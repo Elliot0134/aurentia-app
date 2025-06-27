@@ -13,6 +13,7 @@ import AnalyseDeLaConcurrenceLivrable from "@/components/deliverables/AnalyseDeL
 import BusinessModelLivrable from "@/components/deliverables/BusinessModelLivrable";
 import PropositionDeValeurLivrable from "@/components/deliverables/PropositionDeValeurLivrable";
 import AnalyseDeMarcheLivrable from "@/components/deliverables/AnalyseDeMarcheLivrable"; // Import the new deliverable
+import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRessourcesLivrable";
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 
 const ProjectBusiness = () => {
@@ -156,6 +157,13 @@ const ProjectBusiness = () => {
               textColor="#57a68b"
               buttonColor="#57a68b"
             />
+          </div>
+        </div>
+
+        {/* Level 4 Deliverables */}
+        <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
+          <div className="col-span-12">
+            <AnalyseDesRessourcesLivrable />
           </div>
         </div>
       </div>
