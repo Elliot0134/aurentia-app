@@ -1,17 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useParams } from 'react-router-dom'; // Import useParams to get project_id from URL
 import { supabase } from '@/integrations/supabase/client'; // Import supabase client
 import Timeline from '@/components/Timeline'; // Import the Timeline component
@@ -125,7 +112,7 @@ const MaSuccessStoryLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 bg-blue-400 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between md:h-full"
+        className="border rounded-lg p-4 mb-4 bg-blue-400 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
         onClick={handleTemplateClick}
       >
         <div className="flex-grow mr-4 flex flex-col"> {/* Container for text content */}

@@ -5,13 +5,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -139,7 +132,7 @@ const AnalyseDeLaConcurrenceLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className={`border rounded-lg p-4 mb-4 bg-[${deliverableColor}] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between md:h-full`}
+        className={`border rounded-lg p-4 mb-4 bg-[${deliverableColor}] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between`}
         onClick={handleTemplateClick}
       >
         <div className="flex-grow mr-4 flex flex-col">

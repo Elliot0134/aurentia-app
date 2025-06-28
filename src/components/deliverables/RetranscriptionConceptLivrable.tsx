@@ -88,7 +88,7 @@ const RetranscriptionConceptLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
+        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-48"
         onClick={handleTemplateClick}
         style={{ background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' }}
       >

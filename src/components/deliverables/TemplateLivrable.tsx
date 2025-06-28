@@ -5,13 +5,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"; // Assuming Dialog from ui is used for the popup
 
 interface LivrableProps {
   // Props for the template part
@@ -51,7 +44,7 @@ const Livrable: React.FC<LivrableProps> = ({
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 bg-black text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
+        className="border rounded-lg p-4 mb-4 bg-black text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-48"
         onClick={handleTemplateClick}
       >
         <div className="flex-grow mr-4"> {/* Container for text content */}

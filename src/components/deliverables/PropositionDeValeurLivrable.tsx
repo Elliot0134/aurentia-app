@@ -1,11 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"; // Import ToggleGroup
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
@@ -85,7 +78,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 bg-black text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
+        className="border rounded-lg p-4 mb-4 bg-black text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
         onClick={handleTemplateClick}
         style={{ backgroundColor: '#605dc8' }} // Apply the specified color
       >

@@ -7,13 +7,6 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 
@@ -83,7 +76,7 @@ const PitchLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 bg-green-500 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between md:h-full"
+        className="border rounded-lg p-4 mb-4 bg-green-500 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
         onClick={handleTemplateClick}
       >
         <div className="flex-grow mr-4 flex flex-col">

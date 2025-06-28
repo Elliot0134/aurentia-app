@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface LivrableProps {
   title?: string;
@@ -68,7 +61,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
+        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
         onClick={handleTemplateClick}
         style={{ borderColor: '#57a68b', backgroundColor: '#57a68b' }}
       >

@@ -19,7 +19,7 @@ import FormBusinessIdea from "./pages/FormBusinessIdea";
 import ProjectBusiness from "./pages/ProjectBusiness";
 import WarningPage from "./pages/WarningPage";
 import Outils from "./pages/Outils";
-import ChatbotPage from "./pages/ChatbotPage"; // Import the new ChatbotPage
+import ChatbotPage from "./pages/ChatbotPage";
 import Sidebar from "./components/Sidebar";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";

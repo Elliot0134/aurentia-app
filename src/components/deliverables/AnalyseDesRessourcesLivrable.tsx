@@ -255,7 +255,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
       <>
         {/* Livrable Template Part (always visible) */}
         <div
-          className={`border rounded-lg p-4 mb-4 bg-[#57acc2] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between`}
+          className={`border rounded-lg p-4 mb-4 bg-[#57acc2] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-48`}
           onClick={handleTemplateClick}
         >
           <div className="flex-grow mr-4">
@@ -306,7 +306,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
     <>
       {/* Livrable Template Part */}
       <div
-        className={`border rounded-lg p-4 mb-4 bg-[#57acc2] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between`}
+        className={`border rounded-lg p-4 mb-4 bg-[#57acc2] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-48`}
         onClick={handleTemplateClick}
       >
         <div className="flex-grow mr-4">

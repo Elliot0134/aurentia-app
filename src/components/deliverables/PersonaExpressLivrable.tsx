@@ -1,17 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "../ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { supabase } from '../../integrations/supabase/client';
 import { useParams } from 'react-router-dom';
@@ -129,7 +116,7 @@ const PersonaExpressLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between md:h-full"
+        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
         onClick={handleTemplateClick}
         style={{ borderColor: color, backgroundColor: color }}
       >
