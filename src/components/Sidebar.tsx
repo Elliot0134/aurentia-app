@@ -1,7 +1,7 @@
 
 import { useState, useEffect, memo } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, BookOpen, Zap, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { LayoutDashboard, FileText, Settings, BookOpen, Zap, LogOut, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import MobileNavbar from "./MobileNavbar"; // Import the new MobileNavbar compon
 const Sidebar = memo(() => {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
+  const { projectId } = useParams(); // Get project ID from URL
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -35,6 +36,11 @@ const Sidebar = memo(() => {
       name: "Outils",
       path: "/outils",
       icon: <Settings size={20} />
+    },
+    {
+      name: "Assistant",
+      path: `/chatbot/${projectId}`,
+      icon: <MessageSquare size={20} />
     },
   ];
 

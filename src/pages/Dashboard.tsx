@@ -64,14 +64,14 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
+        <div className="mb-6 md:flex md:justify-between md:items-center">
+          <div className="mb-4 md:mb-0">
             <h1 className="text-2xl font-semibold">Mon tableau de bord</h1>
             <p className="text-gray-600 text-sm mt-1">Bienvenue sur votre espace Aurentia</p>
           </div>
           <button
             onClick={() => navigate("/warning")}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex items-center justify-center gap-2 w-full mt-4 md:w-auto md:mt-0 md:ml-6"
           >
             <Plus size={16} />
             Nouveau projet
@@ -130,7 +130,7 @@ const Dashboard = () => {
               Décrivez votre idée d'entreprise, et notre IA générera une analyse complète pour vous aider à la développer.
             </p>
             <button
-              onClick={() => navigate("/form")}
+              onClick={() => navigate("/warning")}
               className="bg-white text-aurentia-pink font-medium px-4 py-2 text-sm rounded-full hover:shadow-lg transition-all duration-300"
             >
               Voir la démonstration
@@ -139,28 +139,6 @@ const Dashboard = () => {
         </div>
 
         
-        <div className="bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.5s"}}>
-          <div className="flex justify-between items-center mb-4">
-          </div>
-          
-          <div className="text-center py-8">
-            <div className="flex justify-center mb-3">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <FileText size={20} className="text-gray-400" />
-              </div>
-            </div>
-            <h3 className="text-base font-medium">Aucun livrable récent</h3>
-            <p className="text-gray-600 text-xs mt-1 mb-3 max-w-md mx-auto">
-              Commencez un nouveau projet pour générer des analyses et livrables pour votre idée d'entreprise
-            </p>
-            <button
-              onClick={() => navigate("/form")}
-              className="btn-primary text-sm"
-            >
-              Découvrir les livrables
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

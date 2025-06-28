@@ -19,6 +19,7 @@ import FormBusinessIdea from "./pages/FormBusinessIdea";
 import ProjectBusiness from "./pages/ProjectBusiness";
 import WarningPage from "./pages/WarningPage";
 import Outils from "./pages/Outils";
+import ChatbotPage from "./pages/ChatbotPage"; // Import the new ChatbotPage
 import Sidebar from "./components/Sidebar";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,6 +101,7 @@ const App = () => {
                   <Route path="/form" element={<Form />} />
                   <Route path="/form-business-idea" element={<FormBusinessIdea />} />
                   <Route path="/outils" element={<Outils />} />
+                  <Route path="/chatbot/:projectId" element={<ChatbotPage />} /> {/* New route for chatbot */}
                 </Route>
                 <Route path="/" element={<Navigate to="/beta" replace />} />
                 <Route path="*" element={<NotFound />} />

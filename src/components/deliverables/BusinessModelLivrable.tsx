@@ -78,7 +78,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
           <div>{children}</div>
         </div>
         <div className="flex-shrink-0">
-          <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-8 h-8 object-cover self-start" />
+          <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-8 h-8 object-cover self-start" />
         </div>
       </div>
 
@@ -127,7 +127,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
               {/* Row 1 */}
               <div className="col-span-1 md:col-span-1 md:row-span-2 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Partenaires clés</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 {businessModelData?.partenaires_cles?.split('\n').map((line: string, index: number) => {
                   const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
                   return (
@@ -137,7 +137,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
               </div>
               <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Activités clés</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 {businessModelData?.activites_cles?.split('\n').map((line: string, index: number) => {
                   const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
                   return (
@@ -147,7 +147,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
               </div>
               <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Proposition de valeur</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 {businessModelData?.proposition_valeur?.split('\n').map((line: string, index: number) => {
                   const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
                   return (
@@ -157,14 +157,14 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
               </div>
               <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Relations clients</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 {businessModelData?.relations_clients?.split('\n').map((line: string, index: number) => (
                   <p key={index} className="text-[#4B5563] text-xs mb-1">{line}</p>
                 ))}
               </div>
               <div className="col-span-1 md:col-span-1 md:row-span-2 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Segments de clients</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 {businessModelData?.segments_clients?.split('\n').map((line: string, index: number) => {
                   const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
                   return (
@@ -176,7 +176,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
               {/* Row 2 */}
               <div className="col-span-1 md:col-span-2 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Ressources clés</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="col-span-1">
                     <h5 className="text-xs font-semibold mb-1">Humaines:</h5>
@@ -218,7 +218,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
               </div>
               <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Canaux de distribution</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 {businessModelData?.canaux?.split('\n').map((line: string, index: number) => {
                   const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
                   return (
@@ -232,7 +232,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className="col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
                 <h4 className="text-sm font-semibold mb-2">Structure des coûts</h4>
-                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
                 <button
                   className="text-xs px-2 py-1 rounded-full cursor-pointer bg-gray-200 text-gray-700 mb-2"
                   onClick={() => setShowStructureCoutsAnalyse(!showStructureCoutsAnalyse)}

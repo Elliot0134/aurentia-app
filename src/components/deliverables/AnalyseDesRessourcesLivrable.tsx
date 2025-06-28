@@ -150,7 +150,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
         </button>
         <div
           className={`overflow-hidden transition-all duration-300 ease-in-out ${
-            isOpen ? 'max-h-screen' : 'max-h-0'
+            isOpen ? 'max-h-[9999px]' : 'max-h-0'
           }`}
         >
           <div className="mt-3">
@@ -261,12 +261,9 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
           <div className="flex-grow mr-4">
             <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
             {deliverableDescription && <p className="text-white mb-4">{deliverableDescription}</p>}
-            <button className={`text-xs bg-white text-[${deliverableColor}] px-2 py-1 rounded-full mt-2 cursor-default pointer-events-none font-bold`}>
-              Commentaire
-            </button>
           </div>
           <div className="flex-shrink-0">
-            <img src="/placeholder.svg" alt="Placeholder Image" className="w-8 h-8 object-cover self-start" />
+            <img src="/icones-livrables/ressources-icon.png" alt="Ressources Icon" className="w-8 h-8 object-cover self-start" />
           </div>
         </div>
 
@@ -315,12 +312,9 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
         <div className="flex-grow mr-4">
           <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
           {deliverableDescription && <p className="text-white mb-4">{deliverableDescription}</p>}
-          <button className={`text-xs bg-white text-[${deliverableColor}] px-2 py-1 rounded-full mt-2 cursor-default pointer-events-none font-bold`}>
-            Commentaire
-          </button>
         </div>
         <div className="flex-shrink-0">
-          <img src="/placeholder.svg" alt="Placeholder Image" className="w-8 h-8 object-cover self-start" />
+          <img src="/icones-livrables/ressources-icon.png" alt="Ressources Icon" className="w-8 h-8 object-cover self-start" />
         </div>
       </div>
 

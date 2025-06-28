@@ -99,7 +99,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
         </div>
         <div className="flex-shrink-0"> {/* Container for image */}
           {/* Placeholder for image */}
-          <img src="/placeholder.svg" alt="Placeholder Image" className="w-8 h-8 object-cover self-start" />
+          <img src="/icones-livrables/proposition-valeur-icon.png" alt="Proposition de Valeur Icon" className="w-8 h-8 object-cover self-start" />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, BookOpen, Zap, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, Zap, BookOpen, LogOut, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -31,7 +31,21 @@ const MobileNavbar = () => {
       path: "/dashboard",
       icon: <LayoutDashboard size={20} />
     },
-
+    {
+      name: "Projet",
+      path: "/project",
+      icon: <FileText size={20} />
+    },
+    {
+      name: "Outils",
+      path: "/outils",
+      icon: <Settings size={20} />
+    },
+    {
+      name: "Assistant",
+      path: "/chatbot/undefined",
+      icon: <MessageSquare size={20} />
+    },
   ];
 
   return (
