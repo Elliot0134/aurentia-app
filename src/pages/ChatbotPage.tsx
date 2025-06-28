@@ -75,7 +75,7 @@ const ChatbotPage = () => {
 
       try {
         // Send message to webhook and get response
-        const webhookUrl = "https://n8n.eec-technologies.fr/webhook-test/chatbot-global";
+        const webhookUrl = "https://n8n.eec-technologies.fr/webhook/chatbot-global";
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: {
