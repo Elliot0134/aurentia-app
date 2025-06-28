@@ -74,21 +74,29 @@ const ChatbotPage = () => {
       }
 
       try {
-        // Generate bot response
-        const botResponse = await chatbotService.generateBotResponse(
-          currentConversation.id, 
-          userText, 
-          projectId
-        );
+        // Send message to webhook and get response
+        const webhookUrl = "https://n8n.eec-technologies.fr/webhook-test/chatbot-global";
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: userText, projectId: projectId }),
+        });
 
-        // Add bot message with a delay to simulate thinking
-        setTimeout(() => {
-          const botMessage = chatbotService.addMessage(currentConversation.id, 'bot', botResponse);
-          if (botMessage) {
-            setCurrentConversation(prev => prev ? {...prev, messages: [...prev.messages, botMessage]} : null);
-          }
-          setIsLoading(false);
-        }, 1000 + Math.random() * 1000); // 1-2 second delay
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const botResponse = data[0].output.response;
+
+        // Add bot message
+        const botMessage = chatbotService.addMessage(currentConversation.id, 'bot', botResponse);
+        if (botMessage) {
+          setCurrentConversation(prev => prev ? {...prev, messages: [...prev.messages, botMessage]} : null);
+        }
+        setIsLoading(false);
       } catch (error) {
         console.error('Error generating response:', error);
         const errorMessage = chatbotService.addMessage(
@@ -132,11 +140,21 @@ const ChatbotPage = () => {
     setIsLoading(true);
     
     try {
-      const newResponse = await chatbotService.generateBotResponse(
-        currentConversation.id,
-        previousUserMessage.text,
-        projectId
-      );
+      const webhookUrl = "https://n8n.eec-technologies.fr/webhook-test/chatbot-global";
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: previousUserMessage.text, projectId: projectId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const newResponse = data[0].output.response;
 
       // Update the message in place
       const updatedMessages = [...currentConversation.messages];
@@ -220,14 +238,14 @@ const ChatbotPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="flex flex-col h-screen bg-[#F8F6F1]">
       {messages.length === 0 ? (
         // Initial state with welcome message and suggestions
         <div className="flex flex-col items-center justify-center flex-1 px-4 py-8">
           <div className="max-w-3xl w-full text-center space-y-8">
             {/* Header */}
             <div className="space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-primary mb-4">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -245,7 +263,7 @@ const ChatbotPage = () => {
                 <button
                   key={index}
                   onClick={() => handleSuggestedPrompt(prompt)}
-                  className="p-4 text-left border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-md transition-all duration-200 group"
+                  className="p-4 text-left bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-md transition-all duration-200 group"
                 >
                   <span className="text-gray-700 group-hover:text-gray-900">
                     {prompt}
@@ -256,20 +274,20 @@ const ChatbotPage = () => {
 
             {/* Input container */}
             <div className="max-w-2xl mx-auto">
-              <div className="relative bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+              <div className="relative rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 focus-within:border-[#F26358] focus-within:ring-2 focus-within:ring-[#F26358]/20">
                 <Textarea
                   ref={textareaRef}
                   placeholder="Posez votre question à Aurentia..."
                   value={inputMessage}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyPress}
-                  className="resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-2xl px-4 py-4 pr-12 min-h-[60px] text-gray-900 placeholder-gray-500"
+                  className="resize-none border-none bg-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-2xl px-4 py-4 pr-12 min-h-[60px] text-gray-900 placeholder-gray-500"
                   rows={1}
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={isInputEmpty || isLoading}
-                  className="absolute right-2 bottom-2 rounded-xl w-10 h-10 p-0 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  className="absolute right-2 bottom-2 rounded-xl w-10 h-10 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
                   <ArrowUp size={18} className="text-white" />
                 </Button>
@@ -284,7 +302,7 @@ const ChatbotPage = () => {
           <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
             <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -317,18 +335,18 @@ const ChatbotPage = () => {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+            <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`flex max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start space-x-3`}>
+                  <div className={`flex max-w-full ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start space-x-3`}>
                     {/* Avatar */}
                     <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      message.sender === 'user' 
-                        ? 'bg-gray-700 ml-3' 
-                        : 'bg-gradient-to-br from-blue-500 to-purple-600 mr-3'
+                      message.sender === 'user'
+                        ? 'bg-gray-700 ml-3'
+                        : 'bg-gradient-primary mr-3'
                     }`}>
                       {message.sender === 'user' ? (
                         <span className="text-white text-sm font-medium">U</span>
@@ -339,10 +357,10 @@ const ChatbotPage = () => {
 
                     {/* Message content */}
                     <div className={`group relative ${
-                      message.sender === 'user' 
-                        ? 'bg-gray-900 text-white' 
-                        : 'bg-white border border-gray-200'
-                    } rounded-2xl px-4 py-3 shadow-sm`}>
+                      message.sender === 'user'
+                        ? 'bg-[#f0efe6] text-gray-900'
+                        : ''
+                    } rounded-2xl px-4 py-3`}>
                       <div className="whitespace-pre-wrap text-sm leading-relaxed">
                         {message.text}
                       </div>
@@ -355,7 +373,7 @@ const ChatbotPage = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => copyMessage(message.text)}
-                              className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700"
+                              className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-[#F0EFE6]"
                             >
                               <Copy size={12} className="mr-1" />
                               Copier
@@ -364,7 +382,7 @@ const ChatbotPage = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => regenerateResponse(message.id)}
-                              className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700"
+                              className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-[#F0EFE6]"
                               disabled={isLoading}
                             >
                               <RefreshCw size={12} className="mr-1" />
@@ -382,7 +400,7 @@ const ChatbotPage = () => {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex items-start space-x-3 max-w-[80%]">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
                       <Sparkles className="w-4 h-4 text-white" />
                     </div>
                     <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
@@ -404,22 +422,22 @@ const ChatbotPage = () => {
           </div>
 
           {/* Input area */}
-          <div className="border-t border-gray-200 bg-white/80 backdrop-blur-sm">
+          <div>
             <div className="max-w-4xl mx-auto px-4 py-4">
-              <div className="relative bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+              <div className="relative rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 focus-within:border-[#F26358] focus-within:ring-2 focus-within:ring-[#F26358]/20">
                 <Textarea
                   ref={textareaRef}
                   placeholder="Continuez la conversation avec Aurentia..."
                   value={inputMessage}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyPress}
-                  className="resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-2xl px-4 py-4 pr-12 min-h-[60px] max-h-[200px] text-gray-900 placeholder-gray-500"
+                  className="resize-none border-none bg-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-2xl px-4 py-4 pr-12 min-h-[60px] max-h-[200px] text-gray-900 placeholder-gray-500"
                   rows={1}
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={isInputEmpty || isLoading}
-                  className="absolute right-2 bottom-2 rounded-xl w-10 h-10 p-0 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  className="absolute right-2 bottom-2 rounded-xl w-10 h-10 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
                   <ArrowUp size={18} className="text-white" />
                 </Button>
@@ -448,7 +466,7 @@ const ChatbotPage = () => {
             <Button variant="outline" onClick={handleCancelRename} className="rounded-lg">
               Annuler
             </Button>
-            <Button onClick={handleSaveRename} className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+            <Button onClick={handleSaveRename} className="rounded-lg bg-gradient-primary">
               Enregistrer
             </Button>
           </DialogFooter>
