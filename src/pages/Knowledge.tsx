@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Book, BookOpen, FileText, Download, Search, ChevronDown } from "lucide-react";
+import { Book, BookOpen, FileText, Download, Search, ChevronDown, Filter } from "lucide-react";
 import { 
   Accordion, 
   AccordionContent, 
@@ -26,6 +25,7 @@ interface Resource {
 const Knowledge = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedType, setSelectedType] = useState("all");
   const [openArticleId, setOpenArticleId] = useState<string | null>(null);
 
   // Exemples de ressources pour la page
@@ -80,12 +80,13 @@ const Knowledge = () => {
     }
   ];
 
-  // Filtrer les ressources en fonction de la recherche et la catégorie
+  // Filtrer les ressources en fonction de la recherche, la catégorie et le type
   const filteredResources = resources.filter(resource => {
     const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           resource.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || resource.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesType = selectedType === "all" || resource.type === selectedType;
+    return matchesSearch && matchesCategory && matchesType;
   });
 
   // Les ressources mises en avant
@@ -98,6 +99,15 @@ const Knowledge = () => {
     { id: "innovation", name: "Innovation" },
     { id: "strategy", name: "Stratégie" },
     { id: "success", name: "Success Stories" }
+  ];
+
+  // Types pour le filtre par tags
+  const types = [
+    { id: "all", name: "Tous les types" },
+    { id: "guide", name: "Guide" },
+    { id: "template", name: "Template" },
+    { id: "casestudy", name: "Étude de cas" },
+    { id: "article", name: "Article" }
   ];
 
   // Obtenir l'icône en fonction du type de ressource
@@ -146,7 +156,7 @@ const Knowledge = () => {
         {/* En-tête de la page */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-semibold">Knowledge</h1>
+            <h1 className="text-2xl font-semibold">Ressources</h1>
             <p className="text-gray-600 text-sm mt-1">Ressources et contenu éducatif pour entrepreneurs</p>
           </div>
           <div className="flex items-center gap-3">
@@ -163,84 +173,50 @@ const Knowledge = () => {
           </div>
         </div>
 
-        {/* Filtres de catégories */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {categories.map(category => (
-            <button
-              key={category.id}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedCategory === category.id
-                  ? "bg-gradient-primary text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-              onClick={() => setSelectedCategory(category.id)}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Ressources mises en avant */}
-        <div className="mb-8">
-          <h2 className="text-lg font-medium mb-4">Ressources recommandées</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredResources.map(resource => (
-              <HoverCard key={resource.id}>
-                <HoverCardTrigger asChild>
-                  <div 
-                    className={`p-4 rounded-xl ${getBgColor(resource.type)} border transition-all hover:shadow-md cursor-pointer relative overflow-hidden group`}
-                    onClick={() => setOpenArticleId(resource.id)}
-                  >
-                    <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronDown className="h-4 w-4 text-gray-700" />
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-white p-2 rounded-lg shadow-sm">
-                        {getResourceIcon(resource.type)}
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-sm mb-1">{resource.title}</h3>
-                        <p className="text-xs text-gray-600 line-clamp-2">{resource.description}</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex justify-between items-center">
-                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/50 backdrop-blur-sm">
-                        {resource.type === "article" ? "Article" : 
-                         resource.type === "guide" ? "Guide" : 
-                         resource.type === "template" ? "Template" : "Étude de cas"}
-                      </span>
-                      <button 
-                        className="text-xs text-aurentia-pink font-medium hover:underline flex items-center gap-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownload(resource.id);
-                        }}
-                      >
-                        <Download className="h-3 w-3" />
-                        Télécharger
-                      </button>
-                    </div>
-                  </div>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80 p-0 shadow-lg rounded-xl border">
-                  <div className="p-4">
-                    <h3 className="font-medium mb-1">{resource.title}</h3>
-                    <p className="text-sm text-gray-600 mb-3">{resource.description}</p>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        className="w-full bg-gradient-primary"
-                        onClick={() => setOpenArticleId(resource.id)}
-                      >
-                        Voir le détail
-                      </Button>
-                    </div>
-                  </div>
-                </HoverCardContent>
-              </HoverCard>
+        {/* Filtres */}
+        <div className="space-y-4 mb-6">
+          {/* Filtres de catégories */}
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Filter className="h-4 w-4" />
+              Catégories:
+            </div>
+            {categories.map(category => (
+              <button
+                key={category.id}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedCategory === category.id
+                    ? "bg-gradient-primary text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+                onClick={() => setSelectedCategory(category.id)}
+              >
+                {category.name}
+              </button>
             ))}
           </div>
-        </div>
+
+          {/* Filtres par type/tags */}
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <FileText className="h-4 w-4" />
+              Types:
+            </div>
+            {types.map(type => (
+              <button
+                key={type.id}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedType === type.id
+                    ? "bg-gradient-primary text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+                onClick={() => setSelectedType(type.id)}
+              >
+                {type.name}
+              </button>
+            ))}
+          </div>
+        </div>        
 
         {/* Liste de toutes les ressources */}
         <div>

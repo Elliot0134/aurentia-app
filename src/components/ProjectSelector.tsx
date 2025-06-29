@@ -1,108 +1,90 @@
-
 import { useState, useEffect, memo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
-import { ArrowRight, Settings } from "lucide-react";
+import { ArrowRight, Settings, Plus } from "lucide-react";
+import { useProject } from "@/contexts/ProjectContext";
 
 const ProjectSelector = memo(() => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
   const { projectId } = useParams(); // Get project ID from URL
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Use the Project Context
+  const { 
+    userProjects, 
+    userProjectsLoading, 
+    currentProject, 
+    currentProjectId, 
+    loadProject,
+    loadUserProjects 
+  } = useProject();
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoading(true);
-
-      try {
-        // Get the current session to get the user ID
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          setLoading(false);
-          return;
-        }
-
-        // Fetch projects for the current user
-        const { data, error } = await supabase
-          .from('form_business_idea')
-          .select('project_id, nom_projet, created_at')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        const fetchedProjects = data || [];
-        setProjects(fetchedProjects);
-
-        // After fetching, if a projectId is in the URL, set the selected project
-        if (projectId && fetchedProjects.length > 0) {
-          const projectFromUrl = fetchedProjects.find(p => p.project_id === projectId);
-          if (projectFromUrl) {
-            setSelectedProject(projectFromUrl);
-          }
-        }
-
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger vos projets. Veuillez réessayer plus tard.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProjects();
-  }, []);
-
-  // Sync selected project with URL
-  useEffect(() => {
-    if (projects.length > 0) {
-      if (projectId) {
-        const projectFromUrl = projects.find(p => p.project_id === projectId);
-        if (projectFromUrl) {
-          setSelectedProject(projectFromUrl);
-        } else {
-          // Handle case where project ID in URL doesn't exist in user's projects
-          // Maybe navigate to dashboard or show an error
-          console.warn(`Project with ID ${projectId} not found for this user.`);
-          setSelectedProject(null); // Clear selected project if URL ID is invalid
-          // Optionally navigate away or show a message
-        }
-      } else {
-        // If no project ID in URL but user has projects, clear selected project
-        setSelectedProject(null);
-      }
-    } else {
-      // If no projects for user, clear selected project
-      setSelectedProject(null);
+  // Get the current selected project info with improved logic
+  const getSelectedProject = () => {
+    // Priority 1: If we have a projectId from URL, use it
+    if (projectId) {
+      return userProjects.find(p => p.project_id === projectId) || 
+        (currentProject?.project_summary && projectId === currentProjectId ? {
+          project_id: currentProjectId,
+          nom_projet: currentProject.project_summary.nom_projet || "Projet sans nom",
+          created_at: currentProject.project_summary.created_at || ""
+        } : null);
     }
-  }, [projects, projectId]);
+    
+    // Priority 2: If we have a current project loaded, use it
+    if (currentProject?.project_summary && currentProjectId) {
+      return {
+        project_id: currentProjectId,
+        nom_projet: currentProject.project_summary.nom_projet || "Projet sans nom",
+        created_at: currentProject.project_summary.created_at || ""
+      };
+    }
+    
+    // Priority 3: Use the first available project from userProjects
+    if (userProjects.length > 0) {
+      return userProjects[0];
+    }
+    
+    // Priority 4: No project available
+    return null;
+  };
 
+  const selectedProject = getSelectedProject();
 
-  const goToProject = (project) => {
+  // Load project data when projectId changes
+  useEffect(() => {
+    if (projectId && projectId !== currentProjectId) {
+      loadProject(projectId);
+    }
+  }, [projectId, currentProjectId, loadProject]);
+
+  // Ensure user projects are loaded
+  useEffect(() => {
+    if (!userProjectsLoading && userProjects.length === 0) {
+      loadUserProjects();
+    }
+  }, [userProjectsLoading, userProjects.length, loadUserProjects]);
+
+  const goToProject = (project: { project_id: string; nom_projet: string; created_at: string }) => {
     if (project) {
       navigate(`/project-business/${project.project_id}`);
     }
+  };
+
+  const handleCreateNewProject = () => {
+    setIsOpen(false);
+    navigate("/warning");
   };
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
   };
 
-  const selectProject = (project) => {
-    setSelectedProject(project);
+  const selectProject = (project: { project_id: string; nom_projet: string; created_at: string }) => {
     setIsOpen(false);
     goToProject(project); // Navigate to the selected project's page
   };
 
-  if (loading) {
+  if (userProjectsLoading) {
     return (
       <button className="w-full py-2 px-3 text-left font-medium text-sm rounded-md flex items-center gap-2 bg-gray-100 animate-pulse">
         <Settings size={18} />
@@ -111,7 +93,7 @@ const ProjectSelector = memo(() => {
     );
   }
 
-  if (projects.length === 0) {
+  if (userProjects.length === 0) {
     return (
       <button
         onClick={() => navigate("/warning")}
@@ -123,6 +105,11 @@ const ProjectSelector = memo(() => {
     );
   }
 
+  // Determine what to display in the selector
+  const displayText = selectedProject 
+    ? (selectedProject.nom_projet || "Projet sans nom")
+    : (projectId ? "Chargement du projet..." : "Sélection projet");
+
   return (
     <div className="relative">
       <button 
@@ -132,7 +119,7 @@ const ProjectSelector = memo(() => {
         <div className="flex items-center gap-2">
           <Settings size={18} />
           <span className="truncate">
-            {selectedProject ? (selectedProject.nom_projet || "Projet sans nom") : "Sélection projet"}
+            {displayText}
           </span>
         </div>
         <ArrowRight size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
@@ -141,11 +128,23 @@ const ProjectSelector = memo(() => {
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg z-10 max-h-56 overflow-y-auto">
           <div className="p-1">
-            {projects.map(project => (
+            {/* Create new project option */}
+            <button
+              onClick={handleCreateNewProject}
+              className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition flex items-center gap-2 border-b border-gray-100 mb-1"
+            >
+              <Plus size={16} className="text-aurentia-pink" />
+              <span className="text-aurentia-pink font-medium">Créer un nouveau projet</span>
+            </button>
+            
+            {/* Existing projects */}
+            {userProjects.map(project => (
               <button
                 key={project.project_id}
                 onClick={() => selectProject(project)}
-                className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition flex items-center justify-between"
+                className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition flex items-center justify-between ${
+                  project.project_id === projectId ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                }`}
               >
                 <span className="truncate">{project.nom_projet || "Projet sans nom"}</span>
                 <button 

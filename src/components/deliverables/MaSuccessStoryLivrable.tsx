@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // Import useParams to get project_id from URL
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import React, { useState } from 'react';
+import { useProject } from '@/contexts/ProjectContext';
 import Timeline from '@/components/Timeline'; // Import the Timeline component
 import { Trophy, Globe, Handshake } from 'lucide-react'; // Import icons
 
@@ -18,11 +17,21 @@ const MaSuccessStoryLivrable: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
   const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
-  const [successStoryData, setSuccessStoryData] = useState<SuccessStoryData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  
+  // Use Project Context instead of individual API calls
+  const { currentProject, loading, error } = useProject();
+  const successStoryData = currentProject?.ma_success_story;
 
-  const { projectId } = useParams<{ projectId: string }>(); // Get project_id from URL
+  const handleTemplateClick = () => {
+    setIsPopupOpen(true);
+  };
+
+  const handlePopupClose = () => {
+    setIsPopupOpen(false);
+    // Reset placeholder states when closing popup
+    setShowDefinitionPlaceholder(false);
+    setShowRecommendationPlaceholder(false);
+  };
 
   const transformDataToTimelineItems = (data: SuccessStoryData) => {
     const items = [];
@@ -61,45 +70,6 @@ const MaSuccessStoryLivrable: React.FC = () => {
     }
 
     return items;
-  };
-
-  useEffect(() => {
-    const fetchSuccessStoryData = async () => {
-      if (!projectId) {
-        setError("Project ID not found in URL");
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('success_story')
-        .select('*')
-        .eq('project_id', projectId)
-        .single();
-
-      if (error) {
-        setError(error.message);
-        setSuccessStoryData(null);
-      } else {
-        setSuccessStoryData(data);
-      }
-      setLoading(false);
-    };
-
-    if (isPopupOpen) {
-      fetchSuccessStoryData();
-    }
-  }, [isPopupOpen, projectId]); // Fetch data when popup opens or projectId changes
-
-  const handleTemplateClick = () => {
-    setIsPopupOpen(true);
-  };
-
-  const handlePopupClose = () => {
-    setIsPopupOpen(false);
-    // Reset placeholder states when closing popup
-    setShowDefinitionPlaceholder(false);
-    setShowRecommendationPlaceholder(false);
   };
 
   const deliverableTitle = "Ma Success Story";
@@ -165,7 +135,7 @@ const MaSuccessStoryLivrable: React.FC = () => {
             )}
 
             <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+              className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
               onClick={handlePopupClose}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

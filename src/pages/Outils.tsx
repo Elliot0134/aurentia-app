@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const toolsData = [
   { id: 1, name: "Rédaction mail de prospection", description: "Génère des e-mails de prospection personnalisés." },
@@ -44,14 +45,15 @@ const Outils = () => {
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />
-          <select
-            className="border rounded-md px-3 py-2"
-            value={sortCriteria}
-            onChange={(e) => setSortCriteria(e.target.value)}
-          >
-            <option value="name">Trier par nom</option>
-            {/* Add other sorting options here if needed */}
-          </select>
+          <Select value={sortCriteria} onValueChange={setSortCriteria}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Trier par..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Trier par nom</SelectItem>
+              {/* Add other sorting options here if needed */}
+            </SelectContent>
+          </Select>
         </div>
         {/* Placeholder for the grid of cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -14,16 +14,17 @@ import BusinessModelLivrable from "@/components/deliverables/BusinessModelLivrab
 import PropositionDeValeurLivrable from "@/components/deliverables/PropositionDeValeurLivrable";
 import AnalyseDeMarcheLivrable from "@/components/deliverables/AnalyseDeMarcheLivrable"; // Import the new deliverable
 import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRessourcesLivrable";
-import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
+import { useProject } from "@/contexts/ProjectContext";
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [selectedPersonaExpress, setSelectedPersonaExpress] = useState<'Particulier' | 'Entreprise' | 'Organismes'>('Particulier');
-  const [loading, setLoading] = useState(true); // Set loading to true initially
-  const [project, setProject] = useState<{ nom_projet?: string; description_projet?: string } | null>(null); // State for project data
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: string; content: React.ReactNode; buttonColor?: string } | null>(null);
+
+  // Use Project Context
+  const { currentProject, loading, error, loadProject, currentProjectId } = useProject();
 
   const openPopup = (title: string, content: React.ReactNode, buttonColor?: string) => {
     setPopupContent({ title, content, buttonColor });
@@ -35,48 +36,58 @@ const ProjectBusiness = () => {
     setPopupContent(null);
   };
 
+  // Load project data when component mounts or projectId changes
   useEffect(() => {
-    if (!projectId) {
-      setLoading(false);
-      setProject(null);
-      return;
+    if (projectId && projectId !== currentProjectId) {
+      loadProject(projectId);
     }
-
-    const fetchProject = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('project_summary')
-        .select('nom_projet, description_synthetique') // Select the project name and description
-        .eq('project_id', projectId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching project:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les détails du projet.",
-          variant: "destructive",
-        });
-        setProject(null);
-      } else {
-        setProject({
-          nom_projet: data?.nom_projet || "Projet sans nom",
-          description_projet: data?.description_synthetique || "Aucune description",
-        });
-      }
-      setLoading(false);
-    };
-
-    fetchProject();
-  }, [projectId]); // Refetch when projectId changes
+  }, [projectId, currentProjectId, loadProject]);
 
   if (loading) {
-    return <div>Chargement...</div>; // Or a loading spinner component
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aurentia-pink"></div>
+        </div>
+      </div>
+    );
   }
 
-  if (!project) {
-    return <div>Projet non trouvé.</div>; // Or an error message
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <h2 className="text-xl font-medium">Erreur</h2>
+          <p className="text-gray-600 mt-2">{error}</p>
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="mt-4 btn-primary"
+          >
+            Retour au tableau de bord
+          </button>
+        </div>
+      </div>
+    );
   }
+
+  if (!currentProject?.project_summary) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <h2 className="text-xl font-medium">Projet non trouvé</h2>
+          <p className="text-gray-600 mt-2">Le projet que vous recherchez n'existe pas ou a été supprimé.</p>
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="mt-4 btn-primary"
+          >
+            Retour au tableau de bord
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const project = currentProject.project_summary;
 
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
@@ -84,7 +95,7 @@ const ProjectBusiness = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-semibold">{project.nom_projet || "Projet sans nom"}</h1>
-            <p className="text-gray-600 text-sm mt-1">{project.description_projet || "Aucune description"}</p>
+            <p className="text-gray-600 text-sm mt-1">{project.description_synthetique || "Aucune description"}</p>
           </div>
           <div className="flex items-center gap-3">
             <button className="btn-outline flex items-center gap-2 text-sm">
@@ -138,7 +149,7 @@ const ProjectBusiness = () => {
 
           {/* Analyse de Marché Deliverable */}
           <div className="md:h-full">
-            <AnalyseDeMarcheLivrable projectId={projectId} />
+            <AnalyseDeMarcheLivrable projectId={projectId || ''} />
           </div>
         </div>
 

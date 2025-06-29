@@ -1,106 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '../../integrations/supabase/client';
+import React, { useState } from 'react';
+import { useProject } from '@/contexts/ProjectContext';
 
-interface AnalyseDesRessourcesLivrableProps {
-  // No specific props needed for this deliverable as data is fetched internally
-}
+interface AnalyseDesRessourcesLivrableProps {}
 
 const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> = () => {
-  const { projectId } = useParams<{ projectId: string }>();
-  const supabaseClient = supabase;
-
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
   const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use Project Context instead of individual API calls
+  const { currentProject, loading, error } = useProject();
+  const data = currentProject?.ressources_requises;
+  
+  // Local state for UI interactions
   const [openSubCategories, setOpenSubCategories] = useState<Record<string, boolean>>({});
   const [selectedCategory, setSelectedCategory] = useState<string | null>('materielles');
 
-  const deliverableTitle = "Analyse des ressources";
-  const deliverableDescription = "Identification et planification des ressources nécessaires au projet";
-  const deliverableDefinition = "L'analyse des ressources consiste à identifier, quantifier et planifier l'ensemble des moyens matériels, humains et techniques nécessaires à la réalisation et au fonctionnement d'un projet d'entreprise.";
-  const deliverableImportance = "Cette analyse est cruciale car elle permet d'évaluer les investissements requis, de planifier les recrutements, d'anticiper les coûts et de s'assurer que tous les moyens nécessaires seront disponibles au moment opportun pour le lancement et la croissance de l'entreprise.";
-  const deliverableColor = "#57acc2";
-
-  // Fonction utilitaire pour parser les données JSON avec gestion d'erreurs
-  const parseJsonData = (jsonString: string | null) => {
-    if (!jsonString) return { categories_ressources: [] };
-    
+  // Helper function to parse JSON data safely
+  const parseJsonData = (jsonString: any) => {
+    if (!jsonString) return null;
+    if (typeof jsonString === 'object') return jsonString;
     try {
-      const parsed = JSON.parse(jsonString);
-      console.log("Parsed JSON structure:", parsed);
-      
-      // Gérer la structure imbriquée output.agent_response.categories_ressources
-      if (parsed.output && parsed.output.agent_response && parsed.output.agent_response.categories_ressources) {
-        return { categories_ressources: parsed.output.agent_response.categories_ressources };
-      }
-      
-      // Gérer la structure directe categories_ressources
-      if (parsed.categories_ressources) {
-        return { categories_ressources: parsed.categories_ressources };
-      }
-      
-      // Si aucune structure reconnue
-      console.warn("Structure JSON non reconnue:", parsed);
-      return { categories_ressources: [] };
-    } catch (error) {
-      console.error("Erreur lors du parsing JSON:", error);
-      return { categories_ressources: [] };
+      return JSON.parse(jsonString);
+    } catch (e) {
+      console.error('Error parsing JSON:', e);
+      return null;
     }
   };
-
-  useEffect(() => {
-    console.log("AnalyseDesRessourcesLivrable: useEffect triggered");
-    const fetchData = async () => {
-      if (!projectId) {
-        setError("Project ID not found in URL.");
-        setLoading(false);
-        console.log("AnalyseDesRessourcesLivrable: Project ID not found.");
-        return;
-      }
-
-      try {
-        const { data: ressourcesData, error } = await supabaseClient
-          .from('ressources_requises')
-          .select('*')
-          .eq('project_id', projectId)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        if (!ressourcesData) {
-          console.log("AnalyseDesRessourcesLivrable: No data found for project ID:", projectId);
-          setData(null);
-        } else {
-          console.log("AnalyseDesRessourcesLivrable: Raw data from Supabase:", ressourcesData);
-          
-          // Parse JSON columns avec la nouvelle fonction
-          const parsedData = {
-            ...ressourcesData,
-            ressources_materielles: parseJsonData(ressourcesData.ressources_materielles),
-            ressources_humaines: parseJsonData(ressourcesData.ressources_humaines),
-            ressources_techniques: parseJsonData(ressourcesData.ressources_techniques),
-          };
-          
-          setData(parsedData);
-          console.log("AnalyseDesRessourcesLivrable: Parsed data:", parsedData);
-        }
-      } catch (err: any) {
-        setError(err.message || "An unknown error occurred while fetching data.");
-        console.error("AnalyseDesRessourcesLivrable: Fetch error:", err);
-      } finally {
-        setLoading(false);
-        console.log("AnalyseDesRessourcesLivrable: Loading finished.");
-      }
-    };
-
-    fetchData();
-  }, [projectId, supabaseClient]);
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
@@ -111,6 +37,12 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
     setShowDefinitionPlaceholder(false);
     setShowRecommendationPlaceholder(false);
   };
+
+  const deliverableTitle = "Analyse des ressources";
+  const deliverableDescription = "Identification et planification des ressources nécessaires au projet";
+  const deliverableDefinition = "L'analyse des ressources consiste à identifier, quantifier et planifier l'ensemble des moyens matériels, humains et techniques nécessaires à la réalisation et au fonctionnement d'un projet d'entreprise.";
+  const deliverableImportance = "Cette analyse est cruciale car elle permet d'évaluer les investissements requis, de planifier les recrutements, d'anticiper les coûts et de s'assurer que tous les moyens nécessaires seront disponibles au moment opportun pour le lancement et la croissance de l'entreprise.";
+  const deliverableColor = "#57acc2";
 
   const renderResourceCategory = (categoryObject: any, openCategories: Record<string, boolean>, setOpenCategories: React.Dispatch<React.SetStateAction<Record<string, boolean>>>) => {
     if (!categoryObject || !categoryObject.categorie || !Array.isArray(categoryObject.elements)) {
@@ -232,12 +164,10 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
   };
 
   if (loading) {
-    console.log("AnalyseDesRessourcesLivrable: Rendering Loading state.");
     return <div>Chargement des ressources...</div>;
   }
 
   if (error) {
-    console.log("AnalyseDesRessourcesLivrable: Rendering Error state.");
     return <div>Erreur: {error}</div>;
   }
 
@@ -248,9 +178,8 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
     (data.ressources_techniques?.categories_ressources && data.ressources_techniques.categories_ressources.length > 0)
   );
 
-  // Si pas de données, afficher un message
+  // Si pas de données, afficher un message (sans log console verbeux)
   if (!data || !hasResourceData) {
-    console.log("AnalyseDesRessourcesLivrable: No resource data available or data is empty.");
     return (
       <>
         {/* Livrable Template Part (always visible) */}
@@ -278,7 +207,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
               <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
               <p className="mt-4">Aucune donnée de ressource disponible pour ce projet.</p>
               <button
-                className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+                className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
                 onClick={handlePopupClose}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -437,10 +366,10 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
             )}
 
             <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+              className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
               onClick={handlePopupClose}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

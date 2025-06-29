@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import { supabase } from '../../integrations/supabase/client';
-import { useParams } from 'react-router-dom';
+import { useProject } from '@/contexts/ProjectContext';
 
 interface PersonaData {
   identite: string;
@@ -46,56 +45,15 @@ const PersonaExpressLivrable: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
   const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
-  const [personaData, setPersonaData] = useState<PersonaData | null>(null);
-  const [personaBusinessData, setPersonaBusinessData] = useState<PersonaBusinessData | null>(null);
-  const [personaOrganismeData, setPersonaOrganismeData] = useState<PersonaOrganismeData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>('Particulier');
 
-  const { projectId } = useParams<{ projectId: string }>();
-  const supabaseClient = supabase;
+  // Use Project Context instead of individual API calls
+  const { currentProject, loading } = useProject();
 
-  useEffect(() => {
-    const fetchAllPersonaData = async () => {
-      if (!projectId) {
-        setError("Project ID not found in URL.");
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      const [b2cResult, b2bResult, organismeResult] = await Promise.all([
-        supabase.from('persona_express_b2c').select('*').eq('project_id', projectId).single(),
-        supabase.from('persona_express_b2b').select('*').eq('project_id', projectId).single(),
-        supabase.from('persona_express_organismes').select('*').eq('project_id', projectId).single(),
-      ]);
-
-      if (b2cResult.error) {
-        setError(b2cResult.error.message);
-      } else {
-        setPersonaData(b2cResult.data as PersonaData);
-      }
-
-      if (b2bResult.error) {
-        // Handle b2b error if necessary, maybe set a specific error state for b2b
-      } else {
-        setPersonaBusinessData(b2bResult.data as PersonaBusinessData);
-      }
-
-      if (organismeResult.error) {
-        // Handle organisme error if necessary
-      } else {
-        setPersonaOrganismeData(organismeResult.data as PersonaOrganismeData);
-      }
-
-      setLoading(false);
-    };
-
-    fetchAllPersonaData();
-  }, [projectId, supabase]);
+  // Get persona data from context
+  const personaData = currentProject?.persona_express_b2c as PersonaData | null;
+  const personaBusinessData = currentProject?.persona_express_b2b as PersonaBusinessData | null;
+  const personaOrganismeData = currentProject?.persona_express_organismes as PersonaOrganismeData | null;
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
@@ -199,217 +157,183 @@ const PersonaExpressLivrable: React.FC = () => {
             >
               <div className="mt-2">
                 <div className="bg-gray-100 rounded-md p-4">
-                  {personaData?.recommandations?.split('\n').filter(Boolean).map((item, index) => (
-                    <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                  ))}
+                  <p className="text-[#4B5563]">
+                    <strong>Recommandations générales :</strong> 
+                    {selectedType === 'Particulier' && personaData?.recommandations_b2c ? 
+                      personaData.recommandations_b2c : 
+                      selectedType === 'Entreprise' && personaBusinessData?.recommandations_b2b ? 
+                        personaBusinessData.recommandations_b2b :
+                        selectedType === 'Organismes' && personaOrganismeData?.recommandations_organisme ?
+                          personaOrganismeData.recommandations_organisme :
+                          "Aucune recommandation disponible pour ce segment."}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <ToggleGroup type="single" value={selectedType} onValueChange={setSelectedType} className="flex-col md:flex-row mb-4 mt-4">
-              <ToggleGroupItem
-                value="Particulier"
-                aria-label="Toggle particulier"
-                className={`w-full ${selectedType === 'Particulier' ? 'bg-gradient-to-r from-pink-500 to-orange-500 text-white' : ''}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${selectedType === 'Particulier' ? 'text-white' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-2-2a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span className={selectedType === 'Particulier' ? 'text-white' : ''}>Particulier</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="Entreprise"
-                aria-label="Toggle entreprise"
-                className={`w-full ${selectedType === 'Entreprise' ? 'bg-gradient-to-r from-pink-500 to-orange-500 text-white' : ''}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${selectedType === 'Entreprise' ? 'text-white' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><path d="M10 12h4"/><path d="M12 17v-5"/><path d="M5 22v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/><path d="M15 22v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/><path d="M2 10l10-7 10 7"/></svg>
-                <span className={selectedType === 'Entreprise' ? 'text-white' : ''}>Entreprise</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="Organisme"
-                aria-label="Toggle organisme"
-                className={`w-full ${selectedType === 'Organisme' ? 'bg-gradient-to-r from-pink-500 to-orange-500 text-white' : ''}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${selectedType === 'Organisme' ? 'text-white' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                <span className={selectedType === 'Organisme' ? 'text-white' : ''}>Organisme</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-
-            {error && <p className="text-red-500">Error: {error}</p>}
-            {loading && <p>Loading persona data...</p>} {/* Keep loading message */}
-
-            {selectedType === 'Particulier' && personaData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-md p-4" style={{ backgroundColor: '#E1BEE7' }}> {/* Very light purple */}
-                  <h3 className="text-lg font-semibold mb-2">Profil Client</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Identité et profil du persona</h4>
-                    <p className="text-[#4B5563]">{personaData.identite}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Situation personnelle et environnement</h4>
-                    <p className="text-[#4B5563]">{personaData.contexte_personnel}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#FFF9C4' }}> {/* Very light yellow */}
-                  <h3 className="text-lg font-semibold mb-2">Psychologie Client</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Motivations principales et valeurs</h4>
-                    <p className="text-[#4B5563]">{personaData.motivations_valeurs}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Défis rencontrés et frustrations</h4>
-                    <p className="text-[#4B5563]">{personaData.defis_frustrations}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#C8E6C9' }}> {/* Very light green */}
-                  <h3 className="text-lg font-semibold mb-2">Comportement d'Achat</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Habitudes et comportements d'achat</h4>
-                    <p className="text-[#4B5563]">{personaData.comportement_achat}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Présence et activité sur les canaux digitaux</h4>
-                    <p className="text-[#4B5563]">{personaData.presence_digitale}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#BBDEFB' }}> {/* Very light blue */}
-                  <h3 className="text-lg font-semibold mb-2">Stratégies Recommandées</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Stratégies marketing recommandées</h4>
-                    <p className="text-[#4B5563]">{personaData.strategies_marketing}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Approche de vente adaptée</h4>
-                    <p className="text-[#4B5563]">{personaData.approche_vente}</p>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="text-gray-600 mt-2">Chargement des données...</p>
               </div>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <ToggleGroup type="single" value={selectedType} onValueChange={setSelectedType}>
+                    <ToggleGroupItem value="Particulier" aria-label="Particulier">
+                      Particulier
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="Entreprise" aria-label="Entreprise">
+                      Entreprise
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="Organismes" aria-label="Organismes">
+                      Organismes
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+
+                {/* Content for Particulier */}
+                {selectedType === 'Particulier' && (
+                  <div className="space-y-4">
+                    {personaData ? (
+                      <>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Identité</h4>
+                          <p className="text-[#4B5563]">{personaData.identite}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Contexte personnel</h4>
+                          <p className="text-[#4B5563]">{personaData.contexte_personnel}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Motivations et valeurs</h4>
+                          <p className="text-[#4B5563]">{personaData.motivations_valeurs}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Défis et frustrations</h4>
+                          <p className="text-[#4B5563]">{personaData.defis_frustrations}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Comportement d'achat</h4>
+                          <p className="text-[#4B5563]">{personaData.comportement_achat}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Présence digitale</h4>
+                          <p className="text-[#4B5563]">{personaData.presence_digitale}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Stratégies marketing</h4>
+                          <p className="text-[#4B5563]">{personaData.strategies_marketing}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Approche de vente</h4>
+                          <p className="text-[#4B5563]">{personaData.approche_vente}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">Aucune donnée disponible pour les particuliers.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Content for Entreprise */}
+                {selectedType === 'Entreprise' && (
+                  <div className="space-y-4">
+                    {personaBusinessData ? (
+                      <>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Identité professionnelle</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.identite_professionnelle}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Contexte organisationnel</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.contexte_organisationnel}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Responsabilités clés</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.responsabilites_cles}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Enjeux business</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.enjeux_business}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Processus de décision</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.processus_decision}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Recherche d'information</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.recherche_information}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Objections courantes</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.objections_courantes}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Stratégie d'approche</h4>
+                          <p className="text-[#4B5563]">{personaBusinessData.strategie_approche}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">Aucune donnée disponible pour les entreprises.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Content for Organismes */}
+                {selectedType === 'Organismes' && (
+                  <div className="space-y-4">
+                    {personaOrganismeData ? (
+                      <>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Identité institutionnelle</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.identite_institutionnelle}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Contexte organisationnel</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.contexte_organisationnel}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Mission et responsabilités</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.mission_responsabilites}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Contraintes budgétaires</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.contraintes_budgetaires}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Enjeux prioritaires</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.enjeux_prioritaires}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Processus de décision</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.processus_decision}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Valeurs et attentes</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.valeurs_attentes}</p>
+                        </div>
+                        <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                          <h4 className="text-sm font-semibold mb-2">Stratégie d'approche</h4>
+                          <p className="text-[#4B5563]">{personaOrganismeData.strategie_approche}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">Aucune donnée disponible pour les organismes.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
-
-            {selectedType === 'Entreprise' && personaBusinessData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-md p-4" style={{ backgroundColor: '#E1BEE7' }}> {/* Very light purple */}
-                  <h3 className="text-lg font-semibold mb-2">Profil Professionnel</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Identité et profil professionnel</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.identite_professionnelle}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.contexte_organisationnel}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#FFF9C4' }}> {/* Very light yellow */}
-                  <h3 className="text-lg font-semibold mb-2">Contexte Business</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Responsabilités principales</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.responsabilites_cles}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Enjeux et défis business</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.enjeux_business}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#C8E6C9' }}> {/* Very light green */}
-                  <h3 className="text-lg font-semibold mb-2">Processus Décisionnel</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.processus_decision}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Méthodes de recherche d'infos</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.recherche_information}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#BBDEFB' }}> {/* Very light blue */}
-                  <h3 className="text-lg font-semibold mb-2">Stratégies d'Approche</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Objections et freins</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.objections_courantes}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Stratégie d'approche</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.strategie_approche}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {selectedType === 'Organisme' && personaOrganismeData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-md p-4" style={{ backgroundColor: '#E1BEE7' }}> {/* Very light purple */}
-                  <h3 className="text-lg font-semibold mb-2">Profil Institutionnel</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Identité et profil institutionnel</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.identite_institutionnelle}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.contexte_organisationnel}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#FFF9C4' }}> {/* Very light yellow */}
-                  <h3 className="text-lg font-semibold mb-2">Mission et Contraintes</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Mission et responsabilités de l'organisme</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.mission_responsabilites}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contraintes et limitations budgétaires</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.contraintes_budgetaires}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#C8E6C9' }}> {/* Very light green */}
-                  <h3 className="text-lg font-semibold mb-2">Enjeux et Décisions</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Enjeux et priorités principales</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.enjeux_prioritaires}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.processus_decision}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#BBDEFB' }}> {/* Very light blue */}
-                  <h3 className="text-lg font-semibold mb-2">Valeurs et Stratégies</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Valeurs et attentes de l'organisme</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.valeurs_attentes}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Stratégie d'approche recommandée</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.strategie_approche}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Recommandations Section */}
-            <div className="mt-6">
-              <h2 className="text-xl font-bold mb-2">Recommandations</h2>
-              <div className="bg-gray-100 rounded-md p-4">
-                {selectedType === 'Particulier' && personaData?.recommandations_b2c?.split('\n').filter(Boolean).map((item, index) => (
-                  <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                ))}
-                {selectedType === 'Entreprise' && personaBusinessData?.recommandations_b2b?.split('\n').filter(Boolean).map((item, index) => (
-                  <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                ))}
-                {selectedType === 'Organisme' && personaOrganismeData?.recommandations_organisme?.split('\n').filter(Boolean).map((item, index) => (
-                  <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                ))}
-              </div>
-            </div>
 
             <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+              className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
               onClick={handlePopupClose}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -417,17 +341,6 @@ const PersonaExpressLivrable: React.FC = () => {
               </svg>
             </button>
           </div>
-          {/* Define keyframes for the animation */}
-          <style>
-            {`
-              @keyframes scaleIn {
-                to {
-                  opacity: 1;
-                  transform: scale(1);
-                }
-              }
-            `}
-          </style>
         </div>
       )}
     </>

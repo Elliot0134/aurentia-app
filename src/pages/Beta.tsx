@@ -29,6 +29,8 @@ const Beta = () => {
 
   const navigate = useNavigate();
 
+  console.log("Beta component rendered");
+
   const handleJoinWaitlist = () => {
     setShowWaitlistForm(true);
     setShowSuccessMessage(false); // Hide success message if trying again

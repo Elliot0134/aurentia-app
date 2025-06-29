@@ -1,93 +1,65 @@
-
 import { useNavigate } from "react-router-dom";
 import { FileText, Plus, Zap, Book } from "lucide-react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useProject } from "@/contexts/ProjectContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null);
+  
+  // Use Project Context instead of local state
+  const { userProjects, userProjectsLoading } = useProject();
 
-  useEffect(() => {
-    const fetchUserAndProjects = async () => {
-      setLoading(true);
-
-      // Get the current session to get the user ID
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setLoading(false);
-        return;
-      }
-
-      setUserId(session.user.id);
-
-      try {
-        // Fetch projects for the current user from form_responses
-        const { data, error } = await supabase
-          .from('form_business_idea')
-          .select('project_id, nom_projet, created_at, project_summary_v2(statut)')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Format the data for display
-        const formattedProjects = data.map(project => ({
-          id: project.project_id,
-          title: project.nom_projet || "Projet sans nom",
-          status: project.project_summary_v2?.[0]?.statut === "completed" ? "Complété" :
-                  project.project_summary_v2?.[0]?.statut === "pending" ? "En analyse" :
-                  "En cours",
-          createdAt: new Date(project.created_at).toLocaleDateString('fr-FR')
-        }));
-
-        setProjects(formattedProjects);
-      } catch (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger vos projets. Veuillez réessayer plus tard.",
-          variant: "destructive",
-        });
-        console.error("Error fetching projects:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserAndProjects();
-  }, []);
+  // Format projects for display
+  const formattedProjects = userProjects.map(project => ({
+    id: project.project_id,
+    title: project.nom_projet || "Projet sans nom",
+    status: "En cours", // You can enhance this with actual status from project data
+    createdAt: new Date(project.created_at).toLocaleDateString('fr-FR')
+  }));
 
   return (
-    <div className="container mx-auto px-4 py-8 animate-fade-in">
+    <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6 md:flex md:justify-between md:items-center">
-          <div className="mb-4 md:mb-0">
-            <h1 className="text-2xl font-semibold">Mon tableau de bord</h1>
-            <p className="text-gray-600 text-sm mt-1">Bienvenue sur votre espace Aurentia</p>
-          </div>
-          <button
-            onClick={() => navigate("/warning")}
-            className="btn-primary flex items-center justify-center gap-2 w-full mt-4 md:w-auto md:mt-0 md:ml-6"
-          >
-            <Plus size={16} />
-            Nouveau projet
-          </button>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Tableau de bord</h1>
+          <p className="text-gray-600">Bienvenue sur votre espace de gestion de projets entrepreneuriaux</p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-5 animate-slide-up">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Projets totaux</p>
+                <p className="text-2xl font-bold text-gray-900">{userProjects.length}</p>
+              </div>
+              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <FileText className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.1s"}}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Livrables générés</p>
+                <p className="text-2xl font-bold text-gray-900">{userProjects.length * 4}</p>
+              </div>
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <Zap className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.1s"}}>
             <h2 className="text-base font-semibold mb-4">Vos projets</h2>
-            {loading ? (
+            {userProjectsLoading ? (
               <div className="flex justify-center py-6">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aurentia-pink"></div>
               </div>
-            ) : projects.length > 0 ? (
+            ) : formattedProjects.length > 0 ? (
               <div className="space-y-3">
-                {projects.map(project => (
+                {formattedProjects.map(project => (
                   <div
                     key={project.id}
                     className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition cursor-pointer"
@@ -112,33 +84,60 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-5">
-                <p className="text-gray-500 text-sm">Vous n'avez pas encore de projets. Commencez par créer un nouveau projet.</p>
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">Vous n'avez pas encore de projets</p>
                 <button
                   onClick={() => navigate("/warning")}
-                  className="mt-3 text-aurentia-pink hover:underline font-medium text-sm"
+                  className="btn-primary"
                 >
-                  Créer mon premier projet
+                  Créer votre premier projet
                 </button>
               </div>
             )}
           </div>
-          
-          <div className="bg-gradient-primary rounded-xl shadow-sm p-5 text-white animate-slide-up" style={{animationDelay: "0.2s"}}>
-            <h2 className="text-base font-semibold mb-4">Commencez votre projet</h2>
-            <p className="text-sm mb-5">
-              Décrivez votre idée d'entreprise, et notre IA générera une analyse complète pour vous aider à la développer.
-            </p>
-            <button
-              onClick={() => navigate("/warning")}
-              className="bg-white text-aurentia-pink font-medium px-4 py-2 text-sm rounded-full hover:shadow-lg transition-all duration-300"
-            >
-              Voir la démonstration
-            </button>
+
+          <div className="bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.2s"}}>
+            <h2 className="text-base font-semibold mb-4">Actions rapides</h2>
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate("/form-business-idea")}
+                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-aurentia-pink to-aurentia-pink-dark text-white hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-3">
+                  <Plus size={20} />
+                  <div>
+                    <div className="font-medium">Nouveau projet</div>
+                    <div className="text-xs opacity-90">Créer un nouveau projet d'entreprise</div>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => navigate("/outils")}
+                className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <Zap size={20} className="text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">Outils</div>
+                    <div className="text-xs text-gray-500">Découvrir les outils disponibles</div>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => navigate("/knowledge")}
+                className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <Book size={20} className="text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">Centre de connaissances</div>
+                    <div className="text-xs text-gray-500">Accéder aux ressources</div>
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
-
-        
       </div>
     </div>
   );

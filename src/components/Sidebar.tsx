@@ -1,4 +1,3 @@
-
 import { useState, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { LayoutDashboard, FileText, Settings, BookOpen, Zap, LogOut, MessageSquare } from "lucide-react";
@@ -33,6 +32,11 @@ const Sidebar = memo(() => {
       icon: <LayoutDashboard size={20} />
     },
     {
+      name: "Ressources",
+      path: "/knowledge",
+      icon: <BookOpen size={20} />
+    },
+    {
       name: "Outils",
       path: "/outils",
       icon: <Settings size={20} />
@@ -43,6 +47,37 @@ const Sidebar = memo(() => {
       icon: <MessageSquare size={20} />
     },
   ];
+
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  // Helper function to get user display name
+  const getUserDisplayName = () => {
+    if (!user) return "";
+    
+    // Check if user has a display name in metadata
+    const displayName = user.user_metadata?.display_name;
+    if (displayName && displayName.trim()) {
+      return displayName.trim();
+    }
+    
+    // Fallback to username from email (part before @)
+    const email = user.email;
+    if (email) {
+      const username = email.split('@')[0];
+      return username;
+    }
+    
+    return "Utilisateur";
+  };
+
+  // Helper function to get user initial for avatar
+  const getUserInitial = () => {
+    if (!user) return 'U';
+    
+    const displayName = getUserDisplayName();
+    return displayName.charAt(0).toUpperCase();
+  };
 
   // Desktop sidebar
   const DesktopSidebar = () => (
@@ -82,12 +117,12 @@ const Sidebar = memo(() => {
                 to="/profile"
                 className="flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center text-white">
-                  {user.email ? user.email[0].toUpperCase() : 'U'}
+                <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-medium">
+                  {getUserInitial()}
                 </div>
-                <div>
-                  <p className="font-medium">Utilisateur Connecté</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{getUserDisplayName()}</p>
+                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
                 </div>
               </Link>
               <button onClick={handleLogout} className="flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100 w-full mt-2">
@@ -105,9 +140,6 @@ const Sidebar = memo(() => {
       </div>
     </div>
   );
-
-  const [user, setUser] = useState<any>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {

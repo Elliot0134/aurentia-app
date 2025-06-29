@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,12 +20,54 @@ import WarningPage from "./pages/WarningPage";
 import Outils from "./pages/Outils";
 import ChatbotPage from "./pages/ChatbotPage";
 import Sidebar from "./components/Sidebar";
-import { useState, useEffect } from "react";
+import { ProjectProvider } from "./contexts/ProjectContext";
+import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 import "./index.css";
 
 const queryClient = new QueryClient();
+
+// Error Boundary Component
+class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean; error?: Error}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    console.error("Error boundary caught an error:", error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Error boundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-red-50">
+          <div className="text-center p-8">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h1>
+            <p className="text-gray-700 mb-4">An error occurred while loading the application.</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Reload Page
+            </button>
+            <pre className="mt-4 text-xs text-left bg-gray-100 p-4 rounded overflow-auto max-w-lg">
+              {this.state.error?.toString()}
+            </pre>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const ProtectedRoute = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -34,14 +75,23 @@ const ProtectedRoute = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      setLoading(false);
+      try {
+        console.log("Checking authentication...");
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Session:", session);
+        setIsAuthenticated(!!session);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        setIsAuthenticated(false);
+        setLoading(false);
+      }
     };
 
     checkAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session);
       setIsAuthenticated(!!session);
     });
 
@@ -51,20 +101,34 @@ const ProtectedRoute = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>; // Or a loading spinner
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    console.log("Not authenticated, redirecting to login");
+    return <Navigate to="/login" replace />;
+  }
+
+  console.log("Authenticated, rendering protected content");
+  return <Outlet />;
 };
 
 
 const App = () => {
   const [isMobile, setIsMobile] = useState(false);
 
+  console.log("App component rendered");
+
   useEffect(() => {
+    console.log("App useEffect triggered");
     const checkIfMobile = () => {
       const isMobileView = window.innerWidth < 768;
       setIsMobile(isMobileView);
+      console.log("Mobile view:", isMobileView);
     };
 
     checkIfMobile();
@@ -75,42 +139,48 @@ const App = () => {
     };
   }, []);
 
+  console.log("App component rendering with isMobile:", isMobile);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="flex min-h-screen bg-[#F9F6F2]">
-            <Sidebar />
-            <main className={`flex-grow ${!isMobile ? 'md:ml-64' : ''}`}>
-              <Routes>
-                <Route path="/beta" element={<Beta />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/update-password" element={<UpdatePassword />} />
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/automatisations" element={<Automatisations />} />
-                  <Route path="/knowledge" element={<Knowledge />} />
-                  <Route path="/project/:projectId" element={<Project />} />
-                  <Route path="/project-business/:projectId" element={<ProjectBusiness />} />
-                  <Route path="/project-business" element={<ProjectBusiness />} />
-                  <Route path="/warning" element={<WarningPage />} />
-                  <Route path="/form" element={<Form />} />
-                  <Route path="/form-business-idea" element={<FormBusinessIdea />} />
-                  <Route path="/outils" element={<Outils />} />
-                  <Route path="/chatbot/:projectId" element={<ChatbotPage />} /> {/* New route for chatbot */}
-                </Route>
-                <Route path="/" element={<Navigate to="/beta" replace />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-          </div>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ProjectProvider>
+              <div className="flex min-h-screen bg-[#F9F6F2]">
+                <Sidebar />
+                <main className={`flex-grow ${!isMobile ? 'md:ml-64' : ''}`}>
+                  <Routes>
+                    <Route path="/beta" element={<Beta />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/update-password" element={<UpdatePassword />} />
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/automatisations" element={<Automatisations />} />
+                      <Route path="/knowledge" element={<Knowledge />} />
+                      <Route path="/project/:projectId" element={<Project />} />
+                      <Route path="/project-business/:projectId" element={<ProjectBusiness />} />
+                      <Route path="/project-business" element={<ProjectBusiness />} />
+                      <Route path="/warning" element={<WarningPage />} />
+                      <Route path="/form" element={<Form />} />
+                      <Route path="/form-business-idea" element={<FormBusinessIdea />} />
+                      <Route path="/outils" element={<Outils />} />
+                      <Route path="/chatbot/:projectId" element={<ChatbotPage />} /> {/* New route for chatbot */}
+                    </Route>
+                    <Route path="/" element={<Navigate to="/beta" replace />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+              </div>
+            </ProjectProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

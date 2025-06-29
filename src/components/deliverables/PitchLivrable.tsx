@@ -7,8 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useParams } from 'react-router-dom';
+import { useProject } from '@/contexts/ProjectContext';
 
 interface PitchData {
   pitch_30_secondes_texte: string;
@@ -22,40 +21,11 @@ interface PitchData {
 const PitchLivrable: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
-  const [pitchData, setPitchData] = useState<PitchData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [copiedState, setCopiedState] = useState<{ [key: string]: boolean }>({});
 
-  const { projectId } = useParams<{ projectId: string }>();
-  const supabaseClient = supabase;
-
-  useEffect(() => {
-    const fetchPitchData = async () => {
-      if (!projectId) {
-        setError("Project ID is missing.");
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('pitch')
-        .select('*')
-        .eq('project_id', projectId)
-        .single();
-
-      if (error) {
-        setError(error.message);
-        setPitchData(null);
-      } else {
-        setPitchData(data);
-        setError(null);
-      }
-      setLoading(false);
-    };
-
-    fetchPitchData();
-  }, [projectId, supabase]);
+  // Use Project Context instead of individual API calls
+  const { currentProject, loading } = useProject();
+  const pitchData = currentProject?.pitch as PitchData | null;
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
@@ -70,24 +40,35 @@ const PitchLivrable: React.FC = () => {
   const description = "Présentations commerciales de votre projet";
   const definition = "Le pitch est une présentation concise et percutante de votre projet d'entreprise, conçue pour capter l'attention et convaincre votre audience en différents formats selon le contexte.";
   const importance = "Le pitch est essentiel pour communiquer efficacement sur votre projet, que ce soit pour convaincre des investisseurs, des partenaires ou des clients potentiels. Il vous permet de structurer votre discours et de présenter votre valeur ajoutée de manière claire et impactante.";
-  const color = "#FDE047"; // Couleur du livrable
+  const color = "#FDE047";
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedState(prev => ({ ...prev, [key]: true }));
+      setTimeout(() => {
+        setCopiedState(prev => ({ ...prev, [key]: false }));
+      }, 2000);
+    });
+  };
 
   return (
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 bg-green-500 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
+        className="border rounded-lg p-4 mb-4 text-black transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
         onClick={handleTemplateClick}
+        style={{ borderColor: color, backgroundColor: color }}
       >
         <div className="flex-grow mr-4 flex flex-col">
           <h2 className="text-xl font-bold mb-2">{title}</h2>
-          {description && <p className="text-white mb-4">{description}</p>}
+          <p className="text-black mb-4">{description}</p>
           <div className="flex-grow">
             {/* Children for the template content */}
           </div>
-          {/* The PitchLivrable doesn't have a comment button in the main view, but I'll add a placeholder div with mt-auto for consistency in case content is added later */}
           <div className="flex-shrink-0 mt-auto">
-            {/* Placeholder for button */}
+            <button className={`text-xs bg-white px-2 py-1 rounded-full cursor-default pointer-events-none font-bold`} style={{ color: color }}>
+              {pitchData ? 'Disponible' : 'En attente'}
+            </button>
           </div>
         </div>
         <div className="flex-shrink-0">
@@ -108,9 +89,10 @@ const PitchLivrable: React.FC = () => {
               <button
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
                   showDefinitionPlaceholder
-                    ? `bg-green-500 text-white`
+                    ? 'text-black'
                     : 'bg-gray-200 text-gray-700'
                 }`}
+                style={{ backgroundColor: showDefinitionPlaceholder ? color : '' }}
                 onClick={() => {
                   setShowDefinitionPlaceholder(!showDefinitionPlaceholder);
                 }}
@@ -134,119 +116,146 @@ const PitchLivrable: React.FC = () => {
               </div>
             </div>
 
-            {loading && <p>Loading pitch data...</p>}
-            {error && <p className="text-red-500">Error: {error}</p>}
-            {pitchData && (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="pitch-express">
-                  <AccordionTrigger className="text-lg">Pitch Express (30 secondes)</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                      <h4 className="text-sm font-semibold mb-2">Contenu du pitch de 30 secondes</h4>
-                      <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_30_secondes_texte}</p>
-                      <div className="flex justify-end mt-2">
-                        <Button
-                          onClick={() => {
-                            navigator.clipboard.writeText(pitchData.pitch_30_secondes_texte);
-                            setCopiedState({ ...copiedState, pitch_30_secondes_texte: true });
-                          }}
-                          className="bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:shadow-md"
-                        >
-                          {copiedState.pitch_30_secondes_texte ? (
-                            <>
-                              <Check className="mr-1 h-4 w-4" /> Coller
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="mr-1 h-4 w-4" /> Copier
-                            </>
-                          )}
-                        </Button>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
+                <p className="text-gray-600 mt-2">Chargement des données...</p>
+              </div>
+            ) : pitchData ? (
+              <div className="space-y-6">
+                <Accordion type="single" collapsible className="w-full">
+                  {/* Pitch 30 secondes */}
+                  <AccordionItem value="pitch-30-secondes">
+                    <AccordionTrigger className="text-left text-lg flex-1 pr-4">
+                      Pitch 30 secondes - Ascenseur
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4">
+                        <div className="bg-[#F9FAFB] rounded-md p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-semibold">Texte du pitch</h4>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(pitchData.pitch_30_secondes_texte, 'pitch_30_texte')}
+                              className="flex items-center gap-1"
+                            >
+                              {copiedState['pitch_30_texte'] ? <Check size={16} /> : <Copy size={16} />}
+                              {copiedState['pitch_30_texte'] ? 'Copié' : 'Copier'}
+                            </Button>
+                          </div>
+                          <p className="text-[#4B5563] whitespace-pre-wrap">{pitchData.pitch_30_secondes_texte}</p>
+                        </div>
+                        <div className="bg-[#E3F2FD] rounded-md p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-semibold">Appel à l'action</h4>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(pitchData.pitch_30_secondes_appel_action, 'pitch_30_cta')}
+                              className="flex items-center gap-1"
+                            >
+                              {copiedState['pitch_30_cta'] ? <Check size={16} /> : <Copy size={16} />}
+                              {copiedState['pitch_30_cta'] ? 'Copié' : 'Copier'}
+                            </Button>
+                          </div>
+                          <p className="text-[#4B5563] whitespace-pre-wrap">{pitchData.pitch_30_secondes_appel_action}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold">Appel à l'action du pitch de 30 secondes</h4>
-                      </div>
-                      <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_30_secondes_appel_action}</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <AccordionItem value="pitch-court">
-                  <AccordionTrigger className="text-lg">Pitch Court</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                      <h4 className="text-sm font-semibold mb-2">Contenu du pitch court</h4>
-                       <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_court_texte}</p>
-                       <div className="flex justify-end mt-2">
-                         <Button
-                          onClick={() => {
-                            navigator.clipboard.writeText(pitchData.pitch_court_texte);
-                            setCopiedState({ ...copiedState, pitch_court_texte: true });
-                          }}
-                          className="bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:shadow-md"
-                        >
-                          {copiedState.pitch_court_texte ? (
-                            <>
-                              <Check className="mr-1 h-4 w-4" /> Coller
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="mr-1 h-4 w-4" /> Copier
-                            </>
-                          )}
-                        </Button>
+                  {/* Pitch court */}
+                  <AccordionItem value="pitch-court">
+                    <AccordionTrigger className="text-left text-lg flex-1 pr-4">
+                      Pitch court - Présentation rapide
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4">
+                        <div className="bg-[#F9FAFB] rounded-md p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-semibold">Texte du pitch</h4>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(pitchData.pitch_court_texte, 'pitch_court_texte')}
+                              className="flex items-center gap-1"
+                            >
+                              {copiedState['pitch_court_texte'] ? <Check size={16} /> : <Copy size={16} />}
+                              {copiedState['pitch_court_texte'] ? 'Copié' : 'Copier'}
+                            </Button>
+                          </div>
+                          <p className="text-[#4B5563] whitespace-pre-wrap">{pitchData.pitch_court_texte}</p>
+                        </div>
+                        <div className="bg-[#E3F2FD] rounded-md p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-semibold">Appel à l'action</h4>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(pitchData.pitch_court_appel_action, 'pitch_court_cta')}
+                              className="flex items-center gap-1"
+                            >
+                              {copiedState['pitch_court_cta'] ? <Check size={16} /> : <Copy size={16} />}
+                              {copiedState['pitch_court_cta'] ? 'Copié' : 'Copier'}
+                            </Button>
+                          </div>
+                          <p className="text-[#4B5563] whitespace-pre-wrap">{pitchData.pitch_court_appel_action}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold">Appel à l'action du pitch court</h4>
-                      </div>
-                      <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_court_appel_action}</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <AccordionItem value="pitch-complet">
-                  <AccordionTrigger className="text-lg">Pitch Complet</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                      <h4 className="text-sm font-semibold mb-2">Contenu du pitch complet</h4>
-                       <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_complet_texte}</p>
-                       <div className="flex justify-end mt-2">
-                         <Button
-                          onClick={() => {
-                            navigator.clipboard.writeText(pitchData.pitch_complet_texte);
-                            setCopiedState({ ...copiedState, pitch_complet_texte: true });
-                          }}
-                          className="bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:shadow-md"
-                        >
-                          {copiedState.pitch_complet_texte ? (
-                            <>
-                              <Check className="mr-1 h-4 w-4" /> Coller
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="mr-1 h-4 w-4" /> Copier
-                            </>
-                          )}
-                        </Button>
+                  {/* Pitch complet */}
+                  <AccordionItem value="pitch-complet">
+                    <AccordionTrigger className="text-left text-lg flex-1 pr-4">
+                      Pitch complet - Présentation détaillée
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4">
+                        <div className="bg-[#F9FAFB] rounded-md p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-semibold">Texte du pitch</h4>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(pitchData.pitch_complet_texte, 'pitch_complet_texte')}
+                              className="flex items-center gap-1"
+                            >
+                              {copiedState['pitch_complet_texte'] ? <Check size={16} /> : <Copy size={16} />}
+                              {copiedState['pitch_complet_texte'] ? 'Copié' : 'Copier'}
+                            </Button>
+                          </div>
+                          <p className="text-[#4B5563] whitespace-pre-wrap">{pitchData.pitch_complet_texte}</p>
+                        </div>
+                        <div className="bg-[#E3F2FD] rounded-md p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-semibold">Appel à l'action</h4>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(pitchData.pitch_complet_appel_action, 'pitch_complet_cta')}
+                              className="flex items-center gap-1"
+                            >
+                              {copiedState['pitch_complet_cta'] ? <Check size={16} /> : <Copy size={16} />}
+                              {copiedState['pitch_complet_cta'] ? 'Copié' : 'Copier'}
+                            </Button>
+                          </div>
+                          <p className="text-[#4B5563] whitespace-pre-wrap">{pitchData.pitch_complet_appel_action}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold">Appel à l'action du pitch complet</h4>
-                      </div>
-                      <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_complet_appel_action}</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600">Aucune donnée de pitch disponible.</p>
+              </div>
             )}
 
             <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+              className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
               onClick={handlePopupClose}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,16 +263,6 @@ const PitchLivrable: React.FC = () => {
               </svg>
             </button>
           </div>
-          <style>
-            {`
-              @keyframes scaleIn {
-                to {
-                  opacity: 1;
-                  transform: scale(1);
-                }
-              }
-            `}
-          </style>
         </div>
       )}
     </>

@@ -3,7 +3,10 @@ import { useParams } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Pencil, Trash2, Copy, RefreshCw, MoreHorizontal, Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ArrowUp, Pencil, Trash2, Copy, RefreshCw, MoreHorizontal, Sparkles, Settings, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +31,11 @@ const ChatbotPage = () => {
   const [tempConversationName, setTempConversationName] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State for communication style and search mode (defaults)
+  const [communicationStyle, setCommunicationStyle] = useState('normal');
+  const [deepSearchMode, setDeepSearchMode] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +57,7 @@ const ChatbotPage = () => {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
   }, [inputMessage]);
 
@@ -60,6 +68,14 @@ const ChatbotPage = () => {
   const handleSendMessage = async () => {
     if (inputMessage.trim() !== '' && !isLoading && currentConversation) {
       const userText = inputMessage.trim();
+      
+      // Console.log the current settings when sending a message
+      console.log('Sending message with settings:', {
+        communicationStyle,
+        deepSearchMode,
+        message: userText
+      });
+      
       setInputMessage('');
       setIsLoading(true);
 
@@ -74,14 +90,19 @@ const ChatbotPage = () => {
       }
 
       try {
-        // Send message to webhook and get response
+        // Send message to webhook with communication style and search mode
         const webhookUrl = "https://n8n.eec-technologies.fr/webhook/chatbot-global";
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ message: userText, projectId: projectId }),
+          body: JSON.stringify({ 
+            message: userText, 
+            projectId: projectId,
+            communicationStyle: communicationStyle,
+            deepSearchMode: deepSearchMode
+          }),
         });
 
         if (!response.ok) {
@@ -146,7 +167,12 @@ const ChatbotPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: previousUserMessage.text, projectId: projectId }),
+        body: JSON.stringify({ 
+          message: previousUserMessage.text, 
+          projectId: projectId,
+          communicationStyle: communicationStyle,
+          deepSearchMode: deepSearchMode
+        }),
       });
 
       if (!response.ok) {
@@ -208,12 +234,18 @@ const ChatbotPage = () => {
     setIsDeleteDialogOpen(false);
   };
 
+  // Fixed: Remove automatic sending, just populate the input
   const handleSuggestedPrompt = (prompt: string) => {
     setInputMessage(prompt);
-    // Auto-focus the textarea
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
+    textareaRef.current?.focus();
+  };
+
+  const handleNewChat = () => {
+    const userId = 'demo-user'; // This would come from auth context in a real app
+    const newConversation = chatbotService.createConversation(userId, projectId);
+    setCurrentConversation(newConversation);
+    setInputMessage('');
+    toast.success("Nouvelle conversation créée");
   };
 
   const isInputEmpty = inputMessage.trim() === '';
@@ -272,25 +304,63 @@ const ChatbotPage = () => {
               ))}
             </div>
 
-            {/* Input container */}
+            {/* New input design */}
             <div className="max-w-2xl mx-auto">
-              <div className="relative rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 focus-within:border-[#F26358] focus-within:ring-2 focus-within:ring-[#F26358]/20">
-                <Textarea
-                  ref={textareaRef}
-                  placeholder="Posez votre question à Aurentia..."
-                  value={inputMessage}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyPress}
-                  className="resize-none border-none bg-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-2xl px-4 py-4 pr-12 min-h-[60px] text-gray-900 placeholder-gray-500"
-                  rows={1}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={isInputEmpty || isLoading}
-                  className="absolute right-2 bottom-2 rounded-xl w-10 h-10 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  <ArrowUp size={18} className="text-white" />
-                </Button>
+              <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-200">
+                {/* Text input area - top 50% */}
+                <div className="relative p-4 border-b border-gray-100">
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder="Posez votre question à Aurentia..."
+                    value={inputMessage}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyPress}
+                    className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[60px] max-h-[120px] text-gray-900 placeholder-gray-500"
+                    rows={1}
+                  />
+                </div>
+                
+                {/* Controls area - bottom 50% */}
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Communication Style Selector */}
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="style-select" className="text-sm text-gray-600">Style:</Label>
+                      <Select value={communicationStyle} onValueChange={setCommunicationStyle}>
+                        <SelectTrigger id="style-select" className="w-32 h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="concis">Concis</SelectItem>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="explicatif">Explicatif</SelectItem>
+                          <SelectItem value="détaillé">Détaillé</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Deep Search Toggle */}
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="deep-search"
+                        checked={deepSearchMode}
+                        onCheckedChange={setDeepSearchMode}
+                      />
+                      <Label htmlFor="deep-search" className="text-sm text-gray-600">
+                        Recherche approfondie
+                      </Label>
+                    </div>
+                  </div>
+
+                  {/* Send Button */}
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={isInputEmpty || isLoading}
+                    className="rounded-xl w-10 h-10 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    <ArrowUp size={18} className="text-white" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -310,6 +380,15 @@ const ChatbotPage = () => {
                 </h2>
               </div>
               <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNewChat}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <Plus size={16} className="mr-1" />
+                  New chat
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -421,26 +500,64 @@ const ChatbotPage = () => {
             </div>
           </div>
 
-          {/* Input area */}
+          {/* New input area design for chat mode */}
           <div>
             <div className="max-w-4xl mx-auto px-4 py-4">
-              <div className="relative rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 focus-within:border-[#F26358] focus-within:ring-2 focus-within:ring-[#F26358]/20">
-                <Textarea
-                  ref={textareaRef}
-                  placeholder="Continuez la conversation avec Aurentia..."
-                  value={inputMessage}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyPress}
-                  className="resize-none border-none bg-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-2xl px-4 py-4 pr-12 min-h-[60px] max-h-[200px] text-gray-900 placeholder-gray-500"
-                  rows={1}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={isInputEmpty || isLoading}
-                  className="absolute right-2 bottom-2 rounded-xl w-10 h-10 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  <ArrowUp size={18} className="text-white" />
-                </Button>
+              <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-200">
+                {/* Text input area - top 50% */}
+                <div className="relative p-4 border-b border-gray-100">
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder="Continuez la conversation avec Aurentia..."
+                    value={inputMessage}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyPress}
+                    className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[60px] max-h-[120px] text-gray-900 placeholder-gray-500"
+                    rows={1}
+                  />
+                </div>
+                
+                {/* Controls area - bottom 50% */}
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Communication Style Selector */}
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="style-select-chat" className="text-sm text-gray-600">Style:</Label>
+                      <Select value={communicationStyle} onValueChange={setCommunicationStyle}>
+                        <SelectTrigger id="style-select-chat" className="w-32 h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="concis">Concis</SelectItem>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="explicatif">Explicatif</SelectItem>
+                          <SelectItem value="détaillé">Détaillé</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Deep Search Toggle */}
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="deep-search-chat"
+                        checked={deepSearchMode}
+                        onCheckedChange={setDeepSearchMode}
+                      />
+                      <Label htmlFor="deep-search-chat" className="text-sm text-gray-600">
+                        Recherche approfondie
+                      </Label>
+                    </div>
+                  </div>
+
+                  {/* Send Button */}
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={isInputEmpty || isLoading}
+                    className="rounded-xl w-10 h-10 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    <ArrowUp size={18} className="text-white" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
