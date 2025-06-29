@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"; // Import ToggleGroup
-import { useProject } from '@/contexts/ProjectContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useParams } from 'react-router-dom';
 
 interface LivrableProps {
   // Props for the template part
@@ -18,11 +19,37 @@ const PropositionDeValeurLivrable: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
   const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSegment, setSelectedSegment] = useState<string>('B2C'); // Add state for selected segment
+  const [error, setError] = useState<string | null>(null);
 
-  // Use Project Context instead of individual API calls
-  const { currentProject, loading, error } = useProject();
-  const data = currentProject?.proposition_valeur;
+  const { projectId } = useParams<{ projectId: string }>();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!projectId) {
+        setError("Project ID is missing.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('proposition_valeur')
+        .select('*')
+        .eq('project_id', projectId)
+        .single();
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setData(data);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [projectId, supabase]);
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
@@ -261,7 +288,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
               </div>
             </div>
             <button
-              className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
               onClick={handlePopupClose}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

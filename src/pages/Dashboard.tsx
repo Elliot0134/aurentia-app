@@ -51,7 +51,7 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.1s"}}>
+          <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.1s"}}>
             <h2 className="text-base font-semibold mb-4">Vos projets</h2>
             {userProjectsLoading ? (
               <div className="flex justify-center py-6">
@@ -94,48 +94,6 @@ const Dashboard = () => {
                 </button>
               </div>
             )}
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.2s"}}>
-            <h2 className="text-base font-semibold mb-4">Actions rapides</h2>
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate("/form-business-idea")}
-                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-aurentia-pink to-aurentia-pink-dark text-white hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-3">
-                  <Plus size={20} />
-                  <div>
-                    <div className="font-medium">Nouveau projet</div>
-                    <div className="text-xs opacity-90">Créer un nouveau projet d'entreprise</div>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => navigate("/outils")}
-                className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <Zap size={20} className="text-gray-600" />
-                  <div>
-                    <div className="font-medium text-gray-900">Outils</div>
-                    <div className="text-xs text-gray-500">Découvrir les outils disponibles</div>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => navigate("/knowledge")}
-                className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <Book size={20} className="text-gray-600" />
-                  <div>
-                    <div className="font-medium text-gray-900">Centre de connaissances</div>
-                    <div className="text-xs text-gray-500">Accéder aux ressources</div>
-                  </div>
-                </div>
-              </button>
-            </div>
           </div>
         </div>
       </div>

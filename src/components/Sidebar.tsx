@@ -5,11 +5,13 @@ import { cn } from "@/lib/utils";
 import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
 import MobileNavbar from "./MobileNavbar"; // Import the new MobileNavbar component
+import { useProject } from "@/contexts/ProjectContext";
 
 const Sidebar = memo(() => {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { projectId } = useParams(); // Get project ID from URL
+  const { currentProjectId, userProjects } = useProject(); // Get project data from context
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -25,17 +27,20 @@ const Sidebar = memo(() => {
     };
   }, []);
 
+  // Use currentProjectId from context, fallback to projectId from URL, or first available project
+  const activeProjectId = currentProjectId || projectId || (userProjects.length > 0 ? userProjects[0].project_id : null);
+
   const menuItems = [
     {
       name: "Tableau de bord",
       path: "/dashboard",
       icon: <LayoutDashboard size={20} />
     },
-    {
-      name: "Ressources",
-      path: "/knowledge",
-      icon: <BookOpen size={20} />
-    },
+    // { À re afficher quand les ressources seront faites
+    //   name: "Ressources",
+    //   path: "/knowledge",
+    //   icon: <BookOpen size={20} />
+    // },
     {
       name: "Outils",
       path: "/outils",
@@ -43,7 +48,7 @@ const Sidebar = memo(() => {
     },
     {
       name: "Assistant",
-      path: `/chatbot/${projectId}`,
+      path: activeProjectId ? `/chatbot/${activeProjectId}` : "/warning", // Redirect to project creation if no project
       icon: <MessageSquare size={20} />
     },
   ];

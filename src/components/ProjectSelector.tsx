@@ -12,31 +12,21 @@ const ProjectSelector = memo(() => {
   const { 
     userProjects, 
     userProjectsLoading, 
-    currentProject, 
     currentProjectId, 
-    loadProject,
+    setCurrentProjectId,
     loadUserProjects 
   } = useProject();
 
-  // Get the current selected project info with improved logic
+  // Get the current selected project info
   const getSelectedProject = () => {
-    // Priority 1: If we have a projectId from URL, use it
+    // Priority 1: If we have a projectId from URL, find it in userProjects
     if (projectId) {
-      return userProjects.find(p => p.project_id === projectId) || 
-        (currentProject?.project_summary && projectId === currentProjectId ? {
-          project_id: currentProjectId,
-          nom_projet: currentProject.project_summary.nom_projet || "Projet sans nom",
-          created_at: currentProject.project_summary.created_at || ""
-        } : null);
+      return userProjects.find(p => p.project_id === projectId) || null;
     }
     
-    // Priority 2: If we have a current project loaded, use it
-    if (currentProject?.project_summary && currentProjectId) {
-      return {
-        project_id: currentProjectId,
-        nom_projet: currentProject.project_summary.nom_projet || "Projet sans nom",
-        created_at: currentProject.project_summary.created_at || ""
-      };
+    // Priority 2: If we have a currentProjectId, find it in userProjects
+    if (currentProjectId) {
+      return userProjects.find(p => p.project_id === currentProjectId) || null;
     }
     
     // Priority 3: Use the first available project from userProjects
@@ -50,12 +40,12 @@ const ProjectSelector = memo(() => {
 
   const selectedProject = getSelectedProject();
 
-  // Load project data when projectId changes
+  // Update context when projectId changes
   useEffect(() => {
     if (projectId && projectId !== currentProjectId) {
-      loadProject(projectId);
+      setCurrentProjectId(projectId);
     }
-  }, [projectId, currentProjectId, loadProject]);
+  }, [projectId, currentProjectId, setCurrentProjectId]);
 
   // Ensure user projects are loaded
   useEffect(() => {
@@ -81,6 +71,7 @@ const ProjectSelector = memo(() => {
 
   const selectProject = (project: { project_id: string; nom_projet: string; created_at: string }) => {
     setIsOpen(false);
+    setCurrentProjectId(project.project_id); // Update the context
     goToProject(project); // Navigate to the selected project's page
   };
 

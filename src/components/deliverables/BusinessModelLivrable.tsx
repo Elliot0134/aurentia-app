@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useProject } from '@/contexts/ProjectContext';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LivrableProps {
   title?: string;
@@ -21,12 +22,30 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
   const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
+  const [businessModelData, setBusinessModelData] = useState<any>(null);
   const [showStructureCoutsAnalyse, setShowStructureCoutsAnalyse] = useState(true);
   const [showSourcesRevenusAnalyse, setShowSourcesRevenusAnalyse] = useState(true);
+  const { projectId } = useParams<{ projectId: string }>();
 
-  // Use Project Context instead of individual API calls
-  const { currentProject, loading } = useProject();
-  const businessModelData = currentProject?.business_model;
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!projectId) return;
+
+      const { data, error } = await supabase
+        .from('business_model')
+        .select('*')
+        .eq('project_id', projectId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching business model data:', error);
+      } else {
+        setBusinessModelData(data);
+      }
+    };
+
+    fetchData();
+  }, [projectId, supabase]);
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
@@ -38,29 +57,18 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
     setShowRecommendationPlaceholder(false);
   };
 
-  const deliverableTitle = "Business Model";
-  const deliverableDescription = "Modèle économique et stratégie de création de valeur";
-  const deliverableColor = "#ff8c00";
-
   return (
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
+        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
         onClick={handleTemplateClick}
-        style={{ borderColor: deliverableColor, backgroundColor: deliverableColor }}
+        style={{ borderColor: '#57a68b', backgroundColor: '#57a68b' }}
       >
-        <div className="flex-grow mr-4 flex flex-col">
-          <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
-          <p className="text-white mb-4">{deliverableDescription}</p>
-          <div className="flex-grow">
-            {/* Children for the template content */}
-          </div>
-          <div className="flex-shrink-0 mt-auto">
-            <button className={`text-xs bg-white px-2 py-1 rounded-full cursor-default pointer-events-none font-bold`} style={{ color: deliverableColor }}>
-              {businessModelData?.avis || 'Évaluation'}
-            </button>
-          </div>
+        <div className="flex-grow mr-4">
+          <h2 className="text-xl font-bold mb-2">{title}</h2>
+          {description && <p className="text-white mb-4">{description}</p>}
+          <div>{children}</div>
         </div>
         <div className="flex-shrink-0">
           <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-8 h-8 object-cover self-start" />
@@ -71,39 +79,24 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
       {isPopupOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handlePopupClose}>
           <div
-            className="bg-white text-black rounded-lg p-6 w-full mx-2.5 md:w-3/4 relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-y-auto"
+            className="bg-white text-black rounded-lg p-6 w-[90vw] relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
             style={{ animation: 'scaleIn 0.3s ease-out forwards' }}
           >
-            <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
+            <h2 className="text-xl font-bold mb-2">{title}</h2>
             <div className="flex gap-2 mb-4">
               <button
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
                   showDefinitionPlaceholder
-                    ? 'text-white'
+                    ? `bg-[#57a68b] text-white`
                     : 'bg-gray-200 text-gray-700'
                 }`}
-                style={{ backgroundColor: showDefinitionPlaceholder ? deliverableColor : '' }}
                 onClick={() => {
                   setShowDefinitionPlaceholder(!showDefinitionPlaceholder);
                   setShowRecommendationPlaceholder(false);
                 }}
               >
                 Définition
-              </button>
-              <button
-                className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                  showRecommendationPlaceholder
-                    ? 'text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                style={{ backgroundColor: showRecommendationPlaceholder ? deliverableColor : '' }}
-                onClick={() => {
-                  setShowRecommendationPlaceholder(!showRecommendationPlaceholder);
-                  setShowDefinitionPlaceholder(false);
-                }}
-              >
-                Recommandations
               </button>
             </div>
 
@@ -114,158 +107,196 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
             >
               <div className="mt-2">
                 <div className="bg-gray-100 rounded-md p-4 mb-2">
-                  <p className="text-[#4B5563]"><strong>Définition :</strong> {definition}</p>
+                  <p className="text-[#4B5563] text-sm"><strong>Définition :</strong> {definition}</p>
                 </div>
                 <div className="bg-gray-100 rounded-md p-4">
-                  <p className="text-[#4B5563]"><strong>Importance :</strong> {importance}</p>
+                  <p className="text-[#4B5563] text-sm"><strong>Importance :</strong> {importance}</p>
                 </div>
               </div>
             </div>
 
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                showRecommendationPlaceholder ? 'max-h-screen' : 'max-h-0'
-              }`}
-            >
-              <div className="mt-2">
-                <div className="bg-gray-100 rounded-md p-4">
-                  <p className="text-[#4B5563]">
-                    <strong>Recommandations :</strong> {businessModelData?.recommandations || "Aucune recommandation disponible pour ce business model."}
-                  </p>
+            {/* Business Model Canvas Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+              {/* Row 1 */}
+              <div className="col-span-1 md:col-span-1 md:row-span-2 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Partenaires clés</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                {businessModelData?.partenaires_cles?.split('\n').map((line: string, index: number) => {
+                  const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                  return (
+                    <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                  );
+                })}
+              </div>
+              <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Activités clés</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                {businessModelData?.activites_cles?.split('\n').map((line: string, index: number) => {
+                  const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                  return (
+                    <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                  );
+                })}
+              </div>
+              <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Proposition de valeur</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                {businessModelData?.proposition_valeur?.split('\n').map((line: string, index: number) => {
+                  const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                  return (
+                    <p key={index} className="text-[#4B5563] text-xs mb-1">{cleanedLine}</p>
+                  );
+                })}
+              </div>
+              <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Relations clients</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                {businessModelData?.relations_clients?.split('\n').map((line: string, index: number) => (
+                  <p key={index} className="text-[#4B5563] text-xs mb-1">{line}</p>
+                ))}
+              </div>
+              <div className="col-span-1 md:col-span-1 md:row-span-2 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Segments de clients</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                {businessModelData?.segments_clients?.split('\n').map((line: string, index: number) => {
+                  const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                  return (
+                    <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                  );
+                })}
+              </div>
+
+              {/* Row 2 */}
+              <div className="col-span-1 md:col-span-2 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Ressources clés</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="col-span-1">
+                    <h5 className="text-xs font-semibold mb-1">Humaines:</h5>
+                    {businessModelData?.ressources_humaines?.split('\n').map((line: string, index: number) => {
+                      const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                      return (
+                        <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                      );
+                    })}
+                  </div>
+                  <div className="col-span-1">
+                    <h5 className="text-xs font-semibold mb-1">Financières:</h5>
+                    {businessModelData?.ressources_financieres?.split('\n').map((line: string, index: number) => {
+                      const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                      return (
+                        <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                      );
+                    })}
+                  </div>
+                  <div className="col-span-1">
+                    <h5 className="text-xs font-semibold mb-1">Matérielles:</h5>
+                    {businessModelData?.ressources_materielles?.split('\n').map((line: string, index: number) => {
+                      const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                      return (
+                        <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                      );
+                    })}
+                  </div>
+                  <div className="col-span-1">
+                    <h5 className="text-xs font-semibold mb-1">Intellectuelles:</h5>
+                    {businessModelData?.ressources_intellectuelles?.split('\n').map((line: string, index: number) => {
+                      const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                      return (
+                        <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                      );
+                    })}
+                  </div>
                 </div>
+              </div>
+              <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Canaux de distribution</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                {businessModelData?.canaux?.split('\n').map((line: string, index: number) => {
+                  const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                  return (
+                    <p key={index} className="text-[#4B5563] text-xs mb-1">- {cleanedLine}</p>
+                  );
+                })}
               </div>
             </div>
 
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-                <p className="text-gray-600 mt-2">Chargement des données...</p>
-              </div>
-            ) : businessModelData ? (
-              <div className="space-y-6">
-                {/* Business Model Canvas Structure */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Partenaires clés */}
-                  <div className="bg-[#F9FAFB] rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Partenaires clés</h4>
-                    <p className="text-[#4B5563]">{businessModelData.partenaires_cles || "Non défini"}</p>
-                  </div>
-
-                  {/* Activités clés */}
-                  <div className="bg-[#F9FAFB] rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Activités clés</h4>
-                    <p className="text-[#4B5563]">{businessModelData.activites_cles || "Non défini"}</p>
-                  </div>
-
-                  {/* Ressources clés */}
-                  <div className="bg-[#F9FAFB] rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Ressources clés</h4>
-                    <p className="text-[#4B5563]">{businessModelData.ressources_cles || "Non défini"}</p>
-                  </div>
-                </div>
-
-                {/* Proposition de valeur - Full width */}
-                <div className="bg-[#E3F2FD] rounded-md p-4">
-                  <h4 className="text-sm font-semibold mb-2">Proposition de valeur</h4>
-                  <p className="text-[#4B5563]">{businessModelData.proposition_valeur || "Non définie"}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Relations clients */}
-                  <div className="bg-[#F9FAFB] rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Relations avec les clients</h4>
-                    <p className="text-[#4B5563]">{businessModelData.relations_clients || "Non défini"}</p>
-                  </div>
-
-                  {/* Canaux */}
-                  <div className="bg-[#F9FAFB] rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Canaux</h4>
-                    <p className="text-[#4B5563]">{businessModelData.canaux || "Non défini"}</p>
-                  </div>
-                </div>
-
-                {/* Segments clients - Full width */}
-                <div className="bg-[#E8F5E8] rounded-md p-4">
-                  <h4 className="text-sm font-semibold mb-2">Segments de clients</h4>
-                  <p className="text-[#4B5563]">{businessModelData.segments_clients || "Non défini"}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Structure des coûts */}
-                  <div className="bg-[#FFF3E0] rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Structure des coûts</h4>
-                    <p className="text-[#4B5563]">{businessModelData.structure_couts || "Non définie"}</p>
-                    
-                    {businessModelData.structure_couts_analyse && (
-                      <div className="mt-4">
-                        <button
-                          onClick={() => setShowStructureCoutsAnalyse(!showStructureCoutsAnalyse)}
-                          className="text-xs px-2 py-1 rounded-md bg-orange-100 text-orange-700 hover:bg-orange-200 transition"
-                        >
-                          {showStructureCoutsAnalyse ? 'Masquer l\'analyse' : 'Afficher l\'analyse'}
-                        </button>
-                        {showStructureCoutsAnalyse && (
-                          <div className="mt-2 p-2 bg-white rounded border">
-                            <p className="text-xs text-gray-600">{businessModelData.structure_couts_analyse}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Sources de revenus */}
-                  <div className="bg-[#E8F5E8] rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Sources de revenus</h4>
-                    <p className="text-[#4B5563]">{businessModelData.sources_revenus || "Non définies"}</p>
-                    
-                    {businessModelData.sources_revenus_analyse && (
-                      <div className="mt-4">
-                        <button
-                          onClick={() => setShowSourcesRevenusAnalyse(!showSourcesRevenusAnalyse)}
-                          className="text-xs px-2 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition"
-                        >
-                          {showSourcesRevenusAnalyse ? 'Masquer l\'analyse' : 'Afficher l\'analyse'}
-                        </button>
-                        {showSourcesRevenusAnalyse && (
-                          <div className="mt-2 p-2 bg-white rounded border">
-                            <p className="text-xs text-gray-600">{businessModelData.sources_revenus_analyse}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Évaluation et justification */}
-                {businessModelData.avis && (
-                  <div className="bg-gray-50 rounded-md p-4">
-                    <h4 className="text-sm font-semibold mb-2">Évaluation</h4>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700 font-medium">
-                        {businessModelData.avis}
-                      </span>
-                    </div>
-                    {businessModelData.justification_avis && (
-                      <p className="text-[#4B5563] text-sm">{businessModelData.justification_avis}</p>
-                    )}
+            {/* Row 3 - Structure des coûts and Sources de revenus */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Structure des coûts</h4>
+                <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <button
+                  className="text-xs px-2 py-1 rounded-full cursor-pointer bg-gray-200 text-gray-700 mb-2"
+                  onClick={() => setShowStructureCoutsAnalyse(!showStructureCoutsAnalyse)}
+                >
+                  Description
+                </button>
+                {showStructureCoutsAnalyse && (
+                  <div className="bg-white rounded-md p-2 mb-2">
+                    {businessModelData?.structure_couts_analyse?.split('\n').map((line: string, index: number) => {
+                      const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                      return (
+                        <p key={index} className="text-[#4B5563] whitespace-pre-wrap text-xs mb-1">{cleanedLine}</p>
+                      );
+                    })}
                   </div>
                 )}
+                {businessModelData?.structure_couts_liste_des_couts?.split('\n').map((line: string, index: number) => {
+                  const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                  return (
+                    <p key={index} className="text-[#4B5563] whitespace-pre-wrap text-xs mb-1">- {cleanedLine}</p>
+                  );
+                })}
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-600">Aucune donnée de business model disponible.</p>
+              <div className="col-span-1 bg-gray-100 p-2 rounded-lg shadow-md relative">
+                <h4 className="text-sm font-semibold mb-2">Sources de revenus</h4>
+                <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover absolute top-2 right-2" />
+                <button
+                  className="text-xs px-2 py-1 rounded-full cursor-pointer bg-gray-200 text-gray-700 mb-2"
+                  onClick={() => setShowSourcesRevenusAnalyse(!showSourcesRevenusAnalyse)}
+                >
+                  Description
+                </button>
+                {showSourcesRevenusAnalyse && (
+                  <div className="bg-white rounded-md p-2 mb-2">
+                    {businessModelData?.flux_revenus_analyse?.split('\n').map((line: string, index: number) => {
+                      const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                      return (
+                        <p key={index} className="text-[#4B5563] whitespace-pre-wrap text-xs mb-1">{cleanedLine}</p>
+                      );
+                    })}
+                  </div>
+                )}
+                {businessModelData?.flux_revenus_liste_des_revenus?.split('\n').map((line: string, index: number) => {
+                  const cleanedLine = line.startsWith('- ') ? line.substring(2) : line;
+                  return (
+                    <p key={index} className="text-[#4B5563] whitespace-pre-wrap text-xs mb-1">- {cleanedLine}</p>
+                    );
+                  })}
               </div>
-            )}
+            </div>
 
             <button
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
               onClick={handlePopupClose}
-              className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
+          {/* Define keyframes for the animation */}
+          <style>
+            {`
+              @keyframes scaleIn {
+                to {
+                  opacity: 1;
+                  transform: scale(1);
+                }
+              }
+            `}
+          </style>
         </div>
       )}
     </>

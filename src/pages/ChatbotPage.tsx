@@ -1,4 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/atom-one-dark.css'; // ou un autre thème si tu veux
 import { useParams } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowUp, Pencil, Trash2, Copy, RefreshCw, MoreHorizontal, Sparkles, Settings, Plus } from "lucide-react";
+import { ArrowUp, Pencil, Trash2, Copy, RefreshCw, Sparkles, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +18,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { chatbotService, type Message, type Conversation } from '@/services/chatbotService';
 import { toast } from "sonner";
 
@@ -31,7 +29,7 @@ const ChatbotPage = () => {
   const [tempConversationName, setTempConversationName] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // State for communication style and search mode (defaults)
   const [communicationStyle, setCommunicationStyle] = useState('normal');
   const [deepSearchMode, setDeepSearchMode] = useState(false);
@@ -68,17 +66,13 @@ const ChatbotPage = () => {
   const handleSendMessage = async () => {
     if (inputMessage.trim() !== '' && !isLoading && currentConversation) {
       const userText = inputMessage.trim();
-      
-      // Console.log the current settings when sending a message
       console.log('Sending message with settings:', {
         communicationStyle,
         deepSearchMode,
         message: userText
       });
-      
       setInputMessage('');
       setIsLoading(true);
-
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -90,8 +84,7 @@ const ChatbotPage = () => {
       }
 
       try {
-        // Send message to webhook with communication style and search mode
-        const webhookUrl = "https://n8n.eec-technologies.fr/webhook/chatbot-global";
+        const webhookUrl = "https://n8n.eec-technologies.fr/webhook/chatbot-global ";
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: {
@@ -105,10 +98,8 @@ const ChatbotPage = () => {
           }),
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const data = await response.json();
         const botResponse = data[0].output.response;
 
@@ -147,21 +138,16 @@ const ChatbotPage = () => {
 
   const regenerateResponse = async (messageId: string) => {
     if (!currentConversation) return;
-    
     const messageIndex = currentConversation.messages.findIndex(m => m.id === messageId);
     if (messageIndex === -1) return;
-
     const previousUserMessage = currentConversation.messages
       .slice(0, messageIndex)
       .reverse()
       .find(m => m.sender === 'user');
-
     if (!previousUserMessage) return;
-
     setIsLoading(true);
-    
     try {
-      const webhookUrl = "https://n8n.eec-technologies.fr/webhook-test/chatbot-global";
+      const webhookUrl = "https://n8n.eec-technologies.fr/webhook-test/chatbot-global ";
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -174,22 +160,16 @@ const ChatbotPage = () => {
           deepSearchMode: deepSearchMode
         }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       const newResponse = data[0].output.response;
 
-      // Update the message in place
       const updatedMessages = [...currentConversation.messages];
       updatedMessages[messageIndex] = {
         ...updatedMessages[messageIndex],
         text: newResponse,
         timestamp: new Date()
       };
-
       setCurrentConversation(prev => prev ? {...prev, messages: updatedMessages} : null);
       setIsLoading(false);
       toast.success("Réponse régénérée");
@@ -221,7 +201,6 @@ const ChatbotPage = () => {
       if (success) {
         setCurrentConversation(null);
         toast.success("Conversation supprimée");
-        // In a real app, you might redirect to a conversations list or create a new one
         const userId = 'demo-user';
         const newConversation = chatbotService.createConversation(userId, projectId);
         setCurrentConversation(newConversation);
@@ -234,14 +213,13 @@ const ChatbotPage = () => {
     setIsDeleteDialogOpen(false);
   };
 
-  // Fixed: Remove automatic sending, just populate the input
   const handleSuggestedPrompt = (prompt: string) => {
     setInputMessage(prompt);
     textareaRef.current?.focus();
   };
 
   const handleNewChat = () => {
-    const userId = 'demo-user'; // This would come from auth context in a real app
+    const userId = 'demo-user';
     const newConversation = chatbotService.createConversation(userId, projectId);
     setCurrentConversation(newConversation);
     setInputMessage('');
@@ -284,11 +262,10 @@ const ChatbotPage = () => {
                 Bonjour ! Je suis Aurentia
               </h1>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Votre assistant IA spécialisé dans l'analyse de projets entrepreneuriaux. 
+                Votre assistant IA spécialisé dans l'analyse de projets entrepreneuriaux.
                 Posez-moi vos questions sur votre projet, votre marché, ou votre stratégie.
               </p>
             </div>
-
             {/* Suggested prompts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto mb-8">
               {suggestedPrompts.map((prompt, index) => (
@@ -303,7 +280,6 @@ const ChatbotPage = () => {
                 </button>
               ))}
             </div>
-
             {/* New input design */}
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-200">
@@ -319,7 +295,6 @@ const ChatbotPage = () => {
                     rows={1}
                   />
                 </div>
-                
                 {/* Controls area - bottom 50% */}
                 <div className="p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1">
@@ -338,7 +313,6 @@ const ChatbotPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
-
                     {/* Deep Search Toggle */}
                     <div className="flex items-center gap-2">
                       <Switch
@@ -351,7 +325,6 @@ const ChatbotPage = () => {
                       </Label>
                     </div>
                   </div>
-
                   {/* Send Button */}
                   <Button
                     onClick={handleSendMessage}
@@ -411,7 +384,6 @@ const ChatbotPage = () => {
               </div>
             </div>
           </div>
-
           {/* Messages */}
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
@@ -433,17 +405,19 @@ const ChatbotPage = () => {
                         <Sparkles className="w-4 h-4 text-white" />
                       )}
                     </div>
-
                     {/* Message content */}
                     <div className={`group relative ${
                       message.sender === 'user'
                         ? 'bg-[#f0efe6] text-gray-900'
                         : ''
-                    } rounded-2xl px-4 py-3`}>
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                    } rounded-2xl px-4 py-3 markdown-content`}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight]}
+                      >
                         {message.text}
-                      </div>
-                      
+                      </ReactMarkdown>
+
                       {/* Message actions */}
                       {message.sender === 'bot' && (
                         <div className="absolute -bottom-8 left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -474,7 +448,7 @@ const ChatbotPage = () => {
                   </div>
                 </div>
               ))}
-              
+
               {/* Loading indicator */}
               {isLoading && (
                 <div className="flex justify-start">
@@ -495,12 +469,11 @@ const ChatbotPage = () => {
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
           </div>
-
-          {/* New input area design for chat mode */}
+          {/* Input area */}
           <div>
             <div className="max-w-4xl mx-auto px-4 py-4">
               <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-200">
@@ -516,7 +489,6 @@ const ChatbotPage = () => {
                     rows={1}
                   />
                 </div>
-                
                 {/* Controls area - bottom 50% */}
                 <div className="p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1">
@@ -535,7 +507,6 @@ const ChatbotPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
-
                     {/* Deep Search Toggle */}
                     <div className="flex items-center gap-2">
                       <Switch
@@ -548,7 +519,6 @@ const ChatbotPage = () => {
                       </Label>
                     </div>
                   </div>
-
                   {/* Send Button */}
                   <Button
                     onClick={handleSendMessage}

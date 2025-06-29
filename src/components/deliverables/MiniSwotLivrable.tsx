@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useProject } from '@/contexts/ProjectContext';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../integrations/supabase/client';
+import { useParams } from 'react-router-dom';
 
 interface MiniSwotData {
   economique_opportunite_1: string | null;
@@ -27,10 +28,37 @@ const MiniSwotLivrable: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
   const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
+  const [swotData, setSwotData] = useState<MiniSwotData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Use Project Context instead of individual API calls
-  const { currentProject, loading, error } = useProject();
-  const swotData = currentProject?.mini_swot as MiniSwotData | undefined;
+  const { projectId } = useParams<{ projectId: string }>();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!projectId) {
+        setError("Project ID not found in URL.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('mini_swot')
+        .select('*, recommandations, avis, justification_avis')
+        .eq('project_id', projectId)
+        .single();
+
+      if (error) {
+        setError(error.message);
+        setSwotData(null);
+      } else {
+        setSwotData(data);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [projectId, supabase]);
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
@@ -235,7 +263,7 @@ const MiniSwotLivrable: React.FC = () => {
             )}
 
             <button
-              className="sticky top-0 right-4 float-right mb-4 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-gray-600 rounded-full p-2 shadow-md border z-10"
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
               onClick={handlePopupClose}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
