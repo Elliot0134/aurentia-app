@@ -112,9 +112,6 @@ const ProjectBusiness = () => {
         {/* Level 1 Deliverables */}
         <div className="grid grid-cols-12 gap-4 md:gap-5">
           {/* Retranscription du concept Deliverable */}
-          <div className="col-span-12">
-            <RetranscriptionConceptLivrable />
-          </div>
           <div className="col-span-12 md:grid md:grid-cols-2 md:gap-5">
             <div className="col-span-12 md:col-span-1 md:h-full">
               <PersonaExpressLivrable />
