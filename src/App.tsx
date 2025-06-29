@@ -21,8 +21,9 @@ import Outils from "./pages/Outils";
 import ChatbotPage from "./pages/ChatbotPage";
 import Sidebar from "./components/Sidebar";
 import { ProjectProvider } from "./contexts/ProjectContext";
-import { useState, useEffect, ErrorInfo, Component } from "react";
+import { useState, useEffect, ErrorInfo, Component, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { BETA_CODE_VALIDATED_KEY } from "@/lib/utils";
 
 import "./index.css";
 
@@ -75,23 +76,29 @@ const ProtectedRoute = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
+      console.log("ProtectedRoute: checkAuth initiated.");
       try {
-        console.log("Checking authentication...");
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Session:", session);
-        setIsAuthenticated(!!session);
-        setLoading(false);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("ProtectedRoute: Error getting session:", error);
+          setIsAuthenticated(false);
+        } else {
+          console.log("ProtectedRoute: Session data:", session);
+          setIsAuthenticated(!!session);
+        }
       } catch (error) {
-        console.error("Error checking authentication:", error);
+        console.error("ProtectedRoute: Exception during session check:", error);
         setIsAuthenticated(false);
+      } finally {
         setLoading(false);
+        console.log("ProtectedRoute: checkAuth completed. isAuthenticated:", !!isAuthenticated);
       }
     };
 
     checkAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", _event, session);
+      console.log("ProtectedRoute: Auth state changed event:", _event, "session:", session);
       setIsAuthenticated(!!session);
     });
 
@@ -101,6 +108,7 @@ const ProtectedRoute = () => {
   }, []);
 
   if (loading) {
+    console.log("ProtectedRoute: Loading authentication status...");
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Loading...</div>
@@ -109,17 +117,20 @@ const ProtectedRoute = () => {
   }
 
   if (!isAuthenticated) {
-    console.log("Not authenticated, redirecting to login");
+    console.log("ProtectedRoute: Not authenticated, redirecting to login.");
     return <Navigate to="/login" replace />;
   }
 
-  console.log("Authenticated, rendering protected content");
+  console.log("ProtectedRoute: Authenticated, rendering protected content.");
   return <Outlet />;
 };
 
 
 const App = () => {
   const [isMobile, setIsMobile] = useState(false);
+  const [betaValidated, setBetaValidated] = useState(() => {
+    return localStorage.getItem(BETA_CODE_VALIDATED_KEY) === "true";
+  });
 
   console.log("App component rendered");
 
@@ -139,7 +150,16 @@ const App = () => {
     };
   }, []);
 
-  console.log("App component rendering with isMobile:", isMobile);
+  const handleBetaValidated = useCallback(() => {
+    localStorage.setItem(BETA_CODE_VALIDATED_KEY, "true");
+    setBetaValidated(true);
+  }, []);
+
+  console.log("App component rendering with isMobile:", isMobile, "betaValidated:", betaValidated);
+
+  if (!betaValidated) {
+    return <Beta onBetaValidated={handleBetaValidated} />;
+  }
 
   return (
     <ErrorBoundary>
@@ -153,7 +173,6 @@ const App = () => {
                 <Sidebar />
                 <main className={`flex-grow ${!isMobile ? 'md:ml-64' : ''}`}>
                   <Routes>
-                    <Route path="/beta" element={<Beta />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/update-password" element={<UpdatePassword />} />
@@ -171,7 +190,7 @@ const App = () => {
                       <Route path="/outils" element={<Outils />} />
                       <Route path="/chatbot/:projectId" element={<ChatbotPage />} /> {/* New route for chatbot */}
                     </Route>
-                    <Route path="/" element={<Navigate to="/beta" replace />} />
+                    <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>

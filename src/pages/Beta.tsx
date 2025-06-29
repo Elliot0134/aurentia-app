@@ -8,15 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-
-const Beta = () => {
+const Beta = ({ onBetaValidated }: { onBetaValidated: () => void }) => {
   const [betaCode, setBetaCode] = useState("");
   const [showWaitlistForm, setShowWaitlistForm] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -25,9 +17,6 @@ const Beta = () => {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [comment, setComment] = useState("");
-  const [isPopupOpen, setIsPopupOpen] = useState(true); // State to control popup visibility
-
-  const navigate = useNavigate();
 
   console.log("Beta component rendered");
 
@@ -53,7 +42,7 @@ const Beta = () => {
 
       if (result.success === "success") {
         console.log("Beta code validated successfully!");
-        navigate('/login'); // Redirect to login page
+        onBetaValidated(); // Call the prop function to update parent state
       } else {
         console.log("Invalid beta code.");
         setShowInvalidCodeMessage(true);
@@ -65,16 +54,13 @@ const Beta = () => {
   };
 
   return (
-    <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
-      <DialogContent
-        className="w-[90vw] sm:max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in border border-aurentia-orange" // Adjusted width for mobile
-        onPointerDownOutside={(e) => e.preventDefault()} // Prevent closing on outside click
-      >
-        <DialogHeader>
-          <DialogTitle className="text-center text-3xl font-semibold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">
+    <div className="flex items-center justify-center min-h-screen bg-[#F9F6F2]">
+      <div className="w-[90vw] sm:max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in border border-aurentia-orange">
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">
             Rejoindre la bêta
-          </DialogTitle>
-        </DialogHeader>
+          </h1>
+        </div>
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="why-beta">
             <AccordionTrigger>Pourquoi rejoindre la bêta ?</AccordionTrigger>
@@ -195,8 +181,8 @@ const Beta = () => {
           </div>
         )}
         <p className="text-center text-sm text-gray-500 mt-4">Les places sont limitées, rejoignez la liste d'attente dès maintenant !</p>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 
