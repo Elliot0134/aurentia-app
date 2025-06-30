@@ -19,8 +19,10 @@ import ProjectBusiness from "./pages/ProjectBusiness";
 import WarningPage from "./pages/WarningPage";
 import Outils from "./pages/Outils";
 import ChatbotPage from "./pages/ChatbotPage";
-import Sidebar from "./components/Sidebar";
+import ProtectedLayout from "./components/ProtectedLayout";
 import { ProjectProvider } from "./contexts/ProjectContext";
+
+
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -119,27 +121,7 @@ const ProtectedRoute = () => {
 
 
 const App = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
   console.log("App component rendered");
-
-  useEffect(() => {
-    console.log("App useEffect triggered");
-    const checkIfMobile = () => {
-      const isMobileView = window.innerWidth < 768;
-      setIsMobile(isMobileView);
-      console.log("Mobile view:", isMobileView);
-    };
-
-    checkIfMobile();
-    window.addEventListener("resize", checkIfMobile);
-
-    return () => {
-      window.removeEventListener("resize", checkIfMobile);
-    };
-  }, []);
-
-  console.log("App component rendering with isMobile:", isMobile);
 
   return (
     <ErrorBoundary>
@@ -149,33 +131,34 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <ProjectProvider>
-              <div className="flex min-h-screen bg-[#F9F6F2]">
-                <Sidebar />
-                <main className={`flex-grow ${!isMobile ? 'md:ml-64' : ''}`}>
-                  <Routes>
-                    <Route path="/beta" element={<Beta />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/update-password" element={<UpdatePassword />} />
-                    <Route element={<ProtectedRoute />}>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/automatisations" element={<Automatisations />} />
-                      <Route path="/knowledge" element={<Knowledge />} />
-                      <Route path="/project/:projectId" element={<Project />} />
-                      <Route path="/project-business/:projectId" element={<ProjectBusiness />} />
-                      <Route path="/project-business" element={<ProjectBusiness />} />
-                      <Route path="/warning" element={<WarningPage />} />
-                      <Route path="/form" element={<Form />} />
-                      <Route path="/form-business-idea" element={<FormBusinessIdea />} />
-                      <Route path="/outils" element={<Outils />} />
-                      <Route path="/chatbot/:projectId" element={<ChatbotPage />} /> {/* New route for chatbot */}
-                    </Route>
-                    <Route path="/" element={<Navigate to="/beta" replace />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-              </div>
+                <Routes>
+                {/* Public routes without sidebar */}
+                <Route path="/beta" element={<Beta />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
+                
+                {/* Protected routes with sidebar */}
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<ProtectedLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/automatisations" element={<Automatisations />} />
+                    <Route path="/knowledge" element={<Knowledge />} />
+                    <Route path="/project/:projectId" element={<Project />} />
+                    <Route path="/project-business/:projectId" element={<ProjectBusiness />} />
+                    <Route path="/project-business" element={<ProjectBusiness />} />
+                    <Route path="/warning" element={<WarningPage />} />
+                    <Route path="/form" element={<Form />} />
+                    <Route path="/form-business-idea" element={<FormBusinessIdea />} />
+                    <Route path="/outils" element={<Outils />} />
+                    <Route path="/chatbot/:projectId" element={<ChatbotPage />} />
+                  </Route>
+                </Route>
+                
+                <Route path="/" element={<Navigate to="/beta" replace />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </ProjectProvider>
           </BrowserRouter>
         </TooltipProvider>

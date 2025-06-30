@@ -10,6 +10,10 @@ interface ProjectContextType {
   userProjects: Array<{ project_id: string; nom_projet: string; created_at: string }>;
   userProjectsLoading: boolean;
   
+  // Deliverables for current project
+  deliverableNames: string[];
+  deliverablesLoading: boolean;
+  
   // Functions
   setCurrentProjectId: (projectId: string | null) => void;
   loadUserProjects: () => Promise<void>;
@@ -29,10 +33,28 @@ interface ProjectProviderProps {
   children: ReactNode;
 }
 
+// Configuration des livrables basée sur la DB
+const DELIVERABLES_CONFIG = [
+  { name: 'Retranscription du concept', table: 'project_summary' },
+  { name: 'Persona Express B2C', table: 'persona_express_b2c' },
+  { name: 'Persona Express B2B', table: 'persona_express_b2b' },
+  { name: 'Persona Express Organismes', table: 'persona_express_organismes' },
+  { name: 'Mini SWOT', table: 'mini_swot' },
+  { name: 'Success Story', table: 'success_story' },
+  { name: 'Pitch', table: 'pitch' },
+  { name: 'Analyse de la concurrence', table: 'concurrence' },
+  { name: 'Analyse de marché', table: 'marche' },
+  { name: 'Proposition de valeur', table: 'proposition_valeur' },
+  { name: 'Business Model', table: 'business_model' },
+  { name: 'Analyse des ressources', table: 'ressources_requises' }
+];
+
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [userProjects, setUserProjects] = useState<Array<{ project_id: string; nom_projet: string; created_at: string }>>([]);
   const [userProjectsLoading, setUserProjectsLoading] = useState(false);
+  const [deliverableNames, setDeliverableNames] = useState<string[]>([]);
+  const [deliverablesLoading, setDeliverablesLoading] = useState(false);
 
   const loadUserProjects = async () => {
     setUserProjectsLoading(true);
@@ -72,6 +94,63 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
   };
 
+  const loadDeliverables = async (projectId: string) => {
+    if (!projectId) {
+      setDeliverableNames([]);
+      return;
+    }
+
+    setDeliverablesLoading(true);
+    console.log(`🔄 Récupération des livrables pour le projet: ${projectId}`);
+
+    try {
+      const foundDeliverables: string[] = [];
+
+      for (const config of DELIVERABLES_CONFIG) {
+        try {
+          const { data, error } = await supabase
+            .from(config.table)
+            .select('*')
+            .eq('project_id', projectId)
+            .single();
+          
+          // PGRST116 = pas de résultat trouvé, pas une vraie erreur
+          if (!error && data) {
+            foundDeliverables.push(config.name);
+          }
+        } catch (error) {
+          // Ignore les erreurs individuelles
+          console.log(`❌ Erreur pour ${config.table}:`, error);
+        }
+      }
+
+      setDeliverableNames(foundDeliverables);
+      
+      // AFFICHAGE DANS LA CONSOLE comme demandé
+      console.log('📋 === LIVRABLES POSSÉDÉS ===');
+      foundDeliverables.forEach((name, index) => {
+        console.log(`${index + 1}. ${name}`);
+      });
+      console.log(`📊 Total: ${foundDeliverables.length} livrables`);
+      console.log('=============================');
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la récupération des livrables:', error);
+      setDeliverableNames([]);
+    } finally {
+      setDeliverablesLoading(false);
+    }
+  };
+
+  // Load deliverables when current project changes
+  useEffect(() => {
+    if (currentProjectId) {
+      loadDeliverables(currentProjectId);
+    } else {
+      setDeliverableNames([]);
+    }
+  }, [currentProjectId]);
+
   // Load user projects when authentication state changes
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -82,6 +161,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         // User signed out, clear projects
         setUserProjects([]);
         setCurrentProjectId(null);
+        setDeliverableNames([]);
       }
     });
 
@@ -97,6 +177,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     currentProjectId,
     userProjects,
     userProjectsLoading,
+    deliverableNames,
+    deliverablesLoading,
     setCurrentProjectId,
     loadUserProjects,
   };

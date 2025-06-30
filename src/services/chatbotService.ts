@@ -31,6 +31,207 @@ class ChatbotService {
     return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
   }
 
+  // === MÉTHODES DE PERSISTENCE EN BASE DE DONNÉES ===
+
+  // Créer une conversation en DB
+  async createConversationInDB(userId: string, projectId: string, title?: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('conversation')
+        .insert({
+          user_id: userId,
+          project_id: projectId,
+          title: title || 'Nouvelle conversation'
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('Erreur création conversation DB:', error);
+        return null;
+      }
+
+      return data.id;
+    } catch (error) {
+      console.error('Erreur création conversation DB:', error);
+      return null;
+    }
+  }
+
+  // Charger une conversation depuis la DB
+  async loadConversationFromDB(conversationId: string): Promise<Conversation | null> {
+    try {
+      // Charger la conversation
+      const { data: convData, error: convError } = await supabase
+        .from('conversation')
+        .select('*')
+        .eq('id', conversationId)
+        .single();
+
+      if (convError || !convData) {
+        console.error('Conversation non trouvée:', convError);
+        return null;
+      }
+
+      // Charger les messages de cette conversation
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (messagesError) {
+        console.error('Erreur chargement messages:', messagesError);
+        return null;
+      }
+
+      // Convertir en format local
+      const conversation: Conversation = {
+        id: convData.id,
+        title: convData.title,
+        userId: convData.user_id,
+        projectId: convData.project_id,
+        createdAt: new Date(convData.created_at),
+        updatedAt: new Date(convData.updated_at),
+        messages: (messagesData || []).map(msg => ({
+          id: msg.id,
+          sender: msg.sender as 'user' | 'bot',
+          text: msg.content,
+          timestamp: new Date(msg.created_at)
+        }))
+      };
+
+      return conversation;
+    } catch (error) {
+      console.error('Erreur chargement conversation DB:', error);
+      return null;
+    }
+  }
+
+  // Sauvegarder un message en DB
+  async saveMessageToDB(conversationId: string, sender: 'user' | 'bot', content: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender,
+          content
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('Erreur sauvegarde message DB:', error);
+        return null;
+      }
+
+      // Mettre à jour le timestamp de la conversation
+      await supabase
+        .from('conversation')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
+      return data.id;
+    } catch (error) {
+      console.error('Erreur sauvegarde message DB:', error);
+      return null;
+    }
+  }
+
+  // Lister les conversations d'un utilisateur pour un projet
+  async getUserConversationsFromDB(userId: string, projectId: string): Promise<Conversation[]> {
+    try {
+      const { data, error } = await supabase
+        .from('conversation')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('project_id', projectId)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur chargement conversations DB:', error);
+        return [];
+      }
+
+      return (data || []).map(conv => ({
+        id: conv.id,
+        title: conv.title,
+        userId: conv.user_id,
+        projectId: conv.project_id,
+        createdAt: new Date(conv.created_at),
+        updatedAt: new Date(conv.updated_at),
+        messages: [] // Les messages seront chargés séparément si nécessaire
+      }));
+    } catch (error) {
+      console.error('Erreur chargement conversations DB:', error);
+      return [];
+    }
+  }
+
+  // Mettre à jour le titre d'une conversation en DB
+  async updateConversationTitleInDB(conversationId: string, title: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('conversation')
+        .update({ 
+          title,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+
+      if (error) {
+        console.error('Erreur mise à jour titre DB:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erreur mise à jour titre DB:', error);
+      return false;
+    }
+  }
+
+  // Supprimer une conversation de la DB
+  async deleteConversationFromDB(conversationId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('conversation')
+        .delete()
+        .eq('id', conversationId);
+
+      if (error) {
+        console.error('Erreur suppression conversation DB:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erreur suppression conversation DB:', error);
+      return false;
+    }
+  }
+
+  // Mettre à jour un message en DB
+  async updateMessageInDB(messageId: string, content: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ content })
+        .eq('id', messageId);
+
+      if (error) {
+        console.error('Erreur mise à jour message DB:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erreur mise à jour message DB:', error);
+      return false;
+    }
+  }
+
   // Load conversations from localStorage as fallback
   private loadConversationsFromStorage(): void {
     try {
@@ -65,7 +266,7 @@ class ChatbotService {
     }
   }
 
-  // Create a new conversation
+  // Create a new conversation (LEGACY - utilise localStorage)
   createConversation(userId: string, projectId?: string): Conversation {
     const conversation: Conversation = {
       id: this.generateId(),
@@ -84,6 +285,40 @@ class ChatbotService {
     return conversation;
   }
 
+  // Créer une nouvelle conversation avec persistence DB
+  async createNewConversation(userId: string, projectId: string): Promise<Conversation | null> {
+    try {
+      // Créer en DB d'abord
+      const dbConversationId = await this.createConversationInDB(userId, projectId);
+      if (!dbConversationId) {
+        console.error('Échec création conversation en DB');
+        return null;
+      }
+
+      // Créer l'objet conversation sans le stocker localement
+      const conversation: Conversation = {
+        id: dbConversationId,
+        title: 'Nouvelle conversation',
+        userId,
+        projectId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        messages: []
+      };
+
+      // Stocker localement seulement après création (pour permettre l'usage)
+      this.conversations.set(conversation.id, conversation);
+      this.currentConversationId = conversation.id;
+      // Ne pas sauvegarder en localStorage pour éviter la persistence locale
+
+      console.log('✅ Conversation créée avec succès:', dbConversationId);
+      return conversation;
+    } catch (error) {
+      console.error('❌ Erreur création conversation:', error);
+      return null;
+    }
+  }
+
   // Get conversation by ID
   getConversation(conversationId: string): Conversation | null {
     return this.conversations.get(conversationId) || null;
@@ -96,7 +331,7 @@ class ChatbotService {
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
 
-  // Add message to conversation
+  // Add message to conversation (LEGACY - localStorage uniquement)
   addMessage(conversationId: string, sender: 'user' | 'bot', text: string): Message | null {
     const conversation = this.conversations.get(conversationId);
     if (!conversation) return null;
@@ -108,16 +343,142 @@ class ChatbotService {
       timestamp: new Date()
     };
 
-    conversation.messages.push(message);
-    conversation.updatedAt = new Date();
+    // Vérifier qu'il n'y a pas déjà un message avec le même ID
+    const existingMessageIndex = conversation.messages.findIndex(m => m.id === message.id);
+    if (existingMessageIndex === -1) {
+      conversation.messages.push(message);
+      conversation.updatedAt = new Date();
 
-    // Auto-update conversation title based on first user message
-    if (sender === 'user' && conversation.messages.filter(m => m.sender === 'user').length === 1) {
-      conversation.title = this.generateConversationTitle(text);
+      // Auto-update conversation title based on first user message
+      if (sender === 'user' && conversation.messages.filter(m => m.sender === 'user').length === 1) {
+        conversation.title = this.generateConversationTitle(text);
+      }
+    } else {
+      console.warn('⚠️ Message avec ID existant ignoré:', message.id);
+      return conversation.messages[existingMessageIndex]; // Retourner le message existant
     }
 
     this.saveConversationsToStorage();
     return message;
+  }
+
+  // Ajouter un message avec persistence DB
+  async addMessageWithDB(conversationId: string, sender: 'user' | 'bot', text: string): Promise<Message | null> {
+    try {
+      // Sauvegarder en DB d'abord
+      const dbMessageId = await this.saveMessageToDB(conversationId, sender, text);
+      if (!dbMessageId) {
+        console.error('Échec sauvegarde message en DB');
+        return null;
+      }
+
+      // Ajouter localement avec l'ID de la DB
+      const conversation = this.conversations.get(conversationId);
+      if (!conversation) {
+        console.error('Conversation non trouvée localement:', conversationId);
+        return null;
+      }
+
+      const message: Message = {
+        id: dbMessageId,
+        sender,
+        text,
+        timestamp: new Date()
+      };
+
+      // Vérifier qu'il n'y a pas déjà un message avec le même ID
+      const existingMessageIndex = conversation.messages.findIndex(m => m.id === message.id);
+      if (existingMessageIndex === -1) {
+        conversation.messages.push(message);
+        conversation.updatedAt = new Date();
+      } else {
+        console.warn('⚠️ Message avec ID existant ignoré:', message.id);
+        return conversation.messages[existingMessageIndex]; // Retourner le message existant
+      }
+
+      // Auto-update conversation title based on first user message
+      if (sender === 'user' && conversation.messages.filter(m => m.sender === 'user').length === 1) {
+        const newTitle = this.generateConversationTitle(text);
+        conversation.title = newTitle;
+        // Mettre à jour aussi en DB
+        await this.updateConversationTitleInDB(conversationId, newTitle);
+        
+        // Déclencher un événement pour notifier le changement de titre
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('conversationTitleChanged', { 
+            detail: { conversationId, newTitle } 
+          }));
+        }
+      }
+
+      // Ne pas sauvegarder en localStorage pour les nouvelles conversations
+      // this.saveConversationsToStorage();
+
+      console.log('✅ Message ajouté avec succès:', { conversationId, sender, messageId: dbMessageId });
+      return message;
+    } catch (error) {
+      console.error('❌ Erreur ajout message:', error);
+      return null;
+    }
+  }
+
+  // Update an existing message (LEGACY - localStorage uniquement)
+  updateMessage(conversationId: string, messageId: string, text: string): Message | null {
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) return null;
+
+    const messageIndex = conversation.messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return null;
+
+    conversation.messages[messageIndex] = {
+      ...conversation.messages[messageIndex],
+      text,
+      timestamp: new Date()
+    };
+
+    conversation.updatedAt = new Date();
+    this.saveConversationsToStorage();
+    return conversation.messages[messageIndex];
+  }
+
+  // Mettre à jour un message avec persistence DB
+  async updateMessageWithDB(conversationId: string, messageId: string, text: string): Promise<Message | null> {
+    try {
+      // Mettre à jour en DB d'abord
+      const dbSuccess = await this.updateMessageInDB(messageId, text);
+      if (!dbSuccess) {
+        console.error('Échec mise à jour message en DB');
+        return null;
+      }
+
+      // Mettre à jour localement
+      const conversation = this.conversations.get(conversationId);
+      if (!conversation) {
+        console.error('Conversation non trouvée localement:', conversationId);
+        return null;
+      }
+
+      const messageIndex = conversation.messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1) {
+        console.error('Message non trouvé localement:', messageId);
+        return null;
+      }
+
+      conversation.messages[messageIndex] = {
+        ...conversation.messages[messageIndex],
+        text,
+        timestamp: new Date()
+      };
+
+      conversation.updatedAt = new Date();
+      this.saveConversationsToStorage();
+
+      console.log('✅ Message mis à jour avec succès:', { conversationId, messageId });
+      return conversation.messages[messageIndex];
+    } catch (error) {
+      console.error('❌ Erreur mise à jour message:', error);
+      return null;
+    }
   }
 
   // Generate conversation title from first message

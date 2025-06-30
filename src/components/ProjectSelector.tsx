@@ -2,6 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Settings, Plus } from "lucide-react";
 import { useProject } from "@/contexts/ProjectContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ProjectSelector = memo(() => {
   const navigate = useNavigate();
@@ -39,6 +40,13 @@ const ProjectSelector = memo(() => {
   };
 
   const selectedProject = getSelectedProject();
+
+  // Helper function to truncate project names
+  const truncateProjectName = (name: string, maxLength: number = 18) => {
+    if (!name) return "Projet sans nom";
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + "...";
+  };
 
   // Update context when projectId changes
   useEffect(() => {
@@ -103,18 +111,25 @@ const ProjectSelector = memo(() => {
 
   return (
     <div className="relative">
-      <button 
-        onClick={toggleDropdown}
-        className="w-full py-2 px-3 text-left font-medium text-sm rounded-md flex items-center justify-between gap-2 bg-gray-100 hover:bg-gray-200 transition"
-      >
-        <div className="flex items-center gap-2">
-          <Settings size={18} />
-          <span className="truncate">
-            {displayText}
-          </span>
-        </div>
-        <ArrowRight size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button 
+            onClick={toggleDropdown}
+            className="w-full py-2 px-3 text-left font-medium text-sm rounded-md flex items-center justify-between gap-2 bg-gray-100 hover:bg-gray-200 transition"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Settings size={18} className="flex-shrink-0" />
+              <span className="truncate">
+                {truncateProjectName(displayText)}
+              </span>
+            </div>
+            <ArrowRight size={16} className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-90' : ''}`} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-xs">
+          <p>{displayText}</p>
+        </TooltipContent>
+      </Tooltip>
       
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg z-10 max-h-56 overflow-y-auto">
@@ -130,24 +145,30 @@ const ProjectSelector = memo(() => {
             
             {/* Existing projects */}
             {userProjects.map(project => (
-              <button
-                key={project.project_id}
-                onClick={() => selectProject(project)}
-                className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition flex items-center justify-between ${
-                  project.project_id === projectId ? 'bg-blue-50 border-l-2 border-blue-500' : ''
-                }`}
-              >
-                <span className="truncate">{project.nom_projet || "Projet sans nom"}</span>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    goToProject(project);
-                  }}
-                  className="text-aurentia-pink hover:underline text-xs flex items-center gap-1"
-                >
-                  Voir <ArrowRight size={12} />
-                </button>
-              </button>
+              <Tooltip key={project.project_id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => selectProject(project)}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition flex items-center justify-between ${
+                      project.project_id === projectId ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                    }`}
+                  >
+                    <span className="truncate">{truncateProjectName(project.nom_projet || "Projet sans nom")}</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToProject(project);
+                      }}
+                      className="text-aurentia-pink hover:underline text-xs flex items-center gap-1 flex-shrink-0 ml-2"
+                    >
+                      Voir <ArrowRight size={12} />
+                    </button>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  <p>{project.nom_projet || "Projet sans nom"}</p>
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>
