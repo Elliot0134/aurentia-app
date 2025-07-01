@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react'; // Assuming lucide-react is used for icons
+import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -22,6 +22,9 @@ const Form = () => {
   const [popupContent, setPopupContent] = useState('');
   const [currentField, setCurrentField] = useState('');
   const [popupTitle, setPopupTitle] = useState('');
+  const [slideDirection, setSlideDirection] = useState('next');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [previousStep, setPreviousStep] = useState(currentStep);
 
   const handleFieldClick = (field, content, title) => {
     if (isMobile) {
@@ -63,6 +66,9 @@ const Form = () => {
         break;
       case 'whyEntrepreneur':
         setWhyEntrepreneur(popupContent);
+        break;
+      case 'teamSize':
+        setTeamSize(popupContent);
         break;
       case 'descriptionSynthetique':
         setDescriptionSynthetique(popupContent);
@@ -115,7 +121,7 @@ const Form = () => {
   const [geographicArea, setGeographicArea] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [whyEntrepreneur, setWhyEntrepreneur] = useState('');
-
+  const [teamSize, setTeamSize] = useState('');
 
   // State for step 2 fields (Retranscription du concept)
   const [descriptionSynthetique, setDescriptionSynthetique] = useState('');
@@ -131,81 +137,121 @@ const Form = () => {
 
   // State for webhook response and loading
   const [isLoading, setIsLoading] = useState(false);
-  const [projectID, setProjectID] = useState(''); // To store Project ID from webhook
+  const [projectID, setProjectID] = useState('');
 
   const handleNext = async () => {
-    console.log('handleNext called');
-    setIsLoading(true); // Start loading and show dialog
-    try {
-      const { data: { session } = {} } = await supabase.auth.getSession();
-      const userId = session?.user?.id || null;
-      console.log('User ID:', userId);
+    if (currentStep === 7) {
+      // Process step 1 data when moving from step 7 (confirmation) to step 8 (retranscription)
+      console.log('handleNext called');
+      setIsLoading(true);
+      try {
+        const { data: { session } = {} } = await supabase.auth.getSession();
+        const userId = session?.user?.id || null;
+        console.log('User ID:', userId);
 
-      const formData = {
-        userId: userId,
-        projectName: projectName,
-        projectIdeaSentence: projectIdeaSentence,
-        productsServices: productsServices,
-        problemSolved: problemSolved,
-        clienteleCible: clienteleCible,
-        needs: needs,
-        projectType: projectType,
-        geographicArea: projectType === 'Physique' || projectType === 'Les deux' ? geographicArea : '',
-        additionalInfo: additionalInfo,
-        whyEntrepreneur: whyEntrepreneur,
-      };
-      console.log('Form Data (Step 1):', formData);
+        const formData = {
+          userId: userId,
+          projectName: projectName,
+          projectIdeaSentence: projectIdeaSentence,
+          productsServices: productsServices,
+          problemSolved: problemSolved,
+          clienteleCible: clienteleCible,
+          needs: needs,
+          projectType: projectType,
+          geographicArea: projectType === 'Physique' || projectType === 'Les deux' ? geographicArea : '',
+          additionalInfo: additionalInfo,
+          whyEntrepreneur: whyEntrepreneur,
+          teamSize: teamSize,
+        };
+        console.log('Form Data (Step 1):', formData);
 
-      console.log('Sending POST request to idea webhook...');
-      const response = await fetch('https://n8n.eec-technologies.fr/webhook/form-business-idea', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      console.log('Idea webhook response:', response);
+        console.log('Sending POST request to idea webhook...');
+        const response = await fetch('https://n8n.eec-technologies.fr/webhook/form-business-idea', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+        console.log('Idea webhook response:', response);
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Idea webhook response JSON:', result);
-        // Handle response if needed, e.g., show a success message
-        const webhookData = result[0]; // Assuming the response is an array with the first element containing the data
-        if (webhookData) {
-          // Extract and set state for all Step 2 fields from the webhook response
-          setDescriptionSynthetique(webhookData.DescriptionSynthetique || '');
-          setProduitServiceRetranscription(webhookData["Produit/Service"] || '');
-          setPropositionValeur(webhookData.PropositionValeur || '');
-          setElementDistinctif(webhookData.ElementDistinctif || '');
-          setClienteleCibleRetranscription(webhookData.ClienteleCible || '');
-          setProblemResoudreRetranscription(webhookData.ProblemResoudre || '');
-          setVision3Ans(webhookData.Vision3Ans || '');
-          setBusinessModel(webhookData.BusinessModel || '');
-          setCompetences(webhookData.Compétences || '');
-          setMonPourquoiRetranscription(webhookData.MotivationEntrepreneur || '');
-          // Store the ProjectID from the webhook response
-          setProjectID(webhookData.ProjectID || '');
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Idea webhook response JSON:', result);
+          const webhookData = result[0];
+          if (webhookData) {
+            setDescriptionSynthetique(webhookData.DescriptionSynthetique || '');
+            setProduitServiceRetranscription(webhookData["Produit/Service"] || '');
+            setPropositionValeur(webhookData.PropositionValeur || '');
+            setElementDistinctif(webhookData.ElementDistinctif || '');
+            setClienteleCibleRetranscription(webhookData.ClienteleCible || '');
+            setProblemResoudreRetranscription(webhookData.ProblemResoudre || '');
+            setVision3Ans(webhookData.Vision3Ans || '');
+            setBusinessModel(webhookData.BusinessModel || '');
+            setCompetences(webhookData.Compétences || '');
+            setMonPourquoiRetranscription(webhookData.MotivationEntrepreneur || '');
+            setProjectID(webhookData.ProjectID || '');
+          } else {
+            console.error('Webhook response array is empty or does not contain an object.');
+            alert('Erreur lors du traitement de la réponse du formulaire.');
+          }
+          
+          // Start transition
+          setSlideDirection('next');
+          setIsTransitioning(true);
+          setPreviousStep(currentStep);
+          
+          setTimeout(() => {
+            setCurrentStep(currentStep + 1);
+          }, 50);
+          
+          setTimeout(() => {
+            setIsTransitioning(false);
+          }, 350);
         } else {
-          console.error('Webhook response array is empty or does not contain an object.');
-          alert('Erreur lors du traitement de la réponse du formulaire.');
+          console.error('Idea webhook response not OK:', response.status, response.statusText);
+          alert('Erreur lors de la soumission des informations du projet.');
         }
-        setCurrentStep(currentStep + 1); // Move to step 2
-      } else {
-        console.error('Idea webhook response not OK:', response.status, response.statusText);
+      } catch (error) {
+        console.error('Error submitting idea form:', error);
         alert('Erreur lors de la soumission des informations du projet.');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error submitting idea form:', error);
-      alert('Erreur lors de la soumission des informations du projet.');
-    } finally {
-      setIsLoading(false); // End loading and hide dialog
+    } else {
+             // Start transition
+       setSlideDirection('next');
+       setIsTransitioning(true);
+       setPreviousStep(currentStep);
+       
+       setTimeout(() => {
+         setCurrentStep(currentStep + 1);
+       }, 50);
+       
+       setTimeout(() => {
+         setIsTransitioning(false);
+       }, 350);
     }
   };
 
+  const handlePrevious = () => {
+    // Start transition
+    setSlideDirection('prev');
+    setIsTransitioning(true);
+    setPreviousStep(currentStep);
+    
+    setTimeout(() => {
+      setCurrentStep(currentStep - 1);
+    }, 50);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 350);
+  };
 
   const handleSubmit = async () => {
     console.log('handleSubmit called');
-    setIsLoading(true); // Start loading and show dialog
+    setIsLoading(true);
     try {
       const { data: { session } = {} } = await supabase.auth.getSession();
       const userId = session?.user?.id || null;
@@ -223,6 +269,7 @@ const Form = () => {
         geographicArea: projectType === 'Physique' || projectType === 'Les deux' ? geographicArea : '',
         additionalInfo: additionalInfo,
         whyEntrepreneur: whyEntrepreneur,
+        teamSize: teamSize,
         descriptionSynthetique: descriptionSynthetique,
         produitServiceRetranscription: produitServiceRetranscription,
         propositionValeur: propositionValeur,
@@ -231,7 +278,7 @@ const Form = () => {
         problemResoudreRetranscription: problemResoudreRetranscription,
         vision3Ans: vision3Ans,
         businessModel: businessModel,
-        projectID: projectID, // Include projectID here
+        projectID: projectID,
         competences: competences,
         monPourquoiRetranscription: monPourquoiRetranscription,
       };
@@ -252,12 +299,11 @@ const Form = () => {
         const result = await response.json();
         console.log('Livrables webhook response JSON:', result);
 
-        const webhookData = result[0]; // Assuming the response is an array with the first element containing the data
+        const webhookData = result[0];
         const userId = webhookData?.user_id;
         const projectId = webhookData?.project_id;
 
         if (userId && projectId) {
-          // Navigate to the new project idea page
           navigate(`/project-business/${projectId}`);
         } else {
           console.error('user_id or project_id not found in webhook response.');
@@ -271,289 +317,431 @@ const Form = () => {
       console.error('Error submitting form:', error);
       alert('Erreur lors de la soumission du formulaire.');
     } finally {
-      setIsLoading(false); // End loading on success or error
+      setIsLoading(false);
     }
   };
 
-  const totalSteps = 2; // Total number of steps
+  const totalSteps = 8;
 
-  return (
-    <div className="container mx-auto px-4 py-8 text-center">
-      <h1 className="text-3xl font-bold mb-2">Questionnaire de projet</h1>
-      <p className="text-gray-600 text-lg mb-8">Répondez aux questions suivantes pour générer votre livrable personnalisé</p>
+  const stepTitles = [
+    "Informations de base",
+    "Produits & Services", 
+    "Votre clientèle",
+    "Vos besoins",
+    "Type & Localisation",
+    "Informations supplémentaires",
+    "Confirmation",
+    "Retranscription du concept"
+  ];
 
-      {/* Loading Dialog */}
-      <Dialog open={isLoading} onOpenChange={setIsLoading}>
-        <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
-          <DialogHeader>
-            <DialogTitle>
-              {currentStep === 1 ? 'Soumission des informations' : 'Génération de vos livrables'}
-            </DialogTitle>
-            <DialogDescription>
-              {currentStep === 1 ? 'Veuillez patienter pendant la soumission de vos informations.' : 'Veuillez patienter pendant la génération de vos livrables.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center items-center py-4">
-            {/* New Loader HTML */}
-            <div className="loader">
-              <div className="circle"></div>
-              <div className="circle"></div>
-              <div className="circle"></div>
-              <div className="square"></div>
+  const getStepContent = (step = currentStep) => {
+    switch (step) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Commençons par les bases</h2>
+              <p className="text-lg text-gray-600">Parlez-nous de votre projet</p>
             </div>
-          </div>
-          {/* Removed DialogPrimitive.Close component */}
-        </DialogContent>
-      </Dialog>
-
-      {/* Input Pop-up Dialog */}
-      <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
-        <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full">
-          <DialogHeader>
-            <DialogTitle>{popupTitle}</DialogTitle>
-            <DialogDescription>
-              Modifiez le contenu du champ ci-dessous.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={popupContent}
-            onChange={(e) => setPopupContent(e.target.value)}
-            className="w-full h-40"
-          />
-          <DialogFooter>
-            <Button onClick={handlePopupSave}>Enregistrer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Progress Tracker */}
-      <div className="flex justify-center items-center mb-8 mx-auto w-full md:w-4/5">
-        <div className="flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-            {currentStep > 1 ? <CheckCircle size={24} /> : 1}
-          </div>
-          <p className="text-xs mt-1 w-20 text-center">Informations sur le projet</p>
-        </div>
-        <div className={`flex-auto border-t-2 mx-4 ${currentStep > 1 ? 'border-orange-500' : 'border-gray-300'}`}></div>
-        <div className="flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-            {currentStep > 2 ? <CheckCircle size={24} /> : 2}
-          </div>
-          <p className="text-xs mt-1 w-20 text-center">Retranscription du concept</p>
-        </div>
-      </div>
-
-      {currentStep === 2 && (
-        <div className="text-center text-2xl font-semibold mb-4 p-4 rounded-md bg-gradient-to-r from-red-500 to-orange-500 text-white mx-auto w-full md:w-4/5">
-          Modifiez les réponses un maximum.
-          <p className="text-sm font-normal mt-2">Plus vous donnez d'informations sur votre concept, plus la génération des livrables sera développé en conséquence.</p>
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg shadow-md p-6 mx-auto w-full md:w-4/5 text-left space-y-4">
-        {currentStep === 1 && (
-          <>
-            {/* Question 1: Nom du projet */}
-            <div className="bg-[#F9F6F2] rounded-md p-4">
-              <p className="font-medium mb-2">1. Nom du projet</p>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md"
-                value={projectName}
-                onClick={() => handleFieldClick('projectName', projectName, 'Nom du projet')}
-                onChange={(e) => setProjectName(e.target.value)}
-              />
-            </div>
-
-            {/* Question 2: Décrivez votre projet en une phrase */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">2. Décrivez votre projet en une phrase</p>
-              <input
-                type="text"
-                placeholder="Formulez votre concept initial de manière claire et concise."
-                className="w-full p-2 border border-gray-300 rounded-md"
-                value={projectIdeaSentence}
-                onClick={() => handleFieldClick('projectIdeaSentence', projectIdeaSentence, 'Décrivez votre projet en une phrase')}
-                onChange={(e) => setProjectIdeaSentence(e.target.value)}
-              />
-            </div>
-
-            {/* Question 3: Quels produits / services souhaitez vous proposer ? */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">3. Quels produits / services souhaitez vous proposer ?</p>
-              <textarea
-                placeholder="Notez sous forme de liste les produits ou services que vous allez proposer."
-                className="w-full p-2 border border-gray-300 rounded-md h-32"
-                value={productsServices}
-                onClick={() => handleFieldClick('productsServices', productsServices, 'Produits / Services')}
-                onChange={(e) => setProductsServices(e.target.value)}
-              ></textarea>
-            </div>
-
-            {/* Question 4: À quel besoin ou problème répond votre projet ? */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">4. À quel besoin ou problème répond votre projet ?</p>
-              <textarea
-                placeholder="Identifiez le besoin auquel votre solution répond concrètement."
-                className="w-full p-2 border border-gray-300 rounded-md h-32"
-                value={problemSolved}
-                onClick={() => handleFieldClick('problemSolved', problemSolved, 'Besoin ou problème résolu')}
-                onChange={(e) => setProblemSolved(e.target.value)}
-              ></textarea>
-            </div>
-
-            {/* Question 5: Qui seraient vos clients ? */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">5. Qui seraient vos clients ?</p>
-              <textarea
-                placeholder="Décrivez votre public idéal."
-                className="w-full p-2 border border-gray-300 rounded-md h-32"
-                value={clienteleCible}
-                onClick={() => handleFieldClick('clienteleCible', clienteleCible, 'Clientèle cible')}
-                onChange={(e) => setClienteleCible(e.target.value)}
-              ></textarea>
-            </div>
-
-            {/* Question 6: De quoi avez-vous besoin au minimum pour lancer votre projet ? */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">6. De quoi avez-vous besoin au minimum pour lancer votre projet ?</p>
-              <textarea
-                placeholder="Quel besoin en matériel, en compétences etc. ?"
-                className="w-full p-2 border border-gray-300 rounded-md h-32"
-                value={needs}
-                onClick={() => handleFieldClick('needs', needs, 'Besoins pour lancer le projet')}
-                onChange={(e) => setNeeds(e.target.value)}
-              ></textarea>
-            </div>
-
-            {/* Question 7: Quel est le type de votre projet ? */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">7. Quel est le type de votre projet ?</p>
-              <select
-                className="w-full p-2 border border-gray-300 rounded-md"
-                value={projectType}
-                onChange={(e) => setProjectType(e.target.value)}
-              >
-                <option value="">Sélectionner...</option>
-                <option value="Physique">Physique (Boutique, restaurant etc.)</option>
-                <option value="Digital">Digital (E-commerce, logiciel, formation etc.)</option>
-                <option value="Les deux">Les deux (Agence web avec local)</option>
-              </select>
-            </div>
-
-            {/* Conditional Question: Quelle est la zone géographique ciblée pour votre projet ? */}
-            {(projectType === 'Physique' || projectType === 'Les deux') && (
-              <div className="bg-[#F9F9F2] rounded-md p-4">
-                <p className="font-medium mb-2">8. Quelle est la zone géographique ciblée pour votre projet ?</p>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Quel est le nom de votre projet ? ✨
+                </label>
                 <input
                   type="text"
-                  placeholder="Ville, région, etc."
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  value={geographicArea}
-                  onClick={() => handleFieldClick('geographicArea', geographicArea, 'Zone géographique ciblée')}
-                  onChange={(e) => setGeographicArea(e.target.value)}
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
+                  placeholder="Tapez le nom de votre projet..."
+                  value={projectName}
+                  onClick={() => handleFieldClick('projectName', projectName, 'Nom du projet')}
+                  onChange={(e) => setProjectName(e.target.value)}
                 />
               </div>
-            )}
 
-            {/* Question 9: Ajouter d'autres informations */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">9. Ajouter d'autres informations</p>
-              <textarea
-                placeholder="Ajoutez ici toute information supplémentaire pertinente pour votre projet."
-                className="w-full p-2 border border-gray-300 rounded-md h-32"
-                value={additionalInfo}
-                onClick={() => handleFieldClick('additionalInfo', additionalInfo, 'Autres informations')}
-                onChange={(e) => setAdditionalInfo(e.target.value)}
-              ></textarea>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Décrivez votre projet en une phrase 💡
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                  placeholder="Formulez votre concept initial de manière claire et concise..."
+                  value={projectIdeaSentence}
+                  onClick={() => handleFieldClick('projectIdeaSentence', projectIdeaSentence, 'Décrivez votre projet en une phrase')}
+                  onChange={(e) => setProjectIdeaSentence(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Vos produits et services</h2>
+              <p className="text-lg text-gray-600">Que proposez-vous concrètement ?</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Quels produits/services souhaitez-vous proposer ? 🛍️
+                </label>
+                <textarea
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Notez sous forme de liste les produits ou services que vous allez proposer..."
+                  value={productsServices}
+                  onClick={() => handleFieldClick('productsServices', productsServices, 'Produits / Services')}
+                  onChange={(e) => setProductsServices(e.target.value)}
+                />
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  À quel problème répond votre projet ? 🎯
+                </label>
+                <textarea
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Identifiez le besoin auquel votre solution répond concrètement..."
+                  value={problemSolved}
+                  onClick={() => handleFieldClick('problemSolved', problemSolved, 'Besoin ou problème résolu')}
+                  onChange={(e) => setProblemSolved(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Votre clientèle</h2>
+              <p className="text-lg text-gray-600">Qui sont vos clients idéaux ?</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg p-4 border border-yellow-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Qui seraient vos clients ? 👥
+                </label>
+                <textarea
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-yellow-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Décrivez votre public idéal..."
+                  value={clienteleCible}
+                  onClick={() => handleFieldClick('clienteleCible', clienteleCible, 'Clientèle cible')}
+                  onChange={(e) => setClienteleCible(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Vos besoins</h2>
+              <p className="text-lg text-gray-600">De quoi avez-vous besoin pour vous lancer ?</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg p-4 border border-teal-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  De quoi avez-vous besoin pour vous lancer ? 🚀
+                </label>
+                <textarea
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Quel besoin en matériel, en compétences etc. ?"
+                  value={needs}
+                  onClick={() => handleFieldClick('needs', needs, 'Besoins pour lancer le projet')}
+                  onChange={(e) => setNeeds(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Type et localisation</h2>
+              <p className="text-lg text-gray-600">Précisons les détails de votre projet</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 border border-indigo-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Quel est le type de votre projet ? 🏢
+                </label>
+                <select
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                  value={projectType}
+                  onChange={(e) => setProjectType(e.target.value)}
+                >
+                  <option value="">Sélectionner...</option>
+                  <option value="Physique">Physique (Boutique, restaurant etc.)</option>
+                  <option value="Digital">Digital (E-commerce, logiciel, formation etc.)</option>
+                  <option value="Les deux">Les deux (Agence web avec local)</option>
+                </select>
+              </div>
+
+              {(projectType === 'Physique' || projectType === 'Les deux') && (
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg p-4 border border-rose-200">
+                  <label className="block text-lg font-semibold text-gray-800 mb-2">
+                    Quelle zone géographique ciblez-vous ? 📍
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-rose-500 focus:outline-none transition-colors"
+                    placeholder="Ville, région, etc."
+                    value={geographicArea}
+                    onClick={() => handleFieldClick('geographicArea', geographicArea, 'Zone géographique ciblée')}
+                    onChange={(e) => setGeographicArea(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Pour finir...</h2>
+              <p className="text-lg text-gray-600">Ajoutez vos motivations et informations supplémentaires</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg p-4 border border-violet-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Informations supplémentaires 📝
+                </label>
+                <textarea
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-violet-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Ajoutez ici toute information supplémentaire pertinente pour votre projet..."
+                  value={additionalInfo}
+                  onClick={() => handleFieldClick('additionalInfo', additionalInfo, 'Autres informations')}
+                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                />
+              </div>
+
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Pourquoi souhaitez-vous entreprendre ? 🔥
+                </label>
+                <textarea
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Décrivez vos motivations et objectifs..."
+                  value={whyEntrepreneur}
+                  onClick={() => handleFieldClick('whyEntrepreneur', whyEntrepreneur, 'Pourquoi souhaitez vous entreprendre ?')}
+                  onChange={(e) => setWhyEntrepreneur(e.target.value)}
+                />
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">
+                  Combien êtes-vous sur le projet ? 👥
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                  placeholder="Exemple: 2 personnes, juste moi, 3 cofondateurs..."
+                  value={teamSize}
+                  onClick={() => handleFieldClick('teamSize', teamSize, 'Nombre de personnes sur le projet')}
+                  onChange={(e) => setTeamSize(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 7:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">⚠️ Confirmation</h2>
+              <p className="text-lg text-gray-600">Vérifiez vos informations avant de continuer</p>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Warning section */}
+              <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-4 border border-red-200">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="bg-red-100 p-2 rounded-full">
+                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-red-800">Attention !</h3>
+                    <p className="text-red-700 text-sm">Cette action va analyser vos données et générer votre retranscription</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary section */}
+              <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+                <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">📋 Récapitulatif de vos informations</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Nom du projet</p>
+                      <p className="text-gray-600 text-sm">{projectName || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Description en une phrase</p>
+                      <p className="text-gray-600 text-sm">{projectIdeaSentence || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Produits/Services</p>
+                      <p className="text-gray-600 text-sm">{productsServices || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Problème résolu</p>
+                      <p className="text-gray-600 text-sm">{problemSolved || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Clientèle cible</p>
+                      <p className="text-gray-600 text-sm">{clienteleCible || "Non renseigné"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Besoins pour lancer</p>
+                      <p className="text-gray-600 text-sm">{needs || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Type de projet</p>
+                      <p className="text-gray-600 text-sm">{projectType || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Zone géographique</p>
+                      <p className="text-gray-600 text-sm">{geographicArea || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Informations supplémentaires</p>
+                      <p className="text-gray-600 text-sm">{additionalInfo || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Motivation entrepreneuriale</p>
+                      <p className="text-gray-600 text-sm">{whyEntrepreneur || "Non renseigné"}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="font-semibold text-gray-700 text-sm">Équipe</p>
+                      <p className="text-gray-600 text-sm">{teamSize || "Non renseigné"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Confirmation section */}
+              <div className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                  Êtes-vous sûr de vouloir continuer ? ✅
+                </h4>
+                <p className="text-sm text-gray-600">
+                  Vos informations seront traitées pour générer votre retranscription de concept.
+                  Vous pourrez toujours modifier les résultats à l'étape suivante.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 8:
+        return (
+          <div className="space-y-4">
+            <div className="text-center text-lg font-semibold mb-3 p-3 rounded-md bg-gradient-to-r from-red-500 to-orange-500 text-white">
+              Modifiez les réponses un maximum.
+              <p className="text-xs font-normal mt-1">Plus vous donnez d'informations sur votre concept, plus la génération des livrables sera développé en conséquence.</p>
             </div>
 
-            {/* New Question: Pourquoi souhaitez vous entreprendre ? */}
-            <div className="bg-[#F9F9F2] rounded-md p-4">
-              <p className="font-medium mb-2">10. Pourquoi souhaitez vous entreprendre ?</p>
-              <textarea
-                placeholder="Décrivez vos motivations et objectifs."
-                className="w-full p-2 border border-gray-300 rounded-md h-32"
-                value={whyEntrepreneur}
-                onClick={() => handleFieldClick('whyEntrepreneur', whyEntrepreneur, 'Pourquoi souhaitez vous entreprendre ?')}
-                onChange={(e) => setWhyEntrepreneur(e.target.value)}
-              ></textarea>
-            </div>
-          </>
-        )}
-
-        {currentStep === 2 && (
-          <>
-            <h2 className="text-2xl font-semibold mb-4" style={{ fontSize: '26px' }}>Retranscription du concept</h2>
+            <h2 className="text-xl font-semibold mb-3">Retranscription du concept</h2>
             {isLoading ? (
               <div className="text-center text-pink-500 text-lg">Chargement de la retranscription du concept...</div>
             ) : (
-              <div className="space-y-4">
-                <div className="bg-[#F9F6F2] rounded-md p-4">
-                  <p className="font-medium mb-2">Description synthétique</p>
+              <div className="space-y-3">
+                <div className="bg-[#F9F6F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">Description synthétique</p>
                   <textarea
                     placeholder="Décrivez votre concept de manière concise."
-                    className="w-full p-2 border border-gray-300 rounded-md h-32"
+                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
                     value={descriptionSynthetique}
                     onClick={() => handleFieldClick('descriptionSynthetique', descriptionSynthetique, 'Description synthétique')}
-                    onChange={(e) => setDescriptionSynthetique(e.target.value)} // Allow editing after initial load
+                    onChange={(e) => setDescriptionSynthetique(e.target.value)}
                   ></textarea>
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-4">
-                  <p className="font-medium mb-2">Produit / Service</p>
+                <div className="bg-[#F9F9F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">Produit / Service</p>
                   <textarea
                     placeholder="Détaillez les produits ou services que vous proposez."
-                    className="w-full p-2 border border-gray-300 rounded-md h-32"
+                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
                     value={produitServiceRetranscription}
                     onClick={() => handleFieldClick('produitServiceRetranscription', produitServiceRetranscription, 'Produit / Service')}
                     onChange={(e) => setProduitServiceRetranscription(e.target.value)}
                   ></textarea>
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-4">
-                  <p className="font-medium mb-2">Proposition de valeur</p>
+                <div className="bg-[#F9F9F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">Proposition de valeur</p>
                   <textarea
                     placeholder="Quelle valeur unique apportez-vous à vos clients ?"
-                    className="w-full p-2 border border-gray-300 rounded-md h-32"
+                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
                     value={propositionValeur}
                     onClick={() => handleFieldClick('propositionValeur', propositionValeur, 'Proposition de valeur')}
                     onChange={(e) => setPropositionValeur(e.target.value)}
                   ></textarea>
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-4">
-                  <p className="font-medium mb-2">Élément distinctif</p>
+                <div className="bg-[#F9F9F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">Élément distinctif</p>
                   <textarea
                     placeholder="Qu'est-ce qui vous différencie de la concurrence ?"
-                    className="w-full p-2 border border-gray-300 rounded-md h-32"
+                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
                     value={elementDistinctif}
                     onClick={() => handleFieldClick('elementDistinctif', elementDistinctif, 'Élément distinctif')}
                     onChange={(e) => setElementDistinctif(e.target.value)}
                   ></textarea>
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-4">
-                  <p className="font-medium mb-2">Clientèle cible</p>
+                <div className="bg-[#F9F9F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">Clientèle cible</p>
                   <textarea
                     placeholder="Décrivez votre public idéal."
-                    className="w-full p-2 border border-gray-300 rounded-md h-32"
+                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
                     value={clienteleCibleRetranscription}
                     onClick={() => handleFieldClick('clienteleCibleRetranscription', clienteleCibleRetranscription, 'Clientèle cible')}
                     onChange={(e) => setClienteleCibleRetranscription(e.target.value)}
                   ></textarea>
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-4">
-                  <p className="font-medium mb-2">Problème à résoudre</p>
+                <div className="bg-[#F9F9F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">Problème à résoudre</p>
                   <textarea
                     placeholder="Quel problème majeur votre solution résout-elle ?"
-                    className="w-full p-2 border border-gray-300 rounded-md h-32"
+                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
                     value={problemResoudreRetranscription}
                     onClick={() => handleFieldClick('problemResoudreRetranscription', problemResoudreRetranscription, 'Problème à résoudre')}
                     onChange={(e) => setProblemResoudreRetranscription(e.target.value)}
                   ></textarea>
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-4">
-                  <p className="font-medium mb-2">Mon Pourquoi</p>
+                <div className="bg-[#F9F9F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">Mon Pourquoi</p>
                   <textarea
                     placeholder="Décrivez vos motivations profondes pour ce projet."
-                    className="w-full p-2 border border-gray-300 rounded-md h-32"
+                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
                     value={monPourquoiRetranscription}
                     onClick={() => handleFieldClick('monPourquoiRetranscription', monPourquoiRetranscription, 'Mon Pourquoi')}
                     onChange={(e) => setMonPourquoiRetranscription(e.target.value)}
@@ -561,36 +749,287 @@ const Form = () => {
                 </div>
               </div>
             )}
-          </>
-        )}
+          </div>
+        );
 
-        <div className="flex justify-center mt-6">
-          {currentStep > 1 && (
-            <button
-              onClick={() => setCurrentStep(currentStep - 1)}
-              className="btn-secondary"
-            >
-              Précédent
-            </button>
-          )}
-          {currentStep < totalSteps && (
-            <button
-              onClick={handleNext}
-              className="btn-primary ml-4"
-            >
-              Suivant
-            </button>
-          )}
-          {currentStep === totalSteps && (
-            <button
-              onClick={handleSubmit}
-              className="btn-primary ml-4"
-            >
-              Générer mes livrables
-            </button>
-          )}
+      default:
+        return null;
+    }
+  };
+
+     return (
+     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-orange-50">
+             {/* Header */}
+       <div className="container mx-auto px-4 py-4 text-center">
+         <h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+           Questionnaire de projet
+         </h1>
+         <p className="text-gray-600 text-base mb-6">Répondez aux questions suivantes pour générer votre livrable personnalisé</p>
+
+         {/* Progress Bar */}
+         <div className="max-w-4xl mx-auto mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-gray-500">Étape {currentStep} sur {totalSteps}</span>
+            <span className="text-sm font-medium text-gray-500">{Math.round((currentStep / totalSteps) * 100)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div 
+              className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            ></div>
+          </div>
+          <div className="mt-2 text-center">
+            <span className="text-lg font-semibold text-gray-700">{stepTitles[currentStep - 1]}</span>
+          </div>
+        </div>
+
+                 {/* Loading Dialog */}
+         <Dialog open={isLoading} onOpenChange={setIsLoading}>
+           <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+             <DialogHeader>
+               <DialogTitle>
+                 {currentStep === 6 ? 'Soumission des informations' : 'Génération de vos livrables'}
+               </DialogTitle>
+               <DialogDescription>
+                 {currentStep === 6 ? 'Veuillez patienter pendant la soumission de vos informations.' : 'Veuillez patienter pendant la génération de vos livrables.'}
+               </DialogDescription>
+             </DialogHeader>
+            <div className="flex justify-center items-center py-4">
+              <div className="loader">
+                <div className="circle"></div>
+                <div className="circle"></div>
+                <div className="circle"></div>
+                <div className="square"></div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Input Pop-up Dialog */}
+        <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
+          <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full">
+            <DialogHeader>
+              <DialogTitle>{popupTitle}</DialogTitle>
+              <DialogDescription>
+                Modifiez le contenu du champ ci-dessous.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={popupContent}
+              onChange={(e) => setPopupContent(e.target.value)}
+              className="w-full h-40"
+            />
+            <DialogFooter>
+              <Button onClick={handlePopupSave}>Enregistrer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+                 {/* Form Content with Slide Animation */}
+         <div className="max-w-4xl mx-auto">
+           <div className="relative overflow-hidden min-h-[500px]">
+             {isTransitioning ? (
+               <>
+                 {/* Previous content sliding out */}
+                 <div 
+                   className={`absolute inset-0 ${
+                     slideDirection === 'next' ? 'animate-slide-out-left' : 'animate-slide-out-right'
+                   }`}
+                   style={{ willChange: 'transform' }}
+                 >
+                   <div className="p-4 md:p-6 text-left">
+                     {getStepContent(previousStep)}
+                   </div>
+                 </div>
+                 
+                 {/* New content sliding in */}
+                 <div 
+                   className={`absolute inset-0 ${
+                     slideDirection === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+                   }`}
+                   style={{ willChange: 'transform' }}
+                 >
+                   <div className="p-4 md:p-6 text-left">
+                     {getStepContent()}
+                   </div>
+                 </div>
+               </>
+             ) : (
+               <div className="p-4 md:p-6 text-left">
+                 {getStepContent()}
+               </div>
+             )}
+           </div>
+
+                     {/* Navigation Buttons */}
+           <div className="flex justify-between items-center mt-6 px-4">
+             <button
+               onClick={handlePrevious}
+               disabled={currentStep === 1}
+               className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
+                 currentStep === 1
+                   ? 'text-gray-400 cursor-not-allowed'
+                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+               }`}
+             >
+               <ChevronLeft size={18} />
+               <span>Précédent</span>
+             </button>
+
+             {currentStep < totalSteps ? (
+               <button
+                 onClick={handleNext}
+                 className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2 rounded-full font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+               >
+                 <span>Suivant</span>
+                 <ChevronRight size={18} />
+               </button>
+             ) : (
+               <button
+                 onClick={handleSubmit}
+                 className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 rounded-full font-semibold hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+               >
+                 <span>Générer mes livrables</span>
+                 <CheckCircle size={18} />
+               </button>
+             )}
+           </div>
         </div>
       </div>
+
+             {/* CSS for custom loader and slide animations */}
+       <style>{`
+         .loader {
+           position: relative;
+           width: 50px;
+           height: 50px;
+         }
+         
+         .circle {
+           position: absolute;
+           width: 10px;
+           height: 10px;
+           border-radius: 50%;
+           background: linear-gradient(45deg, #f97316, #ef4444);
+           animation: circle-animation 2s infinite ease-in-out;
+         }
+         
+         .circle:nth-child(1) {
+           top: 0;
+           left: 0;
+           animation-delay: 0s;
+         }
+         
+         .circle:nth-child(2) {
+           top: 0;
+           right: 0;
+           animation-delay: 0.5s;
+         }
+         
+         .circle:nth-child(3) {
+           bottom: 0;
+           left: 0;
+           animation-delay: 1s;
+         }
+         
+         .square {
+           position: absolute;
+           bottom: 0;
+           right: 0;
+           width: 10px;
+           height: 10px;
+           background: linear-gradient(45deg, #f97316, #ef4444);
+           animation: square-animation 2s infinite ease-in-out;
+           animation-delay: 1.5s;
+         }
+         
+         .animate-slide-out-left {
+           animation: slide-out-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+           animation-fill-mode: forwards;
+         }
+         
+         .animate-slide-out-right {
+           animation: slide-out-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+           animation-fill-mode: forwards;
+         }
+         
+         .animate-slide-in-left {
+           animation: slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+           animation-fill-mode: forwards;
+         }
+         
+         .animate-slide-in-right {
+           animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+           animation-fill-mode: forwards;
+         }
+         
+         @keyframes slide-out-left {
+           0% {
+             transform: translate3d(0, 0, 0);
+             opacity: 1;
+           }
+           100% {
+             transform: translate3d(-100%, 0, 0);
+             opacity: 0;
+           }
+         }
+         
+         @keyframes slide-out-right {
+           0% {
+             transform: translate3d(0, 0, 0);
+             opacity: 1;
+           }
+           100% {
+             transform: translate3d(100%, 0, 0);
+             opacity: 0;
+           }
+         }
+         
+         @keyframes slide-in-left {
+           0% {
+             transform: translate3d(-100%, 0, 0);
+             opacity: 0;
+           }
+           100% {
+             transform: translate3d(0, 0, 0);
+             opacity: 1;
+           }
+         }
+         
+         @keyframes slide-in-right {
+           0% {
+             transform: translate3d(100%, 0, 0);
+             opacity: 0;
+           }
+           100% {
+             transform: translate3d(0, 0, 0);
+             opacity: 1;
+           }
+         }
+
+         
+         @keyframes circle-animation {
+           0%, 100% {
+             transform: scale(1);
+             opacity: 1;
+           }
+           50% {
+             transform: scale(1.5);
+             opacity: 0.7;
+           }
+         }
+         
+         @keyframes square-animation {
+           0%, 100% {
+             transform: rotate(0deg) scale(1);
+             opacity: 1;
+           }
+           50% {
+             transform: rotate(180deg) scale(1.2);
+             opacity: 0.8;
+           }
+         }
+       `}</style>
     </div>
   );
 };

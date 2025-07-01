@@ -36,6 +36,11 @@ const Sidebar = memo(() => {
       path: "/dashboard",
       icon: <LayoutDashboard size={20} />
     },
+    {
+      name: "Livrables",
+      path: activeProjectId ? `/project-business/${activeProjectId}` : "/warning", // Redirect to project creation if no project
+      icon: <FileText size={20} />
+    },
     // { À re afficher quand les ressources seront faites
     //   name: "Ressources",
     //   path: "/knowledge",
@@ -60,10 +65,10 @@ const Sidebar = memo(() => {
   const getUserDisplayName = () => {
     if (!user) return "";
     
-    // Check if user has a display name in metadata
-    const displayName = user.user_metadata?.display_name;
-    if (displayName && displayName.trim()) {
-      return displayName.trim();
+    // Use first name from metadata (from signup or profile update)
+    const firstName = user.user_metadata?.first_name;
+    if (firstName && firstName.trim()) {
+      return firstName.trim();
     }
     
     // Fallback to username from email (part before @)

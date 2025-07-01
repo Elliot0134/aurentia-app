@@ -1,12 +1,25 @@
 import { useNavigate } from "react-router-dom";
-import { FileText, Plus, Zap, Book } from "lucide-react";
+import { FileText, Plus, Zap, Book, X } from "lucide-react";
 import { useProject } from "@/contexts/ProjectContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   
   // Use Project Context instead of local state
-  const { userProjects, userProjectsLoading } = useProject();
+  const { userProjects, userProjectsLoading, deleteProject } = useProject();
 
   // Format projects for display
   const formattedProjects = userProjects.map(project => ({
@@ -15,6 +28,15 @@ const Dashboard = () => {
     status: "En cours", // You can enhance this with actual status from project data
     createdAt: new Date(project.created_at).toLocaleDateString('fr-FR')
   }));
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+    
+    const success = await deleteProject(projectToDelete);
+    if (success) {
+      setProjectToDelete(null);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
@@ -62,10 +84,12 @@ const Dashboard = () => {
                 {formattedProjects.map(project => (
                   <div
                     key={project.id}
-                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition cursor-pointer"
-                    onClick={() => navigate(`/project-business/${project.id}`)}
+                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition"
                   >
-                    <div>
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => navigate(`/project-business/${project.id}`)}
+                    >
                       <h3 className="font-medium text-sm">{project.title}</h3>
                     </div>
                     <div className="flex items-center">
@@ -76,9 +100,44 @@ const Dashboard = () => {
                       }`}>
                         {project.status}
                       </span>
-                      <button className="ml-3 p-1.5 text-gray-500 hover:text-gray-700">
+                      <button 
+                        className="ml-3 p-1.5 text-gray-500 hover:text-gray-700"
+                        onClick={() => navigate(`/project-business/${project.id}`)}
+                      >
                         <FileText size={16} />
                       </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button 
+                            className="ml-2 p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProjectToDelete(project.id);
+                            }}
+                          >
+                            <X size={16} />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action ne peut pas être annulée. Cela supprimera définitivement le projet "{project.title}" et toutes ses données associées.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>
+                              Non
+                            </AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={handleDeleteProject}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Oui
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}

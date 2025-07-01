@@ -278,7 +278,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
               <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
               <p className="mt-4">Aucune donnée de ressource disponible pour ce projet.</p>
               <button
-                className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+                className="sticky top-2 right-2 text-gray-600 hover:text-gray-900 z-10 ml-auto self-start"
                 onClick={handlePopupClose}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -437,10 +437,10 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
             )}
 
             <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+              className="sticky top-2 right-2 text-gray-600 hover:text-gray-900 z-10 ml-auto self-start"
               onClick={handlePopupClose}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

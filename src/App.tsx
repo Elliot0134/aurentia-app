@@ -13,7 +13,6 @@ import Automatisations from "./pages/Automatisations";
 import Knowledge from "./pages/Knowledge";
 import Project from "./pages/Project";
 import NotFound from "./pages/NotFound";
-import Form from "./pages/Form";
 import FormBusinessIdea from "./pages/FormBusinessIdea";
 import ProjectBusiness from "./pages/ProjectBusiness";
 import WarningPage from "./pages/WarningPage";
@@ -21,7 +20,6 @@ import Outils from "./pages/Outils";
 import ChatbotPage from "./pages/ChatbotPage";
 import ProtectedLayout from "./components/ProtectedLayout";
 import { ProjectProvider } from "./contexts/ProjectContext";
-
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -149,7 +147,6 @@ const App = () => {
                     <Route path="/project-business/:projectId" element={<ProjectBusiness />} />
                     <Route path="/project-business" element={<ProjectBusiness />} />
                     <Route path="/warning" element={<WarningPage />} />
-                    <Route path="/form" element={<Form />} />
                     <Route path="/form-business-idea" element={<FormBusinessIdea />} />
                     <Route path="/outils" element={<Outils />} />
                     <Route path="/chatbot/:projectId" element={<ChatbotPage />} />

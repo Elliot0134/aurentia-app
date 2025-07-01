@@ -12,6 +12,7 @@ import BusinessModelLivrable from "@/components/deliverables/BusinessModelLivrab
 import PropositionDeValeurLivrable from "@/components/deliverables/PropositionDeValeurLivrable";
 import AnalyseDeMarcheLivrable from "@/components/deliverables/AnalyseDeMarcheLivrable"; // Import the new deliverable
 import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRessourcesLivrable";
+import VisionMissionValeursLivrable from "@/components/deliverables/VisionMissionValeursLivrable"; // Import the new deliverable
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 
 const ProjectBusiness = () => {
@@ -116,6 +117,11 @@ const ProjectBusiness = () => {
             </div>
             <div className="col-span-12 md:col-span-1 md:h-full">
               <PitchLivrable />
+            </div>
+          </div>
+          <div className="col-span-12 md:grid md:grid-cols-2 md:gap-5 mt-4 md:mt-0">
+            <div className="col-span-12 md:col-span-1 md:h-full">
+              <VisionMissionValeursLivrable projectId={projectId} />
             </div>
           </div>
         </div>

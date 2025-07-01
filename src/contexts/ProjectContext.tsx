@@ -17,6 +17,7 @@ interface ProjectContextType {
   // Functions
   setCurrentProjectId: (projectId: string | null) => void;
   loadUserProjects: () => Promise<void>;
+  deleteProject: (projectId: string) => Promise<boolean>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -173,6 +174,74 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     };
   }, []);
 
+  const deleteProject = async (projectId: string): Promise<boolean> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Erreur",
+          description: "Vous devez être connecté pour supprimer un projet.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Delete from all related tables
+      const tablesToDelete = [
+        'project_summary',
+        'persona_express_b2c',
+        'persona_express_b2b', 
+        'persona_express_organismes',
+        'mini_swot',
+        'success_story',
+        'pitch',
+        'concurrence',
+        'marche',
+        'proposition_valeur',
+        'business_model',
+        'ressources_requises'
+      ];
+
+      // Delete from each table
+      for (const table of tablesToDelete) {
+        try {
+          await supabase
+            .from(table)
+            .delete()
+            .eq('project_id', projectId)
+            .eq('user_id', session.user.id);
+        } catch (error) {
+          console.log(`Erreur lors de la suppression de ${table}:`, error);
+          // Continue deleting from other tables even if one fails
+        }
+      }
+
+      // If we're deleting the current project, clear it
+      if (currentProjectId === projectId) {
+        setCurrentProjectId(null);
+      }
+
+      // Reload the projects list
+      await loadUserProjects();
+
+      toast({
+        title: "Succès",
+        description: "Le projet a été supprimé avec succès.",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la suppression du projet:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le projet. Veuillez réessayer.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const contextValue: ProjectContextType = {
     currentProjectId,
     userProjects,
@@ -181,6 +250,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     deliverablesLoading,
     setCurrentProjectId,
     loadUserProjects,
+    deleteProject,
   };
 
   return (

@@ -44,12 +44,12 @@ const Profile = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         // In a real application, you would fetch the full user profile from your database
-        // Fetch display_name from user_metadata
-        const displayName = session.user.user_metadata?.display_name || "";
+        // Fetch first_name from user_metadata
+        const firstName = session.user.user_metadata?.first_name || "";
 
         const userData = {
           email: session.user.email || "",
-          full_name: displayName, // Use display_name for full_name
+          full_name: firstName, // Use first_name for full_name
           id: session.user.id,
           created_at: session.user.created_at,
           updated_at: session.user.updated_at,
@@ -97,7 +97,7 @@ const Profile = () => {
       // Update user metadata in Supabase Auth
       const { error } = await supabase.auth.updateUser({
         data: {
-          display_name: editableFields.full_name,
+          first_name: editableFields.full_name,
           company: editableFields.company,
           phone: editableFields.phone,
           location: editableFields.location
@@ -187,12 +187,12 @@ const Profile = () => {
               </div>
               
               <div>
-                <Label className="text-sm font-medium text-gray-600">Nom d'affichage</Label>
+                <Label className="text-sm font-medium text-gray-600">Prénom</Label>
                 {isEditing ? (
                   <Input
                     value={editableFields.full_name}
                     onChange={(e) => handleFieldChange('full_name', e.target.value)}
-                    placeholder="Entrez votre nom d'affichage"
+                    placeholder="Entrez votre prénom"
                     className="mt-1"
                   />
                 ) : (
