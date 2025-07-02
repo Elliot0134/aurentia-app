@@ -13,7 +13,10 @@ import PropositionDeValeurLivrable from "@/components/deliverables/PropositionDe
 import AnalyseDeMarcheLivrable from "@/components/deliverables/AnalyseDeMarcheLivrable"; // Import the new deliverable
 import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRessourcesLivrable";
 import VisionMissionValeursLivrable from "@/components/deliverables/VisionMissionValeursLivrable"; // Import the new deliverable
+import BlurredDeliverableWrapper from "@/components/deliverables/BlurredDeliverableWrapper"; // Import the new wrapper
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import Dialog components
+import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
@@ -21,10 +24,11 @@ const ProjectBusiness = () => {
   const [selectedPersonaExpress, setSelectedPersonaExpress] = useState<'Particulier' | 'Entreprise' | 'Organismes'>('Particulier');
   const [loading, setLoading] = useState(true); // Set loading to true initially
   const [project, setProject] = useState<{ nom_projet?: string; description_projet?: string } | null>(null); // State for project data
+  const [projectStatus, setProjectStatus] = useState<string | null>(null); // State for project status
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [popupContent, setPopupContent] = useState<{ title: string; content: React.ReactNode; buttonColor?: string } | null>(null);
+  const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
 
-  const openPopup = (title: string, content: React.ReactNode, buttonColor?: string) => {
+  const openPopup = (title: React.ReactNode, content: React.ReactNode, buttonColor?: string) => {
     setPopupContent({ title, content, buttonColor });
     setIsPopupOpen(true);
   };
@@ -32,6 +36,74 @@ const ProjectBusiness = () => {
   const closePopup = () => {
     setIsPopupOpen(false);
     setPopupContent(null);
+  };
+
+  const handleUnlockClick = () => {
+    const commonDeliverables = [
+      "Analyse concurrentielle",
+      <>Analyse du marché <span className="text-gray-500 italic">(PESTEL)</span></>,
+      "Proposition de valeur",
+      "Business model",
+      <>Analyse des ressources requises <span className="text-gray-500 italic">(Impréssionant)</span></>,
+    ];
+
+    const niveau1Deliverables = commonDeliverables;
+    const niveau2Deliverables = commonDeliverables;
+
+    openPopup(
+      <>
+        Accédez à vos{" "}
+        <span className="bg-clip-text text-transparent bg-gradient-primary">
+          documents clés
+        </span>{" "}
+        et{" "}
+        <span className="bg-clip-text text-transparent bg-gradient-primary">
+          Aurentia AI
+        </span>
+      </>,
+      <div className="flex flex-col md:flex-row gap-8 justify-center items-stretch">
+        <PlanCard
+          title="Niveau 1"
+          price="2,90€"
+          oldPrice="12,90€"
+          deliverables={niveau1Deliverables}
+          buttonText="J'en profite !"
+          pdfSection={
+            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold">
+              PDF de votre projet
+            </div>
+          }
+          creditsSection={
+            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
+              <span className="font-bold">50 crédits Aurentia IA</span> <br />
+              <span className="text-sm text-gray-600">(1 crédit = un message avec l'agent Aurentia IA connecté à TOUT votre projet)</span>
+            </div>
+          }
+          className="flex-1"
+          onButtonClick={() => window.open('https://buy.stripe.com/6oU9AUgDs1mgbqhbif0gw04', '_blank')}
+        />
+        <PlanCard
+          title="Niveau 2"
+          price="6,90€"
+          oldPrice="24,90€"
+          deliverables={niveau2Deliverables}
+          buttonText="J'en profite encore + !"
+          onButtonClick={() => window.open('https://buy.stripe.com/8x2bJ2gDs8OIgKB8630gw05', '_blank')}
+          pdfSection={
+            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold">
+              PDF de votre projet
+            </div>
+          }
+          creditsSection={
+            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
+              <span className="font-bold">200 crédits Aurentia IA</span> <br />
+              <span className="text-sm text-gray-600">(1 crédit = un message avec l'agent Aurentia IA connecté à TOUT votre projet)</span>
+            </div>
+          }
+          className="flex-1"
+        />
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -45,7 +117,7 @@ const ProjectBusiness = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('project_summary')
-        .select('nom_projet, description_synthetique') // Select the project name and description
+        .select('nom_projet, description_synthetique, statut_project') // Select the project name, description, and status
         .eq('project_id', projectId)
         .single();
 
@@ -57,11 +129,13 @@ const ProjectBusiness = () => {
           variant: "destructive",
         });
         setProject(null);
+        setProjectStatus(null);
       } else {
         setProject({
           nom_projet: data?.nom_projet || "Projet sans nom",
           description_projet: data?.description_synthetique || "Aucune description",
         });
+        setProjectStatus(data?.statut_project || null);
       }
       setLoading(false);
     };
@@ -127,22 +201,28 @@ const ProjectBusiness = () => {
         </div>
 
         {/* Level 2 Deliverables */}
-        <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
-          <div className="col-span-12 text-center">
-            <button className="btn-primary">Débloquer les prochains livrables</button>
+        {projectStatus === 'free' && (
+          <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
+            <div className="col-span-12 text-center">
+              <button className="btn-primary" onClick={handleUnlockClick}>Débloquer les prochains livrables</button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Analyse de la Concurrence and Analyse de Marché Deliverables */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mt-8 items-stretch">
           {/* Analyse de la Concurrence Deliverable */}
           <div className="md:h-full">
-            <AnalyseDeLaConcurrenceLivrable />
+            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <AnalyseDeLaConcurrenceLivrable />
+            </BlurredDeliverableWrapper>
           </div>
 
           {/* Analyse de Marché Deliverable */}
           <div className="md:h-full">
-            <AnalyseDeMarcheLivrable projectId={projectId} />
+            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <AnalyseDeMarcheLivrable projectId={projectId} />
+            </BlurredDeliverableWrapper>
           </div>
         </div>
 
@@ -150,28 +230,48 @@ const ProjectBusiness = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mt-8">
           {/* Proposition de Valeur Deliverable */}
           <div>
-            <PropositionDeValeurLivrable />
+            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <PropositionDeValeurLivrable />
+            </BlurredDeliverableWrapper>
           </div>
 
           {/* Business Model Deliverable */}
           <div>
-            <BusinessModelLivrable
-              title="Business Model"
-              description="Modèle économique structuré de votre entreprise"
-              textColor="#57a68b"
-              buttonColor="#57a68b"
-            />
+            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <BusinessModelLivrable
+                title="Business Model"
+                description="Modèle économique structuré de votre entreprise"
+                textColor="#57a68b"
+                buttonColor="#57a68b"
+              />
+            </BlurredDeliverableWrapper>
           </div>
         </div>
 
         {/* Level 4 Deliverables */}
         <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
           <div className="col-span-12">
-            <AnalyseDesRessourcesLivrable />
+            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <AnalyseDesRessourcesLivrable />
+            </BlurredDeliverableWrapper>
           </div>
         </div>
       </div>
 
+      {/* Popup Dialog */}
+      <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
+        <DialogContent className="w-[90vw] md:w-[70vw] max-w-none overflow-y-auto max-h-[90vh] md:h-[90vh] rounded-lg md:flex md:flex-col md:justify-center md:items-center"> {/* Set width to 90% on mobile, 70% on desktop, remove max-width, add scrollability, and rounded corners */}
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-[#2D2D2D]">{popupContent?.title}</DialogTitle>
+            <DialogDescription>
+              <p className="text-center text-base mb-4">
+                <span className="font-bold text-[#2D2D2D]">{project.nom_projet || "Votre projet"}</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
+              </p>
+              {popupContent?.content}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

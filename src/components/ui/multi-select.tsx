@@ -15,10 +15,11 @@ interface MultiSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  trigger?: React.ReactNode; // New prop for custom trigger
 }
 
 export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
-  ({ options, value, onChange, placeholder = "Sélectionner...", disabled = false, className }, ref) => {
+  ({ options, value, onChange, placeholder = "Sélectionner...", disabled = false, className, trigger }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -54,60 +55,38 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         ref={containerRef}
         className={cn("relative w-full", className)}
       >
-        <div
-          onClick={() => !disabled && setIsOpen(!isOpen)}
-          className={cn(
-            "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
-            "cursor-pointer transition-colors",
-            disabled ? "cursor-not-allowed opacity-50" : "hover:bg-accent hover:text-accent-foreground",
-            isOpen && "ring-2 ring-ring ring-offset-2",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-            "disabled:cursor-not-allowed disabled:opacity-50"
-          )}
-        >
-          <div className="flex flex-1 items-center overflow-hidden">
-            {selectedOptions.length === 0 ? (
-              <span className="text-muted-foreground truncate">{placeholder}</span>
-            ) : selectedOptions.length === 1 ? (
-              <span className="truncate">{selectedOptions[0].label}</span>
-            ) : (
-              <span className="truncate">{selectedOptions.length} livrables sélectionnés</span>
-            )}
+        {trigger ? (
+          <div onClick={() => !disabled && setIsOpen(!isOpen)}>
+            {trigger}
           </div>
-          <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform", isOpen && "rotate-180")} />
-        </div>
+        ) : (
+          <div
+            onClick={() => !disabled && setIsOpen(!isOpen)}
+            className={cn(
+              "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+              "cursor-pointer transition-colors",
+              disabled ? "cursor-not-allowed opacity-50" : "hover:bg-accent hover:text-accent-foreground",
+              isOpen && "ring-2 ring-ring ring-offset-2",
+              "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+              "disabled:cursor-not-allowed disabled:opacity-50"
+            )}
+          >
+            <div className="flex flex-1 items-center overflow-hidden">
+              {selectedOptions.length === 0 ? (
+                <span className="text-muted-foreground truncate">{placeholder}</span>
+              ) : selectedOptions.length === 1 ? (
+                <span className="truncate">{selectedOptions[0].label}</span>
+              ) : (
+                <span className="truncate">{selectedOptions.length} livrables sélectionnés</span>
+              )}
+            </div>
+            <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform", isOpen && "rotate-180")} />
+          </div>
+        )}
 
         {isOpen && (
-          <div className="absolute bottom-full z-50 mb-1 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
-            <div className="max-h-60 overflow-y-auto">
-              {/* Selected items section */}
-              {selectedOptions.length > 0 && (
-                <div className="p-2 border-b border-border mb-1">
-                  <div className="text-xs text-muted-foreground mb-2">Livrables sélectionnés:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className="flex items-center gap-1 rounded-sm bg-secondary px-2 py-1 text-xs"
-                      >
-                        <span>{option.label}</span>
-                        {!disabled && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemove(option.value, e);
-                            }}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
+          <div className="absolute bottom-full z-50 mb-1 left-0 w-max rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+            <div>
               {/* Available options */}
               {options.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
@@ -129,11 +108,8 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                       <div className="flex h-4 w-4 items-center justify-center mr-2">
                         {isSelected && <Check className="h-4 w-4" />}
                       </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{option.label}</div>
-                        {option.description && (
-                          <div className="text-xs text-muted-foreground">{option.description}</div>
-                        )}
+                      <div className="flex-1 text-left whitespace-nowrap">
+                        <div>{option.label}</div>
                       </div>
                     </div>
                   );
@@ -147,4 +123,4 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
   }
 );
 
-MultiSelect.displayName = "MultiSelect"; 
+MultiSelect.displayName = "MultiSelect";

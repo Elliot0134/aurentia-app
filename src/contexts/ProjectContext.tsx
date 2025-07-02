@@ -36,18 +36,16 @@ interface ProjectProviderProps {
 
 // Configuration des livrables basée sur la DB
 const DELIVERABLES_CONFIG = [
-  { name: 'Retranscription du concept', table: 'project_summary' },
-  { name: 'Persona Express B2C', table: 'persona_express_b2c' },
-  { name: 'Persona Express B2B', table: 'persona_express_b2b' },
-  { name: 'Persona Express Organismes', table: 'persona_express_organismes' },
-  { name: 'Mini SWOT', table: 'mini_swot' },
-  { name: 'Success Story', table: 'success_story' },
+  { name: 'Cible B2C', table: 'persona_express_b2c' },
+  { name: 'Cible B2B', table: 'persona_express_b2b' },
+  { name: 'Cible Organismes', table: 'persona_express_organismes' },
   { name: 'Pitch', table: 'pitch' },
-  { name: 'Analyse de la concurrence', table: 'concurrence' },
-  { name: 'Analyse de marché', table: 'marche' },
+  { name: 'Concurrence', table: 'concurrence' },
+  { name: 'Marché', table: 'marche' },
   { name: 'Proposition de valeur', table: 'proposition_valeur' },
   { name: 'Business Model', table: 'business_model' },
-  { name: 'Analyse des ressources', table: 'ressources_requises' }
+  { name: 'Analyse des ressources', table: 'ressources_requises' },
+  { name: 'Vision/Mission', table: 'vision_mission' }
 ];
 
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {
@@ -258,4 +256,4 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       {children}
     </ProjectContext.Provider>
   );
-}; 
+};

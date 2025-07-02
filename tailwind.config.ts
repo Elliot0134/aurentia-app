@@ -24,6 +24,9 @@ export default {
 			}
 		},
 		extend: {
+			padding: {
+				'safe': 'env(safe-area-inset-bottom)',
+			},
 			width: {
 				'9/10': '90%',
 			},
@@ -105,13 +108,18 @@ export default {
 				'slide-up': {
 					from: { transform: 'translateY(10px)', opacity: '0' },
 					to: { transform: 'translateY(0)', opacity: '1' }
+				},
+				spin: {
+					from: { transform: 'rotate(0deg)' },
+					to: { transform: 'rotate(360deg)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.3s ease-out',
-				'slide-up': 'slide-up 0.3s ease-out'
+				'slide-up': 'slide-up 0.3s ease-out',
+				spin: 'spin 1s linear infinite' // Added spin animation
 			},
 			backgroundImage: {
 				'gradient-primary': 'linear-gradient(90deg, #EF4A6D, #F67B47)',

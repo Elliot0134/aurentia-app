@@ -11,6 +11,7 @@ import {
   SuggestedPrompts, 
   ChatDialogs 
 } from '@/components/chat';
+import { Sparkles } from 'lucide-react';
 
 const ChatbotPage = () => {
   const { projectId } = useParams();
@@ -18,6 +19,7 @@ const ChatbotPage = () => {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [tempConversationName, setTempConversationName] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReformulating, setIsReformulating] = useState(false); // New state for reformulation loading
 
   // State for communication style and search mode
   const [communicationStyle, setCommunicationStyle] = useState('normal');
@@ -25,7 +27,7 @@ const ChatbotPage = () => {
   const [selectedSearchModes, setSelectedSearchModes] = useState<string[]>([]);
 
   // Hook pour gérer le projet et les livrables
-  const { deliverableNames, deliverablesLoading } = useProject();
+  const { deliverableNames, deliverablesLoading, userProjects, currentProjectId } = useProject();
   
   // Hook pour gérer la conversation
   const {
@@ -46,6 +48,10 @@ const ChatbotPage = () => {
   } = useChatConversation(projectId);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Get project name
+  const currentProject = userProjects.find(p => p.project_id === currentProjectId);
+  const projectName = currentProject ? currentProject.nom_projet : "votre projet";
 
   // Créer les options pour le multiselect des livrables
   const deliverableOptions = deliverableNames.map(name => ({
@@ -96,8 +102,87 @@ const ChatbotPage = () => {
     }
   };
 
+  const handleReformQuestion = async (message: string) => {
+    if (message.trim() === '' || isReformulating) return;
+
+    setIsReformulating(true);
+    try {
+      const response = await fetch('https://n8n.eec-technologies.fr/webhook/reform-question', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          project_id: currentProjectId,
+          message: message,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const rawResponseData = await response.json(); // Parse the outer JSON
+      console.log("Webhook raw response data:", rawResponseData); // Log the full raw response for debugging
+
+      let reformulatedText = '';
+      let errorMessage = "Réponse invalide ou vide.";
+
+      try {
+        // Check if rawResponseData is an array and has at least one element
+        if (Array.isArray(rawResponseData) && rawResponseData.length > 0) {
+          const firstObject = rawResponseData[0];
+          // The actual content is in firstObject.output, which is a string containing JSON
+          if (firstObject.output && typeof firstObject.output === 'string') {
+            // Remove markdown code block syntax
+            const jsonString = firstObject.output.replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+            console.log("Cleaned JSON string:", jsonString);
+
+            const innerData = JSON.parse(jsonString); // Parse the inner JSON string
+
+            if (innerData && innerData.output && typeof innerData.output.response === 'string') {
+              reformulatedText = innerData.output.response;
+              // Replace \n with actual newlines for display
+              reformulatedText = reformulatedText.replace(/\\n/g, '\n').trim();
+              if (reformulatedText === '') {
+                errorMessage = "Le champ 'response' du webhook est vide après formatage.";
+              }
+            } else {
+              errorMessage = "Le champ 'output.response' est manquant ou n'est pas une chaîne de caractères dans la réponse interne.";
+            }
+          } else {
+            errorMessage = "Le champ 'output' du premier élément est manquant ou n'est pas une chaîne.";
+          }
+        } else {
+          errorMessage = "La structure de la réponse du webhook est incorrecte (pas un tableau ou tableau vide).";
+        }
+      } catch (parseError) {
+        console.error("Erreur lors du parsing de la chaîne JSON interne:", parseError);
+        errorMessage = `Erreur de parsing JSON interne: ${parseError.message}`;
+      }
+
+      console.log("Reformulated text after processing:", reformulatedText); // Log processed text
+
+      if (reformulatedText !== '') {
+        setInputMessage(reformulatedText);
+        toast.success("Question reformulée avec succès !");
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      } else {
+        console.error("La reformulation de la question a échoué. Détails:", errorMessage, "Full response:", rawResponseData); // Corrected typo here
+        toast.error(`La reformulation de la question a échoué. ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la reformulation de la question:", error);
+      toast.error("Erreur lors de la reformulation de la question. Veuillez vérifier la console pour plus de détails.");
+    } finally {
+      setIsReformulating(false);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isSubmitting && !isLoading) {
+    if (e.key === 'Enter' && !e.shiftKey && !isSubmitting && !isLoading && !isReformulating) {
       e.preventDefault();
       e.stopPropagation();
       handleSendMessage();
@@ -166,9 +251,9 @@ const ChatbotPage = () => {
   const messages = currentConversation?.messages || [];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F6F1] overflow-x-hidden">
+    <div className="flex flex-col h-screen bg-[#F8F6F1] overflow-hidden overflow-x-hidden">
       {/* Interface de chat directe - comme ChatGPT */}
-      <div className="flex flex-col flex-1 w-full">
+      <div className="flex flex-col flex-1 w-full md:w-7/10 mx-auto h-full overflow-hidden relative">
         {/* Header avec select de conversation */}
         <ChatHeader
           currentConversation={currentConversation}
@@ -184,66 +269,91 @@ const ChatbotPage = () => {
         {/* Messages et interface de chat */}
         {currentConversation && messages.length > 0 ? (
           // Messages existants
-          <>
-            {/* Messages */}
-            <MessageList
-              messages={messages}
-              isLoading={isLoading}
-              streamingMessageId={streamingMessageId}
-              streamingText={streamingText}
-              onCopyMessage={copyMessage}
-              onRegenerateResponse={handleRegenerateResponse}
-            />
+          <div className="max-w-3xl w-full mx-auto flex flex-col flex-1 overflow-hidden">
+            {/* Messages avec scroll */}
+            <div className="flex-1 overflow-y-auto scrollbar-transparent pb-[200px] md:pb-[120px]">
+              <MessageList
+                messages={messages}
+                isLoading={isLoading}
+                streamingMessageId={streamingMessageId}
+                streamingText={streamingText}
+                onCopyMessage={copyMessage}
+                onRegenerateResponse={handleRegenerateResponse}
+              />
+            </div>
             
-            {/* Input area pour conversation existante */}
-            <ChatInput
-              inputMessage={inputMessage}
-              placeholder="Continuez la conversation avec Aurentia..."
-              isLoading={isLoading}
-              isSubmitting={isSubmitting}
-              communicationStyle={communicationStyle}
-              selectedDeliverables={selectedDeliverables}
-              selectedSearchModes={selectedSearchModes}
-              deliverableOptions={deliverableOptions}
-              searchModeOptions={searchModeOptions}
-              deliverableNames={deliverableNames}
-              onInputChange={handleInputChange}
-              onKeyPress={handleKeyPress}
-              onSendMessage={handleSendMessage}
-              onCommunicationStyleChange={setCommunicationStyle}
-              onSelectedDeliverablesChange={setSelectedDeliverables}
-              onSelectedSearchModesChange={setSelectedSearchModes}
-            />
-          </>
+            {/* Input area fixe pour conversation existante */}
+            <div className="fixed md:absolute bottom-[80px] md:bottom-[10px] left-5 right-5 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+              <div className="max-w-3xl w-full mx-auto">
+                <ChatInput
+                  inputMessage={inputMessage}
+                  placeholder="Continuez la conversation avec Aurentia..."
+                  isLoading={isLoading || isReformulating} // Disable input during reformulation
+                  isSubmitting={isSubmitting}
+                  communicationStyle={communicationStyle}
+                  selectedDeliverables={selectedDeliverables}
+                  selectedSearchModes={selectedSearchModes}
+                  deliverableOptions={deliverableOptions}
+                  searchModeOptions={searchModeOptions}
+                  deliverableNames={deliverableNames}
+                  onInputChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  onSendMessage={handleSendMessage}
+                  onCommunicationStyleChange={setCommunicationStyle}
+                  onSelectedDeliverablesChange={setSelectedDeliverables}
+                  onSelectedSearchModesChange={setSelectedSearchModes}
+                  onReformQuestion={handleReformQuestion}
+                  projectId={currentProjectId || ''} // Pass currentProjectId
+                />
+              </div>
+            </div>
+          </div>
         ) : (
           // Interface de démarrage de conversation
-          <div className="flex flex-col items-center justify-center flex-1 px-3 sm:px-4 py-6 sm:py-8 min-h-0">
-            <div className="max-w-5xl w-full text-center space-y-6 sm:space-y-8">
-              {/* Suggested prompts */}
-              <SuggestedPrompts
-                prompts={suggestedPrompts}
-                onPromptSelect={handleSuggestedPrompt}
-              />
-              
-              {/* Input design */}
-              <ChatInput
-                inputMessage={inputMessage}
-                placeholder="Posez votre question à Aurentia..."
-                isLoading={isLoading}
-                isSubmitting={isSubmitting}
-                communicationStyle={communicationStyle}
-                selectedDeliverables={selectedDeliverables}
-                selectedSearchModes={selectedSearchModes}
-                deliverableOptions={deliverableOptions}
-                searchModeOptions={searchModeOptions}
-                deliverableNames={deliverableNames}
-                onInputChange={handleInputChange}
-                onKeyPress={handleKeyPress}
-                onSendMessage={handleSendMessage}
-                onCommunicationStyleChange={setCommunicationStyle}
-                onSelectedDeliverablesChange={setSelectedDeliverables}
-                onSelectedSearchModesChange={setSelectedSearchModes}
-              />
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto scrollbar-transparent flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-8 pb-[200px] md:pb-[120px]">
+              {/* AI Icon and Welcome Message */}
+              <div className="flex flex-col items-center mb-8">
+                <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4">
+                  <Sparkles className="w-12 h-12 text-white" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  Bonjour, une question pour {projectName} ?
+                </h2>
+              </div>
+              <div className="max-w-3xl w-full text-center space-y-6 sm:space-y-8">
+                {/* Suggested prompts */}
+                <SuggestedPrompts
+                  prompts={suggestedPrompts}
+                  onPromptSelect={handleSuggestedPrompt}
+                />
+              </div>
+            </div>
+            
+            {/* Input area fixe */}
+            <div className="fixed md:absolute bottom-[30px] md:bottom-[10px] left-0 right-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+              <div className="max-w-3xl w-full mx-auto">
+                <ChatInput
+                  inputMessage={inputMessage}
+                  placeholder="Posez votre question à Aurentia..."
+                  isLoading={isLoading || isReformulating} // Disable input during reformulation
+                  isSubmitting={isSubmitting}
+                  communicationStyle={communicationStyle}
+                  selectedDeliverables={selectedDeliverables}
+                  selectedSearchModes={selectedSearchModes}
+                  deliverableOptions={deliverableOptions}
+                  searchModeOptions={searchModeOptions}
+                  deliverableNames={deliverableNames}
+                  onInputChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  onSendMessage={handleSendMessage}
+                  onCommunicationStyleChange={setCommunicationStyle}
+                  onSelectedDeliverablesChange={setSelectedDeliverables}
+                  onSelectedSearchModesChange={setSelectedSearchModes}
+                  onReformQuestion={handleReformQuestion}
+                  projectId={currentProjectId || ''} // Pass currentProjectId
+                />
+              </div>
             </div>
           </div>
         )}

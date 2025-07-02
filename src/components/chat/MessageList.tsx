@@ -35,14 +35,13 @@ export const MessageList: React.FC<MessageListProps> = ({
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-6 sm:space-y-8 w-full">
+    <div className="mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 space-y-6 sm:space-y-8 w-full">
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`flex max-w-[95%] sm:max-w-full ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2 sm:space-x-3`}>
+            <div className={`flex ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2 sm:space-x-3`}>
               <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
                 message.sender === 'user'
                   ? 'bg-gray-700 ml-2 sm:ml-3'
@@ -58,8 +57,8 @@ export const MessageList: React.FC<MessageListProps> = ({
                 message.sender === 'user'
                   ? 'bg-[#f0efe6] text-gray-900'
                   : ''
-              } rounded-2xl px-3 py-2 sm:px-4 sm:py-3 markdown-content w-full overflow-hidden`}>
-                <div className="prose prose-sm sm:prose max-w-none break-words overflow-wrap-anywhere">
+              } rounded-2xl px-3 py-2 sm:px-4 sm:py-3 markdown-content w-full overflow-hidden max-w-[calc(100%-36px)]`}>
+                <div className="prose prose-base sm:prose max-w-none break-words overflow-wrap-anywhere [&>*]:text-base [&>*]:sm:text-base">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}
@@ -114,7 +113,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-sm text-gray-500">Aurentia réfléchit...</span>
+                  <span className="text-base sm:text-sm text-gray-500">Aurentia réfléchit...</span>
                 </div>
               </div>
             </div>
@@ -122,7 +121,6 @@ export const MessageList: React.FC<MessageListProps> = ({
         )}
 
         <div ref={messagesEndRef} />
-      </div>
     </div>
   );
-}; 
+};

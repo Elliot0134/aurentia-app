@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const useAutosizeTextArea = (textAreaRef: React.RefObject<HTMLTextAreaElement>, value: string) => {
+  useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = '0px'; // Reset height to recalculate
+      const scrollHeight = textAreaRef.current.scrollHeight;
+      textAreaRef.current.style.height = scrollHeight + 'px';
+    }
+  }, [textAreaRef, value]);
+};
 
 const Form = () => {
   const navigate = useNavigate();
@@ -138,6 +148,24 @@ const Form = () => {
   // State for webhook response and loading
   const [isLoading, setIsLoading] = useState(false);
   const [projectID, setProjectID] = useState('');
+
+  // Refs for autosizing textareas in step 8
+  const descriptionSynthetiqueRef = useRef<HTMLTextAreaElement>(null);
+  const produitServiceRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
+  const propositionValeurRef = useRef<HTMLTextAreaElement>(null);
+  const elementDistinctifRef = useRef<HTMLTextAreaElement>(null);
+  const clienteleCibleRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
+  const problemResoudreRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
+  const monPourquoiRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  // Apply autosize hook to each textarea
+  useAutosizeTextArea(descriptionSynthetiqueRef, descriptionSynthetique);
+  useAutosizeTextArea(produitServiceRetranscriptionRef, produitServiceRetranscription);
+  useAutosizeTextArea(propositionValeurRef, propositionValeur);
+  useAutosizeTextArea(elementDistinctifRef, elementDistinctif);
+  useAutosizeTextArea(clienteleCibleRetranscriptionRef, clienteleCibleRetranscription);
+  useAutosizeTextArea(problemResoudreRetranscriptionRef, problemResoudreRetranscription);
+  useAutosizeTextArea(monPourquoiRetranscriptionRef, monPourquoiRetranscription);
 
   const handleNext = async () => {
     if (currentStep === 7) {
@@ -340,18 +368,17 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Commençons par les bases</h2>
-              <p className="text-lg text-gray-600">Parlez-nous de votre projet</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Commençons par les bases</h2>
             </div>
             
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Quel est le nom de votre projet ? ✨
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  ✨ Quel est le nom de votre projet ?
                 </label>
                 <input
                   type="text"
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="Tapez le nom de votre projet..."
                   value={projectName}
                   onClick={() => handleFieldClick('projectName', projectName, 'Nom du projet')}
@@ -360,12 +387,12 @@ const Form = () => {
               </div>
 
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Décrivez votre projet en une phrase 💡
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  💡 Décrivez votre projet en une phrase
                 </label>
                 <input
                   type="text"
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                   placeholder="Formulez votre concept initial de manière claire et concise..."
                   value={projectIdeaSentence}
                   onClick={() => handleFieldClick('projectIdeaSentence', projectIdeaSentence, 'Décrivez votre projet en une phrase')}
@@ -380,17 +407,16 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Vos produits et services</h2>
-              <p className="text-lg text-gray-600">Que proposez-vous concrètement ?</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Vos produits et services</h2>
             </div>
             
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Quels produits/services souhaitez-vous proposer ? 🛍️
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  🛍️ Quels produits/services souhaitez-vous proposer ?
                 </label>
                 <textarea
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors h-24 resize-none"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Notez sous forme de liste les produits ou services que vous allez proposer..."
                   value={productsServices}
                   onClick={() => handleFieldClick('productsServices', productsServices, 'Produits / Services')}
@@ -399,11 +425,11 @@ const Form = () => {
               </div>
 
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  À quel problème répond votre projet ? 🎯
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  🎯 À quel problème répond votre projet ?
                 </label>
                 <textarea
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors h-24 resize-none"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Identifiez le besoin auquel votre solution répond concrètement..."
                   value={problemSolved}
                   onClick={() => handleFieldClick('problemSolved', problemSolved, 'Besoin ou problème résolu')}
@@ -418,17 +444,16 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Votre clientèle</h2>
-              <p className="text-lg text-gray-600">Qui sont vos clients idéaux ?</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Votre clientèle</h2>
             </div>
             
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg p-4 border border-yellow-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Qui seraient vos clients ? 👥
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  👥 Qui seraient vos clients ?
                 </label>
                 <textarea
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-yellow-500 focus:outline-none transition-colors h-24 resize-none"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-yellow-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Décrivez votre public idéal..."
                   value={clienteleCible}
                   onClick={() => handleFieldClick('clienteleCible', clienteleCible, 'Clientèle cible')}
@@ -443,17 +468,16 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Vos besoins</h2>
-              <p className="text-lg text-gray-600">De quoi avez-vous besoin pour vous lancer ?</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Vos besoins</h2>
             </div>
             
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg p-4 border border-teal-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  De quoi avez-vous besoin pour vous lancer ? 🚀
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  🚀 De quoi avez-vous besoin pour vous lancer ?
                 </label>
                 <textarea
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none transition-colors h-24 resize-none"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Quel besoin en matériel, en compétences etc. ?"
                   value={needs}
                   onClick={() => handleFieldClick('needs', needs, 'Besoins pour lancer le projet')}
@@ -468,17 +492,16 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Type et localisation</h2>
-              <p className="text-lg text-gray-600">Précisons les détails de votre projet</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Type et localisation</h2>
             </div>
             
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 border border-indigo-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Quel est le type de votre projet ? 🏢
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  🏢 Quel est le type de votre projet ?
                 </label>
                 <select
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
                   value={projectType}
                   onChange={(e) => setProjectType(e.target.value)}
                 >
@@ -491,12 +514,12 @@ const Form = () => {
 
               {(projectType === 'Physique' || projectType === 'Les deux') && (
                 <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg p-4 border border-rose-200">
-                  <label className="block text-lg font-semibold text-gray-800 mb-2">
-                    Quelle zone géographique ciblez-vous ? 📍
+                  <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                    📍 Quelle zone géographique ciblez-vous ?
                   </label>
                   <input
                     type="text"
-                    className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-rose-500 focus:outline-none transition-colors"
+                    className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-rose-500 focus:outline-none transition-colors"
                     placeholder="Ville, région, etc."
                     value={geographicArea}
                     onClick={() => handleFieldClick('geographicArea', geographicArea, 'Zone géographique ciblée')}
@@ -512,17 +535,16 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Pour finir...</h2>
-              <p className="text-lg text-gray-600">Ajoutez vos motivations et informations supplémentaires</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Pour finir...</h2>
             </div>
             
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg p-4 border border-violet-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Informations supplémentaires 📝
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  📝 Informations supplémentaires
                 </label>
                 <textarea
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-violet-500 focus:outline-none transition-colors h-24 resize-none"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-violet-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Ajoutez ici toute information supplémentaire pertinente pour votre projet..."
                   value={additionalInfo}
                   onClick={() => handleFieldClick('additionalInfo', additionalInfo, 'Autres informations')}
@@ -531,11 +553,11 @@ const Form = () => {
               </div>
 
               <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Pourquoi souhaitez-vous entreprendre ? 🔥
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  🔥 Pourquoi souhaitez-vous entreprendre ?
                 </label>
                 <textarea
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors h-24 resize-none"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Décrivez vos motivations et objectifs..."
                   value={whyEntrepreneur}
                   onClick={() => handleFieldClick('whyEntrepreneur', whyEntrepreneur, 'Pourquoi souhaitez vous entreprendre ?')}
@@ -544,12 +566,12 @@ const Form = () => {
               </div>
 
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">
-                  Combien êtes-vous sur le projet ? 👥
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  👥 Combien êtes-vous sur le projet ?
                 </label>
                 <input
                   type="text"
-                  className="w-full p-3 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                   placeholder="Exemple: 2 personnes, juste moi, 3 cofondateurs..."
                   value={teamSize}
                   onClick={() => handleFieldClick('teamSize', teamSize, 'Nombre de personnes sur le projet')}
@@ -564,29 +586,14 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">⚠️ Confirmation</h2>
-              <p className="text-lg text-gray-600">Vérifiez vos informations avant de continuer</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">⚠️ Confirmation</h2>
             </div>
             
             <div className="space-y-6">
-              {/* Warning section */}
-              <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-4 border border-red-200">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="bg-red-100 p-2 rounded-full">
-                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-red-800">Attention !</h3>
-                    <p className="text-red-700 text-sm">Cette action va analyser vos données et générer votre retranscription</p>
-                  </div>
-                </div>
-              </div>
 
               {/* Summary section */}
               <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">📋 Récapitulatif de vos informations</h4>
+                <h4 className="text-lg md:text-xl font-bold text-gray-800 mb-4 text-center">📋 Récapitulatif de vos informations</h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
@@ -652,7 +659,7 @@ const Form = () => {
 
               {/* Confirmation section */}
               <div className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                <h4 className="text-base md:text-lg font-semibold text-gray-800 mb-2">
                   Êtes-vous sûr de vouloir continuer ? ✅
                 </h4>
                 <p className="text-sm text-gray-600">
@@ -667,21 +674,22 @@ const Form = () => {
       case 8:
         return (
           <div className="space-y-4">
-            <div className="text-center text-lg font-semibold mb-3 p-3 rounded-md bg-gradient-to-r from-red-500 to-orange-500 text-white">
+            <div className="text-center text-base md:text-lg font-semibold mb-3 p-3 rounded-md bg-gradient-to-r from-red-500 to-orange-500 text-white">
               Modifiez les réponses un maximum.
               <p className="text-xs font-normal mt-1">Plus vous donnez d'informations sur votre concept, plus la génération des livrables sera développé en conséquence.</p>
             </div>
 
-            <h2 className="text-xl font-semibold mb-3">Retranscription du concept</h2>
+            <h2 className="text-lg md:text-xl font-semibold mb-3">Retranscription du concept</h2>
             {isLoading ? (
-              <div className="text-center text-pink-500 text-lg">Chargement de la retranscription du concept...</div>
+              <div className="text-center text-pink-500 text-base md:text-lg">Chargement de la retranscription du concept...</div>
             ) : (
               <div className="space-y-3">
                 <div className="bg-[#F9F6F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Description synthétique</p>
                   <textarea
+                    ref={descriptionSynthetiqueRef}
                     placeholder="Décrivez votre concept de manière concise."
-                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={descriptionSynthetique}
                     onClick={() => handleFieldClick('descriptionSynthetique', descriptionSynthetique, 'Description synthétique')}
                     onChange={(e) => setDescriptionSynthetique(e.target.value)}
@@ -690,8 +698,9 @@ const Form = () => {
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Produit / Service</p>
                   <textarea
+                    ref={produitServiceRetranscriptionRef}
                     placeholder="Détaillez les produits ou services que vous proposez."
-                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={produitServiceRetranscription}
                     onClick={() => handleFieldClick('produitServiceRetranscription', produitServiceRetranscription, 'Produit / Service')}
                     onChange={(e) => setProduitServiceRetranscription(e.target.value)}
@@ -700,8 +709,9 @@ const Form = () => {
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Proposition de valeur</p>
                   <textarea
+                    ref={propositionValeurRef}
                     placeholder="Quelle valeur unique apportez-vous à vos clients ?"
-                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={propositionValeur}
                     onClick={() => handleFieldClick('propositionValeur', propositionValeur, 'Proposition de valeur')}
                     onChange={(e) => setPropositionValeur(e.target.value)}
@@ -710,8 +720,9 @@ const Form = () => {
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Élément distinctif</p>
                   <textarea
+                    ref={elementDistinctifRef}
                     placeholder="Qu'est-ce qui vous différencie de la concurrence ?"
-                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={elementDistinctif}
                     onClick={() => handleFieldClick('elementDistinctif', elementDistinctif, 'Élément distinctif')}
                     onChange={(e) => setElementDistinctif(e.target.value)}
@@ -720,8 +731,9 @@ const Form = () => {
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Clientèle cible</p>
                   <textarea
+                    ref={clienteleCibleRetranscriptionRef}
                     placeholder="Décrivez votre public idéal."
-                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={clienteleCibleRetranscription}
                     onClick={() => handleFieldClick('clienteleCibleRetranscription', clienteleCibleRetranscription, 'Clientèle cible')}
                     onChange={(e) => setClienteleCibleRetranscription(e.target.value)}
@@ -730,8 +742,9 @@ const Form = () => {
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Problème à résoudre</p>
                   <textarea
+                    ref={problemResoudreRetranscriptionRef}
                     placeholder="Quel problème majeur votre solution résout-elle ?"
-                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={problemResoudreRetranscription}
                     onClick={() => handleFieldClick('problemResoudreRetranscription', problemResoudreRetranscription, 'Problème à résoudre')}
                     onChange={(e) => setProblemResoudreRetranscription(e.target.value)}
@@ -740,8 +753,9 @@ const Form = () => {
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Mon Pourquoi</p>
                   <textarea
+                    ref={monPourquoiRetranscriptionRef}
                     placeholder="Décrivez vos motivations profondes pour ce projet."
-                    className="w-full p-2 border border-gray-300 rounded-md h-20 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={monPourquoiRetranscription}
                     onClick={() => handleFieldClick('monPourquoiRetranscription', monPourquoiRetranscription, 'Mon Pourquoi')}
                     onChange={(e) => setMonPourquoiRetranscription(e.target.value)}
@@ -758,7 +772,7 @@ const Form = () => {
   };
 
      return (
-     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-orange-50">
+     <div className="min-h-screen bg-[#F8F6F1]">
              {/* Header */}
        <div className="container mx-auto px-4 py-4 text-center">
          <h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
@@ -777,9 +791,6 @@ const Form = () => {
               className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             ></div>
-          </div>
-          <div className="mt-2 text-center">
-            <span className="text-lg font-semibold text-gray-700">{stepTitles[currentStep - 1]}</span>
           </div>
         </div>
 
@@ -814,10 +825,10 @@ const Form = () => {
                 Modifiez le contenu du champ ci-dessous.
               </DialogDescription>
             </DialogHeader>
-            <Textarea
+            <textarea
               value={popupContent}
               onChange={(e) => setPopupContent(e.target.value)}
-              className="w-full h-40"
+              className="w-full h-40 border border-gray-300 rounded-md p-2"
             />
             <DialogFooter>
               <Button onClick={handlePopupSave}>Enregistrer</Button>
@@ -862,7 +873,7 @@ const Form = () => {
            </div>
 
                      {/* Navigation Buttons */}
-           <div className="flex justify-between items-center mt-6 px-4">
+           <div className="flex justify-between items-center mt-6 px-4 pb-[80px]">
              <button
                onClick={handlePrevious}
                disabled={currentStep === 1}

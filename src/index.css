@@ -4,6 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Scrollbar personnalisée - complètement transparente */
+@layer utilities {
+  /* Pour Webkit (Chrome, Safari, Edge) */
+  .scrollbar-transparent::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-transparent::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-transparent::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.5);
+  }
+  
+  /* Pour Firefox */
+  .scrollbar-transparent {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
