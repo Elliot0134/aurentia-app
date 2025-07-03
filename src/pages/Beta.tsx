@@ -15,6 +15,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 const Beta = () => {
   const [betaCode, setBetaCode] = useState("");
@@ -28,6 +30,26 @@ const Beta = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(true); // State to control popup visibility
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const betaCodeValidated = localStorage.getItem('betaCodeValidated') === 'true';
+
+      if (session) {
+        // User is logged in, always go to dashboard
+        setIsPopupOpen(false);
+        navigate('/dashboard');
+      } else if (betaCodeValidated) {
+        // User has validated beta code but is not logged in, go to login page
+        setIsPopupOpen(false);
+        navigate('/login');
+      }
+      // If neither, stay on beta page to allow code entry
+    };
+
+    checkAccess();
+  }, [navigate]);
 
   console.log("Beta component rendered");
 
@@ -53,6 +75,7 @@ const Beta = () => {
 
       if (result.success === "success") {
         console.log("Beta code validated successfully!");
+        localStorage.setItem('betaCodeValidated', 'true'); // Set the flag
         navigate('/login'); // Redirect to login page
       } else {
         console.log("Invalid beta code.");
@@ -74,29 +97,10 @@ const Beta = () => {
           <DialogTitle className="text-center text-3xl font-semibold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">
             Rejoindre la bêta
           </DialogTitle>
+          <DialogDescription className="text-center text-gray-600 mb-4">
+            Aurentia est actuellement en bêta. Vous aurez donc accès aux livrables premium.
+          </DialogDescription>
         </DialogHeader>
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="why-beta">
-            <AccordionTrigger>Pourquoi rejoindre la bêta ?</AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div>
-                  <p className="font-semibold">✨ Accès VIP aux contenus premium</p>
-                  <p className="text-sm text-gray-600">Études concurrence, business models gagnants, analyses de marché avancées... tout le contenu payant en avant-première</p>
-                </div>
-                <div>
-                  <p className="font-semibold">✨ Première ligne des innovations</p>
-                  <p className="text-sm text-gray-600">Teste les nouvelles fonctionnalités IA avant tout le monde et influence leur développement</p>
-                </div>
-                <div>
-                  <p className="font-semibold">✨ Économies garanties</p>
-                  <p className="text-sm text-gray-600">Accès gratuit pendant la Beta à du contenu qui sera payant après le lancement</p>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
         {!showSuccessMessage && !showInvalidCodeMessage ? (
           <>
             <div className="grid gap-4 py-4 flex justify-center">

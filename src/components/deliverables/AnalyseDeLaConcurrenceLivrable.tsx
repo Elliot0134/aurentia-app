@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import DeliverableCard from './DeliverableCard';
 
 interface AnalyseDeLaConcurrenceData {
   free_direct_definition: string;
@@ -72,7 +73,11 @@ interface AnalyseDeLaConcurrenceData {
   justification_avis: string;
 }
 
-const AnalyseDeLaConcurrenceLivrable: React.FC = () => {
+interface AnalyseDeLaConcurrenceLivrableProps {
+  projectStatus?: string | null;
+}
+
+const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrableProps> = ({ projectStatus }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
   const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
@@ -143,7 +148,7 @@ const AnalyseDeLaConcurrenceLivrable: React.FC = () => {
           </div>
           <div className="flex-shrink-0 mt-auto">
             <button className={`text-xs bg-white text-[#6191e2] px-2 py-1 rounded-full cursor-default pointer-events-none font-bold`}>
-              {concurrenceData?.avis}
+              {projectStatus === 'free' ? 'commentaire' : concurrenceData?.avis}
             </button>
           </div>
         </div>

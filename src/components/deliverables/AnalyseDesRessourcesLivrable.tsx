@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
+import DeliverableCard from './DeliverableCard';
 
 interface AnalyseDesRessourcesLivrableProps {
   // No specific props needed for this deliverable as data is fetched internally
@@ -70,12 +71,20 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
           .single();
 
         if (error) {
-          throw error;
-        }
-
-        if (!ressourcesData) {
-          console.log("AnalyseDesRessourcesLivrable: No data found for project ID:", projectId);
+          // Check if the error is specifically for no rows found
+          if (error.code === 'PGRST116') { // PGRST116 is the error code for "No rows found"
+            console.log("AnalyseDesRessourcesLivrable: No data found for project ID (PGRST116 error):", projectId);
+            setData(null); // Set data to null to trigger the "no data" display
+            setError(null); // Clear any previous error state
+          } else {
+            // For other types of errors, set the error state
+            setError(error.message || "An unknown error occurred while fetching data.");
+            console.error("AnalyseDesRessourcesLivrable: Fetch error:", error);
+          }
+        } else if (!ressourcesData) { // This case might not be hit if single() always errors on no data
+          console.log("AnalyseDesRessourcesLivrable: No data found for project ID (ressourcesData is null):", projectId);
           setData(null);
+          setError(null); // Clear error if data is explicitly null
         } else {
           console.log("AnalyseDesRessourcesLivrable: Raw data from Supabase:", ressourcesData);
           
@@ -253,19 +262,13 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
     console.log("AnalyseDesRessourcesLivrable: No resource data available or data is empty.");
     return (
       <>
-        {/* Livrable Template Part (always visible) */}
-        <div
-          className={`border rounded-lg p-4 mb-4 bg-[#57acc2] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-48`}
+        <DeliverableCard
+          title={deliverableTitle}
+          description={deliverableDescription}
+          iconSrc="/icones-livrables/ressources-icon.png"
+          bgColor={`bg-[${deliverableColor}]`}
           onClick={handleTemplateClick}
-        >
-          <div className="flex-grow mr-4">
-            <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
-            {deliverableDescription && <p className="text-white mb-4">{deliverableDescription}</p>}
-          </div>
-          <div className="flex-shrink-0">
-            <img src="/icones-livrables/ressources-icon.png" alt="Ressources Icon" className="w-8 h-8 object-cover self-start" />
-          </div>
-        </div>
+        />
 
         {/* Livrable Popup Part (shows message if no data) */}
         {isPopupOpen && (
@@ -304,19 +307,13 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
 
   return (
     <>
-      {/* Livrable Template Part */}
-      <div
-        className={`border rounded-lg p-4 mb-4 bg-[#57acc2] text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-48`}
+      <DeliverableCard
+        title={deliverableTitle}
+        description={deliverableDescription}
+        iconSrc="/icones-livrables/ressources-icon.png"
+        bgColor={`bg-[${deliverableColor}]`}
         onClick={handleTemplateClick}
-      >
-        <div className="flex-grow mr-4">
-          <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
-          {deliverableDescription && <p className="text-white mb-4">{deliverableDescription}</p>}
-        </div>
-        <div className="flex-shrink-0">
-          <img src="/icones-livrables/ressources-icon.png" alt="Ressources Icon" className="w-8 h-8 object-cover self-start" />
-        </div>
-      </div>
+      />
 
       {/* Livrable Popup Part */}
       {isPopupOpen && (

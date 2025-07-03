@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FileText, Download, Settings, DollarSign, Briefcase, Lightbulb, Package, Shield, TrendingUp, Book, ListChecks, BarChart, Globe } from "lucide-react";
+import { FileText, Download, Settings, DollarSign, Briefcase, Lightbulb, Package, Shield, TrendingUp, Book, ListChecks, BarChart, Globe, HelpCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import RetranscriptionConceptLivrable from "@/components/deliverables/RetranscriptionConceptLivrable";
 import PersonaExpressLivrable from "@/components/deliverables/PersonaExpressLivrable";
 import MiniSwotLivrable from "@/components/deliverables/MiniSwotLivrable";
@@ -61,7 +63,7 @@ const ProjectBusiness = () => {
           Aurentia AI
         </span>
       </>,
-      <div className="flex flex-col md:flex-row gap-8 justify-center items-stretch">
+      <div className="flex flex-col md:flex-row gap-8 justify-center items-stretch mt-8">
         <PlanCard
           title="Niveau 1"
           price="2,90€"
@@ -69,14 +71,49 @@ const ProjectBusiness = () => {
           deliverables={niveau1Deliverables}
           buttonText="J'en profite !"
           pdfSection={
-            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold">
+            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold flex items-center justify-center gap-2">
               PDF de votre projet
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
+                      </PopoverTrigger>
+                      <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
+                        <p>Un PDF complet de votre projet</p>
+                      </PopoverContent>
+                    </Popover>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Un PDF complet de votre projet</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           }
           creditsSection={
             <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
-              <span className="font-bold">50 crédits Aurentia IA</span> <br />
-              <span className="text-sm text-gray-600">(1 crédit = un message avec l'agent Aurentia IA connecté à TOUT votre projet)</span>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-bold">50 crédits Aurentia IA</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
+                        </PopoverTrigger>
+                        <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
+                          <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
+                        </PopoverContent>
+                      </Popover>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           }
           className="flex-1"
@@ -90,14 +127,49 @@ const ProjectBusiness = () => {
           buttonText="J'en profite encore + !"
           onButtonClick={() => window.open('https://buy.stripe.com/8x2bJ2gDs8OIgKB8630gw05', '_blank')}
           pdfSection={
-            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold">
+            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold flex items-center justify-center gap-2">
               PDF de votre projet
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
+                      </PopoverTrigger>
+                      <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
+                        <p>Un PDF complet de votre projet</p>
+                      </PopoverContent>
+                    </Popover>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Un PDF complet de votre projet</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           }
           creditsSection={
             <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
-              <span className="font-bold">200 crédits Aurentia IA</span> <br />
-              <span className="text-sm text-gray-600">(1 crédit = un message avec l'agent Aurentia IA connecté à TOUT votre projet)</span>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-bold">200 crédits Aurentia IA</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
+                        </PopoverTrigger>
+                        <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
+                          <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
+                        </PopoverContent>
+                      </Popover>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           }
           className="flex-1"
@@ -214,7 +286,7 @@ const ProjectBusiness = () => {
           {/* Analyse de la Concurrence Deliverable */}
           <div className="md:h-full">
             <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
-              <AnalyseDeLaConcurrenceLivrable />
+              <AnalyseDeLaConcurrenceLivrable projectStatus={projectStatus} />
             </BlurredDeliverableWrapper>
           </div>
 
