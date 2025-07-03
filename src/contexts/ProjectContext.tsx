@@ -14,10 +14,16 @@ interface ProjectContextType {
   deliverableNames: string[];
   deliverablesLoading: boolean;
   
+  // User credits
+  userCredits: { current: number; max: number } | null;
+  creditsLoading: boolean;
+  
   // Functions
   setCurrentProjectId: (projectId: string | null) => void;
   loadUserProjects: () => Promise<void>;
   deleteProject: (projectId: string) => Promise<boolean>;
+  loadUserCredits: () => Promise<void>;
+  updateUserCredits: (newCredits: number) => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -54,6 +60,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const [userProjectsLoading, setUserProjectsLoading] = useState(false);
   const [deliverableNames, setDeliverableNames] = useState<string[]>([]);
   const [deliverablesLoading, setDeliverablesLoading] = useState(false);
+  const [userCredits, setUserCredits] = useState<{ current: number; max: number } | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(false);
 
   const loadUserProjects = async () => {
     setUserProjectsLoading(true);
@@ -150,25 +158,101 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
   }, [currentProjectId]);
 
-  // Load user projects when authentication state changes
+  const loadUserCredits = async () => {
+    setCreditsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        setUserCredits(null);
+        setCreditsLoading(false);
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('credits_restants, credit_limit')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Erreur lors du chargement des crédits:', error);
+        setUserCredits(null);
+        return;
+      }
+
+      const current = parseInt(profile.credits_restants || '0', 10);
+      const max = parseInt(profile.credit_limit || '0', 10);
+      
+      setUserCredits({ current, max });
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des crédits:', error);
+      setUserCredits(null);
+    } finally {
+      setCreditsLoading(false);
+    }
+  };
+
+  const updateUserCredits = async (newCredits: number) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        console.error('Utilisateur non connecté');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ credits_restants: newCredits.toString() })
+        .eq('id', session.user.id);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour des crédits:', error);
+        return;
+      }
+
+      // Mettre à jour l'état local
+      if (userCredits) {
+        setUserCredits({ ...userCredits, current: newCredits });
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des crédits:', error);
+    }
+  };
+
+  // Load user credits when authentication state changes
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        // User signed in, load their projects
+        // User signed in, load their projects and credits
         loadUserProjects();
+        loadUserCredits();
       } else {
-        // User signed out, clear projects
+        // User signed out, clear projects and credits
         setUserProjects([]);
         setCurrentProjectId(null);
         setDeliverableNames([]);
+        setUserCredits(null);
       }
     });
 
-    // Load projects on initial mount if user is already authenticated
+    // Listen for credit updates from Stripe service
+    const handleCreditsUpdated = (event: CustomEvent) => {
+      setUserCredits(event.detail);
+    };
+
+    window.addEventListener('creditsUpdated', handleCreditsUpdated as EventListener);
+
+    // Load projects and credits on initial mount if user is already authenticated
     loadUserProjects();
+    loadUserCredits();
 
     return () => {
       authListener.subscription.unsubscribe();
+      window.removeEventListener('creditsUpdated', handleCreditsUpdated as EventListener);
     };
   }, []);
 
@@ -246,9 +330,13 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     userProjectsLoading,
     deliverableNames,
     deliverablesLoading,
+    userCredits,
+    creditsLoading,
     setCurrentProjectId,
     loadUserProjects,
     deleteProject,
+    loadUserCredits,
+    updateUserCredits,
   };
 
   return (

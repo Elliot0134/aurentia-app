@@ -14,6 +14,12 @@ interface MessageListProps {
   streamingText: string;
   onCopyMessage: (text: string) => void;
   onRegenerateResponse: (messageId: string) => void;
+  /**
+   * Indicates that the assistant is currently streaming a message.
+   * When true we add extra bottom padding so the last tokens are not hidden
+   * behind the fixed ChatInput bar.
+   */
+  isStreaming?: boolean;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -23,19 +29,32 @@ export const MessageList: React.FC<MessageListProps> = ({
   streamingText,
   onCopyMessage,
   onRegenerateResponse,
+  isStreaming = false,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, streamingText]);
+
+  // Scroll automatique pendant le streaming
+  useEffect(() => {
+    if (streamingText && streamingMessageId) {
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [streamingText, streamingMessageId]);
+
+  const bottomPaddingClass = isStreaming ? "pb-44" : "pb-20"; // pb-44 = 11rem (≈176px)
 
   return (
-    <div className="mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 space-y-6 sm:space-y-8 w-full">
+    <div className={`mx-auto px-3 sm:px-4 py-4 sm:py-6 ${bottomPaddingClass} space-y-6 sm:space-y-8 w-full`}>
         {messages.map((message) => (
           <div
             key={message.id}

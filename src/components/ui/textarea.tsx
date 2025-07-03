@@ -37,8 +37,13 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         )}
         ref={(e) => {
           if (e) {
-            // @ts-ignore
-            ref.current = e;
+            // Assign to external ref if provided
+            if (ref && typeof ref === 'function') {
+              ref(e);
+            } else if (ref && 'current' in ref) {
+              ref.current = e;
+            }
+            // Always assign to internal ref
             textareaRef.current = e;
           }
         }}

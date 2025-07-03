@@ -6,8 +6,8 @@ CREATE TABLE public.Template (
   project_id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT Template_pkey PRIMARY KEY (user_id),
-  CONSTRAINT Template_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
-  CONSTRAINT Template_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT Template_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT Template_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id)
 );
 CREATE TABLE public.b2b (
   user_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -33,8 +33,8 @@ CREATE TABLE public.b2b (
   b2b_strategies_engagement text,
   b2b_recommandations_marketing text,
   CONSTRAINT b2b_pkey PRIMARY KEY (project_id),
-  CONSTRAINT b2b_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT b2b_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_responses(project_id)
+  CONSTRAINT b2b_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_responses(project_id),
+  CONSTRAINT b2b_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.b2c (
   project_id uuid NOT NULL,
@@ -82,8 +82,8 @@ CREATE TABLE public.business_model (
   flux_revenus_analyse text,
   flux_revenus_liste_des_revenus text,
   CONSTRAINT business_model_pkey PRIMARY KEY (user_id),
-  CONSTRAINT business_model_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT business_model_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id)
+  CONSTRAINT business_model_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
+  CONSTRAINT business_model_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.carte_empathie (
   user_id uuid NOT NULL,
@@ -119,8 +119,8 @@ CREATE TABLE public.carte_empathie (
   motivations text,
   autres_pensees_influencant_comportement text,
   CONSTRAINT carte_empathie_pkey PRIMARY KEY (user_id),
-  CONSTRAINT carte_empathie_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT carte_empathie_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary_v2(project_id)
+  CONSTRAINT carte_empathie_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary_v2(project_id),
+  CONSTRAINT carte_empathie_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.complexite (
   user_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -152,8 +152,8 @@ CREATE TABLE public.complexite (
   pay_facteurs_cles text,
   pay_recommandations_gestion_complexite text,
   CONSTRAINT complexite_pkey PRIMARY KEY (project_id),
-  CONSTRAINT complexite_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_responses(project_id),
-  CONSTRAINT complexite_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT complexite_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT complexite_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_responses(project_id)
 );
 CREATE TABLE public.concurrence (
   user_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -313,14 +313,15 @@ CREATE TABLE public.concurrence_ancien (
   CONSTRAINT concurrence_duplicate_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_responses(project_id)
 );
 CREATE TABLE public.conversation (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  project_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  title text NOT NULL DEFAULT 'Nouvelle conversation'::text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  conv_id uuid DEFAULT gen_random_uuid() UNIQUE,
-  messages ARRAY,
-  CONSTRAINT conversation_pkey PRIMARY KEY (user_id),
-  CONSTRAINT chatbot_global_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT chatbot_global_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT conversation_pkey PRIMARY KEY (id),
+  CONSTRAINT conversation_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT conversation_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.definition_livrable (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -513,13 +514,17 @@ CREATE TABLE public.marche (
   avis text,
   justification_avis text,
   CONSTRAINT marche_pkey PRIMARY KEY (project_id),
-  CONSTRAINT marche_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT marche_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+  CONSTRAINT marche_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT marche_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.messages (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  date timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT messages_pkey PRIMARY KEY (id)
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  sender text NOT NULL CHECK (sender = ANY (ARRAY['user'::text, 'bot'::text])),
+  content text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT messages_pkey PRIMARY KEY (id),
+  CONSTRAINT messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversation(id)
 );
 CREATE TABLE public.mini_swot (
   user_id uuid NOT NULL,
@@ -545,8 +550,8 @@ CREATE TABLE public.mini_swot (
   avis text,
   justification_avis text,
   CONSTRAINT mini_swot_pkey PRIMARY KEY (project_id),
-  CONSTRAINT mini_swot_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT mini_swot_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT mini_swot_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT mini_swot_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.organisms (
   user_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -624,8 +629,8 @@ CREATE TABLE public.persona_express_b2b (
   strategie_approche text,
   recommandations_b2b text,
   CONSTRAINT persona_express_b2b_pkey PRIMARY KEY (project_id),
-  CONSTRAINT persona_express_b2b_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT buyer_b2b_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT buyer_b2b_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT persona_express_b2b_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.persona_express_b2c (
   user_id uuid NOT NULL,
@@ -644,8 +649,8 @@ CREATE TABLE public.persona_express_b2c (
   justification_avis text,
   recommandations_b2c text,
   CONSTRAINT persona_express_b2c_pkey PRIMARY KEY (project_id),
-  CONSTRAINT buyer_b2c_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT persona_express_b2c_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+  CONSTRAINT persona_express_b2c_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT buyer_b2c_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.persona_express_organismes (
   user_id uuid NOT NULL,
@@ -661,8 +666,8 @@ CREATE TABLE public.persona_express_organismes (
   strategie_approche text,
   recommandations_organisme text,
   CONSTRAINT persona_express_organismes_pkey PRIMARY KEY (project_id),
-  CONSTRAINT buyer_organismes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT persona_express_organismes_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+  CONSTRAINT persona_express_organismes_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT buyer_organismes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.pertinence (
   project_id uuid NOT NULL,
@@ -711,8 +716,19 @@ CREATE TABLE public.pitch (
   pitch_complet_texte text,
   pitch_complet_appel_action text,
   CONSTRAINT pitch_pkey PRIMARY KEY (project_id),
-  CONSTRAINT Pitch_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT Pitch_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT Pitch_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT Pitch_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.products (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  id_stripe text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  Nom text,
+  Description text,
+  prix text,
+  crédits text,
+  descritpion text,
+  CONSTRAINT products_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
@@ -724,6 +740,8 @@ CREATE TABLE public.profiles (
   drive_folder_id text,
   drive_folder_rag text,
   conv_limit text,
+  credits_restants text DEFAULT '5'::text,
+  credit_limit text DEFAULT '5'::text,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
@@ -774,6 +792,8 @@ CREATE TABLE public.project_summary (
   drive_folder_url text,
   drive_folder_id text,
   doc_free_id text,
+  statut_vision_mission_valeurs text,
+  statut_project text,
   CONSTRAINT project_summary_pkey PRIMARY KEY (project_id),
   CONSTRAINT project_summary_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
   CONSTRAINT project_summary_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
@@ -814,8 +834,8 @@ CREATE TABLE public.project_summary_v2 (
   validation_complexite text,
   statut buyer personna text,
   CONSTRAINT project_summary_v2_pkey PRIMARY KEY (project_id),
-  CONSTRAINT project_summary_v2_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT project_summary_v2_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id)
+  CONSTRAINT project_summary_v2_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
+  CONSTRAINT project_summary_v2_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.proposition_valeur (
   user_id uuid NOT NULL,
@@ -840,10 +860,10 @@ CREATE TABLE public.proposition_valeur (
   organismes_carte_valeur_createurs_benefices text,
   organismes_carte_valeur_solutions text,
   CONSTRAINT proposition_valeur_pkey PRIMARY KEY (project_id),
-  CONSTRAINT proposition_valeur_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
   CONSTRAINT proposition_valeur_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT proposition_valeur_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT proposition_valeur_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT proposition_valeur_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT proposition_valeur_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id)
 );
 CREATE TABLE public.rag (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -854,8 +874,8 @@ CREATE TABLE public.rag (
   embedding USER-DEFINED,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT rag_pkey PRIMARY KEY (id),
-  CONSTRAINT rag_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT rag_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+  CONSTRAINT rag_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT rag_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.ressources_requises (
   user_id uuid NOT NULL,
@@ -880,6 +900,20 @@ CREATE TABLE public.success_story (
   projections_cinq_ans_vision text,
   message_motivation text,
   CONSTRAINT success_story_pkey PRIMARY KEY (project_id),
-  CONSTRAINT success_story_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT success_story_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT success_story_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT success_story_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.vision_mission_valeurs (
+  user_id uuid NOT NULL,
+  project_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  vision text,
+  mission text,
+  valeurs text,
+  coherence_strategique text,
+  CONSTRAINT vision_mission_valeurs_pkey PRIMARY KEY (project_id),
+  CONSTRAINT vision_mission_valeurs_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT vision_mission_valeurs_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
+  CONSTRAINT vision_mission_valeurs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT vision_mission_valeurs_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );

@@ -19,6 +19,7 @@ import BlurredDeliverableWrapper from "@/components/deliverables/BlurredDelivera
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
+import { useStripePayment } from "@/hooks/useStripePayment";
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
@@ -29,6 +30,22 @@ const ProjectBusiness = () => {
   const [projectStatus, setProjectStatus] = useState<string | null>(null); // State for project status
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
+  
+  // Stripe payment hook
+  const { isLoading: isPaymentLoading, paymentStatus, initiatePayment } = useStripePayment();
+
+  const handlePayment = async (planId: string) => {
+    if (!projectId) {
+      toast({
+        title: "Erreur",
+        description: "ID du projet manquant",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await initiatePayment(planId, projectId);
+  };
 
   const openPopup = (title: React.ReactNode, content: React.ReactNode, buttonColor?: string) => {
     setPopupContent({ title, content, buttonColor });
@@ -117,7 +134,7 @@ const ProjectBusiness = () => {
             </div>
           }
           className="flex-1"
-          onButtonClick={() => window.open('https://buy.stripe.com/6oU9AUgDs1mgbqhbif0gw04', '_blank')}
+          onButtonClick={() => handlePayment('plan1')}
         />
         <PlanCard
           title="Niveau 2"
@@ -125,7 +142,7 @@ const ProjectBusiness = () => {
           oldPrice="24,90€"
           deliverables={niveau2Deliverables}
           buttonText="J'en profite encore + !"
-          onButtonClick={() => window.open('https://buy.stripe.com/8x2bJ2gDs8OIgKB8630gw05', '_blank')}
+          onButtonClick={() => handlePayment('plan2')}
           pdfSection={
             <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold flex items-center justify-center gap-2">
               PDF de votre projet
@@ -330,6 +347,30 @@ const ProjectBusiness = () => {
         </div>
       </div>
 
+      {/* Payment Loading Dialog */}
+      <Dialog open={isPaymentLoading} onOpenChange={() => {}}>
+        <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+          <DialogHeader>
+            <DialogTitle>
+              {paymentStatus === 'processing' ? 'Génération des livrables premium' : 'Traitement du paiement'}
+            </DialogTitle>
+            <DialogDescription>
+              {paymentStatus === 'processing' 
+                ? 'Veuillez patienter pendant la génération de vos livrables premium.' 
+                : 'Traitement de votre paiement en cours...'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center items-center py-4">
+            <div className="loader">
+              <div className="circle"></div>
+              <div className="circle"></div>
+              <div className="circle"></div>
+              <div className="square"></div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Popup Dialog */}
       <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
         <DialogContent className="w-[90vw] md:w-[70vw] max-w-none overflow-y-auto max-h-[90vh] md:h-[90vh] rounded-lg md:flex md:flex-col md:justify-center md:items-center"> {/* Set width to 90% on mobile, 70% on desktop, remove max-width, add scrollability, and rounded corners */}
@@ -344,6 +385,71 @@ const ProjectBusiness = () => {
           </DialogHeader>
         </DialogContent>
       </Dialog>
+
+      {/* CSS for custom loader */}
+      <style>{`
+        .loader {
+          position: relative;
+          width: 50px;
+          height: 50px;
+        }
+        
+        .circle {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: linear-gradient(45deg, #f97316, #ef4444);
+          animation: circle-animation 2s infinite ease-in-out;
+        }
+        
+        .circle:nth-child(1) {
+          top: 0;
+          left: 0;
+          animation-delay: 0s;
+        }
+        
+        .circle:nth-child(2) {
+          top: 0;
+          right: 0;
+          animation-delay: 0.5s;
+        }
+        
+        .circle:nth-child(3) {
+          bottom: 0;
+          left: 0;
+          animation-delay: 1s;
+        }
+        
+        .square {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 10px;
+          height: 10px;
+          background: linear-gradient(45deg, #f97316, #ef4444);
+          animation: square-animation 2s infinite ease-in-out;
+          animation-delay: 1.5s;
+        }
+        
+        @keyframes circle-animation {
+          0%, 80%, 100% {
+            transform: scale(0);
+          }
+          40% {
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes square-animation {
+          0%, 80%, 100% {
+            transform: scale(0) rotate(0deg);
+          }
+          40% {
+            transform: scale(1) rotate(180deg);
+          }
+        }
+      `}</style>
     </div>
   );
 };

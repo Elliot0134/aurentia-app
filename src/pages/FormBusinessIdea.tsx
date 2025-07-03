@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -12,17 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const useAutosizeTextArea = (textAreaRef: React.RefObject<HTMLTextAreaElement>, value: string) => {
-  useEffect(() => {
-    if (textAreaRef.current) {
-      textAreaRef.current.style.height = '0px'; // Reset height to recalculate
-      const scrollHeight = textAreaRef.current.scrollHeight;
-      textAreaRef.current.style.height = scrollHeight + 'px';
-    }
-  }, [textAreaRef, value]);
-};
+
 
 const Form = () => {
   const navigate = useNavigate();
@@ -149,27 +142,11 @@ const Form = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [projectID, setProjectID] = useState('');
 
-  // Refs for autosizing textareas in step 8
-  const descriptionSynthetiqueRef = useRef<HTMLTextAreaElement>(null);
-  const produitServiceRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
-  const propositionValeurRef = useRef<HTMLTextAreaElement>(null);
-  const elementDistinctifRef = useRef<HTMLTextAreaElement>(null);
-  const clienteleCibleRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
-  const problemResoudreRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
-  const monPourquoiRetranscriptionRef = useRef<HTMLTextAreaElement>(null);
-
-  // Apply autosize hook to each textarea
-  useAutosizeTextArea(descriptionSynthetiqueRef, descriptionSynthetique);
-  useAutosizeTextArea(produitServiceRetranscriptionRef, produitServiceRetranscription);
-  useAutosizeTextArea(propositionValeurRef, propositionValeur);
-  useAutosizeTextArea(elementDistinctifRef, elementDistinctif);
-  useAutosizeTextArea(clienteleCibleRetranscriptionRef, clienteleCibleRetranscription);
-  useAutosizeTextArea(problemResoudreRetranscriptionRef, problemResoudreRetranscription);
-  useAutosizeTextArea(monPourquoiRetranscriptionRef, monPourquoiRetranscription);
+  // Note: Textarea components from shadcn handle auto-resize automatically
 
   const handleNext = async () => {
-    if (currentStep === 7) {
-      // Process step 1 data when moving from step 7 (confirmation) to step 8 (retranscription)
+    if (currentStep === 8) {
+      // Process step 1 data when moving from step 8 (confirmation) to step 9 (retranscription)
       console.log('handleNext called');
       setIsLoading(true);
       try {
@@ -349,7 +326,7 @@ const Form = () => {
     }
   };
 
-  const totalSteps = 8;
+  const totalSteps = 9;
 
   const stepTitles = [
     "Informations de base",
@@ -376,7 +353,7 @@ const Form = () => {
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   ✨ Quel est le nom de votre projet ?
                 </label>
-                <input
+                <Input
                   type="text"
                   className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="Tapez le nom de votre projet..."
@@ -390,7 +367,7 @@ const Form = () => {
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   💡 Décrivez votre projet en une phrase
                 </label>
-                <input
+                <Input
                   type="text"
                   className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                   placeholder="Formulez votre concept initial de manière claire et concise..."
@@ -415,7 +392,7 @@ const Form = () => {
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   🛍️ Quels produits/services souhaitez-vous proposer ?
                 </label>
-                <textarea
+                <Textarea
                   className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Notez sous forme de liste les produits ou services que vous allez proposer..."
                   value={productsServices}
@@ -428,7 +405,7 @@ const Form = () => {
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   🎯 À quel problème répond votre projet ?
                 </label>
-                <textarea
+                <Textarea
                   className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Identifiez le besoin auquel votre solution répond concrètement..."
                   value={problemSolved}
@@ -452,7 +429,7 @@ const Form = () => {
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   👥 Qui seraient vos clients ?
                 </label>
-                <textarea
+                <Textarea
                   className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-yellow-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Décrivez votre public idéal..."
                   value={clienteleCible}
@@ -476,7 +453,7 @@ const Form = () => {
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   🚀 De quoi avez-vous besoin pour vous lancer ?
                 </label>
-                <textarea
+                <Textarea
                   className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none transition-colors h-24 resize-none"
                   placeholder="Quel besoin en matériel, en compétences etc. ?"
                   value={needs}
@@ -517,7 +494,7 @@ const Form = () => {
                   <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                     📍 Quelle zone géographique ciblez-vous ?
                   </label>
-                  <input
+                  <Input
                     type="text"
                     className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-rose-500 focus:outline-none transition-colors"
                     placeholder="Ville, région, etc."
@@ -535,41 +512,15 @@ const Form = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Pour finir...</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Votre équipe</h2>
             </div>
             
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg p-4 border border-violet-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
-                  📝 Informations supplémentaires
-                </label>
-                <textarea
-                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-violet-500 focus:outline-none transition-colors h-24 resize-none"
-                  placeholder="Ajoutez ici toute information supplémentaire pertinente pour votre projet..."
-                  value={additionalInfo}
-                  onClick={() => handleFieldClick('additionalInfo', additionalInfo, 'Autres informations')}
-                  onChange={(e) => setAdditionalInfo(e.target.value)}
-                />
-              </div>
-
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
-                  🔥 Pourquoi souhaitez-vous entreprendre ?
-                </label>
-                <textarea
-                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors h-24 resize-none"
-                  placeholder="Décrivez vos motivations et objectifs..."
-                  value={whyEntrepreneur}
-                  onClick={() => handleFieldClick('whyEntrepreneur', whyEntrepreneur, 'Pourquoi souhaitez vous entreprendre ?')}
-                  onChange={(e) => setWhyEntrepreneur(e.target.value)}
-                />
-              </div>
-
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   👥 Combien êtes-vous sur le projet ?
                 </label>
-                <input
+                <Input
                   type="text"
                   className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                   placeholder="Exemple: 2 personnes, juste moi, 3 cofondateurs..."
@@ -583,6 +534,43 @@ const Form = () => {
         );
 
       case 7:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Pour finir...</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg p-4 border border-violet-200">
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  📝 Informations supplémentaires
+                </label>
+                <Textarea
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-violet-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Ajoutez ici toute information supplémentaire pertinente pour votre projet..."
+                  value={additionalInfo}
+                  onClick={() => handleFieldClick('additionalInfo', additionalInfo, 'Autres informations')}
+                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                />
+              </div>
+
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
+                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                  🔥 Pourquoi souhaitez-vous entreprendre ?
+                </label>
+                <Textarea
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Décrivez vos motivations et objectifs..."
+                  value={whyEntrepreneur}
+                  onClick={() => handleFieldClick('whyEntrepreneur', whyEntrepreneur, 'Pourquoi souhaitez vous entreprendre ?')}
+                  onChange={(e) => setWhyEntrepreneur(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 8:
         return (
           <div className="space-y-4">
             <div className="text-center mb-8">
@@ -671,7 +659,7 @@ const Form = () => {
           </div>
         );
 
-      case 8:
+      case 9:
         return (
           <div className="space-y-4">
             <div className="text-center text-base md:text-lg font-semibold mb-3 p-3 rounded-md bg-gradient-to-r from-red-500 to-orange-500 text-white">
@@ -686,80 +674,73 @@ const Form = () => {
               <div className="space-y-3">
                 <div className="bg-[#F9F6F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Description synthétique</p>
-                  <textarea
-                    ref={descriptionSynthetiqueRef}
+                  <Textarea
                     placeholder="Décrivez votre concept de manière concise."
                     className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={descriptionSynthetique}
                     onClick={() => handleFieldClick('descriptionSynthetique', descriptionSynthetique, 'Description synthétique')}
                     onChange={(e) => setDescriptionSynthetique(e.target.value)}
-                  ></textarea>
+                  />
                 </div>
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Produit / Service</p>
-                  <textarea
-                    ref={produitServiceRetranscriptionRef}
+                  <Textarea
                     placeholder="Détaillez les produits ou services que vous proposez."
                     className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={produitServiceRetranscription}
                     onClick={() => handleFieldClick('produitServiceRetranscription', produitServiceRetranscription, 'Produit / Service')}
                     onChange={(e) => setProduitServiceRetranscription(e.target.value)}
-                  ></textarea>
+                  />
                 </div>
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Proposition de valeur</p>
-                  <textarea
-                    ref={propositionValeurRef}
+                  <Textarea
                     placeholder="Quelle valeur unique apportez-vous à vos clients ?"
                     className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={propositionValeur}
                     onClick={() => handleFieldClick('propositionValeur', propositionValeur, 'Proposition de valeur')}
                     onChange={(e) => setPropositionValeur(e.target.value)}
-                  ></textarea>
+                  />
                 </div>
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Élément distinctif</p>
-                  <textarea
-                    ref={elementDistinctifRef}
+                  <Textarea
                     placeholder="Qu'est-ce qui vous différencie de la concurrence ?"
                     className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={elementDistinctif}
                     onClick={() => handleFieldClick('elementDistinctif', elementDistinctif, 'Élément distinctif')}
                     onChange={(e) => setElementDistinctif(e.target.value)}
-                  ></textarea>
+                  />
                 </div>
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Clientèle cible</p>
-                  <textarea
-                    ref={clienteleCibleRetranscriptionRef}
+                  <Textarea
                     placeholder="Décrivez votre public idéal."
                     className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={clienteleCibleRetranscription}
                     onClick={() => handleFieldClick('clienteleCibleRetranscription', clienteleCibleRetranscription, 'Clientèle cible')}
                     onChange={(e) => setClienteleCibleRetranscription(e.target.value)}
-                  ></textarea>
+                  />
                 </div>
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Problème à résoudre</p>
-                  <textarea
-                    ref={problemResoudreRetranscriptionRef}
+                  <Textarea
                     placeholder="Quel problème majeur votre solution résout-elle ?"
                     className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={problemResoudreRetranscription}
                     onClick={() => handleFieldClick('problemResoudreRetranscription', problemResoudreRetranscription, 'Problème à résoudre')}
                     onChange={(e) => setProblemResoudreRetranscription(e.target.value)}
-                  ></textarea>
+                  />
                 </div>
                 <div className="bg-[#F9F9F2] rounded-md p-3">
                   <p className="font-medium mb-1 text-sm">Mon Pourquoi</p>
-                  <textarea
-                    ref={monPourquoiRetranscriptionRef}
+                  <Textarea
                     placeholder="Décrivez vos motivations profondes pour ce projet."
                     className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     value={monPourquoiRetranscription}
                     onClick={() => handleFieldClick('monPourquoiRetranscription', monPourquoiRetranscription, 'Mon Pourquoi')}
                     onChange={(e) => setMonPourquoiRetranscription(e.target.value)}
-                  ></textarea>
+                  />
                 </div>
               </div>
             )}
@@ -799,10 +780,10 @@ const Form = () => {
            <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
              <DialogHeader>
                <DialogTitle>
-                 {currentStep === 6 ? 'Soumission des informations' : 'Génération de vos livrables'}
+                 {currentStep === 8 ? 'Soumission des informations' : 'Génération de vos livrables'}
                </DialogTitle>
                <DialogDescription>
-                 {currentStep === 6 ? 'Veuillez patienter pendant la soumission de vos informations.' : 'Veuillez patienter pendant la génération de vos livrables.'}
+                 {currentStep === 8 ? 'Veuillez patienter pendant la soumission de vos informations.' : 'Veuillez patienter pendant la génération de vos livrables.'}
                </DialogDescription>
              </DialogHeader>
             <div className="flex justify-center items-center py-4">
@@ -825,7 +806,7 @@ const Form = () => {
                 Modifiez le contenu du champ ci-dessous.
               </DialogDescription>
             </DialogHeader>
-            <textarea
+            <Textarea
               value={popupContent}
               onChange={(e) => setPopupContent(e.target.value)}
               className="w-full h-40 border border-gray-300 rounded-md p-2"

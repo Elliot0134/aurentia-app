@@ -8,7 +8,7 @@ import { useProject } from "@/contexts/ProjectContext";
 const MobileNavbar = () => {
   const location = useLocation();
   const { projectId } = useParams();
-  const { currentProjectId, userProjects } = useProject();
+  const { currentProjectId, userProjects, userCredits, creditsLoading } = useProject();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -38,6 +38,11 @@ const MobileNavbar = () => {
       icon: <LayoutDashboard size={20} />
     },
     {
+      name: "Livrables",
+      path: activeProjectId ? `/project-business/${activeProjectId}` : "/warning",
+      icon: <BookOpen size={20} />
+    },
+    {
       name: "Outils",
       path: "/outils",
       icon: <Settings size={20} />
@@ -51,6 +56,19 @@ const MobileNavbar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden">
+      {/* Credits display for mobile */}
+      {user && userCredits && (
+        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <Zap size={16} className="text-yellow-500" />
+            <span className="font-medium text-gray-700">
+              {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
+            </span>
+            <span className="text-xs text-gray-500">crédits</span>
+          </div>
+        </div>
+      )}
+      
       <nav className="flex justify-around py-3">
         {menuItems.map((item) => (
           <Link

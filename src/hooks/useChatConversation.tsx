@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { chatbotService, type Message, type Conversation } from '@/services/chatbotService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
+import { useProject } from '@/contexts/ProjectContext';
 
 export const useChatConversation = (projectId: string | undefined) => {
+  const { updateUserCredits } = useProject();
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isConversationLoading, setIsConversationLoading] = useState(false);
@@ -178,10 +180,42 @@ export const useChatConversation = (projectId: string | undefined) => {
     lastSentTime.current = currentTime;
 
     try {
+      // Vérifier et décrémenter les crédits utilisateur
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error('Vous devez être connecté pour envoyer un message');
+        return false;
+      }
+
+      // Récupérer le profil utilisateur pour vérifier les crédits
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('credits_restants')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('❌ Erreur récupération profil:', profileError);
+        toast.error('Erreur lors de la vérification de vos crédits');
+        return false;
+      }
+
+      const currentCredits = parseInt(profile.credits_restants || '0', 10);
+      
+      if (currentCredits <= 0) {
+        toast.error('Vous n\'avez plus de crédits disponibles. Veuillez acheter un plan pour continuer.');
+        return false;
+      }
+
+      // Décrémenter les crédits
+      const newCredits = currentCredits - 1;
+      await updateUserCredits(newCredits);
+
+      console.log(`💳 Crédit utilisé. Crédits restants: ${newCredits}`);
+
       // Créer une nouvelle conversation si nécessaire
       let conversationToUse = currentConversation;
       if (!conversationToUse) {
-        const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user || !projectId) {
           toast.error('Impossible de créer une nouvelle conversation');
           return false;
@@ -308,6 +342,39 @@ export const useChatConversation = (projectId: string | undefined) => {
     
     setIsLoading(true);
     try {
+      // Vérifier et décrémenter les crédits utilisateur pour la régénération
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error('Vous devez être connecté pour régénérer une réponse');
+        return;
+      }
+
+      // Récupérer le profil utilisateur pour vérifier les crédits
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('credits_restants')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('❌ Erreur récupération profil:', profileError);
+        toast.error('Erreur lors de la vérification de vos crédits');
+        return;
+      }
+
+      const currentCredits = parseInt(profile.credits_restants || '0', 10);
+      
+      if (currentCredits <= 0) {
+        toast.error('Vous n\'avez plus de crédits disponibles pour régénérer une réponse.');
+        return;
+      }
+
+      // Décrémenter les crédits
+      const newCredits = currentCredits - 1;
+      await updateUserCredits(newCredits);
+
+      console.log(`💳 Crédit utilisé pour régénération. Crédits restants: ${newCredits}`);
+
       const webhookUrl = "https://n8n.eec-technologies.fr/webhook/chatbot-global";
       const response = await fetch(webhookUrl, {
         method: 'POST',

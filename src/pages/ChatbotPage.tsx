@@ -271,7 +271,7 @@ const ChatbotPage = () => {
           // Messages existants
           <div className="max-w-3xl w-full mx-auto flex flex-col flex-1 overflow-hidden">
             {/* Messages avec scroll */}
-            <div className="flex-1 overflow-y-auto scrollbar-transparent pb-[200px] md:pb-[120px]">
+            <div className="flex-1 overflow-y-auto scrollbar-hide pb-[160px] md:pb-[200px]">
               <MessageList
                 messages={messages}
                 isLoading={isLoading}
@@ -279,11 +279,12 @@ const ChatbotPage = () => {
                 streamingText={streamingText}
                 onCopyMessage={copyMessage}
                 onRegenerateResponse={handleRegenerateResponse}
+                isStreaming={Boolean(streamingMessageId)}
               />
             </div>
             
             {/* Input area fixe pour conversation existante */}
-            <div className="fixed md:absolute bottom-[80px] md:bottom-[10px] left-5 right-5 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+            <div className="fixed md:absolute bottom-[120px] md:bottom-[80px] left-[7.5%] right-[7.5%] md:left-5 md:right-5 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
               <div className="max-w-3xl w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}
@@ -311,13 +312,13 @@ const ChatbotPage = () => {
         ) : (
           // Interface de démarrage de conversation
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto scrollbar-transparent flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-8 pb-[200px] md:pb-[120px]">
+            <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-8 pb-[160px] md:pb-[200px]">
               {/* AI Icon and Welcome Message */}
               <div className="flex flex-col items-center mb-8">
                 <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4">
                   <Sparkles className="w-12 h-12 text-white" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-800">
+                <h2 className="text-2xl font-semibold text-gray-800 text-center">
                   Bonjour, une question pour {projectName} ?
                 </h2>
               </div>
@@ -331,7 +332,7 @@ const ChatbotPage = () => {
             </div>
             
             {/* Input area fixe */}
-            <div className="fixed md:absolute bottom-[30px] md:bottom-[10px] left-0 right-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+            <div className="fixed md:absolute bottom-[120px] md:bottom-[30px] left-[7.5%] right-[7.5%] md:left-0 md:right-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
               <div className="max-w-3xl w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}

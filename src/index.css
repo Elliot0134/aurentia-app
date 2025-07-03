@@ -30,6 +30,17 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
   }
+
+  /* Scrollbar complètement cachée */
+  .scrollbar-hide {
+    /* Pour Webkit (Chrome, Safari, Edge) */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
 }
 
 @layer base {

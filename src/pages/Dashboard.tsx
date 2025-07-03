@@ -154,6 +154,17 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+          
+          {/* Bouton créer un projet - visible uniquement en mobile */}
+          <div className="md:hidden mt-6">
+            <button
+              onClick={() => navigate("/warning")}
+              className="btn-primary w-full flex items-center justify-center gap-2 px-4 py-3"
+            >
+              <Plus size={20} />
+              Créer un nouveau projet
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,17 +1,18 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, BookOpen, Zap, LogOut, MessageSquare } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
 import MobileNavbar from "./MobileNavbar"; // Import the new MobileNavbar component
 import { useProject } from "@/contexts/ProjectContext";
+import { Zap } from "lucide-react";
 
 const Sidebar = memo(() => {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { projectId } = useParams(); // Get project ID from URL
-  const { currentProjectId, userProjects } = useProject(); // Get project data from context
+  const { currentProjectId, userProjects, userCredits, creditsLoading } = useProject(); // Get project data and credits from context
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -118,6 +119,19 @@ const Sidebar = memo(() => {
             </Link>
           ))}
         </nav>
+
+        {/* Credits section for desktop */}
+        {user && userCredits && (
+          <div className="absolute bottom-20 left-0 right-0 p-3">
+            <div className="flex items-center gap-2 py-2.5 px-4 rounded-md text-sm bg-gray-50">
+              <Zap size={16} className="text-yellow-500" />
+              <span className="font-medium text-gray-700">
+                {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
+              </span>
+              <span className="text-xs text-gray-500">crédits</span>
+            </div>
+          </div>
+        )}
 
         {/* Profile section for desktop */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-3">
