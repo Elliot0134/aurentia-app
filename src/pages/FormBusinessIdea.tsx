@@ -103,6 +103,9 @@ const Form = () => {
       case 'monPourquoiRetranscription':
         setMonPourquoiRetranscription(popupContent);
         break;
+      case 'equipeFondatrice':
+        setEquipeFondatrice(popupContent);
+        break;
       default:
         break;
     }
@@ -137,6 +140,7 @@ const Form = () => {
   const [businessModel, setBusinessModel] = useState('');
   const [competences, setCompetences] = useState('');
   const [monPourquoiRetranscription, setMonPourquoiRetranscription] = useState('');
+  const [equipeFondatrice, setEquipeFondatrice] = useState('');
 
   // State for webhook response and loading
   const [isLoading, setIsLoading] = useState(false);
@@ -195,6 +199,7 @@ const Form = () => {
             setBusinessModel(webhookData.BusinessModel || '');
             setCompetences(webhookData.Compétences || '');
             setMonPourquoiRetranscription(webhookData.MotivationEntrepreneur || '');
+            setEquipeFondatrice(webhookData.EquipeFondatrice || '');
             setProjectID(webhookData.ProjectID || '');
           } else {
             console.error('Webhook response array is empty or does not contain an object.');
@@ -286,6 +291,7 @@ const Form = () => {
         projectID: projectID,
         competences: competences,
         monPourquoiRetranscription: monPourquoiRetranscription,
+        equipeFondatrice: equipeFondatrice,
       };
       console.log('Form Data (Step 2):', formData);
 
@@ -520,10 +526,9 @@ const Form = () => {
                 <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
                   👥 Combien êtes-vous sur le projet ?
                 </label>
-                <Input
-                  type="text"
-                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
-                  placeholder="Exemple: 2 personnes, juste moi, 3 cofondateurs..."
+                <Textarea
+                  className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors h-24 resize-none"
+                  placeholder="Décrivez la taille de votre équipe actuelle ou envisagée pour ce projet. Par exemple : 'Je suis seul', 'Nous sommes 2 cofondateurs', 'Une équipe de 5 personnes incluant des freelances'."
                   value={teamSize}
                   onClick={() => handleFieldClick('teamSize', teamSize, 'Nombre de personnes sur le projet')}
                   onChange={(e) => setTeamSize(e.target.value)}
@@ -740,6 +745,16 @@ const Form = () => {
                     value={monPourquoiRetranscription}
                     onClick={() => handleFieldClick('monPourquoiRetranscription', monPourquoiRetranscription, 'Mon Pourquoi')}
                     onChange={(e) => setMonPourquoiRetranscription(e.target.value)}
+                  />
+                </div>
+                <div className="bg-[#F9F9F2] rounded-md p-3">
+                  <p className="font-medium mb-1 text-sm">L'équipe fondatrice</p>
+                  <Textarea
+                    placeholder="Décrivez l'équipe fondatrice et ses compétences clés."
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    value={equipeFondatrice}
+                    onClick={() => handleFieldClick('equipeFondatrice', equipeFondatrice, 'L\'équipe fondatrice')}
+                    onChange={(e) => setEquipeFondatrice(e.target.value)}
                   />
                 </div>
               </div>

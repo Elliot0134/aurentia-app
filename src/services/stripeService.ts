@@ -104,11 +104,11 @@ class StripeService {
           window.dispatchEvent(new CustomEvent('creditsUpdated', { 
             detail: { current: 50, max: 50 } 
           }));
-        }
+        }s
       }
       
       // Call the webhook
-      const webhookResponse = await fetch('https://n8n.eec-technologies.fr/webhook-test/generation-livrables-premium', {
+      const webhookResponse = await fetch('https://n8n.eec-technologies.fr/webhook/generation-livrables-premium', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

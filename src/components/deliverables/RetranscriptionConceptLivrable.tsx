@@ -43,6 +43,7 @@ type ProjectSummary = {
   validation_pestel: string | null;
   validation_profile_acheteur: string | null;
   vision_3_ans: string | null;
+  equipe_fondatrice: string | null;
 };
 
 const RetranscriptionConceptLivrable: React.FC = () => {
@@ -93,8 +94,8 @@ const RetranscriptionConceptLivrable: React.FC = () => {
         style={{ background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' }}
       >
         <div className="flex-grow mr-4"> {/* Container for text content */}
-          <h2 className="text-xl font-bold mb-2">Retranscription du concept</h2>
-          <p className="text-white mb-4">Synthèse complète de votre projet d'entreprise</p>
+          <h2 className="text-3xl font-bold mb-2">Retranscription du concept</h2>
+          <p className="text-xl text-white mb-4">Synthèse complète de votre projet d'entreprise</p>
           <div>
             {/* Children for the template content */}
             {/* The actual deliverable content might go here or be passed via children */}
@@ -115,7 +116,7 @@ const RetranscriptionConceptLivrable: React.FC = () => {
           >
             {/* Sticky Header */}
             <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-              <h2 className="text-xl font-bold">Retranscription du concept</h2>
+              <h2 className="text-3xl font-bold">Retranscription du concept</h2>
               <button
                 className="text-gray-600 hover:text-gray-900 transition-colors"
                 onClick={handlePopupClose}
@@ -272,6 +273,10 @@ const RetranscriptionConceptLivrable: React.FC = () => {
                   <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
                     <h4 className="text-sm font-semibold mb-2">Budget</h4>
                     <p className="text-[#4B5563]">{projectSummary?.budget || 'N/A'}</p>
+                  </div>
+                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                    <h4 className="text-sm font-semibold mb-2">L'équipe fondatrice</h4>
+                    <p className="text-[#4B5563]">{projectSummary?.equipe_fondatrice || 'N/A'}</p>
                   </div>
                 </AccordionContent>
               </AccordionItem>

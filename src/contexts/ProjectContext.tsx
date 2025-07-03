@@ -7,7 +7,7 @@ interface ProjectContextType {
   currentProjectId: string | null;
   
   // User projects list for selector
-  userProjects: Array<{ project_id: string; nom_projet: string; created_at: string }>;
+  userProjects: Array<{ project_id: string; nom_projet: string; created_at: string; statut_project: string }>;
   userProjectsLoading: boolean;
   
   // Deliverables for current project
@@ -56,7 +56,7 @@ const DELIVERABLES_CONFIG = [
 
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [userProjects, setUserProjects] = useState<Array<{ project_id: string; nom_projet: string; created_at: string }>>([]);
+  const [userProjects, setUserProjects] = useState<Array<{ project_id: string; nom_projet: string; created_at: string; statut_project: string }>>([]);
   const [userProjectsLoading, setUserProjectsLoading] = useState(false);
   const [deliverableNames, setDeliverableNames] = useState<string[]>([]);
   const [deliverablesLoading, setDeliverablesLoading] = useState(false);
@@ -77,7 +77,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       // Get projects from project_summary table
       const { data, error } = await supabase
         .from('project_summary')
-        .select('project_id, nom_projet, created_at')
+        .select('project_id, nom_projet, created_at, statut_project')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
 

@@ -4,8 +4,9 @@ import { cn } from '@/lib/utils';
 
 interface MultiSelectOption {
   value: string;
-  label: string;
+  label: string | React.ReactNode;
   description?: string;
+  disabled?: boolean; // Add disabled property
 }
 
 interface MultiSelectProps {
@@ -98,11 +99,12 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   return (
                     <div
                       key={option.value}
-                      onClick={() => handleSelect(option.value)}
+                      onClick={() => !option.disabled && handleSelect(option.value)} // Disable click if option is disabled
                       className={cn(
                         "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                         "cursor-pointer hover:bg-accent hover:text-accent-foreground",
-                        isSelected && "bg-accent text-accent-foreground"
+                        isSelected && "bg-accent text-accent-foreground",
+                        option.disabled && "opacity-50 cursor-not-allowed" // Add disabled styling
                       )}
                     >
                       <div className="flex h-4 w-4 items-center justify-center mr-2">

@@ -49,7 +49,7 @@ const Sidebar = memo(() => {
     // },
     {
       name: "Outils",
-      path: "/outils",
+      path: activeProjectId ? "/outils" : "/warning",
       icon: <Settings size={20} />
     },
     {
@@ -109,7 +109,9 @@ const Sidebar = memo(() => {
               to={item.path}
               className={cn(
                 "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
-                location.pathname === item.path
+                (location.pathname === item.path && location.pathname !== "/warning") ||
+                (item.name === "Livrables" && location.pathname.startsWith("/project-business/")) ||
+                (item.name === "Assistant" && location.pathname.startsWith("/chatbot/"))
                   ? "bg-gradient-primary text-white font-medium"
                   : "text-gray-700 hover:bg-gray-100"
               )}
@@ -120,21 +122,19 @@ const Sidebar = memo(() => {
           ))}
         </nav>
 
-        {/* Credits section for desktop */}
-        {user && userCredits && (
-          <div className="absolute bottom-20 left-0 right-0 p-3">
-            <div className="flex items-center gap-2 py-2.5 px-4 rounded-md text-sm bg-gray-50">
-              <Zap size={16} className="text-yellow-500" />
-              <span className="font-medium text-gray-700">
-                {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
-              </span>
-              <span className="text-xs text-gray-500">crédits</span>
-            </div>
-          </div>
-        )}
-
         {/* Profile section for desktop */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-3">
+          {user && userCredits && (
+            <div className="px-3 mb-2"> {/* Adjusted padding and added margin-bottom */}
+              <div className="flex items-center gap-2 py-2.5 px-4 rounded-md text-sm bg-gray-50">
+                <Zap size={16} className="text-yellow-500" />
+                <span className="font-medium text-gray-700">
+                  {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
+                </span>
+                <span className="text-xs text-gray-500">crédits</span>
+              </div>
+            </div>
+          )}
           {user ? (
             <>
               <Link

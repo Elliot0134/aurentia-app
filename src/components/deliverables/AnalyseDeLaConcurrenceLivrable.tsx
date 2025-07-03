@@ -142,7 +142,11 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
       >
         <div className="flex-grow mr-4 flex flex-col">
           <h2 className="text-xl font-bold mb-2">Concurrence</h2>
-          <p className="text-white mb-4">{concurrenceData?.justification_avis}</p>
+          <p className="text-white mb-4">
+            {projectStatus === 'free'
+              ? 'Analyse concurrentielle de votre projet (forces et faiblesses des concurrents) + site web'
+              : concurrenceData?.justification_avis}
+          </p>
           <div className="flex-grow">
             {/* Children for the template content */}
           </div>

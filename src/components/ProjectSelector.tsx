@@ -55,13 +55,6 @@ const ProjectSelector = memo(() => {
     }
   }, [projectId, currentProjectId, setCurrentProjectId]);
 
-  // Ensure user projects are loaded
-  useEffect(() => {
-    if (!userProjectsLoading && userProjects.length === 0) {
-      loadUserProjects();
-    }
-  }, [userProjectsLoading, userProjects.length, loadUserProjects]);
-
   const goToProject = (project: { project_id: string; nom_projet: string; created_at: string }) => {
     if (project) {
       navigate(`/project-business/${project.project_id}`);

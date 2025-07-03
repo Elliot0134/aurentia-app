@@ -53,6 +53,7 @@ const ChatbotPage = () => {
   // Get project name
   const currentProject = userProjects.find(p => p.project_id === currentProjectId);
   const projectName = currentProject ? currentProject.nom_projet : "votre projet";
+  const projectStatus = currentProject ? currentProject.statut_project : "unknown";
 
   // Créer les options pour le multiselect des livrables
   const deliverableOptions = deliverableNames.map(name => ({
@@ -335,6 +336,7 @@ const ChatbotPage = () => {
                   onSelectedSearchModesChange={setSelectedSearchModes}
                   onReformQuestion={handleReformQuestion}
                   projectId={currentProjectId || ''} // Pass currentProjectId
+                  projectStatus={projectStatus} // Pass projectStatus
                 />
               </div>
             </div>
@@ -383,6 +385,7 @@ const ChatbotPage = () => {
                   onSelectedSearchModesChange={setSelectedSearchModes}
                   onReformQuestion={handleReformQuestion}
                   projectId={currentProjectId || ''} // Pass currentProjectId
+                  projectStatus={projectStatus} // Pass projectStatus
                 />
               </div>
             </div>

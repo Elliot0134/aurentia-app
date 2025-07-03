@@ -37,6 +37,7 @@ interface ChatInputProps {
   onSelectedSearchModesChange: (value: string[]) => void;
   onReformQuestion: (message: string) => Promise<void>; // New prop for reformulating question
   projectId: string; // New prop for project ID
+  projectStatus: string; // New prop for project status
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -58,6 +59,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSelectedSearchModesChange,
   onReformQuestion,
   projectId,
+  projectStatus,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -140,7 +142,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
                 {/* Modes de recherche */}
                 <MultiSelect
-                  options={searchModeOptions}
+                  options={searchModeOptions.map(option => {
+                    if (option.value === 'project_rag' && projectStatus === 'free') {
+                      return {
+                        ...option,
+                        label: (
+                          <>
+                            {option.label}
+                            <span className="text-xs text-red-500 block">Disponible au plan supérieur</span>
+                          </>
+                        ),
+                        disabled: true // Disable the option if project is free
+                      };
+                    }
+                    return option;
+                  })}
                   value={selectedSearchModes}
                   onChange={onSelectedSearchModesChange}
                   placeholder="Sélectionner les modes..."
