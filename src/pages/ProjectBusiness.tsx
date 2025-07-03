@@ -349,14 +349,14 @@ const ProjectBusiness = () => {
 
       {/* Payment Loading Dialog */}
       <Dialog open={isPaymentLoading} onOpenChange={() => {}}>
-        <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+        <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
           <DialogHeader>
-            <DialogTitle>
-              {paymentStatus === 'processing' ? 'Génération des livrables premium' : 'Traitement du paiement'}
+            <DialogTitle className="text-2xl">
+              {paymentStatus === 'processing' ? '☕️ Une pause café ?' : 'Traitement du paiement'}
             </DialogTitle>
             <DialogDescription>
               {paymentStatus === 'processing' 
-                ? 'Veuillez patienter pendant la génération de vos livrables premium.' 
+                ? <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
                 : 'Traitement de votre paiement en cours...'}
             </DialogDescription>
           </DialogHeader>

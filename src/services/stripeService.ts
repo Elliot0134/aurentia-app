@@ -81,6 +81,9 @@ class StripeService {
     try {
       console.log(`🚀 Traitement du paiement réussi - Plan: ${planId}, Projet: ${projectId}, User: ${userId}`);
       
+      // Clear payment data from localStorage immediately to prevent re-triggering
+      localStorage.removeItem('aurentia_payment_data');
+
       // Update user credits for plan1
       if (planId === 'plan1') {
         console.log('💳 Mise à jour des crédits pour Plan 1...');
@@ -104,7 +107,7 @@ class StripeService {
           window.dispatchEvent(new CustomEvent('creditsUpdated', { 
             detail: { current: 50, max: 50 } 
           }));
-        }s
+        }
       }
       
       // Call the webhook
@@ -122,14 +125,11 @@ class StripeService {
 
       if (!webhookResponse.ok) {
         throw new Error(`Webhook failed with status: ${webhookResponse.status}`);
-      }
-
+      } 
+      
       const webhookResult = await webhookResponse.json();
       console.log('✅ Webhook response:', webhookResult);
-
-      // Clear payment data from localStorage
-      localStorage.removeItem('aurentia_payment_data');
-
+      
       return { success: true };
 
     } catch (error) {
@@ -168,4 +168,4 @@ class StripeService {
   }
 }
 
-export const stripeService = new StripeService(); 
+export const stripeService = new StripeService();
