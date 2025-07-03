@@ -76,7 +76,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                 message.sender === 'user'
                   ? 'bg-[#f0efe6] text-gray-900'
                   : ''
-              } rounded-2xl px-3 py-2 sm:px-4 sm:py-3 markdown-content w-full overflow-hidden max-w-[calc(100%-36px)]`}>
+              } rounded-2xl px-3 py-2 sm:px-4 sm:py-3 markdown-content w-full overflow-hidden max-w-full`}>
                 <div className="prose prose-base sm:prose max-w-none break-words overflow-wrap-anywhere [&>*]:text-base [&>*]:sm:text-base">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}

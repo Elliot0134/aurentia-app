@@ -73,7 +73,8 @@ export default {
 					violet: '#9C27B0',
 					rose: '#E91E63',
 					mint: '#26A69A',
-					'blue-violet': '#3F51B5'
+					'blue-violet': '#3F51B5',
+					'deliverable-resource': '#57acc2'
 				}
 			},
 			borderRadius: {

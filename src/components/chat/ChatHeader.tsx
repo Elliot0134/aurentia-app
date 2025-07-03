@@ -1,7 +1,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Plus, Pencil, Trash2 } from "lucide-react";
+import { Sparkles, Plus, Pencil, Trash2, History } from "lucide-react";
 import { type Conversation } from '@/services/chatbotService';
 
 interface ChatHeaderProps {
@@ -13,6 +13,7 @@ interface ChatHeaderProps {
   onNewChat: () => void;
   onRenameConversation: () => void;
   onDeleteConversation: () => void;
+  onToggleHistoryMobile: () => void; // New prop for toggling history on mobile
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -24,6 +25,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onNewChat,
   onRenameConversation,
   onDeleteConversation,
+  onToggleHistoryMobile, // Destructure new prop
 }) => {
   return (
     <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
@@ -35,8 +37,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           
-          {/* Titre/Select de conversation */}
-          <div className="flex-1 min-w-0">
+          {/* Titre/Select de conversation - Hidden on mobile */}
+          <div className="flex-1 min-w-0 hidden sm:block">
             {isHistoryLoading ? (
               // Chargement en cours
               <div className="flex items-center gap-2">
@@ -76,7 +78,19 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           </div>
           
           {/* Boutons d'action */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-auto"> {/* Added ml-auto to push buttons to the right */}
+            {/* History button - visible only on mobile */}
+            {conversationHistory.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleHistoryMobile}
+                className="text-gray-500 hover:text-gray-700 p-2 sm:hidden"
+              >
+                <History size={16} />
+              </Button>
+            )}
+
             {/* Bouton Nouveau - toujours visible */}
             <Button
               variant="ghost"

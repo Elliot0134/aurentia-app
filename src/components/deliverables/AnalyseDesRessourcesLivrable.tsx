@@ -24,7 +24,6 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
   const deliverableDescription = "Identification et planification des ressources nécessaires au projet";
   const deliverableDefinition = "L'analyse des ressources consiste à identifier, quantifier et planifier l'ensemble des moyens matériels, humains et techniques nécessaires à la réalisation et au fonctionnement d'un projet d'entreprise.";
   const deliverableImportance = "Cette analyse est cruciale car elle permet d'évaluer les investissements requis, de planifier les recrutements, d'anticiper les coûts et de s'assurer que tous les moyens nécessaires seront disponibles au moment opportun pour le lancement et la croissance de l'entreprise.";
-  const deliverableColor = "#57acc2";
 
   // Fonction utilitaire pour parser les données JSON avec gestion d'erreurs
   const parseJsonData = (jsonString: string | null) => {
@@ -266,7 +265,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
           title={deliverableTitle}
           description={deliverableDescription}
           iconSrc="/icones-livrables/ressources-icon.png"
-          bgColor={`bg-[${deliverableColor}]`}
+          bgColor="bg-aurentia-deliverable-resource"
           onClick={handleTemplateClick}
         />
 
@@ -311,7 +310,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
         title={deliverableTitle}
         description={deliverableDescription}
         iconSrc="/icones-livrables/ressources-icon.png"
-        bgColor={`bg-[${deliverableColor}]`}
+        bgColor="bg-aurentia-deliverable-resource"
         onClick={handleTemplateClick}
       />
 
@@ -328,7 +327,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
               <button
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
                   showDefinitionPlaceholder
-                    ? `bg-[${deliverableColor}] text-white`
+                    ? `bg-aurentia-deliverable-resource text-white`
                     : 'bg-gray-200 text-gray-700'
                 }`}
                 onClick={() => {
@@ -359,7 +358,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
               <button
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
                   selectedCategory === 'materielles'
-                    ? `bg-[${deliverableColor}] text-white`
+                    ? `bg-aurentia-deliverable-resource text-white`
                     : 'bg-gray-200 text-gray-700'
                 }`}
                 onClick={() => setSelectedCategory('materielles')}
@@ -369,7 +368,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
               <button
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
                   selectedCategory === 'humaines'
-                    ? `bg-[${deliverableColor}] text-white`
+                    ? `bg-aurentia-deliverable-resource text-white`
                     : 'bg-gray-200 text-gray-700'
                 }`}
                 onClick={() => setSelectedCategory('humaines')}
@@ -379,7 +378,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
               <button
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
                   selectedCategory === 'techniques'
-                    ? `bg-[${deliverableColor}] text-white`
+                    ? `bg-aurentia-deliverable-resource text-white`
                     : 'bg-gray-200 text-gray-700'
                 }`}
                 onClick={() => setSelectedCategory('techniques')}

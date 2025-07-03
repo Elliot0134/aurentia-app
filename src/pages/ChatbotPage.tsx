@@ -20,6 +20,7 @@ const ChatbotPage = () => {
   const [tempConversationName, setTempConversationName] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReformulating, setIsReformulating] = useState(false); // New state for reformulation loading
+  const [isHistoryOpenMobile, setIsHistoryOpenMobile] = useState(false); // New state for mobile history visibility
 
   // State for communication style and search mode
   const [communicationStyle, setCommunicationStyle] = useState('normal');
@@ -264,12 +265,41 @@ const ChatbotPage = () => {
           onNewChat={newChat}
           onRenameConversation={handleRenameConversation}
           onDeleteConversation={handleDeleteConversation}
+          onToggleHistoryMobile={() => setIsHistoryOpenMobile(!isHistoryOpenMobile)} // Pass the toggle function
         />
+
+        {/* Mobile History Dropdown */}
+        {isHistoryOpenMobile && conversationHistory.length > 0 && (
+          <div className="sm:hidden bg-white border-b border-gray-200 py-2 px-4">
+            {isHistoryLoading ? (
+              <div className="flex items-center gap-2 py-2">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-500">Chargement des conversations...</span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {conversationHistory.map((conv) => (
+                  <div key={conv.id} onClick={() => {
+                    loadConversation(conv.id);
+                    setIsHistoryOpenMobile(false); // Close history after selection
+                  }} className="py-2 px-3 rounded-md hover:bg-gray-100 cursor-pointer">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="truncate">{conv.title}</span>
+                      <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                        {new Date(conv.updatedAt).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Messages et interface de chat */}
         {currentConversation && messages.length > 0 ? (
           // Messages existants
-          <div className="max-w-3xl w-full mx-auto flex flex-col flex-1 overflow-hidden">
+          <div className="w-full flex flex-col flex-1 overflow-hidden px-4">
             {/* Messages avec scroll */}
             <div className="flex-1 overflow-y-auto scrollbar-hide pb-[160px] md:pb-[200px]">
               <MessageList
@@ -284,8 +314,8 @@ const ChatbotPage = () => {
             </div>
             
             {/* Input area fixe pour conversation existante */}
-            <div className="fixed md:absolute bottom-[120px] md:bottom-[80px] left-[7.5%] right-[7.5%] md:left-5 md:right-5 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
-              <div className="max-w-3xl w-full mx-auto">
+            <div className="fixed md:absolute bottom-[120px] md:bottom-[80px] left-0 right-0 px-4 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+              <div className="w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}
                   placeholder="Continuez la conversation avec Aurentia..."
@@ -322,7 +352,7 @@ const ChatbotPage = () => {
                   Bonjour, une question pour {projectName} ?
                 </h2>
               </div>
-              <div className="max-w-3xl w-full text-center space-y-6 sm:space-y-8">
+              <div className="w-full text-center space-y-6 sm:space-y-8 px-4">
                 {/* Suggested prompts */}
                 <SuggestedPrompts
                   prompts={suggestedPrompts}
@@ -332,8 +362,8 @@ const ChatbotPage = () => {
             </div>
             
             {/* Input area fixe */}
-            <div className="fixed md:absolute bottom-[120px] md:bottom-[30px] left-[7.5%] right-[7.5%] md:left-0 md:right-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
-              <div className="max-w-3xl w-full mx-auto">
+            <div className="fixed md:absolute bottom-[120px] md:bottom-[30px] left-0 right-0 px-4 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+              <div className="w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}
                   placeholder="Posez votre question à Aurentia..."
