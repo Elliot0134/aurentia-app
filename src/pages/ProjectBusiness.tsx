@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FileText, Download, Settings, DollarSign, Briefcase, Lightbulb, Package, Shield, TrendingUp, Book, ListChecks, BarChart, Globe, HelpCircle } from "lucide-react";
+import { FileText, Download, Settings, DollarSign, Briefcase, Lightbulb, Package, Shield, TrendingUp, Book, ListChecks, BarChart, Globe, HelpCircle, UserPlus, Mail, Eye, Edit, FolderSearch } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import RetranscriptionConceptLivrable from "@/components/deliverables/RetranscriptionConceptLivrable";
 import PersonaExpressLivrable from "@/components/deliverables/PersonaExpressLivrable";
 import MiniSwotLivrable from "@/components/deliverables/MiniSwotLivrable";
@@ -17,9 +22,10 @@ import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRe
 import VisionMissionValeursLivrable from "@/components/deliverables/VisionMissionValeursLivrable"; // Import the new deliverable
 import BlurredDeliverableWrapper from "@/components/deliverables/BlurredDeliverableWrapper"; // Import the new wrapper
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import Dialog components
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
 import { useStripePayment } from "@/hooks/useStripePayment";
+import { useProject } from "@/contexts/ProjectContext";
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
@@ -31,8 +37,15 @@ const ProjectBusiness = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
   
+  // États pour le popup d'invitation
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'Lecteur' | 'Éditeur'>('Lecteur');
+  const [inviteProjects, setInviteProjects] = useState<string[]>([]);
+  
   // Stripe payment hook
   const { isLoading: isPaymentLoading, paymentStatus, initiatePayment } = useStripePayment();
+  const { userProjects } = useProject();
 
   const handlePayment = async (planId: string) => {
     if (!projectId) {
@@ -195,6 +208,49 @@ const ProjectBusiness = () => {
     );
   };
 
+  const handleInvite = () => {
+    if (!inviteEmail) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer une adresse email",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Vérifier si l'email est valide
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail)) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer une adresse email valide",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Vérifier qu'au moins un projet est sélectionné
+    if (inviteProjects.length === 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner au moins un projet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // TODO: Implémenter l'envoi réel de l'invitation
+    setIsInviteModalOpen(false);
+    setInviteEmail('');
+    setInviteRole('Lecteur');
+    setInviteProjects([]);
+    
+    toast({
+      title: "Succès",
+      description: `Invitation envoyée à ${inviteEmail}`,
+    });
+  };
+
   useEffect(() => {
     if (!projectId) {
       setLoading(false);
@@ -243,22 +299,56 @@ const ProjectBusiness = () => {
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold">{project.nom_projet || "Projet sans nom"}</h1>
-            <p className="text-gray-600 text-sm mt-1">{project.description_projet || "Aucune description"}</p>
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
+            <div className="flex items-center gap-3 w-full">
+              <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
+                if (projectStatus === 'free') {
+                  handleUnlockClick();
+                } else {
+                  // TODO: Implement actual modify functionality here
+                  toast({
+                    title: "Modification",
+                    description: "La fonctionnalité de modification sera bientôt disponible.",
+                    duration: 3000,
+                  });
+                }
+              }}>
+                <Settings size={16} />
+                Modifier
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
+                if (projectStatus === 'free') {
+                  handleUnlockClick();
+                } else {
+                  // TODO: Implement actual export functionality here
+                  toast({
+                    title: "Exportation",
+                    description: "La fonctionnalité d'exportation sera bientôt disponible.",
+                    duration: 3000,
+                  });
+                }
+              }}>
+                <Download size={16} />
+                Exporter
+              </Button>
+            </div>
+            <Button
+              onClick={() => setIsInviteModalOpen(true)}
+              className="flex items-center gap-2 bg-gradient-primary hover:opacity-90 transition-opacity w-full"
+              size="sm"
+            >
+              <UserPlus size={16} />
+              Inviter un collaborateur
+            </Button>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="btn-outline flex items-center gap-2 text-sm">
-              <Settings size={16} />
-              Modifier
-            </button>
-            <button className="btn-outline flex items-center gap-2 text-sm">
-              <Download size={16} />
-              Exporter
-            </button>
+          <div className="flex flex-col w-full md:w-1/2 md:order-first">
+            <div>
+              <h1 className="text-2xl font-semibold">{project.nom_projet || "Projet sans nom"}</h1>
+            </div>
           </div>
         </div>
+        <p className="text-gray-600 text-sm mt-1 mb-6">{project.description_projet || "Aucune description"}</p>
 
         {/* Level 1 Deliverables */}
         <div className="grid grid-cols-12 gap-4 md:gap-5">
@@ -383,6 +473,78 @@ const ProjectBusiness = () => {
               {popupContent?.content}
             </DialogDescription>
           </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      {/* Popup d'invitation */}
+      <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+        <DialogContent className="rounded-xl w-[90vw] mx-auto my-4 sm:max-w-[425px] sm:w-full">
+          <DialogHeader>
+            <DialogTitle>Inviter un nouveau collaborateur</DialogTitle>
+            <DialogDescription>
+              Envoyez une invitation par email pour donner accès à votre projet.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Adresse email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="collaborateur@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="placeholder:text-xs"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="role">Rôle</Label>
+              <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'Lecteur' | 'Éditeur')}>
+                <SelectTrigger id="role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Lecteur">
+                    <div className="flex items-center">
+                      <Eye className="w-4 h-4 mr-2" />
+                      Lecteur - Peut consulter le projet
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Éditeur">
+                    <div className="flex items-center">
+                      <Edit className="w-4 h-4 mr-2" />
+                      Éditeur - Peut modifier le projet
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="projects">Projets</Label>
+              <MultiSelect
+                options={userProjects.map(project => ({
+                  value: project.project_id,
+                  label: (
+                    <div className="flex items-center gap-2">
+                      <FolderSearch className="w-4 h-4" />
+                      {project.nom_projet}
+                    </div>
+                  ),
+                }))}
+                value={inviteProjects}
+                onChange={setInviteProjects}
+                placeholder="Sélectionner les projets..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="mr-2 flex-1">
+              Annuler
+            </Button>
+            <Button onClick={handleInvite} className="flex-1">
+              Envoyer l'invitation
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

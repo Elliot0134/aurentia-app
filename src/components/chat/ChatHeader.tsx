@@ -28,7 +28,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onToggleHistoryMobile, // Destructure new prop
 }) => {
   return (
-    <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+    <div className="border-b border-gray-200 bg-white bg-opacity-90 backdrop-blur-md sticky top-0 z-10 rounded-xl mx-4"> {/* Added mx-4 */}
       <div className="mx-auto px-3 sm:px-4 py-3 sm:py-4">
         {/* Layout en une seule ligne avec tout aligné */}
         <div className="flex items-center gap-3 w-full">

@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, ChevronLeft, Library } from "lucide-react"; // Import Library
+import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, ChevronLeft, Library, Users } from "lucide-react"; // Import Library and Users
 import { cn } from "@/lib/utils";
 import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +81,14 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
       path: "/ressources",
       icon: <Library size={20} />
     },
+    {
+      isDivider: true, // Custom property to indicate a divider
+    },
+    {
+      name: "Collaborateurs",
+      path: "/collaborateurs",
+      icon: <Users size={20} />
+    },
   ];
 
   const [user, setUser] = useState<any>(null);
@@ -149,7 +157,8 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                   (item.name === "Assistant IA" && location.pathname.startsWith("/chatbot/")) ||
                   (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
                   (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
-                  (item.name === "Plan d'action" && location.pathname.startsWith("/roadmap"))
+                  (item.name === "Plan d'action" && location.pathname.startsWith("/roadmap")) ||
+                  (item.name === "Collaborateurs" && location.pathname.startsWith("/collaborateurs"))
                     ? "bg-gradient-primary text-white font-medium"
                     : "text-gray-700 hover:bg-gray-100"
                 )}

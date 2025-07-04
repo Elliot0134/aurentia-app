@@ -73,8 +73,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const isInputEmpty = inputMessage.trim() === '';
 
   return (
-    <div className="w-full pb-safe">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-200">
+    <div className="w-full pb-safe px-2"> {/* Added px-4 for mobile padding, removed mx-4 */}
+      <div className="w-full mx-auto bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-200"> {/* Removed md:w-[60vw], mx-auto, added w-full, added mx-auto */}
         
         {/* Zone de saisie avec bouton send */}
         <div className="relative px-4 pt-4 pb-2">

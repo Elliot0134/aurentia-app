@@ -21,6 +21,7 @@ const ChatbotPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReformulating, setIsReformulating] = useState(false); // New state for reformulation loading
   const [isHistoryOpenMobile, setIsHistoryOpenMobile] = useState(false); // New state for mobile history visibility
+  const [isDropdownExiting, setIsDropdownExiting] = useState(false); // New state for exit animation
 
   // State for communication style and search mode
   const [communicationStyle, setCommunicationStyle] = useState('normal');
@@ -253,7 +254,7 @@ const ChatbotPage = () => {
   return (
     <div className="flex flex-col h-screen bg-[#F8F6F1] overflow-hidden overflow-x-hidden">
       {/* Interface de chat directe - comme ChatGPT */}
-      <div className="flex flex-col flex-1 w-full md:w-7/10 mx-auto h-full overflow-hidden relative">
+      <div className="flex flex-col flex-1 w-full md:w-[60vw] mx-auto h-full overflow-hidden relative pt-4"> {/* Changed to 60vw for screen width, added pt-4 */}
         {/* Header avec select de conversation */}
         <ChatHeader
           currentConversation={currentConversation}
@@ -264,12 +265,23 @@ const ChatbotPage = () => {
           onNewChat={newChat}
           onRenameConversation={handleRenameConversation}
           onDeleteConversation={handleDeleteConversation}
-          onToggleHistoryMobile={() => setIsHistoryOpenMobile(!isHistoryOpenMobile)} // Pass the toggle function
+          onToggleHistoryMobile={() => {
+            if (isHistoryOpenMobile) {
+              setIsDropdownExiting(true);
+              setTimeout(() => {
+                setIsHistoryOpenMobile(false);
+                setIsDropdownExiting(false);
+              }, 300); // Match animation duration
+            } else {
+              setIsHistoryOpenMobile(true);
+              setIsDropdownExiting(false);
+            }
+          }}
         />
 
         {/* Mobile History Dropdown */}
-        {isHistoryOpenMobile && conversationHistory.length > 0 && (
-          <div className="sm:hidden bg-white border-b border-gray-200 py-2 px-4">
+        {(isHistoryOpenMobile || isDropdownExiting) && conversationHistory.length > 0 && (
+          <div className={`sm:hidden bg-white border-b border-gray-200 py-2 px-4 mx-4 rounded-xl backdrop-blur-md mt-0.5 absolute top-[60px] left-0 right-0 z-20 ${isDropdownExiting ? 'animate-fade-out' : 'animate-fade-in'}`}> {/* Added absolute, top-[60px], left-0, right-0, z-20 */}
             {isHistoryLoading ? (
               <div className="flex items-center gap-2 py-2">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
@@ -280,10 +292,14 @@ const ChatbotPage = () => {
                 {conversationHistory.map((conv) => (
                   <div key={conv.id} onClick={() => {
                     loadConversation(conv.id);
-                    setIsHistoryOpenMobile(false); // Close history after selection
+                    setIsDropdownExiting(true); // Start exit animation
+                    setTimeout(() => {
+                      setIsHistoryOpenMobile(false); // Close history after animation
+                      setIsDropdownExiting(false);
+                    }, 300); // Match animation duration
                   }} className="py-2 px-3 rounded-md hover:bg-gray-100 cursor-pointer">
                     <div className="flex items-center justify-between w-full">
-                      <span className="truncate">{conv.title}</span>
+                      <span className="">{conv.title}</span> {/* Removed truncate */}
                       <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
                         {new Date(conv.updatedAt).toLocaleDateString('fr-FR')}
                       </span>
@@ -313,11 +329,11 @@ const ChatbotPage = () => {
             </div>
             
             {/* Input area fixe pour conversation existante */}
-            <div className="fixed md:absolute bottom-[120px] md:bottom-[80px] left-0 right-0 px-4 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+            <div className="fixed md:absolute bottom-[120px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
               <div className="w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}
-                  placeholder="Continuez la conversation avec Aurentia..."
+                  placeholder="Répondre à Aurentia..."
                   isLoading={isLoading || isReformulating} // Disable input during reformulation
                   isSubmitting={isSubmitting}
                   communicationStyle={communicationStyle}
@@ -362,11 +378,11 @@ const ChatbotPage = () => {
             </div>
             
             {/* Input area fixe */}
-            <div className="fixed md:absolute bottom-[120px] md:bottom-[30px] left-0 right-0 px-4 bg-[#F8F6F1]/80 backdrop-blur-md z-10 md:w-full">
+            <div className="fixed md:absolute bottom-[120px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
               <div className="w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}
-                  placeholder="Posez votre question à Aurentia..."
+                  placeholder="Répondre à Aurentia..."
                   isLoading={isLoading || isReformulating} // Disable input during reformulation
                   isSubmitting={isSubmitting}
                   communicationStyle={communicationStyle}
