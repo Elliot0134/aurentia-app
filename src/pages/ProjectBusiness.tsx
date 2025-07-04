@@ -48,6 +48,7 @@ const ProjectBusiness = () => {
   const { userProjects } = useProject();
 
   const handlePayment = async (planId: string) => {
+    console.log("handlePayment called. planId:", planId);
     if (!projectId) {
       toast({
         title: "Erreur",
@@ -58,6 +59,7 @@ const ProjectBusiness = () => {
     }
     
     await initiatePayment(planId, projectId);
+    console.log("initiatePayment finished. isPaymentLoading:", isPaymentLoading, "paymentStatus:", paymentStatus, "isWaitingPayment:", isWaitingPayment);
   };
 
   const openPopup = (title: React.ReactNode, content: React.ReactNode, buttonColor?: string) => {
@@ -281,12 +283,40 @@ const ProjectBusiness = () => {
           description_projet: data?.description_synthetique || "Aucune description",
         });
         setProjectStatus(data?.statut_project || null);
+        console.log("fetchProject: projectStatus set to", data?.statut_project);
       }
       setLoading(false);
     };
 
     fetchProject();
   }, [projectId]); // Refetch when projectId changes
+
+  // Refetch project status when waiting for payment
+  useEffect(() => {
+    if (!projectId || !isWaitingPayment) return;
+
+    console.log("Polling useEffect started. isWaitingPayment:", isWaitingPayment);
+    const interval = setInterval(async () => {
+      console.log("Polling for project status...");
+      const { data, error } = await supabase
+        .from('project_summary')
+        .select('statut_project')
+        .eq('project_id', projectId)
+        .single();
+
+      if (!error && data) {
+        setProjectStatus(data.statut_project || null);
+        console.log("Polling: projectStatus updated to", data?.statut_project);
+      } else if (error) {
+        console.error("Polling error:", error);
+      }
+    }, 4000);
+
+    return () => {
+      clearInterval(interval);
+      console.log("Polling useEffect cleaned up.");
+    };
+  }, [projectId, isWaitingPayment]);
 
   // Refetch project status when waiting for payment
   useEffect(() => {
@@ -581,70 +611,6 @@ const ProjectBusiness = () => {
         </DialogContent>
       </Dialog>
 
-      {/* CSS for custom loader */}
-      <style>{`
-        .loader {
-          position: relative;
-          width: 50px;
-          height: 50px;
-        }
-        
-        .circle {
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: linear-gradient(45deg, #f97316, #ef4444);
-          animation: circle-animation 2s infinite ease-in-out;
-        }
-        
-        .circle:nth-child(1) {
-          top: 0;
-          left: 0;
-          animation-delay: 0s;
-        }
-        
-        .circle:nth-child(2) {
-          top: 0;
-          right: 0;
-          animation-delay: 0.5s;
-        }
-        
-        .circle:nth-child(3) {
-          bottom: 0;
-          left: 0;
-          animation-delay: 1s;
-        }
-        
-        .square {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 10px;
-          height: 10px;
-          background: linear-gradient(45deg, #f97316, #ef4444);
-          animation: square-animation 2s infinite ease-in-out;
-          animation-delay: 1.5s;
-        }
-        
-        @keyframes circle-animation {
-          0%, 80%, 100% {
-            transform: scale(0);
-          }
-          40% {
-            transform: scale(1);
-          }
-        }
-        
-        @keyframes square-animation {
-          0%, 80%, 100% {
-            transform: scale(0) rotate(0deg);
-          }
-          40% {
-            transform: scale(1) rotate(180deg);
-          }
-        }
-      `}</style>
     </div>
   );
 };
