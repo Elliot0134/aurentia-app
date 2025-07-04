@@ -244,8 +244,6 @@ const ChatbotPage = () => {
   };
 
   const suggestedPrompts = [
-    "Aide-moi à analyser ma concurrence",
-    "Quelles sont les tendances de mon marché ?",
     "Comment améliorer ma proposition de valeur ?",
     "Analyse les risques de mon projet"
   ];
@@ -344,9 +342,9 @@ const ChatbotPage = () => {
         ) : (
           // Interface de démarrage de conversation
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-8 pb-[160px] md:pb-[200px]">
-              {/* AI Icon and Welcome Message */}
-              <div className="flex flex-col items-center mb-8">
+          <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-1 sm:py-8 pb-[160px] md:pb-[200px]">
+            {/* AI Icon and Welcome Message */}
+            <div className="flex flex-col items-center mb-8">
                 <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4">
                   <Sparkles className="w-12 h-12 text-white" />
                 </div>

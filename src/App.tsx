@@ -17,6 +17,8 @@ import FormBusinessIdea from "./pages/FormBusinessIdea";
 import ProjectBusiness from "./pages/ProjectBusiness";
 import WarningPage from "./pages/WarningPage";
 import Outils from "./pages/Outils";
+import Partenaires from "./pages/Partenaires";
+import Roadmap from "./pages/Roadmap";
 import ChatbotPage from "./pages/ChatbotPage";
 import ProtectedLayout from "./components/ProtectedLayout";
 import { ProjectProvider } from "./contexts/ProjectContext";
@@ -149,6 +151,8 @@ const App = () => {
                     <Route path="/warning" element={<WarningPage />} />
                     <Route path="/form-business-idea" element={<FormBusinessIdea />} />
                     <Route path="/outils" element={<Outils />} />
+                    <Route path="/partenaires" element={<Partenaires />} />
+                    <Route path="/roadmap" element={<Roadmap />} />
                     <Route path="/chatbot/:projectId" element={<ChatbotPage />} />
                   </Route>
                 </Route>

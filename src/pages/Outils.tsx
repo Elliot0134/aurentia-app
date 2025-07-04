@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 const toolsData = [
   { id: 1, name: "Rédaction mail de prospection", description: "Génère des e-mails de prospection personnalisés." },
@@ -18,6 +27,7 @@ const ToolCard = ({ tool }) => (
 const Outils = () => {
   const [filterText, setFilterText] = useState('');
   const [sortCriteria, setSortCriteria] = useState('name'); // Default sort by name
+  const [showPopup, setShowPopup] = useState(true);
 
   const filteredTools = toolsData.filter(tool =>
     tool.name.toLowerCase().includes(filterText.toLowerCase())
@@ -34,6 +44,22 @@ const Outils = () => {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Outils</h1>
+
+      <Dialog open={showPopup} onOpenChange={setShowPopup}>
+        <DialogContent className="w-[90vw] rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="bg-gradient-primary text-transparent bg-clip-text text-3xl">Fonctionnalité à venir</DialogTitle>
+            <Separator className="my-4" />
+            <DialogDescription className="text-black">
+
+              Imaginez pouvoir en un clic, générer tout votre contenu marketing, analyser les risques liés à votre projet par rapport à une décision, analyser le sentiment des retours de vos utilisateurs, rédiger vos emails de prospection, et bien plus encore.
+              <br /><br />
+              C'est la vision d'Aurentia. Un écosystème 360° propulsé par l'IA, connecté à votre projet.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
       {/* Card grid with filters and sorting will go here */}
       <div>
         {/* Placeholder for filters and sorting */}

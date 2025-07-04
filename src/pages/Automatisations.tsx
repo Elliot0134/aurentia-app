@@ -1,9 +1,43 @@
 
+import React, { useState, useEffect } from 'react';
 import { FileText, AlertCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 const Automatisations = () => {
+  const [showPopup, setShowPopup] = useState(true);
+
   return (
     <div className="container mx-auto px-4 py-12 animate-fade-in">
+      <Dialog open={showPopup} onOpenChange={setShowPopup}>
+        <DialogContent className="w-[90vw] rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="bg-gradient-primary text-transparent bg-clip-text text-3xl">Fonctionnalité à venir</DialogTitle>
+            <Separator className="my-4" />
+            <DialogDescription className="text-black">
+              Imaginez...
+              <br /><br />
+              ✅ <b>Votre veille stratégique automatisée</b> - Concurrence, réglementation et opportunités détectées en temps réel
+              <br /><br />
+              ✅ <b>Votre marketing en pilote automatique</b> - Articles de blog hebdomadaires, contenu social et campagnes email personnalisées
+              <br /><br />
+              ✅ <b>Votre gestion simplifiée</b> - Facturation, synchronisation CRM/comptabilité et reporting automatiques
+              <br /><br />
+              ✅ <b>Votre assistant entrepreneurial IA</b> - Recommandations stratégiques et optimisations basées sur vos données
+              <br /><br />
+              Avec Aurentia, pendant que l'IA gère le quotidien, vous développez votre vision.
+              <br />
+              Soyez les premiers informés du lancement !
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-semibold mb-8">Automatisations</h1>
         

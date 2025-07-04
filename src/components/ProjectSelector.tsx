@@ -1,10 +1,14 @@
 import { useState, useEffect, memo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Settings, Plus } from "lucide-react";
+import { ArrowRight, Plus, FolderSearch } from "lucide-react"; // Import FolderSearch, remove Settings
 import { useProject } from "@/contexts/ProjectContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-const ProjectSelector = memo(() => {
+interface ProjectSelectorProps {
+  isCollapsed: boolean;
+}
+
+const ProjectSelector = memo(({ isCollapsed }: ProjectSelectorProps) => {
   const navigate = useNavigate();
   const { projectId } = useParams(); // Get project ID from URL
   const [isOpen, setIsOpen] = useState(false);
@@ -79,8 +83,8 @@ const ProjectSelector = memo(() => {
   if (userProjectsLoading) {
     return (
       <button className="w-full py-2 px-3 text-left font-medium text-sm rounded-md flex items-center gap-2 bg-gray-100 animate-pulse">
-        <Settings size={18} />
-        <span>Chargement des projets...</span>
+        <FolderSearch size={18} />
+        {!isCollapsed && <span>Chargement des projets...</span>}
       </button>
     );
   }
@@ -91,8 +95,8 @@ const ProjectSelector = memo(() => {
         onClick={() => navigate("/warning")}
         className="w-full py-2 px-3 text-left font-medium text-sm rounded-md flex items-center gap-2 bg-gray-100"
       >
-        <Settings size={18} />
-        <span>Créer un nouveau projet</span>
+        <FolderSearch size={18} />
+        {!isCollapsed && <span>Créer un nouveau projet</span>}
       </button>
     );
   }
@@ -111,12 +115,14 @@ const ProjectSelector = memo(() => {
             className="w-full py-2 px-3 text-left font-medium text-sm rounded-md flex items-center justify-between gap-2 bg-gray-100 hover:bg-gray-200 transition"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Settings size={18} className="flex-shrink-0" />
-              <span className="truncate">
-                {truncateProjectName(displayText)}
-              </span>
+              <FolderSearch size={18} className="flex-shrink-0" />
+              {!isCollapsed && (
+                <span className="truncate">
+                  {truncateProjectName(displayText)}
+                </span>
+              )}
             </div>
-            <ArrowRight size={16} className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-90' : ''}`} />
+            {!isCollapsed && <ArrowRight size={16} className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-90' : ''}`} />}
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-xs">

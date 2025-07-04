@@ -1,14 +1,20 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
 import MobileNavbar from "./MobileNavbar"; // Import the new MobileNavbar component
 import { useProject } from "@/contexts/ProjectContext";
 import { Zap } from "lucide-react";
+import AurentiaLogo from "./AurentiaLogo"; // Import the AurentiaLogo component
 
-const Sidebar = memo(() => {
+interface SidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
+}
+
+const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { projectId } = useParams(); // Get project ID from URL
@@ -42,20 +48,33 @@ const Sidebar = memo(() => {
       path: activeProjectId ? `/project-business/${activeProjectId}` : "/warning", // Redirect to project creation if no project
       icon: <FileText size={20} />
     },
-    // { À re afficher quand les ressources seront faites
-    //   name: "Ressources",
-    //   path: "/knowledge",
-    //   icon: <BookOpen size={20} />
-    // },
+    {
+      name: "Assistant IA",
+      path: activeProjectId ? `/chatbot/${activeProjectId}` : "/warning", // Redirect to project creation if no project
+      icon: <MessageSquare size={20} />
+    },
+    {
+      isDivider: true, // Custom property to indicate a divider
+    },
+    {
+      name: "Plan d'action",
+      path: "/roadmap",
+      icon: <LandPlot size={20} />
+    },
     {
       name: "Outils",
       path: activeProjectId ? "/outils" : "/warning",
       icon: <Settings size={20} />
     },
     {
-      name: "Assistant",
-      path: activeProjectId ? `/chatbot/${activeProjectId}` : "/warning", // Redirect to project creation if no project
-      icon: <MessageSquare size={20} />
+      name: "Automatisations",
+      path: "/automatisations",
+      icon: <Zap size={20} />
+    },
+    {
+      name: "Partenaires",
+      path: "/partenaires",
+      icon: <Handshake size={20} />
     },
   ];
 
@@ -92,40 +111,55 @@ const Sidebar = memo(() => {
 
   // Desktop sidebar
   const DesktopSidebar = () => (
-    <div className="hidden md:block h-screen fixed top-0 left-0 z-10 w-64">
+    <div className={cn("hidden md:block h-screen fixed top-0 left-0 z-10 transition-all duration-300", isCollapsed ? "w-20" : "w-64")}>
       <div className="bg-white h-full rounded-r-xl shadow-sm border-r border-gray-100 relative">
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-lg font-semibold">Aurentia</h1>
+        <div className="flex items-center p-4 gap-2 relative">
+          <AurentiaLogo />
+          {!isCollapsed && <h1 className="text-lg font-semibold">Aurentia</h1>}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="absolute right-[-12px] top-1/2 -translate-y-1/2 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:bg-gray-100 transition-all duration-300"
+          >
+            <ChevronLeft size={16} className={cn("transition-transform duration-300", isCollapsed ? "rotate-180" : "")} />
+          </button>
         </div>
+        <div className="border-b border-gray-200 mx-4 mb-4"></div> {/* Separator line */}
 
-        <div className="mb-6 px-3">
-          <ProjectSelector />
+        <div className={cn("mb-6 px-3")}> {/* Removed isCollapsed && "hidden" */}
+          <ProjectSelector isCollapsed={isCollapsed} />
         </div>
 
         <nav className="space-y-1 flex-1 px-3">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
-                (location.pathname === item.path && location.pathname !== "/warning") ||
-                (item.name === "Livrables" && location.pathname.startsWith("/project-business/")) ||
-                (item.name === "Assistant" && location.pathname.startsWith("/chatbot/"))
-                  ? "bg-gradient-primary text-white font-medium"
-                  : "text-gray-700 hover:bg-gray-100"
-              )}
-            >
-              {item.icon}
-              <span>{item.name}</span>
-            </Link>
+          {menuItems.map((item, index) => (
+            item.isDivider ? (
+              <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
+            ) : (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+                  (location.pathname === item.path && location.pathname !== "/warning") ||
+                  (item.name === "Livrables" && location.pathname.startsWith("/project-business/")) ||
+                  (item.name === "Assistant IA" && location.pathname.startsWith("/chatbot/")) ||
+                  (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
+                  (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
+                  (item.name === "Plan d'action" && location.pathname.startsWith("/roadmap"))
+                    ? "bg-gradient-primary text-white font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{item.name}</span>}
+              </Link>
+            )
           ))}
         </nav>
 
         {/* Profile section for desktop */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-3">
           {user && userCredits && (
-            <div className="px-3 mb-2"> {/* Adjusted padding and added margin-bottom */}
+            <div className={cn("px-3 mb-2", isCollapsed && "hidden")}> {/* Adjusted padding and added margin-bottom */}
               <div className="flex items-center gap-2 py-2.5 px-4 rounded-md text-sm bg-gray-50">
                 <Zap size={16} className="text-yellow-500" />
                 <span className="font-medium text-gray-700">
@@ -139,25 +173,27 @@ const Sidebar = memo(() => {
             <>
               <Link
                 to="/profile"
-                className="flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100"
+                className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100")}
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-medium">
                   {getUserInitial()}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{getUserDisplayName()}</p>
-                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                </div>
+                {!isCollapsed && (
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{getUserDisplayName()}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                )}
               </Link>
-              <button onClick={handleLogout} className="flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100 w-full mt-2">
+              <button onClick={handleLogout} className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100 w-full mt-2")}>
                 <LogOut size={18} />
-                <span>Déconnexion</span>
+                {!isCollapsed && <span>Déconnexion</span>}
               </button>
             </>
           ) : (
-            <Link to="/login" className="flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100 w-full">
+            <Link to="/login" className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100 w-full")}>
               <LogOut size={18} />
-              <span>Connexion</span>
+              {!isCollapsed && <span>Connexion</span>}
             </Link>
           )}
         </div>

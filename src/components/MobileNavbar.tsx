@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { LayoutDashboard, Settings, Zap, BookOpen, LogOut, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Settings, Zap, BookOpen, LogOut, MessageSquare, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
@@ -48,6 +48,16 @@ const MobileNavbar = () => {
       icon: <Settings size={20} />
     },
     {
+      name: "Automatisations",
+      path: "/automatisations",
+      icon: <Zap size={20} />
+    },
+    {
+      name: "Partenaires",
+      path: "/partenaires",
+      icon: <Handshake size={20} />
+    },
+    {
       name: "Assistant",
       path: activeProjectId ? `/chatbot/${activeProjectId}` : "/warning",
       icon: <MessageSquare size={20} />
@@ -76,7 +86,11 @@ const MobileNavbar = () => {
             to={item.path}
             className={cn(
               "flex flex-col items-center gap-1 text-sm transition-colors p-2",
-              location.pathname === item.path
+              (location.pathname === item.path && location.pathname !== "/warning") ||
+              (item.name === "Livrables" && location.pathname.startsWith("/project-business/")) ||
+              (item.name === "Assistant" && location.pathname.startsWith("/chatbot/")) ||
+              (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
+              (item.name === "Partenaires" && location.pathname.startsWith("/partenaires"))
                 ? "text-primary font-medium"
                 : "text-gray-700 hover:text-primary"
             )}
