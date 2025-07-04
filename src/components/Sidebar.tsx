@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, ChevronLeft, Library } from "lucide-react"; // Import Library
 import { cn } from "@/lib/utils";
 import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,6 +75,11 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
       name: "Partenaires",
       path: "/partenaires",
       icon: <Handshake size={20} />
+    },
+    {
+      name: "Ressources",
+      path: "/ressources",
+      icon: <Library size={20} />
     },
   ];
 
