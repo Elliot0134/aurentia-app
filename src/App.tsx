@@ -29,6 +29,8 @@ import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 import "./index.css";
+import TestCollaboration from "./pages/test-collaboration";
+import InvitationPage from "./pages/invitation";
 
 const queryClient = new QueryClient();
 
@@ -158,6 +160,9 @@ const App = () => {
                     <Route path="/roadmap" element={<Roadmap />} />
                     <Route path="/collaborateurs" element={<Collaborateurs />} /> {/* New route for Collaborateurs */}
                     <Route path="/chatbot/:projectId" element={<ChatbotPage />} />
+                    <Route path="/test-collaboration" element={<TestCollaboration />} />
+                    <Route path="/invitation" element={<InvitationPage />} />
+
                   </Route>
                 </Route>
                 

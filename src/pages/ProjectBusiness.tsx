@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { collaborationManager } from "@/services/collaborationManager";
 import RetranscriptionConceptLivrable from "@/components/deliverables/RetranscriptionConceptLivrable";
 import PersonaExpressLivrable from "@/components/deliverables/PersonaExpressLivrable";
 import MiniSwotLivrable from "@/components/deliverables/MiniSwotLivrable";
@@ -40,8 +41,9 @@ const ProjectBusiness = () => {
   // États pour le popup d'invitation
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'Lecteur' | 'Éditeur'>('Lecteur');
+  const [inviteRole, setInviteRole] = useState<'reader' | 'editor'>('reader');
   const [inviteProjects, setInviteProjects] = useState<string[]>([]);
+  const [isInviting, setIsInviting] = useState(false);
   
   // Stripe payment hook
   const { isLoading: isPaymentLoading, paymentStatus, initiatePayment } = useStripePayment();
@@ -208,7 +210,7 @@ const ProjectBusiness = () => {
     );
   };
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     if (!inviteEmail) {
       toast({
         title: "Erreur",
@@ -239,16 +241,52 @@ const ProjectBusiness = () => {
       return;
     }
 
-    // TODO: Implémenter l'envoi réel de l'invitation
-    setIsInviteModalOpen(false);
-    setInviteEmail('');
-    setInviteRole('Lecteur');
-    setInviteProjects([]);
-    
-    toast({
-      title: "Succès",
-      description: `Invitation envoyée à ${inviteEmail}`,
-    });
+    setIsInviting(true);
+
+    try {
+      // Convertir le rôle français vers anglais pour le service
+      const serviceRole = inviteRole === 'Éditeur' ? 'editor' : 'reader';
+      
+      // Envoyer les invitations pour chaque projet sélectionné
+      const invitationPromises = inviteProjects.map(projectId =>
+        collaborationManager.inviteByEmail(projectId, inviteEmail, serviceRole as 'reader' | 'editor')
+      );
+
+      const results = await Promise.all(invitationPromises);
+      
+      // Vérifier si toutes les invitations ont réussi
+      const failedInvitations = results.filter(result => result.error);
+      
+      if (failedInvitations.length > 0) {
+        toast({
+          title: "Erreur partielle",
+          description: `${failedInvitations.length} invitation(s) ont échoué. Vérifiez la console pour plus de détails.`,
+          variant: "destructive",
+        });
+        console.error('Invitations échouées:', failedInvitations);
+      } else {
+        toast({
+          title: "Succès",
+          description: `Invitation${inviteProjects.length > 1 ? 's' : ''} envoyée${inviteProjects.length > 1 ? 's' : ''} à ${inviteEmail}`,
+        });
+      }
+
+      // Réinitialiser le formulaire
+      setIsInviteModalOpen(false);
+      setInviteEmail('');
+      setInviteRole('reader');
+      setInviteProjects([]);
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi des invitations:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'envoi des invitations",
+        variant: "destructive",
+      });
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   useEffect(() => {
@@ -499,18 +537,18 @@ const ProjectBusiness = () => {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="role">Rôle</Label>
-              <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'Lecteur' | 'Éditeur')}>
+              <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'reader' | 'editor')}>
                 <SelectTrigger id="role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Lecteur">
+                  <SelectItem value="reader">
                     <div className="flex items-center">
                       <Eye className="w-4 h-4 mr-2" />
                       Lecteur - Peut consulter le projet
                     </div>
                   </SelectItem>
-                  <SelectItem value="Éditeur">
+                  <SelectItem value="editor">
                     <div className="flex items-center">
                       <Edit className="w-4 h-4 mr-2" />
                       Éditeur - Peut modifier le projet
@@ -538,11 +576,20 @@ const ProjectBusiness = () => {
             </div>
           </div>
           <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="mr-2 flex-1">
+            <Button
+              variant="outline"
+              onClick={() => setIsInviteModalOpen(false)}
+              className="mr-2 flex-1"
+              disabled={isInviting}
+            >
               Annuler
             </Button>
-            <Button onClick={handleInvite} className="flex-1">
-              Envoyer l'invitation
+            <Button
+              onClick={handleInvite}
+              className="flex-1"
+              disabled={isInviting}
+            >
+              {isInviting ? "Envoi en cours..." : "Envoyer l'invitation"}
             </Button>
           </DialogFooter>
         </DialogContent>

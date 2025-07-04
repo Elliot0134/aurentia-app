@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,14 +33,16 @@ import { useResponsive } from '@/hooks/use-responsive';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '@/contexts/ProjectContext';
+import { collaborationManager, ProjectCollaborator } from '@/services/collaborationManager';
+import InvitationDialog from '@/components/collaboration/InvitationDialog';
 
 interface Collaborateur {
   id: string;
   nom: string;
   email: string;
-  role: 'Lecteur' | 'Éditeur';
-  projects: string[]; // Changed to array for multiple projects
-  status: 'En attente' | 'Actif';
+  role: 'reader' | 'editor';
+  project_id: string;
+  status: 'pending' | 'accepted' | 'declined';
   avatar?: string;
 }
 
@@ -48,115 +50,113 @@ const Collaborateurs: React.FC = () => {
   const navigate = useNavigate();
   const { userProjects } = useProject();
   
-  const [collaborateurs, setCollaborateurs] = useState<Collaborateur[]>([
-    {
-      id: '1',
-      nom: 'Marie Dupont',
-      email: 'marie.dupont@example.com',
-      role: 'Éditeur',
-      projects: ['project-1', 'project-2'], // Multiple projects
-      status: 'Actif',
-    },
-    {
-      id: '2',
-      nom: 'Jean Martin',
-      email: 'jean.martin@example.com',
-      role: 'Lecteur',
-      projects: ['project-2'], // Single project
-      status: 'Actif',
-    },
-    {
-      id: '3',
-      nom: 'Sophie Bernard',
-      email: 'sophie.bernard@example.com',
-      role: 'Éditeur',
-      projects: ['project-1'], // Single project
-      status: 'Actif',
-    },
-  ]);
-
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'Lecteur' | 'Éditeur'>('Lecteur');
-  const [inviteProjects, setInviteProjects] = useState<string[]>([]);
+  const [collaborateurs, setCollaborateurs] = useState<Collaborateur[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // États pour les filtres
   const [filterEmail, setFilterEmail] = useState('');
-  const [filterRole, setFilterRole] = useState<'Tous' | 'Lecteur' | 'Éditeur'>('Tous');
-  const [filterStatus, setFilterStatus] = useState<'Tous' | 'Actif' | 'En attente'>('Tous');
-  const [filterProject, setFilterProject] = useState<string>('Tous');
+  const [filterRole, setFilterRole] = useState<'Tous' | 'reader' | 'editor'>('Tous');
+  const [filterStatus, setFilterStatus] = useState<'Tous' | 'accepted' | 'pending'>('Tous');
   const [showFilters, setShowFilters] = useState(false);
 
-  const handleInvite = () => {
-    if (!inviteEmail) {
-      toast.error('Veuillez entrer une adresse email');
-      return;
+  // Charger l'utilisateur actuel et ses projets
+  useEffect(() => {
+    loadCurrentUser();
+  }, []);
+
+  // Charger les collaborateurs quand le projet change
+  useEffect(() => {
+    if (selectedProjectId) {
+      loadCollaborators();
     }
+  }, [selectedProjectId]);
 
-    // Vérifier si l'email est valide
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail)) {
-      toast.error('Veuillez entrer une adresse email valide');
-      return;
+  const loadCurrentUser = async () => {
+    try {
+      const user = await collaborationManager.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        if (userProjects.length > 0) {
+          setSelectedProjectId(userProjects[0].project_id);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur chargement utilisateur:', error);
     }
+  };
 
-    // Vérifier si l'utilisateur existe déjà
-    if (collaborateurs.some(c => c.email === inviteEmail)) {
-      toast.error('Cet utilisateur a déjà accès au projet');
-      return;
-    }
-
-    // Vérifier qu'au moins un projet est sélectionné
-    if (inviteProjects.length === 0) {
-      toast.error('Veuillez sélectionner au moins un projet');
-      return;
-    }
-
-    // Ajouter le nouveau collaborateur
-    const newCollaborateur: Collaborateur = {
-      id: Date.now().toString(),
-      nom: inviteEmail.split('@')[0], // Nom temporaire basé sur l'email
-      email: inviteEmail,
-      role: inviteRole,
-      projects: inviteProjects,
-      status: 'En attente', // New collaborators are pending
-    };
-
-    setCollaborateurs([...collaborateurs, newCollaborateur]);
-    setIsInviteModalOpen(false);
-    setInviteEmail('');
-    setInviteRole('Lecteur');
-    setInviteProjects([]);
+  const loadCollaborators = async () => {
+    if (!selectedProjectId) return;
     
-    toast.success(`Invitation envoyée à ${inviteEmail}`);
+    try {
+      setLoading(true);
+      const collabs = await collaborationManager.getProjectCollaborators(selectedProjectId);
+      
+      // Transformer les données pour correspondre à notre interface
+      const transformedCollabs: Collaborateur[] = collabs.map((collab: ProjectCollaborator) => ({
+        id: collab.id,
+        nom: collab.user?.full_name || collab.user?.email?.split('@')[0] || 'Utilisateur',
+        email: collab.user?.email || '',
+        role: collab.role,
+        project_id: collab.project_id,
+        status: collab.status,
+      }));
+      
+      setCollaborateurs(transformedCollabs);
+    } catch (error) {
+      console.error('Erreur chargement collaborateurs:', error);
+      toast.error('Erreur lors du chargement des collaborateurs');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRoleChange = (collaborateurId: string, newRole: 'Lecteur' | 'Éditeur') => {
-    setCollaborateurs(collaborateurs.map(c => 
-      c.id === collaborateurId ? { ...c, role: newRole } : c
-    ));
-    toast.success('Rôle mis à jour avec succès');
+  const handleRoleChange = async (collaborateurId: string, newRole: 'reader' | 'editor') => {
+    // Note: Cette fonctionnalité nécessiterait une fonction update dans collaborationManager
+    // Pour l'instant, on affiche juste un message
+    toast.info('Modification des rôles - fonctionnalité à implémenter');
   };
 
-  const handleRemoveCollaborateur = (collaborateurId: string) => {
+  const handleRemoveCollaborateur = async (collaborateurId: string) => {
     const collaborateur = collaborateurs.find(c => c.id === collaborateurId);
-    setCollaborateurs(collaborateurs.filter(c => c.id !== collaborateurId));
-    toast.success(`${collaborateur?.nom} a été retiré du projet`);
+    
+    if (!confirm(`Supprimer ${collaborateur?.nom} du projet ?`)) return;
+
+    try {
+      await collaborationManager.removeCollaborator(selectedProjectId, collaborateur?.id || '');
+      toast.success(`${collaborateur?.nom} a été retiré du projet`);
+      await loadCollaborators(); // Recharger la liste
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
   };
 
   const getRoleBadgeVariant = (role: string) => {
-    return role === 'Éditeur' ? 'default' : 'secondary';
+    return role === 'editor' ? 'default' : 'secondary';
   };
 
   const getRoleIcon = (role: string) => {
-    return role === 'Éditeur' ? <Edit className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />;
+    return role === 'editor' ? <Edit className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />;
   };
 
-  const getStatusBadgeClass = (status: 'En attente' | 'Actif') => {
-    if (status === 'Actif') {
+  const getStatusBadgeClass = (status: 'pending' | 'accepted' | 'declined') => {
+    if (status === 'accepted') {
       return 'bg-[#cef5d1] text-green-800'; // Green background, dark green text
-    } else {
+    } else if (status === 'pending') {
       return 'bg-[#e9eef9] text-blue-800'; // Light blue background, dark blue text
+    } else {
+      return 'bg-[#fecaca] text-red-800'; // Red background for declined
+    }
+  };
+
+  const getStatusLabel = (status: 'pending' | 'accepted' | 'declined') => {
+    switch (status) {
+      case 'accepted': return 'Actif';
+      case 'pending': return 'En attente';
+      case 'declined': return 'Refusé';
+      default: return status;
     }
   };
 
@@ -186,13 +186,9 @@ const Collaborateurs: React.FC = () => {
     }
     
     // Filtre par statut
-    if (filterStatus !== 'Tous' && collaborateur.status !== filterStatus) {
-      return false;
-    }
-    
-    // Filtre par projet
-    if (filterProject !== 'Tous' && !collaborateur.projects.includes(filterProject)) {
-      return false;
+    if (filterStatus !== 'Tous') {
+      if (filterStatus === 'accepted' && collaborateur.status !== 'accepted') return false;
+      if (filterStatus === 'pending' && collaborateur.status !== 'pending') return false;
     }
     
     return true;
@@ -213,82 +209,19 @@ const Collaborateurs: React.FC = () => {
             </p>
           </div>
           
-          <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
-            <DialogTrigger asChild>
+          <InvitationDialog
+            defaultProjectId={selectedProjectId}
+            onInvitationSent={loadCollaborators}
+            buttonText="Inviter un collaborateur"
+            buttonVariant="default"
+            showProjectSelector={true}
+            trigger={
               <Button className="flex items-center gap-2 bg-gradient-primary hover:opacity-90 transition-opacity">
                 <UserPlus className="w-4 h-4" />
                 Inviter un collaborateur
               </Button>
-            </DialogTrigger>
-            <DialogContent className="w-[95vw] max-w-[425px] mx-auto my-4 sm:w-full">
-              <DialogHeader>
-                <DialogTitle>Inviter un nouveau collaborateur</DialogTitle>
-                <DialogDescription>
-                  Envoyez une invitation par email pour donner accès à votre projet.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Adresse email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="collaborateur@example.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="placeholder:text-xs"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="role">Rôle</Label>
-                  <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'Lecteur' | 'Éditeur')}>
-                    <SelectTrigger id="role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Lecteur">
-                        <div className="flex items-center">
-                          <Eye className="w-4 h-4 mr-2" />
-                          Lecteur - Peut consulter le projet
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Éditeur">
-                        <div className="flex items-center">
-                          <Edit className="w-4 h-4 mr-2" />
-                          Éditeur - Peut modifier le projet
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="projects">Projets</Label>
-                  <MultiSelect
-                    options={userProjects.map(project => ({
-                      value: project.project_id,
-                      label: (
-                        <div className="flex items-center gap-2">
-                          <FolderSearch className="w-4 h-4" />
-                          {project.nom_projet}
-                        </div>
-                      ),
-                    }))}
-                    value={inviteProjects}
-                    onChange={setInviteProjects}
-                    placeholder="Sélectionner les projets..."
-                  />
-                </div>
-              </div>
-              <DialogFooter className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="mr-2 flex-1">
-                  Annuler
-                </Button>
-                <Button onClick={handleInvite} className="flex-1">
-                  Envoyer l'invitation
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            }
+          />
         </div>
 
         {/* Statistiques */}
@@ -307,7 +240,7 @@ const Collaborateurs: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Éditeurs</p>
                 <p className="text-2xl font-bold">
-                  {collaborateurs.filter(c => c.role === 'Éditeur').length}
+                  {collaborateurs.filter(c => c.role === 'editor').length}
                 </p>
               </div>
               <Edit className="w-8 h-8 text-primary opacity-20" />
@@ -318,7 +251,7 @@ const Collaborateurs: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Lecteurs</p>
                 <p className="text-2xl font-bold">
-                  {collaborateurs.filter(c => c.role === 'Lecteur').length}
+                  {collaborateurs.filter(c => c.role === 'reader').length}
                 </p>
               </div>
               <Eye className="w-8 h-8 text-primary opacity-20" />
@@ -356,19 +289,19 @@ const Collaborateurs: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="filter-role" className="text-sm mb-2">Autorisations</Label>
-              <Select value={filterRole} onValueChange={(value) => setFilterRole(value as 'Tous' | 'Lecteur' | 'Éditeur')}>
+              <Select value={filterRole} onValueChange={(value) => setFilterRole(value as 'Tous' | 'reader' | 'editor')}>
                 <SelectTrigger id="filter-role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Tous">Tous</SelectItem>
-                  <SelectItem value="Lecteur">
+                  <SelectItem value="reader">
                     <div className="flex items-center">
                       <Eye className="w-4 h-4 mr-2" />
                       Lecteur
                     </div>
                   </SelectItem>
-                  <SelectItem value="Éditeur">
+                  <SelectItem value="editor">
                     <div className="flex items-center">
                       <Edit className="w-4 h-4 mr-2" />
                       Éditeur
@@ -379,35 +312,22 @@ const Collaborateurs: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="filter-status" className="text-sm mb-2">Statut</Label>
-              <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as 'Tous' | 'Actif' | 'En attente')}>
+              <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as 'Tous' | 'accepted' | 'pending')}>
                 <SelectTrigger id="filter-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Tous">Tous</SelectItem>
-                  <SelectItem value="Actif">Actif</SelectItem>
-                  <SelectItem value="En attente">En attente</SelectItem>
+                  <SelectItem value="accepted">Actif</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="filter-project" className="text-sm mb-2">Projet</Label>
-              <Select value={filterProject} onValueChange={setFilterProject}>
-                <SelectTrigger id="filter-project">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Tous">Tous les projets</SelectItem>
-                  {userProjects.map(project => (
-                    <SelectItem key={project.project_id} value={project.project_id}>
-                      <div className="flex items-center gap-2">
-                        <FolderSearch className="w-4 h-4" />
-                        {project.nom_projet}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="current-project" className="text-sm mb-2">Projet actuel</Label>
+              <div className="p-2 bg-gray-100 rounded text-sm">
+                {selectedProjectId ? getProjectName(selectedProjectId) : 'Aucun projet sélectionné'}
+              </div>
             </div>
           </div>
             </div>
@@ -442,19 +362,19 @@ const Collaborateurs: React.FC = () => {
                   <div className="flex items-center justify-between mb-3">
                     <Select 
                       value={collaborateur.role} 
-                      onValueChange={(value) => handleRoleChange(collaborateur.id, value as 'Lecteur' | 'Éditeur')}
+                      onValueChange={(value) => handleRoleChange(collaborateur.id, value as 'reader' | 'editor')}
                     >
                       <SelectTrigger className="w-[140px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Lecteur">
+                        <SelectItem value="reader">
                           <div className="flex items-center">
                             <Eye className="w-4 h-4 mr-2" />
                             Lecteur
                           </div>
                         </SelectItem>
-                        <SelectItem value="Éditeur">
+                        <SelectItem value="editor">
                           <div className="flex items-center">
                             <Edit className="w-4 h-4 mr-2" />
                             Éditeur
@@ -463,26 +383,21 @@ const Collaborateurs: React.FC = () => {
                       </SelectContent>
                     </Select>
                     <Badge className={`${getStatusBadgeClass(collaborateur.status)} hover:bg-transparent hover:text-current cursor-default`}>
-                      {collaborateur.status}
+                      {getStatusLabel(collaborateur.status)}
                     </Badge>
                   </div>
                   <div className="text-sm text-gray-600 mt-2">
                     <div className="flex items-center gap-2 mb-1">
                       <FolderSearch className="w-4 h-4" />
-                      <span className="font-medium">Projets :</span>
+                      <span className="font-medium">Projet :</span>
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                      {collaborateur.projects.map((projectId) => (
-                        <Badge
-                          key={projectId}
-                          variant="secondary"
-                          className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                          onClick={() => handleProjectClick(projectId)}
-                        >
-                          {getProjectName(projectId)}
-                        </Badge>
-                      ))}
-                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() => handleProjectClick(collaborateur.project_id)}
+                    >
+                      {getProjectName(collaborateur.project_id)}
+                    </Badge>
                   </div>
                 </div>
               ))}
@@ -499,7 +414,7 @@ const Collaborateurs: React.FC = () => {
                   <TableHead>
                     <div className="flex items-center gap-2">
                       <FolderSearch className="w-4 h-4" />
-                      Projets
+                      Projet
                     </div>
                   </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -527,19 +442,19 @@ const Collaborateurs: React.FC = () => {
                     <TableCell>
                     <Select 
                       value={collaborateur.role} 
-                      onValueChange={(value) => handleRoleChange(collaborateur.id, value as 'Lecteur' | 'Éditeur')}
+                      onValueChange={(value) => handleRoleChange(collaborateur.id, value as 'reader' | 'editor')}
                     >
                       <SelectTrigger className="w-[140px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Lecteur">
+                        <SelectItem value="reader">
                           <div className="flex items-center">
                             <Eye className="w-4 h-4 mr-2" />
                             Lecteur
                           </div>
                         </SelectItem>
-                        <SelectItem value="Éditeur">
+                        <SelectItem value="editor">
                           <div className="flex items-center">
                             <Edit className="w-4 h-4 mr-2" />
                             Éditeur
@@ -550,22 +465,17 @@ const Collaborateurs: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Badge className={`${getStatusBadgeClass(collaborateur.status)} hover:bg-transparent hover:text-current cursor-default`}>
-                      {collaborateur.status}
+                      {getStatusLabel(collaborateur.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1 max-w-xs">
-                      {collaborateur.projects.map((projectId) => (
-                        <Badge
-                          key={projectId}
-                          variant="secondary"
-                          className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                          onClick={() => handleProjectClick(projectId)}
-                        >
-                          {getProjectName(projectId)}
-                        </Badge>
-                      ))}
-                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() => handleProjectClick(collaborateur.project_id)}
+                    >
+                      {getProjectName(collaborateur.project_id)}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                       <Button
