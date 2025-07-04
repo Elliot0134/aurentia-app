@@ -12,13 +12,13 @@ export const PAYMENT_PLANS: Record<string, PaymentPlan> = {
     id: 'plan1',
     name: 'Plan 1',
     price: '2€',
-    stripeUrl: 'https://buy.stripe.com/6oU9AUgDs1mgbqhbif0gw04'
+    stripeUrl: 'https://buy.stripe.com/4gM14ogDs2qk2TLcmj0gw06'
   },
   plan2: {
     id: 'plan2', 
     name: 'Plan 2',
     price: '6€',
-    stripeUrl: 'https://buy.stripe.com/8x2bJ2gDs8OIgKB8630gw05'
+    stripeUrl: 'https://buy.stripe.com/cNi4gAdrggha51Teur0gw07'
   }
 };
 
