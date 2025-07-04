@@ -51,6 +51,23 @@ class StripeService {
         };
       }
 
+      // Update project status to waiting payment
+      const newStatus = planId === 'plan1' ? 'pay_1_waiting' : 'pay_2_waiting';
+      const { error: updateError } = await supabase
+        .from('project_summary')
+        .update({ statut_project: newStatus })
+        .eq('project_id', projectId);
+
+      if (updateError) {
+        console.error('❌ Erreur mise à jour statut projet:', updateError);
+        return {
+          success: false,
+          error: 'Erreur lors de la mise à jour du statut du projet'
+        };
+      }
+
+      console.log(`✅ Statut projet mis à jour: ${newStatus}`);
+
       // Store payment intent data for later processing
       const paymentData = {
         userId,
@@ -77,12 +94,46 @@ class StripeService {
     }
   }
 
+  async checkProjectStatus(projectId: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('project_summary')
+        .select('statut_project')
+        .eq('project_id', projectId)
+        .single();
+
+      if (error) {
+        console.error('❌ Erreur vérification statut projet:', error);
+        return null;
+      }
+
+      return data?.statut_project || null;
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification du statut:', error);
+      return null;
+    }
+  }
+
   async processPaymentSuccess(planId: string, projectId: string, userId: string): Promise<PaymentResult> {
     try {
       console.log(`🚀 Traitement du paiement réussi - Plan: ${planId}, Projet: ${projectId}, User: ${userId}`);
       
       // Clear payment data from localStorage immediately to prevent re-triggering
       localStorage.removeItem('aurentia_payment_data');
+
+      // Double-check that the project status is 'payment_receive' before proceeding
+      const currentStatus = await this.checkProjectStatus(projectId);
+      console.log(`🔍 Vérification finale du statut: ${currentStatus}`);
+      
+      if (currentStatus !== 'payment_receive') {
+        console.error(`❌ Statut incorrect pour la génération: ${currentStatus}`);
+        return {
+          success: false,
+          error: `Statut incorrect pour la génération des livrables: ${currentStatus}`
+        };
+      }
+
+      console.log('✅ Statut confirmé: payment_receive, génération des livrables...');
 
       // Update user credits for plan1
       if (planId === 'plan1') {
@@ -111,6 +162,7 @@ class StripeService {
       }
       
       // Call the webhook
+      console.log('🌐 Appel du webhook de génération des livrables...');
       const webhookResponse = await fetch('https://n8n.eec-technologies.fr/webhook/generation-livrables-premium', {
         method: 'POST',
         headers: {

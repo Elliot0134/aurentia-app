@@ -44,7 +44,7 @@ const ProjectBusiness = () => {
   const [inviteProjects, setInviteProjects] = useState<string[]>([]);
   
   // Stripe payment hook
-  const { isLoading: isPaymentLoading, paymentStatus, initiatePayment } = useStripePayment();
+  const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, initiatePayment } = useStripePayment();
   const { userProjects } = useProject();
 
   const handlePayment = async (planId: string) => {
@@ -288,6 +288,25 @@ const ProjectBusiness = () => {
     fetchProject();
   }, [projectId]); // Refetch when projectId changes
 
+  // Refetch project status when waiting for payment
+  useEffect(() => {
+    if (!projectId || !isWaitingPayment) return;
+
+    const interval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('project_summary')
+        .select('statut_project')
+        .eq('project_id', projectId)
+        .single();
+
+      if (!error && data) {
+        setProjectStatus(data.statut_project || null);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [projectId, isWaitingPayment]);
+
   if (loading) {
     return <div>Chargement...</div>; // Or a loading spinner component
   }
@@ -438,14 +457,17 @@ const ProjectBusiness = () => {
       </div>
 
       {/* Payment Loading Dialog */}
-      <Dialog open={isPaymentLoading} onOpenChange={() => {}}>
+      <Dialog open={isPaymentLoading || isWaitingPayment} onOpenChange={() => {}}>
         <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
           <DialogHeader>
             <DialogTitle className="text-2xl">
-              {paymentStatus === 'processing' ? '☕️ Une pause café ?' : 'Traitement du paiement'}
+              {isWaitingPayment ? '⏳ En attente du paiement...' : 
+               paymentStatus === 'processing' ? '☕️ Une pause café ?' : 'Traitement du paiement'}
             </DialogTitle>
             <DialogDescription>
-              {paymentStatus === 'processing' 
+              {isWaitingPayment 
+                ? <>Votre navigateur va s'ouvrir dans un nouvel onglet pour finaliser le paiement. <br /><br /> Une fois le paiement effectué, nous générerons automatiquement vos livrables premium.</>
+                : paymentStatus === 'processing' 
                 ? <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
                 : 'Traitement de votre paiement en cours...'}
             </DialogDescription>
