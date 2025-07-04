@@ -44,7 +44,7 @@ const ProjectBusiness = () => {
   const [inviteProjects, setInviteProjects] = useState<string[]>([]);
   
   // Stripe payment hook
-  const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, initiatePayment } = useStripePayment();
+  const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, initiatePayment, cancelPayment } = useStripePayment();
   const { userProjects } = useProject();
 
   const handlePayment = async (planId: string) => {
@@ -480,6 +480,17 @@ const ProjectBusiness = () => {
               <div className="square"></div>
             </div>
           </div>
+          {isWaitingPayment && (
+            <DialogFooter className="flex justify-center">
+              <Button 
+                variant="outline" 
+                onClick={cancelPayment}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Annuler le paiement
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 

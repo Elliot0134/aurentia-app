@@ -147,13 +147,41 @@ export const useStripePayment = () => {
     setPaymentError(null);
   };
 
+  const cancelPayment = () => {
+    console.log('❌ Annulation du paiement par l\'utilisateur');
+    stopStatusPolling();
+    localStorage.removeItem('aurentia_payment_data');
+    setIsLoading(false);
+    setPaymentStatus('idle');
+    setPaymentError(null);
+    setIsWaitingPayment(false);
+    toast.info('Paiement annulé');
+  };
+
   // Check for pending payment on mount and when window gains focus
   useEffect(() => {
     const checkPayment = async () => {
       const pendingPayment = stripeService.checkPendingPayment();
       if (pendingPayment) {
-        // Start polling for this pending payment
-        startStatusPolling(pendingPayment.projectId, pendingPayment.planId, pendingPayment.userId);
+        console.log('🔍 Données de paiement trouvées dans localStorage, vérification du statut...');
+        
+        // Check current project status before starting polling
+        const currentStatus = await stripeService.checkProjectStatus(pendingPayment.projectId);
+        console.log(`📊 Statut actuel du projet: ${currentStatus}`);
+        
+        // Only start polling if the project is still in waiting state
+        if (currentStatus === 'pay_1_waiting' || currentStatus === 'pay_2_waiting') {
+          console.log('✅ Projet toujours en attente, redémarrage du polling...');
+          startStatusPolling(pendingPayment.projectId, pendingPayment.planId, pendingPayment.userId);
+        } else if (currentStatus === 'payment_receive') {
+          console.log('✅ Paiement déjà reçu, traitement immédiat...');
+          // Process immediately if payment was already received
+          await processPaymentCallback(pendingPayment.planId, pendingPayment.projectId, pendingPayment.userId);
+        } else {
+          console.log('ℹ️ Projet plus en attente de paiement, nettoyage des données...');
+          // Clear localStorage if project is no longer in waiting state
+          localStorage.removeItem('aurentia_payment_data');
+        }
       }
     };
 
@@ -180,6 +208,7 @@ export const useStripePayment = () => {
     paymentError,
     isWaitingPayment,
     initiatePayment,
-    resetPaymentState
+    resetPaymentState,
+    cancelPayment
   };
 }; 
