@@ -159,13 +159,19 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
         {/* Profile section for desktop */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-3">
           {user && userCredits && (
-            <div className={cn("px-3 mb-2", isCollapsed && "hidden")}> {/* Adjusted padding and added margin-bottom */}
-              <div className="flex items-center gap-2 py-2.5 px-4 rounded-md text-sm bg-gray-50">
+            <div className={cn("px-3 mb-2", isCollapsed && "flex justify-center")}> {/* Adjusted padding and added margin-bottom, added justify-center for collapsed state */}
+              <div className={cn("flex items-center gap-2 py-2.5 px-4 rounded-md text-sm bg-gray-50", isCollapsed && "w-fit flex-col justify-center gap-0.5")}> {/* Added w-fit, flex-col, justify-center, gap-0.5 for collapsed state */}
                 <Zap size={16} className="text-yellow-500" />
-                <span className="font-medium text-gray-700">
-                  {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
-                </span>
-                <span className="text-xs text-gray-500">crédits</span>
+                {!isCollapsed && (
+                  <span className="font-medium text-gray-700">
+                    {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
+                  </span>
+                )}
+                {isCollapsed && (
+                  <span className="font-medium text-gray-700 text-center"> {/* Added text-center for collapsed state */}
+                    {creditsLoading ? '...' : `${userCredits.current}/${userCredits.max}`}
+                  </span>
+                )}
               </div>
             </div>
           )}
