@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Accordion,
@@ -416,9 +415,7 @@ Cohérence
 
 [1, 2, 3, 4, 5].map((year) => {
 
-const projectionKey = `vision_${year}_ans` as keyof VisionData;
-
-// Ensure the specific property exists on the vision object
+const projectionKey = year === 1 ? 'vision_1_an' : `vision_${year}_ans`;
 
 const projectionValue = visionMissionValeursData.vision[projectionKey] !== undefined
 

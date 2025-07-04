@@ -155,7 +155,7 @@ const App = () => {
                     <Route path="/outils" element={<Outils />} />
                     <Route path="/partenaires" element={<Partenaires />} />
                     <Route path="/ressources" element={<Ressources />} /> {/* New route for Ressources */}
-                    <Route path="/roadmap" element={<Roadmap />} />
+                    <Route path="/roadmap/:id" element={<Roadmap />} />
                     <Route path="/collaborateurs" element={<Collaborateurs />} /> {/* New route for Collaborateurs */}
                     <Route path="/chatbot/:projectId" element={<ChatbotPage />} />
                   </Route>

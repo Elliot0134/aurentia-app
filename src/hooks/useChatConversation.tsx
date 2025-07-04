@@ -138,7 +138,7 @@ export const useChatConversation = (projectId: string | undefined) => {
       currentText += (i === 0 ? '' : ' ') + words[i];
       setStreamingText(currentText);
       
-      const delay = words[i].length > 8 ? 80 : 50;
+      const delay = words[i].length > 8 ? 40 : 25;
       await new Promise(resolve => setTimeout(resolve, delay));
     }
     

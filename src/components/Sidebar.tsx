@@ -58,12 +58,12 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     },
     {
       name: "Plan d'action",
-      path: "/roadmap",
+      path: `/roadmap/${activeProjectId}`,
       icon: <LandPlot size={20} />
     },
     {
       name: "Outils",
-      path: activeProjectId ? "/outils" : "/warning",
+      path: "/outils",
       icon: <Settings size={20} />
     },
     {
@@ -148,7 +148,7 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
             ) : (
               <Link
-                key={item.path}
+                key={`${item.path}-${item.name}-${index}`}
                 to={item.path}
                 className={cn(
                   "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",

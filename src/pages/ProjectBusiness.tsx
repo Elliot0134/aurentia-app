@@ -429,7 +429,7 @@ const ProjectBusiness = () => {
 
         {/* Level 4 Deliverables */}
         <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
-          <div className="col-span-12">
+          <div className="col-span-12 mb-16 md:mb-0">
             <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
               <AnalyseDesRessourcesLivrable />
             </BlurredDeliverableWrapper>
