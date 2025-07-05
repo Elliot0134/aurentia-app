@@ -329,7 +329,7 @@ const ChatbotPage = () => {
             </div>
             
             {/* Input area fixe pour conversation existante */}
-            <div className="fixed md:absolute bottom-[120px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
+            <div className="fixed md:absolute bottom-[100px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
               <div className="w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}
@@ -378,7 +378,7 @@ const ChatbotPage = () => {
             </div>
             
             {/* Input area fixe */}
-            <div className="fixed md:absolute bottom-[120px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
+            <div className="fixed md:absolute bottom-[100px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
               <div className="w-full mx-auto">
                 <ChatInput
                   inputMessage={inputMessage}

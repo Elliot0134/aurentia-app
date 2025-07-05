@@ -86,7 +86,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         )}
 
         {isOpen && (
-          <div className="absolute top-full z-50 mt-1 left-0 w-max rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+          <div className="absolute bottom-full z-50 mb-1 left-0 w-max rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
             <div>
               {/* Available options */}
               {options.length === 0 ? (

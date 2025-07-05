@@ -21,11 +21,13 @@ import AnalyseDeMarcheLivrable from "@/components/deliverables/AnalyseDeMarcheLi
 import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRessourcesLivrable";
 import VisionMissionValeursLivrable from "@/components/deliverables/VisionMissionValeursLivrable"; // Import the new deliverable
 import BlurredDeliverableWrapper from "@/components/deliverables/BlurredDeliverableWrapper"; // Import the new wrapper
+import DeliverableProgressContainer from "@/components/deliverables/DeliverableProgressContainer"; // Import the new progress container
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
 import { useStripePayment } from "@/hooks/useStripePayment";
 import { useProject } from "@/contexts/ProjectContext";
+import { useDeliverableProgress } from "@/hooks/useDeliverableProgress"; // Import the new hook
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
@@ -46,6 +48,9 @@ const ProjectBusiness = () => {
   // Stripe payment hook
   const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, isWaitingDeliverables, initiatePayment, cancelPayment } = useStripePayment();
   const { userProjects } = useProject();
+  
+  // Deliverable progress hook - actif seulement pendant l'attente des livrables
+  const { deliverables, isLoading: isDeliverablesLoading, error: deliverablesError } = useDeliverableProgress(projectId, isWaitingDeliverables || paymentStatus === 'processing');
 
   const handlePayment = async (planId: string) => {
     console.log("handlePayment called. planId:", planId);
@@ -491,20 +496,29 @@ const ProjectBusiness = () => {
         <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
           <DialogHeader>
             <DialogTitle className="text-2xl">
-              {isWaitingPayment ? '⏳ En attente du paiement...' : 
-               isWaitingDeliverables ? '☕️ Une pause café ?' :
-               paymentStatus === 'processing' ? '☕️ Une pause café ?' : 'Traitement du paiement'}
+              {isWaitingPayment ? '⏳ En attente du paiement...' : '☕️ Une pause café ?'}
             </DialogTitle>
             <DialogDescription>
-              {isWaitingPayment 
+              {isWaitingPayment
                 ? <>Votre navigateur va s'ouvrir dans un nouvel onglet pour finaliser le paiement. <br /><br /> Une fois le paiement effectué, nous générerons automatiquement vos livrables premium.</>
-                : isWaitingDeliverables
-                ? <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
-                : paymentStatus === 'processing' 
-                ? <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
-                : 'Traitement de votre paiement en cours...'}
+                : <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
+              }
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Deliverable Progress Section - Only show when not waiting for payment */}
+          {!isWaitingPayment && (
+            <div className="mt-6 space-y-3">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
+              {deliverables.map((deliverable) => (
+                <DeliverableProgressContainer
+                  key={deliverable.key}
+                  deliverable={deliverable}
+                />
+              ))}
+            </div>
+          )}
+          
           <div className="flex justify-center items-center py-4">
             <div className="loader">
               <div className="circle"></div>
@@ -515,8 +529,8 @@ const ProjectBusiness = () => {
           </div>
           {isWaitingPayment && (
             <DialogFooter className="flex justify-center">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={cancelPayment}
                 className="text-gray-600 hover:text-gray-800"
               >

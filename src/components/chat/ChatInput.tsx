@@ -109,12 +109,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       <span className="sr-only">Select communication style</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent side="top" align="start" className="w-auto p-0">
+                  <PopoverContent side="top" align="start" className="w-auto p-0" collisionPadding={0} avoidCollisions={false}>
                     <Select value={communicationStyle} onValueChange={onCommunicationStyleChange}>
                       <SelectTrigger className="h-9 text-sm">
                         <SelectValue placeholder="Style" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent side="top">
+                        <SelectItem value="réflexion approfondie">Réflexion approfondie</SelectItem>
                         <SelectItem value="concis">Concis</SelectItem>
                         <SelectItem value="normal">Normal</SelectItem>
                         <SelectItem value="explicatif">Explicatif</SelectItem>

@@ -282,7 +282,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         'marche',
         'proposition_valeur',
         'business_model',
-        'ressources_requises'
+        'ressources_requises',
+        'rag',
+        'vision_mission_valeurs'
       ];
 
       // Delete from each table

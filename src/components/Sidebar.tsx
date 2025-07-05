@@ -157,8 +157,7 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                   (item.name === "Assistant IA" && location.pathname.startsWith("/chatbot/")) ||
                   (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
                   (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
-                  (item.name === "Plan d'action" && location.pathname.startsWith("/roadmap")) ||
-                  (item.name === "Collaborateurs" && location.pathname.startsWith("/collaborateurs"))
+                  (item.name === "Plan d'action" && location.pathname.startsWith("/roadmap"))
                     ? "bg-gradient-primary text-white font-medium"
                     : "text-gray-700 hover:bg-gray-100"
                 )}

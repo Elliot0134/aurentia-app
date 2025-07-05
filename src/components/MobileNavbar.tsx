@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { LayoutDashboard, Settings, Zap, BookOpen, LogOut, MessageSquare, Handshake } from "lucide-react";
+import { LayoutDashboard, Settings, Zap, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, Library, Users, FileText, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import clsx from 'clsx';
 
 const MobileNavbar = () => {
+  const isMobile = useIsMobile();
   const location = useLocation();
   const { projectId } = useParams();
   const { currentProjectId, userProjects, userCredits, creditsLoading } = useProject();
   const [user, setUser] = useState<any>(null);
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -28,6 +32,11 @@ const MobileNavbar = () => {
     };
   }, []);
 
+  // Close navbar when location changes (navigation)
+  useEffect(() => {
+    setIsNavbarOpen(false);
+  }, [location.pathname]);
+
   // Use currentProjectId from context, fallback to projectId from URL, or first available project
   const activeProjectId = currentProjectId || projectId || (userProjects.length > 0 ? userProjects[0].project_id : null);
 
@@ -40,7 +49,17 @@ const MobileNavbar = () => {
     {
       name: "Livrables",
       path: activeProjectId ? `/project-business/${activeProjectId}` : "/warning",
-      icon: <BookOpen size={20} />
+      icon: <FileText size={20} />
+    },
+    {
+      name: "Assistant IA",
+      path: activeProjectId ? `/chatbot/${activeProjectId}` : "/warning",
+      icon: <MessageSquare size={20} />
+    },
+    {
+      name: "Plan d'action",
+      path: `/roadmap/${activeProjectId}`,
+      icon: <LandPlot size={20} />
     },
     {
       name: "Outils",
@@ -58,79 +77,119 @@ const MobileNavbar = () => {
       icon: <Handshake size={20} />
     },
     {
-      name: "Assistant",
-      path: activeProjectId ? `/chatbot/${activeProjectId}` : "/warning",
-      icon: <MessageSquare size={20} />
+      name: "Ressources",
+      path: "/ressources",
+      icon: <Library size={20} />
+    },
+    {
+      name: "Collaborateurs",
+      path: "/collaborateurs",
+      icon: <Users size={20} />
     },
   ];
 
+  if (!isMobile) return null;
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden">
-      {/* Credits display for mobile */}
-      {user && userCredits && (
-        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <Zap size={16} className="text-yellow-500" />
-            <span className="font-medium text-gray-700">
-              {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
-            </span>
-            <span className="text-xs text-gray-500">crédits</span>
-          </div>
-        </div>
+    <>
+      {/* Menu toggle button - only show when navbar is closed */}
+      {!isNavbarOpen && (
+        <button
+          onClick={() => setIsNavbarOpen(true)}
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-primary text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 md:hidden"
+        >
+          <Menu size={24} />
+        </button>
       )}
-      
-      <nav className="flex justify-around py-3">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={cn(
-              "flex flex-col items-center gap-1 text-sm transition-colors p-2",
-              (location.pathname === item.path && location.pathname !== "/warning") ||
-              (item.name === "Livrables" && location.pathname.startsWith("/project-business/")) ||
-              (item.name === "Assistant" && location.pathname.startsWith("/chatbot/")) ||
-              (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
-              (item.name === "Partenaires" && location.pathname.startsWith("/partenaires"))
-                ? "text-primary font-medium"
-                : "text-gray-700 hover:text-primary"
-            )}
-          >
-            <div className="w-6 h-6 flex items-center justify-center">
-              {React.cloneElement(item.icon, { size: 24 })}
-            </div>
-          </Link>
-        ))}
-        {user ? (
-           <Link
-            to="/profile"
-            className={cn(
-              "flex flex-col items-center gap-1 text-sm transition-colors p-2",
-              location.pathname === "/profile"
-                ? "text-primary font-medium"
-                : "text-gray-700 hover:text-primary"
-            )}
-          >
-            <div className="w-6 h-6 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-medium">
-              {user.email ? user.email[0].toUpperCase() : 'U'}
-            </div>
-          </Link>
-        ) : (
-          <Link
-            to="/login"
-            className={cn(
-              "flex flex-col items-center gap-1 text-sm transition-colors p-2",
-              location.pathname === "/login"
-                ? "text-primary font-medium"
-                : "text-gray-700 hover:text-primary"
-            )}
-          >
-            <div className="w-6 h-6 flex items-center justify-center">
-              <LogOut size={24} />
-            </div>
-          </Link>
+
+      {/* Navbar container with fade animation */}
+      <div
+        className={clsx(
+          "fixed bottom-4 left-4 right-4 z-50 md:hidden transition-all duration-300 ease-in-out",
+          isNavbarOpen
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-8 pointer-events-none"
         )}
-      </nav>
-    </div>
+      >
+        {/* Main navigation with scrollable content */}
+        <nav className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          {/* Credits display for mobile - integrated into navbar */}
+          {user && userCredits && (
+            <div className="bg-white px-4 py-2 border-b border-gray-200">
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <Zap size={16} className="text-yellow-500" />
+                <span className="font-medium text-gray-700">
+                  {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
+                </span>
+                <span className="text-xs text-gray-500">crédits</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Scrollable navigation items */}
+          <div className="px-3 py-3 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center space-x-3 min-w-max">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={clsx(
+                    'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
+                    (location.pathname === item.path && location.pathname !== "/warning") ||
+                    (item.name === "Livrables" && location.pathname.startsWith("/project-business/")) ||
+                    (item.name === "Assistant IA" && location.pathname.startsWith("/chatbot/")) ||
+                    (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
+                    (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
+                    (item.name === "Plan d'action" && location.pathname.startsWith("/roadmap")) ||
+                    (item.name === "Ressources" && location.pathname.startsWith("/ressources")) ||
+                    (item.name === "Collaborateurs" && location.pathname.startsWith("/collaborateurs"))
+                      ? 'bg-gradient-primary text-white shadow-md scale-110'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                  )}
+                >
+                  {React.cloneElement(item.icon, { size: 20 })}
+                </Link>
+              ))}
+              {user ? (
+                <Link
+                  to="/profile"
+                  className={clsx(
+                    'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
+                    location.pathname === "/profile"
+                      ? 'bg-gradient-primary text-white shadow-md scale-110'
+                      : 'bg-gradient-primary text-white hover:scale-105'
+                  )}
+                >
+                  <span className="text-sm font-medium">
+                    {user.email ? user.email[0].toUpperCase() : 'U'}
+                  </span>
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className={clsx(
+                    'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
+                    location.pathname === "/login"
+                      ? 'bg-gradient-primary text-white shadow-md scale-110'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                  )}
+                >
+                  <LogOut size={20} />
+                </Link>
+              )}
+              
+              {/* Close button */}
+              <button
+                onClick={() => setIsNavbarOpen(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105 ml-2"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </>
   );
 };
 

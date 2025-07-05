@@ -21,12 +21,12 @@ import Partenaires from "./pages/Partenaires";
 import Roadmap from "./pages/Roadmap";
 import Ressources from "./pages/Ressources"; // Import the new Ressources component
 import ChatbotPage from "./pages/ChatbotPage";
-import Collaborateurs from "./pages/Collaborateurs"; // Import the new Collaborateurs component
 import ProtectedLayout from "./components/ProtectedLayout";
 import { ProjectProvider } from "./contexts/ProjectContext";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import useMounted from "./hooks/useMounted"; // Import the new hook
 
 import "./index.css";
 
@@ -76,6 +76,7 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
 const ProtectedRoute = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const mounted = useMounted(); // Use the new hook
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -83,12 +84,16 @@ const ProtectedRoute = () => {
         console.log("Checking authentication...");
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Session:", session);
-        setIsAuthenticated(!!session);
-        setLoading(false);
+        if (mounted.current) { // Only update state if component is still mounted
+          setIsAuthenticated(!!session);
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error checking authentication:", error);
-        setIsAuthenticated(false);
-        setLoading(false);
+        if (mounted.current) { // Only update state if component is still mounted
+          setIsAuthenticated(false);
+          setLoading(false);
+        }
       }
     };
 
@@ -96,13 +101,15 @@ const ProtectedRoute = () => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("Auth state changed:", _event, session);
-      setIsAuthenticated(!!session);
+      if (mounted.current) { // Only update state if component is still mounted
+        setIsAuthenticated(!!session);
+      }
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [mounted]); // Add mounted to dependency array
 
   if (loading) {
     return (
@@ -156,7 +163,6 @@ const App = () => {
                     <Route path="/partenaires" element={<Partenaires />} />
                     <Route path="/ressources" element={<Ressources />} /> {/* New route for Ressources */}
                     <Route path="/roadmap/:id" element={<Roadmap />} />
-                    <Route path="/collaborateurs" element={<Collaborateurs />} /> {/* New route for Collaborateurs */}
                     <Route path="/chatbot/:projectId" element={<ChatbotPage />} />
                   </Route>
                 </Route>
