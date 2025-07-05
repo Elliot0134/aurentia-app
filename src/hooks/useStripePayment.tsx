@@ -8,10 +8,12 @@ export const useStripePayment = () => {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isWaitingPayment, setIsWaitingPayment] = useState(false);
+  const [isWaitingDeliverables, setIsWaitingDeliverables] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const deliverablesPollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const startStatusPolling = (projectId: string, planId: string, userId: string) => {
     console.log(`🔄 Démarrage du polling pour le projet ${projectId}, plan ${planId}`);
@@ -27,15 +29,30 @@ export const useStripePayment = () => {
       console.log(`🔍 Vérification statut projet: ${status}`);
       
       if (status === 'payment_receive') {
-        console.log('✅ Paiement reçu, génération des livrables...');
+        console.log('✅ Paiement reçu, arrêt du polling Stripe et démarrage du polling des livrables...');
+        
+        // Stop Stripe polling and start deliverables polling
         clearInterval(pollingIntervalRef.current!);
         pollingIntervalRef.current = null;
+        setIsWaitingPayment(false);
         
-        // Process the payment success
-        await processPaymentCallback(planId, projectId, userId);
+        // Start polling for deliverables completion
+        startDeliverablesPolling(projectId);
+        
       } else if (status === 'pay_1_waiting' || status === 'pay_2_waiting') {
         console.log('⏳ En attente du paiement...');
         // Continue polling
+      } else if (status === 'plan1' || status === 'plan2') {
+        console.log('✅ Statut plan détecté, arrêt du polling Stripe et démarrage du polling des livrables...');
+        
+        // Stop Stripe polling and start deliverables polling
+        clearInterval(pollingIntervalRef.current!);
+        pollingIntervalRef.current = null;
+        setIsWaitingPayment(false);
+        
+        // Start polling for deliverables completion
+        startDeliverablesPolling(projectId);
+        
       } else if (status === 'free') {
         console.log('ℹ️ Projet en statut gratuit, arrêt du polling');
         clearInterval(pollingIntervalRef.current!);
@@ -65,6 +82,35 @@ export const useStripePayment = () => {
     setCurrentUserId(null);
   };
 
+  const startDeliverablesPolling = (projectId: string) => {
+    console.log(`🔄 Démarrage du polling des livrables pour le projet ${projectId}`);
+    setIsWaitingDeliverables(true);
+
+    // Start polling every 4 seconds for deliverables
+    deliverablesPollingIntervalRef.current = setInterval(async () => {
+      const deliverablesComplete = await stripeService.checkDeliverablesCompletion(projectId);
+      
+      if (deliverablesComplete) {
+        console.log('✅ Tous les livrables sont générés !');
+        clearInterval(deliverablesPollingIntervalRef.current!);
+        deliverablesPollingIntervalRef.current = null;
+        setIsWaitingDeliverables(false);
+        toast.success('Le chargement des livrables est terminé !');
+      } else {
+        console.log('⏳ Livrables en cours de génération...');
+        // Continue polling
+      }
+    }, 4000);
+  };
+
+  const stopDeliverablesPolling = () => {
+    if (deliverablesPollingIntervalRef.current) {
+      clearInterval(deliverablesPollingIntervalRef.current);
+      deliverablesPollingIntervalRef.current = null;
+    }
+    setIsWaitingDeliverables(false);
+  };
+
   const processPaymentCallback = async (planId: string, projectId: string, userId: string): Promise<void> => {
     try {
       setIsLoading(true);
@@ -79,12 +125,8 @@ export const useStripePayment = () => {
         setPaymentStatus('success');
         toast.success('Paiement validé ! Génération des livrables en cours...');
         
-        // Wait a bit to show success state
-        setTimeout(() => {
-          setIsLoading(false);
-          setPaymentStatus('idle');
-          setIsWaitingPayment(false);
-        }, 2000);
+        // Don't stop polling here - let it continue to monitor for deliverables completion
+        setIsLoading(false);
         
       } else {
         throw new Error(result.error || 'Erreur lors du traitement');
@@ -142,6 +184,7 @@ export const useStripePayment = () => {
 
   const resetPaymentState = () => {
     stopStatusPolling();
+    stopDeliverablesPolling();
     setIsLoading(false);
     setPaymentStatus('idle');
     setPaymentError(null);
@@ -150,11 +193,13 @@ export const useStripePayment = () => {
   const cancelPayment = () => {
     console.log('❌ Annulation du paiement par l\'utilisateur');
     stopStatusPolling();
+    stopDeliverablesPolling();
     localStorage.removeItem('aurentia_payment_data');
     setIsLoading(false);
     setPaymentStatus('idle');
     setPaymentError(null);
     setIsWaitingPayment(false);
+    setIsWaitingDeliverables(false);
     toast.info('Paiement annulé');
   };
 
@@ -174,9 +219,31 @@ export const useStripePayment = () => {
           console.log('✅ Projet toujours en attente, redémarrage du polling...');
           startStatusPolling(pendingPayment.projectId, pendingPayment.planId, pendingPayment.userId);
         } else if (currentStatus === 'payment_receive') {
-          console.log('✅ Paiement déjà reçu, traitement immédiat...');
-          // Process immediately if payment was already received
-          await processPaymentCallback(pendingPayment.planId, pendingPayment.projectId, pendingPayment.userId);
+          console.log('✅ Paiement déjà reçu, vérification des livrables...');
+          
+          // Check if deliverables are already complete
+          const deliverablesComplete = await stripeService.checkDeliverablesCompletion(pendingPayment.projectId);
+          
+          if (deliverablesComplete) {
+            console.log('✅ Livrables déjà générés, nettoyage des données...');
+            localStorage.removeItem('aurentia_payment_data');
+          } else {
+            console.log('⏳ Livrables en cours de génération, démarrage du polling des livrables...');
+            startDeliverablesPolling(pendingPayment.projectId);
+          }
+        } else if (currentStatus === 'plan1' || currentStatus === 'plan2') {
+          console.log('✅ Statut plan détecté, vérification finale des livrables...');
+          
+          // Double-check deliverables completion
+          const deliverablesComplete = await stripeService.checkDeliverablesCompletion(pendingPayment.projectId);
+          
+          if (deliverablesComplete) {
+            console.log('✅ Génération des livrables terminée, nettoyage des données...');
+            localStorage.removeItem('aurentia_payment_data');
+          } else {
+            console.log('⏳ Livrables encore en cours malgré le statut plan, démarrage du polling des livrables...');
+            startDeliverablesPolling(pendingPayment.projectId);
+          }
         } else {
           console.log('ℹ️ Projet plus en attente de paiement, nettoyage des données...');
           // Clear localStorage if project is no longer in waiting state
@@ -199,6 +266,7 @@ export const useStripePayment = () => {
     return () => {
       window.removeEventListener('focus', handleFocus);
       stopStatusPolling();
+      stopDeliverablesPolling();
     };
   }, []);
 
@@ -207,6 +275,7 @@ export const useStripePayment = () => {
     paymentStatus,
     paymentError,
     isWaitingPayment,
+    isWaitingDeliverables,
     initiatePayment,
     resetPaymentState,
     cancelPayment

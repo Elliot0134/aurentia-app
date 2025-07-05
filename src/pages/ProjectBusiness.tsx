@@ -44,7 +44,7 @@ const ProjectBusiness = () => {
   const [inviteProjects, setInviteProjects] = useState<string[]>([]);
   
   // Stripe payment hook
-  const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, initiatePayment, cancelPayment } = useStripePayment();
+  const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, isWaitingDeliverables, initiatePayment, cancelPayment } = useStripePayment();
   const { userProjects } = useProject();
 
   const handlePayment = async (planId: string) => {
@@ -487,16 +487,19 @@ const ProjectBusiness = () => {
       </div>
 
       {/* Payment Loading Dialog */}
-      <Dialog open={isPaymentLoading || isWaitingPayment} onOpenChange={() => {}}>
+      <Dialog open={isPaymentLoading || isWaitingPayment || isWaitingDeliverables} onOpenChange={() => {}}>
         <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
           <DialogHeader>
             <DialogTitle className="text-2xl">
               {isWaitingPayment ? '⏳ En attente du paiement...' : 
+               isWaitingDeliverables ? '☕️ Une pause café ?' :
                paymentStatus === 'processing' ? '☕️ Une pause café ?' : 'Traitement du paiement'}
             </DialogTitle>
             <DialogDescription>
               {isWaitingPayment 
                 ? <>Votre navigateur va s'ouvrir dans un nouvel onglet pour finaliser le paiement. <br /><br /> Une fois le paiement effectué, nous générerons automatiquement vos livrables premium.</>
+                : isWaitingDeliverables
+                ? <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
                 : paymentStatus === 'processing' 
                 ? <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
                 : 'Traitement de votre paiement en cours...'}

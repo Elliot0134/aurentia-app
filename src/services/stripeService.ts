@@ -193,6 +193,82 @@ class StripeService {
     }
   }
 
+  // Method to check if all deliverables are generated
+  async checkDeliverablesCompletion(projectId: string): Promise<boolean> {
+    try {
+      console.log('🔍 Vérification de la génération des livrables pour le projet:', projectId);
+      
+      // Check ressources_requises table
+      const { data: ressourcesData, error: ressourcesError } = await supabase
+        .from('ressources_requises')
+        .select('ressources_materielles, ressources_humaines, ressources_techniques')
+        .eq('project_id', projectId)
+        .single();
+
+      if (ressourcesError) {
+        console.log('❌ Erreur lors de la vérification des ressources:', ressourcesError);
+        return false;
+      }
+
+      // Check if all three resource fields are filled
+      const ressourcesComplete = ressourcesData && 
+        ressourcesData.ressources_materielles && 
+        ressourcesData.ressources_humaines && 
+        ressourcesData.ressources_techniques;
+
+      console.log('📊 État des ressources:', {
+        materielles: !!ressourcesData?.ressources_materielles,
+        humaines: !!ressourcesData?.ressources_humaines,
+        techniques: !!ressourcesData?.ressources_techniques,
+        complete: ressourcesComplete
+      });
+
+      if (!ressourcesComplete) {
+        return false;
+      }
+
+      // Check other premium deliverables tables
+      const tablesToCheck = [
+        'concurrence',
+        'marche', 
+        'business_model',
+        'proposition_valeur'
+      ];
+
+      for (const table of tablesToCheck) {
+        const { data, error } = await supabase
+          .from(table)
+          .select('*')
+          .eq('project_id', projectId)
+          .single();
+
+        if (error || !data) {
+          console.log(`❌ Table ${table} non complète ou erreur:`, error);
+          return false;
+        }
+
+        // Check if the table has meaningful data (not just empty fields)
+        const hasData = Object.values(data).some(value => 
+          value && typeof value === 'string' && value.trim().length > 0
+        );
+
+        if (!hasData) {
+          console.log(`❌ Table ${table} vide ou incomplète`);
+          return false;
+        }
+
+        console.log(`✅ Table ${table} complète`);
+      }
+
+      console.log('✅ Tous les livrables sont générés !');
+      return true;
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification des livrables:', error);
+      return false;
+    }
+  }
+
   // Method to check for pending payment on page load
   checkPendingPayment(): { userId: string; projectId: string; planId: string } | null {
     try {
