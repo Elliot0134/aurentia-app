@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ComingSoonDialog from "@/components/ui/ComingSoonDialog"; // Import ComingSoonDialog
 
 // Import des composants de collaboration
 import CollaboratorStats from '@/components/collaboration/CollaboratorStats';
@@ -13,6 +14,7 @@ import { useCollaborators } from '@/hooks/useCollaborators';
 const CollaboratorsPage = () => {
   const { toast } = useToast();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false); // State for ComingSoonDialog
   
   const {
     collaborators,
@@ -137,7 +139,7 @@ const CollaboratorsPage = () => {
           </div>
           
           <Button
-            onClick={() => setIsInviteModalOpen(true)}
+            onClick={() => setIsComingSoonOpen(true)}
             className="bg-gradient-primary text-white flex items-center gap-2 w-full lg:w-auto mt-4 lg:mt-0"
           >
             <UserPlus size={16} />
@@ -191,7 +193,7 @@ const CollaboratorsPage = () => {
                 Elles pourront consulter, modifier ou administrer vos projets selon leurs permissions.
               </p>
               <Button
-                onClick={() => setIsInviteModalOpen(true)}
+                onClick={() => setIsComingSoonOpen(true)}
                 className="bg-gradient-primary text-white"
               >
                 <UserPlus size={16} className="mr-2" />
@@ -201,6 +203,12 @@ const CollaboratorsPage = () => {
           </Card>
         )}
 
+        {/* Coming Soon Dialog */}
+        <ComingSoonDialog
+          isOpen={isComingSoonOpen}
+          onClose={() => setIsComingSoonOpen(false)}
+          description="La fonctionnalité d'invitation de collaborateurs sera bientôt disponible. Restez à l'écoute pour les mises à jour !"
+        />
       </div>
     </div>
   );

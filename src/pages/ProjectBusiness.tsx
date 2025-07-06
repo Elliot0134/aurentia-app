@@ -25,6 +25,7 @@ import DeliverableProgressContainer from "@/components/deliverables/DeliverableP
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
+import ComingSoonDialog from "@/components/ui/ComingSoonDialog"; // Import ComingSoonDialog
 import { useStripePayment } from "@/hooks/useStripePayment";
 import { useProject } from "@/contexts/ProjectContext";
 import { useDeliverableProgress } from "@/hooks/useDeliverableProgress"; // Import the new hook
@@ -44,6 +45,7 @@ const ProjectBusiness = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'Lecteur' | 'Éditeur'>('Lecteur');
   const [inviteProjects, setInviteProjects] = useState<string[]>([]);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false); // State for ComingSoonDialog
   
   // Stripe payment hook
   const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, isWaitingDeliverables, initiatePayment, cancelPayment } = useStripePayment();
@@ -391,7 +393,7 @@ const ProjectBusiness = () => {
               </Button>
             </div>
             <Button
-              onClick={() => setIsInviteModalOpen(true)}
+              onClick={() => setIsComingSoonOpen(true)}
               className="flex items-center gap-2 bg-gradient-primary hover:opacity-90 transition-opacity w-full"
               size="sm"
             >
@@ -625,6 +627,12 @@ const ProjectBusiness = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Coming Soon Dialog */}
+      <ComingSoonDialog
+        isOpen={isComingSoonOpen}
+        onClose={() => setIsComingSoonOpen(false)}
+        description="La fonctionnalité d'invitation de collaborateurs sera bientôt disponible. Restez à l'écoute pour les mises à jour !"
+      />
     </div>
   );
 };

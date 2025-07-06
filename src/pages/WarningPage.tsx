@@ -16,7 +16,7 @@ const WarningPage: React.FC = () => {
         <h1 className="text-3xl font-bold mb-2">Regardez la vidéo avant de commencer</h1>
         <div className="relative w-full mt-4 mx-auto" style={{ paddingBottom: '56.25%', height: 0 }}>
           <iframe
-            src="https://www.youtube.com/embed/3XM_FKYTNmU"
+            src="https://www.youtube.com/embed/IFsykJwBl7M?si=w6BErOIaedinIyvj"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen

@@ -12,7 +12,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+declare global {
+  interface Window {
+    Tally: {
+      loadEmbeds: () => void;
+    };
+  }
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -37,6 +45,22 @@ const Dashboard = () => {
       setProjectToDelete(null);
     }
   };
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://tally.so/widgets/embed.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.Tally) {
+        window.Tally.loadEmbeds();
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
@@ -155,6 +179,21 @@ const Dashboard = () => {
             )}
           </div>
           
+          {/* Tally Form Embed */}
+          <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-5 animate-slide-up mt-6">
+            <iframe 
+              data-tally-src="https://tally.so/embed/3qq1e8?alignLeft=1&transparentBackground=1&dynamicHeight=1" 
+              loading="lazy" 
+              width="100%" 
+              height="552" 
+              frameBorder="0" 
+              marginHeight={0} 
+              marginWidth={0} 
+              allow="microphone; camera; geolocation; autoplay" 
+              title="Votre avis nous aide à grandir !"
+            ></iframe>
+          </div>
+
           {/* Bouton créer un projet - visible uniquement en mobile */}
           <div className="md:hidden mt-6">
             <button
