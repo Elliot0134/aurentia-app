@@ -111,7 +111,7 @@ export const useStripePayment = () => {
           hasShownCompletionToast.current = true;
         }
         
-        navigate(`/project/${projectId}/business`); // Navigate here
+        navigate(`/project-business/${projectId}`); // Navigate here
       } else {
         console.log('⏳ Livrables en cours de génération...');
         // Continue polling

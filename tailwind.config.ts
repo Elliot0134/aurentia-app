@@ -19,6 +19,7 @@ export default {
 			center: true,
 			padding: '2rem',
 			screens: {
+				'lg': '1050px', // Custom breakpoint for 1050px
 				'2xl': '1400px'
 			}
 		},

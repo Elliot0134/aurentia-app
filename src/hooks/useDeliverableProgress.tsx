@@ -21,35 +21,35 @@ export const useDeliverableProgress = (projectId: string | undefined, isActive: 
       key: 'concurrence',
       id: 'statut_concurrence',
       name: 'Concurrence',
-      icon: '🏢',
+      icon: '/icones-livrables/concurrence-icon.png',
       color: '#e74c3c'
     },
     {
       key: 'pestel',
       id: 'statut_pestel',
       name: 'Analyse de marché (PESTEL)',
-      icon: '📊',
+      icon: '/icones-livrables/market-icon.png',
       color: '#3498db'
     },
     {
       key: 'proposition_valeur',
       id: 'statut_proposition_valeur',
       name: 'Proposition de valeur',
-      icon: '💎',
+      icon: '/icones-livrables/proposition-valeur-icon.png',
       color: '#9b59b6'
     },
     {
       key: 'business_model',
       id: 'statut_business_model',
       name: 'Business model',
-      icon: '💼',
+      icon: '/icones-livrables/business-model-icon.png',
       color: '#57a68b'
     },
     {
       key: 'ressources',
       id: 'statut_ressources',
       name: 'Analyse des ressources',
-      icon: '⚙️',
+      icon: '/icones-livrables/ressources-icon.png',
       color: '#f39c12'
     }
   ];

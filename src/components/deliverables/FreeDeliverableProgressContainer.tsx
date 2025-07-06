@@ -1,11 +1,11 @@
 import React from 'react';
-import { DeliverableStatus } from '@/hooks/useDeliverableProgress';
+import { FreeDeliverableStatus } from '@/hooks/useFreeDeliverableProgress';
 
-interface DeliverableProgressContainerProps {
-  deliverable: DeliverableStatus;
+interface FreeDeliverableProgressContainerProps {
+  deliverable: FreeDeliverableStatus;
 }
 
-const DeliverableProgressContainer: React.FC<DeliverableProgressContainerProps> = ({ deliverable }) => {
+const FreeDeliverableProgressContainer: React.FC<FreeDeliverableProgressContainerProps> = ({ deliverable }) => {
   const getStatusDisplay = (status: string | null) => {
     if (!status) return { text: 'En attente', style: 'bg-gray-200 text-gray-600' };
     
@@ -28,30 +28,18 @@ const DeliverableProgressContainer: React.FC<DeliverableProgressContainerProps> 
 
   const statusDisplay = getStatusDisplay(deliverable.status);
 
-  // Mapping des icônes vers les images
-  const getIconImage = (key: string) => {
-    const iconMap: { [key: string]: string } = {
-      'concurrence': '/icones-livrables/concurrence-icon.png',
-      'pestel': '/icones-livrables/market-icon.png',
-      'proposition_valeur': '/icones-livrables/proposition-valeur-icon.png',
-      'business_model': '/icones-livrables/business-model-icon.png',
-      'ressources': '/icones-livrables/ressources-icon.png'
-    };
-    return iconMap[key] || '/icones-livrables/market-icon.png';
-  };
-
   return (
     <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
       {/* Icône et nom du livrable */}
       <div className="flex items-center gap-3">
         <div
-          className="w-8 h-8 rounded-md flex items-center justify-center"
+          className="w-8 h-8 rounded-md flex items-center justify-center border border-gray-200"
           style={{ backgroundColor: deliverable.color }}
         >
           <img
-            src={getIconImage(deliverable.key)}
+            src={deliverable.icon}
             alt={deliverable.name}
-            className="w-5 h-5 object-contain filter brightness-0 invert"
+            className="w-6 h-6 object-contain filter brightness-0 invert"
           />
         </div>
         <span className="text-sm font-medium text-gray-800">
@@ -67,4 +55,4 @@ const DeliverableProgressContainer: React.FC<DeliverableProgressContainerProps> 
   );
 };
 
-export default DeliverableProgressContainer;
+export default FreeDeliverableProgressContainer;

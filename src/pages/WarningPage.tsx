@@ -11,10 +11,10 @@ const WarningPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-screen">
-      <div className="bg-white w-[95%] md:w-4/5 p-6 rounded-lg shadow-md flex flex-col items-center text-center">
+      <div className="bg-white w-[95%] md:w-3/4 lg:w-2/3 p-6 rounded-lg shadow-md flex flex-col items-center text-center">
         <AlertTriangle size={48} className="text-aurentia-pink mb-4" />
         <h1 className="text-3xl font-bold mb-2">Regardez la vidéo avant de commencer</h1>
-        <div className="relative w-full mt-4" style={{ paddingBottom: '56.25%', height: 0 }}>
+        <div className="relative w-full mt-4 mx-auto" style={{ paddingBottom: '56.25%', height: 0 }}>
           <iframe
             src="https://www.youtube.com/embed/3XM_FKYTNmU"
             frameBorder="0"

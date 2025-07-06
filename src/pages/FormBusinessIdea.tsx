@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useFreeDeliverableProgress } from "@/hooks/useFreeDeliverableProgress";
+import FreeDeliverableProgressContainer from "@/components/deliverables/FreeDeliverableProgressContainer";
 
 
 
@@ -145,6 +147,9 @@ const Form = () => {
   // State for webhook response and loading
   const [isLoading, setIsLoading] = useState(false);
   const [projectID, setProjectID] = useState('');
+  
+  // Hook pour le suivi des livrables gratuits - actif à l'étape 9 avec projectID
+  const { deliverables } = useFreeDeliverableProgress(projectID, projectID && currentStep === 9);
 
   // Note: Textarea components from shadcn handle auto-resize automatically
 
@@ -200,7 +205,9 @@ const Form = () => {
             setCompetences(webhookData.Compétences || '');
             setMonPourquoiRetranscription(webhookData.MotivationEntrepreneur || '');
             setEquipeFondatrice(webhookData.EquipeFondatrice || '');
-            setProjectID(webhookData.ProjectID || '');
+            const newProjectID = webhookData.ProjectID || '';
+            console.log('🆔 ProjectID défini:', newProjectID);
+            setProjectID(newProjectID);
           } else {
             console.error('Webhook response array is empty or does not contain an object.');
             alert('Erreur lors du traitement de la réponse du formulaire.');
@@ -768,9 +775,9 @@ const Form = () => {
   };
 
      return (
-     <div className="min-h-screen bg-[#F8F6F1]">
+     <div className="min-h-screen bg-[#F8F6F1] flex flex-col md:justify-center py-10 container mx-auto px-4">
              {/* Header */}
-       <div className="container mx-auto px-4 py-4 text-center">
+       <div className="text-center">
          <h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
            Questionnaire de projet
          </h1>
@@ -792,15 +799,31 @@ const Form = () => {
 
                  {/* Loading Dialog */}
          <Dialog open={isLoading} onOpenChange={setIsLoading}>
-           <DialogContent className="w-[95vw] max-w-[425px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+           <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
              <DialogHeader>
-               <DialogTitle>
-                 {currentStep === 8 ? 'Soumission des informations' : 'Génération de vos livrables'}
+               <DialogTitle className="text-2xl">
+                 {currentStep === 8 ? 'Soumission des informations' : '🚀 Génération de vos livrables'}
                </DialogTitle>
                <DialogDescription>
-                 {currentStep === 8 ? 'Veuillez patienter pendant la soumission de vos informations.' : 'Veuillez patienter pendant la génération de vos livrables.'}
+                 {currentStep === 8
+                   ? 'Veuillez patienter pendant la soumission de vos informations.'
+                   : 'La génération de vos premiers livrables peut prendre quelques minutes. Nous créons du contenu personnalisé basé sur vos réponses !'}
                </DialogDescription>
              </DialogHeader>
+             
+             {/* Deliverable Progress Section - Only show during deliverables generation (step 9) */}
+             {currentStep === 9 && (
+               <div className="mt-6 space-y-3">
+                 <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
+                 {deliverables.map((deliverable) => (
+                   <FreeDeliverableProgressContainer
+                     key={deliverable.key}
+                     deliverable={deliverable}
+                   />
+                 ))}
+               </div>
+             )}
+             
             <div className="flex justify-center items-center py-4">
               <div className="loader">
                 <div className="circle"></div>

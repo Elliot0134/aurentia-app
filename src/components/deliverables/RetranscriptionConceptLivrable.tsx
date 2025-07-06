@@ -94,8 +94,8 @@ const RetranscriptionConceptLivrable: React.FC = () => {
         style={{ background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' }}
       >
         <div className="flex-grow mr-4"> {/* Container for text content */}
-          <h2 className="text-3xl font-bold mb-2">Retranscription du concept</h2>
-          <p className="text-xl text-white mb-4">Synthèse complète de votre projet d'entreprise</p>
+          <h2 className="text-3xl font-bold mb-2">{projectSummary?.nom_projet || "Retranscription du concept"}</h2>
+          <p className="text-sm text-white mb-4">{projectSummary?.description_synthetique || "Synthèse complète de votre projet d'entreprise"}</p>
           <div>
             {/* Children for the template content */}
             {/* The actual deliverable content might go here or be passed via children */}
@@ -116,7 +116,7 @@ const RetranscriptionConceptLivrable: React.FC = () => {
           >
             {/* Sticky Header */}
             <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-              <h2 className="text-3xl font-bold">Retranscription du concept</h2>
+              <h2 className="text-3xl font-bold">{projectSummary?.nom_projet || "Retranscription du concept"}</h2>
               <button
                 className="text-gray-600 hover:text-gray-900 transition-colors"
                 onClick={handlePopupClose}

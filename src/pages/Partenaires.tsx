@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ComingSoonDialog from '@/components/ui/ComingSoonDialog';
 import {
   Dialog,
   DialogContent,
@@ -284,6 +285,12 @@ const Partenaires = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+
+  useEffect(() => {
+    setIsComingSoonOpen(true);
+  }, []);
 
   return (
     <div className="container mx-auto py-8">
@@ -627,16 +634,23 @@ const Partenaires = () => {
       </Dialog>
 
       {/* Dialog pour devenir partenaire */}
-      <Dialog open={showPopup} onOpenChange={setShowPopup}>
-        <DialogContent className="w-[90vw] rounded-lg">
-          <DialogHeader>
-            <DialogTitle className="bg-gradient-primary text-transparent bg-clip-text text-3xl">Devenir Partenaire Aurentia</DialogTitle>
-            <Separator className="my-4" />
-            <DialogDescription className="text-black">
-              Rejoignez notre réseau de partenaires qualifiés et développez votre activité en collaborant avec des porteurs de projets ambitieux.
-              <br /><br />
-              En tant que partenaire Aurentia, vous bénéficierez d'une visibilité accrue et d'un accès privilégié à des projets correspondant à votre expertise.
-            </DialogDescription>
+      <ComingSoonDialog
+        isOpen={isComingSoonOpen}
+        onClose={() => setIsComingSoonOpen(false)}
+        description={
+          <>
+            Prochainement, connectez-vous directement avec notre réseau de partenaires Aurentia certifiés. Une plateforme dédiée pour trouver les experts dont votre projet a besoin :
+            <br /><br />
+            ✅ <b>Création</b> : Designers graphiques, développeurs web, créateurs de contenu
+            <br />
+            ✅ <b>Marketing</b> : Spécialistes SEO, experts en publicité, consultants réseaux sociaux
+            <br />
+            ✅ <b>Business</b> : Comptables, juristes, consultants en stratégie
+            <br />
+            ✅ <b>Technique</b> : Développeurs d'applications, experts en automatisation, spécialistes data
+            <br /><br />
+            Tous nos partenaires sont sélectionnés pour leur expertise et leur connaissance de l'écosystème entrepreneurial. Trouvez, comparez et collaborez en quelques clics.
+            <br /><br />
             <div className="bg-gray-50 p-4 rounded-lg mt-4">
               <div className="text-black text-center mb-4">
                 <p className="font-semibold">Candidature partenaire</p>
@@ -688,6 +702,20 @@ const Partenaires = () => {
                 </div>
               </div>
             </div>
+          </>
+        }
+      />
+      {/* Dialog pour devenir partenaire */}
+      <Dialog open={showPopup} onOpenChange={setShowPopup}>
+        <DialogContent className="w-[90vw] rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="bg-gradient-primary text-transparent bg-clip-text text-3xl">Devenir Partenaire Aurentia</DialogTitle>
+            <Separator className="my-4" />
+            <DialogDescription className="text-black">
+              Rejoignez notre réseau de partenaires qualifiés et développez votre activité en collaborant avec des porteurs de projets ambitieux.
+              <br /><br />
+              En tant que partenaire Aurentia, vous bénéficierez d'une visibilité accrue et d'un accès privilégié à des projets correspondant à votre expertise.
+            </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>

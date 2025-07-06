@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Separator } from "@/components/ui/separator";
+import ComingSoonDialog from '@/components/ui/ComingSoonDialog';
 import {
   DndContext,
   closestCenter,
@@ -424,6 +425,12 @@ const Roadmap = () => {
     commentCountByCard[c.card_id] = (commentCountByCard[c.card_id] || 0) + 1;
   });
 
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+
+  useEffect(() => {
+    setIsComingSoonOpen(true);
+  }, []);
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6 text-center md:text-left tracking-tight">Plan d'action</h1>
@@ -564,6 +571,26 @@ const Roadmap = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ComingSoonDialog
+        isOpen={isComingSoonOpen}
+        onClose={() => setIsComingSoonOpen(false)}
+        description={
+          <>
+            Bientôt, Aurentia IA pourra générer automatiquement un plan d'action complet et personnalisé pour votre projet d'entreprise. L'IA analysera votre idée et créera :
+            <br /><br />
+            ✅ Des catégories adaptées à votre secteur d'activité
+            <br />
+            ✅ Une liste de tâches concrètes à accomplir
+            <br />
+            ✅ Une répartition des responsabilités par profil/personne
+            <br />
+            ✅ Un classement par ordre de priorité pour optimiser votre progression
+            <br /><br />
+            Fini les plans d'action génériques ! Votre feuille de route sera entièrement adaptée à votre projet et prête à être mise en œuvre.
+          </>
+        }
+      />
     </div>
   );
 };

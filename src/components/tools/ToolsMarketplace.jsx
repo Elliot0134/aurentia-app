@@ -2,19 +2,23 @@ import React, { useState } from 'react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import ToolGrid from './ToolGrid';
 import ToolModal from './ToolModal';
 import ToolFilters from './ToolFilters';
-import CreditBalance from '../automation/CreditBalance';
 import {
   Search,
   Star,
@@ -31,7 +35,8 @@ import {
   Zap,
   Shield,
   Search as SearchIcon,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useTools } from '../../hooks/useTools';
@@ -132,77 +137,92 @@ const ToolsMarketplace = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* En-tête avec statistiques */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Centre d'outils IA
-            </h1>
-            <p className="text-gray-600">
-              Découvrez {stats.totalTools} outils spécialisés pour votre entreprise
-            </p>
-          </div>
-          <CreditBalance credits={credits} />
+    <div className="container mx-auto px-4 py-8" style={{ maxWidth: '90vw' }}>
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Centre d'outils IA
+          </h1>
         </div>
-        
-        {/* Statistiques rapides */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center space-x-2">
-              <Grid3X3 className="h-5 w-5 text-blue-600" />
-              <div>
-                <div className="text-lg font-semibold">{stats.totalTools}</div>
-                <div className="text-sm text-gray-600">Outils disponibles</div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center space-x-2">
-              <Star className="h-5 w-5 text-yellow-600" />
-              <div>
-                <div className="text-lg font-semibold">{stats.averageRating}</div>
-                <div className="text-sm text-gray-600">Note moyenne</div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center space-x-2">
-              <Heart className="h-5 w-5 text-red-600" />
-              <div>
-                <div className="text-lg font-semibold">{stats.favoritesCount}</div>
-                <div className="text-sm text-gray-600">Favoris</div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center space-x-2">
-              <History className="h-5 w-5 text-green-600" />
-              <div>
-                <div className="text-lg font-semibold">{stats.usageCount}</div>
-                <div className="text-sm text-gray-600">Utilisations</div>
-              </div>
-            </div>
-          </div>
+      </div>
+
+      {/* Statistiques rapides */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-lg p-4 border border-gray-100">
+          <div className="text-2xl font-bold text-blue-600">{stats.totalTools}</div>
+          <div className="text-sm text-gray-600">Outils disponibles</div>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-gray-100">
+          <div className="text-2xl font-bold text-yellow-600">{stats.averageRating}</div>
+          <div className="text-sm text-gray-600">Note moyenne</div>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-gray-100">
+          <div className="text-2xl font-bold text-red-600">{stats.favoritesCount}</div>
+          <div className="text-sm text-gray-600">Favoris</div>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-gray-100">
+          <div className="text-2xl font-bold text-green-600">{stats.usageCount}</div>
+          <div className="text-sm text-gray-600">Utilisations</div>
         </div>
       </div>
 
       {/* Barre de recherche et filtres */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Rechercher un outil..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <div className="flex space-x-2">
+      <div className="bg-white rounded-xl border border-gray-100 p-6 mb-8">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Recherche */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Rechercher un outil..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Catégories */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full lg:w-48 flex items-center justify-between">
+                {(() => {
+                  const category = categories.find(cat => cat.id === selectedCategory);
+                  const IconComponent = categoryIcons[selectedCategory] || Grid3X3;
+                  return (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <IconComponent className="h-4 w-4" />
+                        <span>{category?.name || 'Catégorie'}</span>
+                      </div>
+                      <ChevronDown className="h-4 w-4" />
+                    </>
+                  );
+                })()}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {categories.map((category) => {
+                const IconComponent = categoryIcons[category.id] || Grid3X3;
+                return (
+                  <DropdownMenuItem
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className="flex items-center space-x-2"
+                  >
+                    <IconComponent className="h-4 w-4" />
+                    <span>{category.name}</span>
+                    <Badge variant="secondary" className="ml-auto">
+                      {category.count}
+                    </Badge>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Tri */}
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full lg:w-48">
               <SelectValue placeholder="Trier par" />
             </SelectTrigger>
             <SelectContent>
@@ -225,74 +245,57 @@ const ToolsMarketplace = () => {
             onOpenChange={setIsFiltersOpen}
           />
         </div>
-      </div>
 
-      {/* Catégories */}
-      <div className="flex flex-wrap gap-2">
-        {categories.map((category) => {
-          const IconComponent = categoryIcons[category.id] || Grid3X3;
-          return (
-            <Button
-              key={category.id}
-              variant={selectedCategory === category.id ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory(category.id)}
-              className="flex items-center space-x-2"
-            >
-              <IconComponent className="h-4 w-4" />
-              <span>{category.name}</span>
-              <Badge variant="secondary" className="ml-1">
-                {category.count}
+        {/* Filtres actifs */}
+        {(selectedCategory !== 'all' || searchQuery) && (
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
+            {selectedCategory !== 'all' && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                {categories.find(c => c.id === selectedCategory)?.name}
+                <button
+                  onClick={() => setSelectedCategory('all')}
+                  className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                >
+                  ×
+                </button>
               </Badge>
-            </Button>
-          );
-        })}
+            )}
+            {searchQuery && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                "{searchQuery}"
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Onglets principaux */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex flex-wrap gap-2 mb-6">
-          <TabsTrigger value="all" className="flex items-center space-x-2">
-            <Grid3X3 className="h-4 w-4" />
-            <span>Tous</span>
-          </TabsTrigger>
-          <TabsTrigger value="popular" className="flex items-center space-x-2">
-            <Star className="h-4 w-4" />
-            <span>Populaires</span>
-          </TabsTrigger>
-          <TabsTrigger value="recommended" className="flex items-center space-x-2">
-            <Sparkles className="h-4 w-4" />
-            <span>Recommandés</span>
-          </TabsTrigger>
-          <TabsTrigger value="favorites" className="flex items-center space-x-2">
-            <Heart className="h-4 w-4" />
-            <span>Favoris</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center space-x-2">
-            <History className="h-4 w-4" />
-            <span>Historique</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Résultats */}
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-gray-600">
+          {tools.length} outil{tools.length > 1 ? 's' : ''} trouvé{tools.length > 1 ? 's' : ''}
+        </p>
+      </div>
 
-        {/* Contenu des onglets */}
-        {['all', 'popular', 'recommended', 'favorites', 'history'].map((tab) => (
-          <TabsContent key={tab} value={tab} className="mt-6">
-            <ToolGrid
-              tools={getToolsForTab(tab)}
-              onToolSelect={selectTool}
-              onToggleFavorite={toggleFavorite}
-              favorites={favorites}
-              usageHistory={usageHistory}
-              credits={credits}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              loading={loading}
-              searchQuery={searchQuery}
-              selectedCategory={selectedCategory}
-            />
-          </TabsContent>
-        ))}
-      </Tabs>
+      {/* Grille des outils */}
+      <ToolGrid
+        tools={getToolsForTab(activeTab)}
+        onToolSelect={selectTool}
+        onToggleFavorite={toggleFavorite}
+        favorites={favorites}
+        usageHistory={usageHistory}
+        credits={credits}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        loading={loading}
+        searchQuery={searchQuery}
+        selectedCategory={selectedCategory}
+      />
 
       {/* Modal d'outil */}
       <ToolModal

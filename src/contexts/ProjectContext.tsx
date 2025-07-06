@@ -271,7 +271,6 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
       // Delete from all related tables
       const tablesToDelete = [
-        'project_summary',
         'persona_express_b2c',
         'persona_express_b2b', 
         'persona_express_organismes',
@@ -284,10 +283,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         'business_model',
         'ressources_requises',
         'rag',
-        'vision_mission_valeurs'
+        'vision_mission_valeurs',
+        'project_summary', // Put project_summary back in the main list
+        'form_business_idea' // Put form_business_idea back in the main list
       ];
 
-      // Delete from each table
+      // Delete from each table with user_id filter
       for (const table of tablesToDelete) {
         try {
           await supabase
@@ -299,6 +300,25 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
           console.log(`Erreur lors de la suppression de ${table}:`, error);
           // Continue deleting from other tables even if one fails
         }
+      }
+
+      // Final attempt to delete project_summary and form_business_idea without user_id filter
+      try {
+        await supabase
+          .from('project_summary')
+          .delete()
+          .eq('project_id', projectId);
+      } catch (error) {
+        console.log(`Erreur lors de la suppression finale de project_summary:`, error);
+      }
+
+      try {
+        await supabase
+          .from('form_business_idea')
+          .delete()
+          .eq('project_id', projectId);
+      } catch (error) {
+        console.log(`Erreur lors de la suppression finale de form_business_idea:`, error);
       }
 
       // If we're deleting the current project, clear it

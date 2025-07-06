@@ -351,9 +351,12 @@ const ProjectBusiness = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 animate-fade-in">
-      <div className="max-w-7xl mx-auto">
+    <div className="mx-auto py-8 animate-fade-in">
+      <div className="w-[95vw] md:w-11/12 mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+          <div className="flex flex-col w-full md:w-1/2 md:order-first">
+            <h1 className="text-3xl font-semibold">Mes livrables</h1>
+          </div>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
             <div className="flex items-center gap-3 w-full">
               <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
@@ -396,13 +399,7 @@ const ProjectBusiness = () => {
               Inviter un collaborateur
             </Button>
           </div>
-          <div className="flex flex-col w-full md:w-1/2 md:order-first">
-            <div>
-              <h1 className="text-2xl font-semibold">{project.nom_projet || "Projet sans nom"}</h1>
-            </div>
-          </div>
         </div>
-        <p className="text-gray-600 text-sm mt-1 mb-6">{project.description_projet || "Aucune description"}</p>
 
         {/* Level 1 Deliverables */}
         <div className="grid grid-cols-12 gap-4 md:gap-5">
