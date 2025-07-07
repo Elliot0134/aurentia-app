@@ -105,7 +105,7 @@ const ProjectBusiness = () => {
       <div className="flex flex-col md:flex-row gap-8 justify-center items-stretch mt-8">
         <PlanCard
           title="Niveau 1"
-          price="2,90€"
+          price="3,90€"
           oldPrice="12,90€"
           deliverables={niveau1Deliverables}
           buttonText="J'en profite !"
