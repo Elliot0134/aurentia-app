@@ -109,28 +109,6 @@ const ProjectBusiness = () => {
           oldPrice="12,90€"
           deliverables={niveau1Deliverables}
           buttonText="J'en profite !"
-          pdfSection={
-            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold flex items-center justify-center gap-2">
-              PDF de votre projet
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
-                      </PopoverTrigger>
-                      <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
-                        <p>Un PDF complet de votre projet</p>
-                      </PopoverContent>
-                    </Popover>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Un PDF complet de votre projet</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          }
           creditsSection={
             <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
               <div className="flex items-center justify-center gap-2">
@@ -165,28 +143,6 @@ const ProjectBusiness = () => {
           deliverables={niveau2Deliverables}
           buttonText="J'en profite encore + !"
           onButtonClick={() => handlePayment('plan2')}
-          pdfSection={
-            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center font-bold flex items-center justify-center gap-2">
-              PDF de votre projet
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
-                      </PopoverTrigger>
-                      <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
-                        <p>Un PDF complet de votre projet</p>
-                      </PopoverContent>
-                    </Popover>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Un PDF complet de votre projet</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          }
           creditsSection={
             <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
               <div className="flex items-center justify-center gap-2">

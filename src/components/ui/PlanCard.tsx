@@ -7,13 +7,12 @@ interface PlanCardProps {
   oldPrice?: string;
   deliverables: React.ReactNode[];
   buttonText: string;
-  pdfSection: React.ReactNode; // New prop for PDF section
   creditsSection: React.ReactNode; // New prop for Credits section
   className?: string;
   onButtonClick?: () => void; // New prop for button click handler
 }
 
-const PlanCard: React.FC<PlanCardProps> = ({ title, price, oldPrice, deliverables, buttonText, pdfSection, creditsSection, className, onButtonClick }) => {
+const PlanCard: React.FC<PlanCardProps> = ({ title, price, oldPrice, deliverables, buttonText, creditsSection, className, onButtonClick }) => {
   return (
     <div className={`relative bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center text-center md:w-[400px] ${className} ${title === 'Niveau 2' ? 'border-2 border-aurentia-pink' : 'border border-pink-300'}`}>
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full p-[2px] bg-gradient-to-r from-aurentia-pink to-aurentia-orange">
@@ -30,9 +29,9 @@ const PlanCard: React.FC<PlanCardProps> = ({ title, price, oldPrice, deliverable
       </div>
       <div className="w-4/5 border-b border-gray-300 mx-auto mb-6"></div> {/* Divider */}
       <div className="flex flex-col gap-4 w-full mb-6">
-        {pdfSection}
         {creditsSection}
       </div>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 text-left w-full">Livrables premium</h3>
       <ul className="list-none p-0 m-0 text-left w-full">
         {deliverables.map((item, index) => (
           <li key={index} className="flex items-start mb-3"> {/* Changed items-center to items-start for better top alignment with wrapped text */}
