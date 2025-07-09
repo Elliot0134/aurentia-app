@@ -300,6 +300,23 @@ const ProjectBusiness = () => {
     return () => clearInterval(interval);
   }, [projectId, isWaitingPayment]);
 
+  // Listen for project status updates (e.g., when payment is cancelled)
+  useEffect(() => {
+    const handleProjectStatusUpdate = (event: CustomEvent) => {
+      const { projectId: updatedProjectId, newStatus } = event.detail;
+      if (updatedProjectId === projectId) {
+        console.log('📡 Received projectStatusUpdated event, updating status to:', newStatus);
+        setProjectStatus(newStatus);
+      }
+    };
+
+    window.addEventListener('projectStatusUpdated', handleProjectStatusUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('projectStatusUpdated', handleProjectStatusUpdate as EventListener);
+    };
+  }, [projectId]);
+
   if (loading) {
     return <div>Chargement...</div>; // Or a loading spinner component
   }
