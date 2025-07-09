@@ -215,8 +215,34 @@ export const useStripePayment = () => {
     hasShownCompletionToast.current = false;
   };
 
-  const cancelPayment = () => {
+  const cancelPayment = async () => {
     console.log('❌ Annulation du paiement par l\'utilisateur');
+    
+    // Reset project status to "free" if we have current project info
+
+    if (currentProjectId) {
+      try {
+        const { error } = await supabase
+          .from('project_summary')
+          .update({ statut_project: 'free' })
+          .eq('project_id', currentProjectId);
+
+        if (error) {
+          console.error('❌ Erreur lors de la remise à zéro du statut projet:', error);
+        } else {
+          console.log('✅ Statut projet remis à "free"');
+          // Dispatch custom event to notify UI to refresh project status/buttons
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('projectStatusUpdated', {
+              detail: { projectId: currentProjectId, newStatus: 'free' }
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la remise à zéro du statut projet:', error);
+      }
+    }
+
     stopStatusPolling();
     stopDeliverablesPolling();
     localStorage.removeItem('aurentia_payment_data');
