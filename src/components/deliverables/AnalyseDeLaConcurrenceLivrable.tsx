@@ -106,6 +106,39 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
     fetchData();
   }, [projectId, supabase]);
 
+  // Listen for deliverables refresh event
+  useEffect(() => {
+    const handleRefreshDeliverables = (event: CustomEvent) => {
+      const { projectId: refreshProjectId } = event.detail;
+      if (refreshProjectId === projectId) {
+        console.log('🔄 Refreshing AnalyseDeLaConcurrenceLivrable data...');
+        // Refetch data
+        const fetchData = async () => {
+          if (projectId) {
+            const { data, error } = await supabase
+              .from('concurrence')
+              .select('*')
+              .eq('project_id', projectId)
+              .single();
+
+            if (error) {
+              console.error('Error fetching concurrence data:', error);
+            } else {
+              setConcurrenceData(data);
+            }
+          }
+        };
+        fetchData();
+      }
+    };
+
+    window.addEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
+    
+    return () => {
+      window.removeEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
+    };
+  }, [projectId]);
+
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
   };
