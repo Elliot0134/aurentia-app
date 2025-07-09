@@ -213,30 +213,36 @@ export const useStripePayment = () => {
     setPaymentError(null);
     hasShownSuccessToast.current = false;
     hasShownCompletionToast.current = false;
-  };
-
-  const cancelPayment = async () => {
+  };  const cancelPayment = async () => {
     console.log('❌ Annulation du paiement par l\'utilisateur');
     
-    // Reset project status to "free" if we have current project info
-
+    // Reset project status to "free" if we have current project info and it's in waiting state
     if (currentProjectId) {
       try {
-        const { error } = await supabase
-          .from('project_summary')
-          .update({ statut_project: 'free' })
-          .eq('project_id', currentProjectId);
+        // First check the current status
+        const currentStatus = await stripeService.checkProjectStatus(currentProjectId);
+        console.log('🔍 Statut actuel du projet:', currentStatus);
+        
+        // Only update to "free" if currently in waiting state
+        if (currentStatus === 'pay_1_waiting' || currentStatus === 'pay_2_waiting') {
+          const { error } = await supabase
+            .from('project_summary')
+            .update({ statut_project: 'free' })
+            .eq('project_id', currentProjectId);
 
-        if (error) {
-          console.error('❌ Erreur lors de la remise à zéro du statut projet:', error);
-        } else {
-          console.log('✅ Statut projet remis à "free"');
-          // Dispatch custom event to notify UI to refresh project status/buttons
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('projectStatusUpdated', {
-              detail: { projectId: currentProjectId, newStatus: 'free' }
-            }));
+          if (error) {
+            console.error('❌ Erreur lors de la remise à zéro du statut projet:', error);
+          } else {
+            console.log(`✅ Statut projet remis de "${currentStatus}" à "free"`);
+            // Dispatch custom event to notify UI to refresh project status/buttons
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('projectStatusUpdated', {
+                detail: { projectId: currentProjectId, newStatus: 'free' }
+              }));
+            }
           }
+        } else {
+          console.log(`ℹ️ Pas de changement de statut nécessaire, statut actuel: ${currentStatus}`);
         }
       } catch (error) {
         console.error('❌ Erreur lors de la remise à zéro du statut projet:', error);
