@@ -111,6 +111,13 @@ export const useStripePayment = () => {
           hasShownCompletionToast.current = true;
         }
         
+        // Dispatch custom event to notify UI to refresh deliverables content
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('deliverablesCompleted', {
+            detail: { projectId: projectId }
+          }));
+        }
+        
         navigate(`/project-business/${projectId}`); // Navigate here
       } else {
         console.log('⏳ Livrables en cours de génération...');

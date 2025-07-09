@@ -153,49 +153,41 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
 
 
 {/* Livrable Popup Part */}
-
 {isPopupOpen && (
-
 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handlePopupClose}>
-
 <div
-
-className="bg-white text-black rounded-lg p-6 w-full mx-2.5 md:w-3/4 relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-y-auto"
-
+className="bg-white text-black rounded-lg w-full mx-2.5 md:w-3/4 relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-hidden flex flex-col"
 onClick={(e) => e.stopPropagation()}
-
 style={{ animation: 'scaleIn 0.3s ease-out forwards' }}
-
 >
-
-<h2 className="text-xl font-bold mb-2">{livrableTitle}</h2>
-
-<div className="flex gap-2 mb-4">
-
+{/* Sticky Header */}
+<div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
+<h2 className="text-xl font-bold">{livrableTitle}</h2>
 <button
-
-className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-
-showDefinitionPlaceholder
-
-? `bg-[${livrableColor}] text-white`
-
-: 'bg-gray-200 text-gray-700'
-
-}`}
-
-onClick={() => {
-
-setShowDefinitionPlaceholder(!showDefinitionPlaceholder);
-
-}}
-
+className="text-gray-600 hover:text-gray-900 transition-colors"
+onClick={handlePopupClose}
 >
-
-Définition
-
+<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+</svg>
 </button>
+</div>
 
+{/* Scrollable Content */}
+<div className="flex-1 overflow-y-auto p-6 pt-4">
+<div className="flex gap-2 mb-4">
+<button
+className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
+showDefinitionPlaceholder
+? `bg-[${livrableColor}] text-white`
+: 'bg-gray-200 text-gray-700'
+}`}
+onClick={() => {
+setShowDefinitionPlaceholder(!showDefinitionPlaceholder);
+}}
+>
+Définition
+</button>
 </div>
 
 
@@ -567,61 +559,40 @@ return (
 )}
 
 
-{activeSection === 'coherence_strategique' && (
+            {activeSection === 'coherence_strategique' && (
+              <div className="mt-2">
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Alignement Vision-Mission</h4>
+                  <p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.alignement_vision_mission || 'N/A'}</p>
+                </div>
 
-<div className="mt-2">
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Progression temporelle</h4>
+                  <p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.progression_temporelle || 'N/A'}</p>
+                </div>
 
-<div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-
-<h4 className="text-sm font-semibold mb-2">Alignement Vision-Mission</h4>
-
-<p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.alignement_vision_mission || 'N/A'}</p>
-
-</div>
-
-<div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-
-<h4 className="text-sm font-semibold mb-2">Progression temporelle</h4>
-
-<p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.progression_temporelle || 'N/A'}</p>
-
-</div>
-
-<div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-
-<h4 className="text-sm font-semibold mb-2">Opérationnalisation des valeurs</h4>
-
-<p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.operationnalisation_valeurs || 'N/A'}</p>
-
-</div>
-
-</div>
-
-)}
-
-        <button
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
-          onClick={handlePopupClose}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <style>
-        {`
-          @keyframes scaleIn {
-            to {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-        `}
-      </style>
-    </div>
-  )}
-  </>
-);
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                  <h4 className="text-sm font-semibold mb-2">Opérationnalisation des valeurs</h4>
+                  <p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.operationnalisation_valeurs || 'N/A'}</p>
+                </div>
+              </div>
+            )}
+            </div>
+          </div>
+          <style>
+            {`
+              @keyframes scaleIn {
+                to {
+                  opacity: 1;
+                  transform: scale(1);
+                }
+              }
+            `}
+          </style>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default VisionMissionValeursLivrable;

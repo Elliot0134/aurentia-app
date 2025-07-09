@@ -47,6 +47,39 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
     fetchData();
   }, [projectId, supabase]);
 
+  // Listen for deliverables refresh event
+  useEffect(() => {
+    const handleRefreshDeliverables = (event: CustomEvent) => {
+      const { projectId: refreshProjectId } = event.detail;
+      if (refreshProjectId === projectId) {
+        console.log('🔄 Refreshing BusinessModelLivrable data...');
+        // Refetch data
+        const fetchData = async () => {
+          if (!projectId) return;
+
+          const { data, error } = await supabase
+            .from('business_model')
+            .select('*')
+            .eq('project_id', projectId)
+            .single();
+
+          if (error) {
+            console.error('Error fetching business model data:', error);
+          } else {
+            setBusinessModelData(data);
+          }
+        };
+        fetchData();
+      }
+    };
+
+    window.addEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
+    
+    return () => {
+      window.removeEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
+    };
+  }, [projectId]);
+
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
   };

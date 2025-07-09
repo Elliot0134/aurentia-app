@@ -317,6 +317,31 @@ const ProjectBusiness = () => {
     };
   }, [projectId]);
 
+  // Listen for deliverables completion to refresh content
+  useEffect(() => {
+    const handleDeliverablesCompleted = (event: CustomEvent) => {
+      const { projectId: completedProjectId } = event.detail;
+      if (completedProjectId === projectId) {
+        console.log('📦 Received deliverablesCompleted event, refreshing deliverables...');
+        
+        // Force a re-render by updating a state that will cause components to refresh
+        // This will trigger useEffect hooks in deliverable components to refetch their data
+        setProjectStatus(prev => prev); // This will trigger a re-render
+        
+        // Also trigger a window event for individual deliverable components to listen to
+        window.dispatchEvent(new CustomEvent('refreshDeliverables', {
+          detail: { projectId: completedProjectId }
+        }));
+      }
+    };
+
+    window.addEventListener('deliverablesCompleted', handleDeliverablesCompleted as EventListener);
+    
+    return () => {
+      window.removeEventListener('deliverablesCompleted', handleDeliverablesCompleted as EventListener);
+    };
+  }, [projectId]);
+
   if (loading) {
     return <div>Chargement...</div>; // Or a loading spinner component
   }
