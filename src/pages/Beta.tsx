@@ -23,10 +23,6 @@ const Beta = () => {
   const [showWaitlistForm, setShowWaitlistForm] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showInvalidCodeMessage, setShowInvalidCodeMessage] = useState(false);
-  const [name, setName] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [email, setEmail] = useState("");
-  const [comment, setComment] = useState("");
   const [isPopupOpen, setIsPopupOpen] = useState(true); // State to control popup visibility
 
   const navigate = useNavigate();
@@ -51,13 +47,28 @@ const Beta = () => {
     checkAccess();
   }, [navigate]);
 
+  useEffect(() => {
+    if (showWaitlistForm) {
+      // Ensure Tally.loadEmbeds() is called only when the form is visible
+      // and the Tally script has loaded.
+      if (window.Tally) {
+        window.Tally.loadEmbeds();
+      } else {
+        // If Tally script is not yet loaded, wait for it
+        const script = document.querySelector('script[src="https://tally.so/widgets/embed.js"]');
+        script?.addEventListener('load', () => {
+          window.Tally.loadEmbeds();
+        });
+      }
+    }
+  }, [showWaitlistForm]);
+
   console.log("Beta component rendered");
 
   const handleJoinWaitlist = () => {
     setShowWaitlistForm(true);
     setShowSuccessMessage(false); // Hide success message if trying again
     setShowInvalidCodeMessage(false); // Hide invalid code message if trying again
-    // TODO: Implement waitlist logic
     console.log("Joining waitlist with code:", betaCode);
   };
 
@@ -90,7 +101,7 @@ const Beta = () => {
   return (
     <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
       <DialogContent
-        className="w-[90vw] sm:max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in border border-aurentia-orange" // Adjusted width for mobile
+        className="w-[90vw] sm:max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in border border-aurentia-orange max-h-[90vh] overflow-y-auto" // Adjusted width for mobile, added max-height and overflow for scrolling
         onPointerDownOutside={(e) => e.preventDefault()} // Prevent closing on outside click
       >
         <DialogHeader>
@@ -124,65 +135,10 @@ const Beta = () => {
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
             <div className="flex justify-center">
-              <Button onClick={handleJoinWaitlist}>Rejoindre la liste d'attente</Button>
+              <Button onClick={handleJoinWaitlist}>S'inscrire à la bêta</Button>
             </div>
             {showWaitlistForm && (
-              <div className="grid gap-4 py-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <Input
-                    id="name"
-                    placeholder="Nom"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    id="firstName"
-                    placeholder="Prénom"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="flex-1"
-                  />
-                </div>
-                <Input
-                  id="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <Input
-                  id="comment"
-                  placeholder="Commentaire"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                />
-                <Button onClick={async () => {
-                  try {
-                    const response = await fetch("https://n8n.eec-technologies.fr/webhook/inscription-beta", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({ name, firstName, email, comment }),
-                    });
-                    if (response.ok) {
-                      console.log("Waitlist form submitted successfully!");
-                      setName("");
-                      setFirstName("");
-                      setEmail("");
-                      setComment("");
-                      setShowWaitlistForm(false);
-                      setShowSuccessMessage(true);
-                    } else {
-                      console.error("Failed to submit waitlist form:", response.statusText);
-                      // Optionally, show an error message
-                    }
-                  } catch (error) {
-                    console.error("Error submitting waitlist form:", error);
-                    // Optionally, show an error message
-                  }
-                }}>Valider</Button>
-              </div>
+              <iframe data-tally-src="https://tally.so/embed/3Xd5Jj?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1" loading="lazy" width="100%" height="510" frameBorder={0} marginHeight={0} marginWidth={0} title="Liste d'attente Aurentia bêta"></iframe>
             )}
           </>
         ) : showSuccessMessage ? (
