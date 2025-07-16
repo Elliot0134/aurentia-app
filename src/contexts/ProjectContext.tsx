@@ -321,6 +321,29 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         console.log(`Erreur lors de la suppression finale de form_business_idea:`, error);
       }
 
+      // Trigger webhook for RAG deletion
+      try {
+        const webhookUrl = 'https://n8n.srv906204.hstgr.cloud/webhook/supp-rag';
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: session.user.id,
+            project_id: projectId,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Erreur lors de l\'appel du webhook RAG:', response.statusText);
+        } else {
+          console.log('Webhook RAG appelé avec succès.');
+        }
+      } catch (webhookError) {
+        console.error('Erreur lors de l\'appel du webhook RAG:', webhookError);
+      }
+
       // If we're deleting the current project, clear it
       if (currentProjectId === projectId) {
         setCurrentProjectId(null);
