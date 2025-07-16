@@ -163,7 +163,7 @@ class StripeService {
       
       // Call the webhook
       console.log('🌐 Appel du webhook de génération des livrables...');
-      const webhookResponse = await fetch('https://n8n.eec-technologies.fr/webhook/generation-livrables-premium', {
+      const webhookResponse = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/generation-livrables-premium', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

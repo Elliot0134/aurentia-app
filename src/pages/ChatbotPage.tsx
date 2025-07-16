@@ -110,7 +110,7 @@ const ChatbotPage = () => {
 
     setIsReformulating(true);
     try {
-      const response = await fetch('https://n8n.eec-technologies.fr/webhook/reform-question', {
+      const response = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/reform-question', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

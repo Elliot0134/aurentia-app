@@ -74,7 +74,7 @@ const Beta = () => {
 
   const handleValidateCode = async () => {
     try {
-      const response = await fetch("https://n8n.eec-technologies.fr/webhook/code-beta", {
+      const response = await fetch("https://n8n.srv906204.hstgr.cloud/webhook/code-beta", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +135,7 @@ const Beta = () => {
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
             <div className="flex justify-center">
-              <Button onClick={handleJoinWaitlist}>S'inscrire à la bêta</Button>
+              <Button onClick={handleJoinWaitlist}>Rejoindre la liste d'attente</Button>
             </div>
             {showWaitlistForm && (
               <iframe data-tally-src="https://tally.so/embed/3Xd5Jj?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1" loading="lazy" width="100%" height="510" frameBorder={0} marginHeight={0} marginWidth={0} title="Liste d'attente Aurentia bêta"></iframe>

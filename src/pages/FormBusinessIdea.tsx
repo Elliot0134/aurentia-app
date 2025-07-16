@@ -180,7 +180,7 @@ const Form = () => {
         console.log('Form Data (Step 1):', formData);
 
         console.log('Sending POST request to idea webhook...');
-        const response = await fetch('https://n8n.eec-technologies.fr/webhook/form-business-idea', {
+        const response = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/form-business-idea', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -303,7 +303,7 @@ const Form = () => {
       console.log('Form Data (Step 2):', formData);
 
       console.log('Sending POST request to retranscription webhook...');
-      const response = await fetch('https://n8n.eec-technologies.fr/webhook/retranscription', {
+      const response = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/retranscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

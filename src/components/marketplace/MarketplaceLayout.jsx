@@ -141,7 +141,7 @@ const MarketplaceLayout = () => {
 
     setIsContributorSubmitting(true);
     try {
-      const response = await fetch('https://n8n.eec-technologies.fr/webhook/partenaires-ressources', {
+      const response = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/partenaires-ressources', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

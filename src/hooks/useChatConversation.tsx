@@ -252,7 +252,7 @@ export const useChatConversation = (projectId: string | undefined) => {
       const currentConvState = chatbotService.getConversation(conversationToUse.id);
       const isFirstMessage = currentConvState ? currentConvState.messages.filter(m => m.sender === 'user').length === 1 : true;
       
-      const webhookUrl = "https://n8n.eec-technologies.fr/webhook/chatbot-global";
+      const webhookUrl = "https://n8n.srv906204.hstgr.cloud/webhook/chatbot-global";
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -272,8 +272,7 @@ export const useChatConversation = (projectId: string | undefined) => {
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
-      const data = await response.json();
-      const botResponse = data[0].output.response;
+      const botResponse = await response.text();
 
       // Add bot message with streaming
       const botMessage = await chatbotService.addMessageWithDB(conversationToUse.id, 'bot', '');
@@ -375,7 +374,7 @@ export const useChatConversation = (projectId: string | undefined) => {
 
       console.log(`💳 Crédit utilisé pour régénération. Crédits restants: ${newCredits}`);
 
-      const webhookUrl = "https://n8n.eec-technologies.fr/webhook/chatbot-global";
+      const webhookUrl = "https://n8n.srv906204.hstgr.cloud/webhook/chatbot-global";
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -394,8 +393,7 @@ export const useChatConversation = (projectId: string | undefined) => {
       });
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      const newResponse = data[0].output.response;
+      const newResponse = await response.text();
 
       // Vider temporairement le message pour l'effet de streaming
       const messageToUpdate = currentConversation.messages[messageIndex];
@@ -501,4 +499,4 @@ export const useChatConversation = (projectId: string | undefined) => {
     deleteConversation,
     newChat,
   };
-}; 
+};

@@ -212,7 +212,7 @@ const Partenaires = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('https://n8n.eec-technologies.fr/webhook/partenaires-freelances', {
+      const response = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/partenaires-freelances', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
