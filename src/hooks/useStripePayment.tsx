@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { stripeService, type PaymentResult } from '../services/stripeService';
+import { stripeService, type PaymentResult, SUBSCRIPTION_PLAN, PREMIUM_DELIVERABLES_COST } from '../services/stripeService';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -9,22 +9,20 @@ export const useStripePayment = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [isWaitingPayment, setIsWaitingPayment] = useState(false);
+  const [isWaitingSubscription, setIsWaitingSubscription] = useState(false);
   const [isWaitingDeliverables, setIsWaitingDeliverables] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const deliverablesPollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasShownSuccessToast = useRef<boolean>(false);
   const hasShownCompletionToast = useRef<boolean>(false);
 
-  const startStatusPolling = (projectId: string, planId: string, userId: string) => {
-    console.log(`🔄 Démarrage du polling pour le projet ${projectId}, plan ${planId}`);
+  const startStatusPolling = (projectId: string, userId: string) => {
+    console.log(`🔄 Démarrage du polling pour le projet ${projectId}`);
     setCurrentProjectId(projectId);
-    setCurrentPlanId(planId);
     setCurrentUserId(userId);
-    setIsWaitingPayment(true);
+    setIsWaitingSubscription(true);
     setPaymentStatus('processing');
 
     // Start polling every 4 seconds
@@ -33,32 +31,32 @@ export const useStripePayment = () => {
       console.log(`🔍 Vérification statut projet: ${status}`);
       
       if (status === 'payment_receive') {
-        console.log('✅ Paiement reçu, arrêt du polling Stripe et déclenchement du webhook...');
+        console.log('✅ Paiement reçu, arrêt du polling et déclenchement du webhook...');
         
-        // Stop Stripe polling
+        // Stop subscription polling
         clearInterval(pollingIntervalRef.current!);
         pollingIntervalRef.current = null;
-        setIsWaitingPayment(false);
+        setIsWaitingSubscription(false);
         
-        // Trigger the webhook call via processPaymentCallback
-        await processPaymentCallback(planId, projectId, userId);
+        // Trigger the webhook call
+        await processSubscriptionCallback(projectId, userId);
         setIsWaitingDeliverables(true);
         
-      } else if (status === 'pay_1_waiting' || status === 'pay_2_waiting') {
-        console.log('⏳ En attente du paiement...');
+      } else if (status === 'subscription_waiting') {
+        console.log('⏳ En attente de l\'abonnement...');
         // Continue polling
-      } else if (status === 'plan1' || status === 'plan2') {
-        console.log('✅ Statut plan détecté, arrêt du polling Stripe et considération comme succès.');
+      } else if (status === 'subscription_active') {
+        console.log('✅ Abonnement actif détecté, arrêt du polling.');
         
-        // Stop Stripe polling
+        // Stop subscription polling
         clearInterval(pollingIntervalRef.current!);
         pollingIntervalRef.current = null;
-        setIsWaitingPayment(false);
-        setPaymentStatus('success'); // Set status to success as payment is already processed
+        setIsWaitingSubscription(false);
+        setPaymentStatus('success');
         
         // Only show toast once
         if (!hasShownSuccessToast.current) {
-          toast.success('Paiement déjà validé !');
+          toast.success('Abonnement activé !');
           hasShownSuccessToast.current = true;
         }
         
@@ -66,14 +64,14 @@ export const useStripePayment = () => {
         console.log('ℹ️ Projet en statut gratuit, arrêt du polling');
         clearInterval(pollingIntervalRef.current!);
         pollingIntervalRef.current = null;
-        setIsWaitingPayment(false);
+        setIsWaitingSubscription(false);
         setPaymentStatus('idle');
       } else {
         console.log('❌ Statut inattendu:', status);
         // Stop polling if status is unexpected
         clearInterval(pollingIntervalRef.current!);
         pollingIntervalRef.current = null;
-        setIsWaitingPayment(false);
+        setIsWaitingSubscription(false);
         setPaymentStatus('error');
         setPaymentError('Statut de paiement inattendu');
       }
@@ -85,9 +83,8 @@ export const useStripePayment = () => {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
-    setIsWaitingPayment(false);
+    setIsWaitingSubscription(false);
     setCurrentProjectId(null);
-    setCurrentPlanId(null);
     setCurrentUserId(null);
   };
 
@@ -118,7 +115,7 @@ export const useStripePayment = () => {
           }));
         }
         
-        navigate(`/project-business/${projectId}`); // Navigate here
+        navigate(`/project-business/${projectId}`);
       } else {
         console.log('⏳ Livrables en cours de génération...');
         // Continue polling
@@ -134,27 +131,27 @@ export const useStripePayment = () => {
     setIsWaitingDeliverables(false);
   };
 
-  const processPaymentCallback = async (planId: string, projectId: string, userId: string): Promise<void> => {
+  const processSubscriptionCallback = async (projectId: string, userId: string): Promise<void> => {
     try {
       setIsLoading(true);
       setPaymentStatus('processing');
       setPaymentError(null);
 
-      console.log('🔄 Traitement du paiement en cours...');
+      console.log('🔄 Traitement de l\'abonnement en cours...');
       
-      const result = await stripeService.processPaymentSuccess(planId, projectId, userId);
+      const result = await stripeService.processSubscriptionSuccess(projectId, userId);
       
       if (result.success) {
         setPaymentStatus('success');
         
         // Only show success toast once
         if (!hasShownSuccessToast.current) {
-          toast.success('Paiement validé ! Génération des livrables en cours...');
+          toast.success('Abonnement validé ! Génération des livrables en cours...');
           hasShownSuccessToast.current = true;
         }
         
-        // Start deliverables polling here, and let it handle navigation and popup hiding
-        startDeliverablesPolling(projectId); // Ensure this is called
+        // Start deliverables polling
+        startDeliverablesPolling(projectId);
         
         setIsLoading(false);
         
@@ -163,52 +160,89 @@ export const useStripePayment = () => {
       }
       
     } catch (error) {
-      console.error('❌ Erreur lors du traitement du paiement:', error);
-      setPaymentError(error instanceof Error ? error.message : 'Erreur lors du traitement du paiement');
+      console.error('❌ Erreur lors du traitement de l\'abonnement:', error);
+      setPaymentError(error instanceof Error ? error.message : 'Erreur lors du traitement de l\'abonnement');
       setPaymentStatus('error');
       setIsLoading(false);
-      setIsWaitingPayment(false);
-      toast.error('Erreur lors du traitement du paiement');
+      setIsWaitingSubscription(false);
+      toast.error('Erreur lors du traitement de l\'abonnement');
     }
   };
 
-  const initiatePayment = async (planId: string, projectId: string): Promise<void> => {
+  const initiateSubscription = async (projectId: string): Promise<void> => {
     try {
-      console.log(`🚀 Initiation du paiement - Plan: ${planId}, Projet: ${projectId}`);
+      console.log(`🚀 Initiation de l'abonnement - Projet: ${projectId}`);
       setPaymentError(null);
       setPaymentStatus('idle');
       
-      const result = await stripeService.initiatePayment(planId, projectId);
+      const result = await stripeService.initiateSubscription(projectId);
       
       if (!result.success) {
-        console.error('❌ Échec de l\'initiation du paiement:', result.error);
-        setPaymentError(result.error || 'Erreur lors de l\'initiation du paiement');
+        console.error('❌ Échec de l\'initiation de l\'abonnement:', result.error);
+        setPaymentError(result.error || 'Erreur lors de l\'initiation de l\'abonnement');
         setPaymentStatus('error');
-        toast.error(result.error || 'Erreur lors de l\'initiation du paiement');
+        toast.error(result.error || 'Erreur lors de l\'initiation de l\'abonnement');
         return;
       }
 
-      console.log('✅ Initiation du paiement réussie, démarrage du polling...');
+      console.log('✅ Initiation de l\'abonnement réussie, démarrage du polling...');
 
       // Get current user for polling
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // Start polling for payment status
-        startStatusPolling(projectId, planId, session.user.id);
+        // Start polling for subscription status
+        startStatusPolling(projectId, session.user.id);
       } else {
         console.error('❌ Aucune session utilisateur trouvée');
         setPaymentError('Session utilisateur non trouvée');
         setPaymentStatus('error');
       }
 
-      // Payment window opened successfully
-      toast.success('Redirection vers le paiement...');
+      // Subscription window opened successfully
+      toast.success('Redirection vers l\'abonnement...');
       
     } catch (error) {
-      console.error('❌ Erreur lors de l\'initiation du paiement:', error);
-      setPaymentError('Erreur inattendue lors de l\'initiation du paiement');
+      console.error('❌ Erreur lors de l\'initiation de l\'abonnement:', error);
+      setPaymentError('Erreur inattendue lors de l\'initiation de l\'abonnement');
       setPaymentStatus('error');
-      toast.error('Erreur inattendue lors de l\'initiation du paiement');
+      toast.error('Erreur inattendue lors de l\'initiation de l\'abonnement');
+    }
+  };
+
+  const generatePremiumDeliverables = async (projectId: string): Promise<void> => {
+    try {
+      console.log(`🚀 Génération des livrables premium - Projet: ${projectId}`);
+      setPaymentError(null);
+      setPaymentStatus('idle');
+      
+      const result = await stripeService.initiatePremiumGeneration(projectId);
+      
+      if (!result.success) {
+        console.error('❌ Échec de la génération des livrables premium:', result.error);
+        setPaymentError(result.error || 'Erreur lors de la génération des livrables premium');
+        setPaymentStatus('error');
+        toast.error(result.error || 'Erreur lors de la génération des livrables premium');
+        return;
+      }
+
+      console.log('✅ Génération des livrables premium réussie');
+      setPaymentStatus('success');
+      
+      // Start deliverables polling
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setCurrentProjectId(projectId);
+        setCurrentUserId(session.user.id);
+        startDeliverablesPolling(projectId);
+      }
+
+      toast.success(result.message || 'Génération des livrables premium en cours...');
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de la génération des livrables premium:', error);
+      setPaymentError('Erreur inattendue lors de la génération des livrables premium');
+      setPaymentStatus('error');
+      toast.error('Erreur inattendue lors de la génération des livrables premium');
     }
   };
 
@@ -220,8 +254,10 @@ export const useStripePayment = () => {
     setPaymentError(null);
     hasShownSuccessToast.current = false;
     hasShownCompletionToast.current = false;
-  };  const cancelPayment = async () => {
-    console.log('❌ Annulation du paiement par l\'utilisateur');
+  };
+
+  const cancelSubscription = async () => {
+    console.log('❌ Annulation de l\'abonnement par l\'utilisateur');
     
     // Reset project status to "free" if we have current project info and it's in waiting state
     if (currentProjectId) {
@@ -231,7 +267,7 @@ export const useStripePayment = () => {
         console.log('🔍 Statut actuel du projet:', currentStatus);
         
         // Only update to "free" if currently in waiting state
-        if (currentStatus === 'pay_1_waiting' || currentStatus === 'pay_2_waiting') {
+        if (currentStatus === 'subscription_waiting') {
           const { error } = await supabase
             .from('project_summary')
             .update({ statut_project: 'free' })
@@ -258,62 +294,59 @@ export const useStripePayment = () => {
 
     stopStatusPolling();
     stopDeliverablesPolling();
-    localStorage.removeItem('aurentia_payment_data');
+    localStorage.removeItem('aurentia_subscription_data');
     setIsLoading(false);
     setPaymentStatus('idle');
     setPaymentError(null);
-    setIsWaitingPayment(false);
+    setIsWaitingSubscription(false);
     setIsWaitingDeliverables(false);
     hasShownSuccessToast.current = false;
     hasShownCompletionToast.current = false;
-    toast.info('Paiement annulé');
+    toast.info('Abonnement annulé');
   };
 
-  // Check for pending payment on mount and when window gains focus
+  // Check for pending subscription on mount and when window gains focus
   useEffect(() => {
-    const checkPayment = async () => {
-      const pendingPayment = stripeService.checkPendingPayment();
-      if (pendingPayment) {
-        console.log('🔍 Données de paiement trouvées dans localStorage, vérification du statut...');
+    const checkSubscription = async () => {
+      const pendingSubscription = stripeService.checkPendingSubscription();
+      if (pendingSubscription) {
+        console.log('🔍 Données d\'abonnement trouvées dans localStorage, vérification du statut...');
         
         // Check current project status before starting polling
-        const currentStatus = await stripeService.checkProjectStatus(pendingPayment.projectId);
+        const currentStatus = await stripeService.checkProjectStatus(pendingSubscription.projectId);
         console.log(`📊 Statut actuel du projet: ${currentStatus}`);
         
         // Only start polling if the project is still in waiting state
-        if (currentStatus === 'pay_1_waiting' || currentStatus === 'pay_2_waiting') {
+        if (currentStatus === 'subscription_waiting') {
           console.log('✅ Projet toujours en attente, redémarrage du polling...');
-          startStatusPolling(pendingPayment.projectId, pendingPayment.planId, pendingPayment.userId);
+          startStatusPolling(pendingSubscription.projectId, pendingSubscription.userId);
         } else if (currentStatus === 'payment_receive') {
           console.log('✅ Paiement déjà reçu, vérification des livrables...');
-          const deliverablesComplete = await stripeService.checkDeliverablesCompletion(pendingPayment.projectId);
+          const deliverablesComplete = await stripeService.checkDeliverablesCompletion(pendingSubscription.projectId);
           if (!deliverablesComplete) {
             console.log('⏳ Livrables non complets, redémarrage du polling des livrables...');
-            startDeliverablesPolling(pendingPayment.projectId);
-            // Do not remove from localStorage yet, keep it for polling
+            startDeliverablesPolling(pendingSubscription.projectId);
           } else {
             console.log('✅ Livrables déjà complets, nettoyage des données...');
-            localStorage.removeItem('aurentia_payment_data');
+            localStorage.removeItem('aurentia_subscription_data');
           }
-        } else if (currentStatus === 'plan1' || currentStatus === 'plan2') {
-          console.log('✅ Statut plan détecté, nettoyage des données...');
-          // Assuming webhook was already triggered by processPaymentCallback
-          localStorage.removeItem('aurentia_payment_data');
+        } else if (currentStatus === 'subscription_active') {
+          console.log('✅ Abonnement déjà actif, nettoyage des données...');
+          localStorage.removeItem('aurentia_subscription_data');
         } else {
-          console.log('ℹ️ Projet plus en attente de paiement, nettoyage des données...');
-          // Clear localStorage if project is no longer in waiting state
-          localStorage.removeItem('aurentia_payment_data');
+          console.log('ℹ️ Projet plus en attente d\'abonnement, nettoyage des données...');
+          localStorage.removeItem('aurentia_subscription_data');
         }
       }
     };
 
     // Check immediately
-    checkPayment();
+    checkSubscription();
 
     // Check when window gains focus (user comes back from Stripe)
     const handleFocus = () => {
       // Small delay to ensure localStorage is updated
-      setTimeout(checkPayment, 1000);
+      setTimeout(checkSubscription, 1000);
     };
 
     window.addEventListener('focus', handleFocus);
@@ -329,10 +362,14 @@ export const useStripePayment = () => {
     isLoading,
     paymentStatus,
     paymentError,
-    isWaitingPayment,
+    isWaitingSubscription,
     isWaitingDeliverables,
-    initiatePayment,
+    initiateSubscription,
+    generatePremiumDeliverables,
     resetPaymentState,
-    cancelPayment
+    cancelSubscription,
+    // Informations sur l'abonnement et les coûts
+    subscriptionPlan: SUBSCRIPTION_PLAN,
+    premiumCost: PREMIUM_DELIVERABLES_COST
   };
 };

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"; // Importation des composants Accordion
 import { supabase } from '../../integrations/supabase/client';
 import { useParams } from 'react-router-dom';
+import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
+import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
+import { useHarmonizedModal } from './shared/useHarmonizedModal';
 
 interface PersonaData {
   identite: string;
@@ -43,9 +47,6 @@ interface PersonaOrganismeData {
 }
 
 const PersonaExpressLivrable: React.FC = () => {
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
-  const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
   const [personaData, setPersonaData] = useState<PersonaData | null>(null);
   const [personaBusinessData, setPersonaBusinessData] = useState<PersonaBusinessData | null>(null);
   const [personaOrganismeData, setPersonaOrganismeData] = useState<PersonaOrganismeData | null>(null);
@@ -54,7 +55,13 @@ const PersonaExpressLivrable: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('Particulier');
 
   const { projectId } = useParams<{ projectId: string }>();
-  const supabaseClient = supabase;
+
+  // Utilisation du hook harmonisé pour la modal
+  const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
+    hasContent: true,
+    hasRecommendations: true,
+    hasDefinition: true
+  });
 
   useEffect(() => {
     const fetchAllPersonaData = async () => {
@@ -80,7 +87,7 @@ const PersonaExpressLivrable: React.FC = () => {
       }
 
       if (b2bResult.error) {
-        // Handle b2b error if necessary, maybe set a specific error state for b2b
+        // Handle b2b error if necessary
       } else {
         setPersonaBusinessData(b2bResult.data as PersonaBusinessData);
       }
@@ -95,350 +102,519 @@ const PersonaExpressLivrable: React.FC = () => {
     };
 
     fetchAllPersonaData();
-  }, [projectId, supabase]);
+  }, [projectId]);
 
-  const handleTemplateClick = () => {
-    setIsPopupOpen(true);
-  };
-
-  const handlePopupClose = () => {
-    setIsPopupOpen(false);
-    setShowDefinitionPlaceholder(false);
-    setShowRecommendationPlaceholder(false);
-  };
+  useEffect(() => {
+    console.log("Persona Data (Particulier):", personaData);
+    console.log("Persona Business Data (Entreprise):", personaBusinessData);
+    console.log("Persona Organisme Data (Organisme):", personaOrganismeData);
+    console.log("Selected Type:", selectedType);
+    console.log("Recommendations for selected type:", getGeneralRecommendations());
+  }, [personaData, personaBusinessData, personaOrganismeData, selectedType]);
 
   const title = "Persona Express";
-  const definition = "Un persona est un profil semi-fictif représentant votre client idéal, basé sur des données réelles et des recherches sur votre marché cible";
-  const importance = "Créer des personas permet de mieux comprendre vos clients, d'adapter votre communication, de développer des produits qui répondent à leurs besoins et d'optimiser vos stratégies marketing et commerciales";
-  const color = "#9C27B0"; // Couleur du livrable
+  const definition = "Un persona est un profil semi-fictif représentant votre client idéal, basé sur des données réelles et des recherches sur votre marché cible.";
+  const importanceText = "Créer des personas permet de mieux comprendre vos clients, d'adapter votre communication, de développer des produits qui répondent à leurs besoins et d'optimiser vos stratégies marketing et commerciales";
 
-  return (
+  // Prépare les recommandations générales pour l'onglet "Recommandations"
+  // Fonction utilitaire pour formater le texte avec des sauts de ligne et du gras
+  const formatText = (text: string | null | undefined) => {
+    if (!text) return null;
+    
+    // Convertir le texte en éléments React avec mise en forme
+    const formatLine = (line: string) => {
+      // Expression régulière pour trouver le texte en gras (entouré de ** ou __)
+      const boldRegex = /(\*\*|__)(.*?)\1/g;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+      
+      while ((match = boldRegex.exec(line)) !== null) {
+        // Ajouter le texte avant le gras
+        if (match.index > lastIndex) {
+          parts.push(line.substring(lastIndex, match.index));
+        }
+        
+        // Ajouter le texte en gras
+        parts.push(<strong key={`${line}-${match.index}`}>{match[2]}</strong>);
+        lastIndex = match.index + match[0].length;
+      }
+      
+      // Ajouter le reste du texte après le dernier élément en gras
+      if (lastIndex < line.length) {
+        parts.push(line.substring(lastIndex));
+      }
+      
+      return parts;
+    };
+    
+    // Convertir les sauts de ligne en balises <br />
+    const lines = text.split('\n');
+    return lines.map((line, index) => (
+      <React.Fragment key={index}>
+        {index > 0 && <br />}
+        {formatLine(line)}
+      </React.Fragment>
+    ));
+  };
+
+  const getGeneralRecommendations = () => {
+    return formatText(personaData?.recommandations) || ''; // Utilise formatText pour mettre en gras les textes entre "**"
+  };
+
+  // Contenu spécifique de PersonaExpress avec le sélecteur
+  const personaContent = (
     <>
-      {/* Livrable Template Part */}
-      <div
-        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between"
-        onClick={handleTemplateClick}
-        style={{ borderColor: color, backgroundColor: color }}
-      >
-        <div className="flex-grow mr-4 flex flex-col">
-          <h2 className="text-xl font-bold mb-2">{title}</h2>
-          {personaData?.justification_avis && <p className="text-white mb-4">{personaData.justification_avis}</p>}
-          <div className="flex-grow">
-            {/* Children for the template content */}
-          </div>
-          <div className="flex-shrink-0 mt-auto">
-            <button className={`text-xs bg-white px-2 py-1 rounded-full cursor-default pointer-events-none font-bold`} style={{ color: color }}>
-              {personaData?.avis || 'Commentaire'}
-            </button>
+      <ToggleGroup type="single" value={selectedType} onValueChange={setSelectedType} className="flex-row mb-4 mt-4 justify-start">
+        <ToggleGroupItem
+          value="Particulier"
+          aria-label="Toggle particuliers"
+          className={`px-3 py-1 text-sm mr-2 ${selectedType === 'Particulier' ? 'bg-aurentia-orange-aurentia text-white' : 'bg-gray-200'}`}
+        >
+          <span className={selectedType === 'Particulier' ? 'text-white' : ''}>Particuliers</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="Entreprise"
+          aria-label="Toggle entreprises"
+          className={`px-3 py-1 text-sm mr-2 ${selectedType === 'Entreprise' ? 'bg-aurentia-orange-aurentia text-white' : 'bg-gray-200'}`}
+        >
+          <span className={selectedType === 'Entreprise' ? 'text-white' : ''}>Entreprises</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="Organisme"
+          aria-label="Toggle organismes"
+          className={`px-3 py-1 text-sm mr-2 ${selectedType === 'Organisme' ? 'bg-aurentia-orange-aurentia text-white' : 'bg-gray-200'}`}
+        >
+          <span className={selectedType === 'Organisme' ? 'text-white' : ''}>Organismes</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
+
+      {error && <p className="text-red-500">Error: {error}</p>}
+      {loading && <p>Loading persona data...</p>}
+
+      {selectedType === 'Particulier' && personaData && (
+        <div>
+          {personaData.recommandations_b2c && (
+            <Accordion type="single" collapsible className="w-full mb-6">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="text-lg font-semibold">Recommandations spécifiques</AccordionTrigger>
+                <AccordionContent>
+                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                    <p className="text-[#4B5563]">{formatText(personaData.recommandations_b2c)}</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
+          <div className="grid grid-cols-1 gap-6"> {/* Changed to grid-cols-1 */}
+            <div className="rounded-md p-4 bg-aurentia-orange-light-1">
+              <h3 className="text-lg font-semibold mb-2">Profil Client</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Identité et profil du persona</h4>
+                  <p className="text-[#4B5563]">{personaData.identite}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Situation personnelle et environnement</h4>
+                  <p className="text-[#4B5563]">{personaData.contexte_personnel}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md p-4 bg-aurentia-orange-light-2">
+              <h3 className="text-lg font-semibold mb-2">Psychologie Client</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Motivations principales et valeurs</h4>
+                  <p className="text-[#4B5563]">{personaData.motivations_valeurs}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Défis rencontrés et frustrations</h4>
+                  <p className="text-[#4B5563]">{personaData.defis_frustrations}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md p-4 bg-aurentia-orange-light-3">
+              <h3 className="text-lg font-semibold mb-2">Comportement d'Achat</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Habitudes et comportements d'achat</h4>
+                  <p className="text-[#4B5563]">{personaData.comportement_achat}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Présence et activité sur les canaux digitaux</h4>
+                  <p className="text-[#4B5563]">{personaData.presence_digitale}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md p-4 bg-aurentia-orange-light-4">
+              <h3 className="text-lg font-semibold mb-2">Stratégies Recommandées</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Stratégies marketing recommandées</h4>
+                  <p className="text-[#4B5563]">{personaData.strategies_marketing}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Approche de vente adaptée</h4>
+                  <p className="text-[#4B5563]">{personaData.approche_vente}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex-shrink-0">
-          <img src="/icones-livrables/persona-icon.png" alt="Persona Icon" className="w-8 h-8 object-cover self-start" />
-        </div>
-      </div>
+      )}
 
-      {/* Livrable Popup Part */}
-      {isPopupOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handlePopupClose}>
-          <div
-            className="bg-white text-black rounded-lg w-full mx-2.5 md:w-3/4 relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-            style={{ animation: 'scaleIn 0.3s ease-out forwards' }}
-          >
-            {/* Sticky Header */}
-            <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-              <h2 className="text-xl font-bold">{title}</h2>
-              <button
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-                onClick={handlePopupClose}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 pt-4">
-            <div className="flex gap-2 mb-4">
-              <button
-                className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                  showDefinitionPlaceholder
-                    ? 'text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                style={{ backgroundColor: showDefinitionPlaceholder ? color : '' }}
-                onClick={() => {
-                  setShowDefinitionPlaceholder(!showDefinitionPlaceholder);
-                  setShowRecommendationPlaceholder(false);
-                }}
-              >
-                Définition
-              </button>
-              <button
-                className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                  showRecommendationPlaceholder
-                    ? 'text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                style={{ backgroundColor: showRecommendationPlaceholder ? color : '' }}
-                onClick={() => {
-                  setShowRecommendationPlaceholder(!showRecommendationPlaceholder);
-                  setShowDefinitionPlaceholder(false);
-                }}
-              >
-                Recommandations globales
-              </button>
-            </div>
-
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                showDefinitionPlaceholder ? 'max-h-screen' : 'max-h-0'
-              }`}
-            >
-              <div className="mt-2">
-                <div className="bg-gray-100 rounded-md p-4 mb-2">
-                  <p className="text-[#4B5563]"><strong>Définition :</strong> {definition}</p>
+      {selectedType === 'Entreprise' && personaBusinessData && (
+        <div>
+          {personaBusinessData.recommandations_b2b && (
+            <Accordion type="single" collapsible className="w-full mb-6">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="text-lg font-semibold">Recommandations spécifiques</AccordionTrigger>
+                <AccordionContent>
+                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                    <p className="text-[#4B5563]">{formatText(personaBusinessData.recommandations_b2b)}</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
+          <div className="grid grid-cols-1 gap-6"> {/* Changed to grid-cols-1 */}
+            <div className="rounded-md p-4 bg-aurentia-orange-light-1">
+              <h3 className="text-lg font-semibold mb-2">Profil Professionnel</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Identité et profil professionnel</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.identite_professionnelle}</p>
                 </div>
-                <div className="bg-gray-100 rounded-md p-4">
-                  <p className="text-[#4B5563]"><strong>Importance :</strong> {importance}</p>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.contexte_organisationnel}</p>
                 </div>
               </div>
             </div>
 
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                showRecommendationPlaceholder ? 'max-h-screen' : 'max-h-0'
-              }`}
-            >
-              <div className="mt-2">
-                <div className="bg-gray-100 rounded-md p-4">
-                  {personaData?.recommandations?.split('\n').filter(Boolean).map((item, index) => (
-                    <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                  ))}
+            <div className="rounded-md p-4 bg-aurentia-orange-light-2">
+              <h3 className="text-lg font-semibold mb-2">Contexte Business</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Responsabilités principales</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.responsabilites_cles}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Enjeux et défis business</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.enjeux_business}</p>
                 </div>
               </div>
             </div>
 
-            <ToggleGroup type="single" value={selectedType} onValueChange={setSelectedType} className="flex-col md:flex-row mb-4 mt-4">
-              <ToggleGroupItem
-                value="Particulier"
-                aria-label="Toggle particulier"
-                className={`w-full ${selectedType === 'Particulier' ? 'bg-gradient-to-r from-pink-500 to-orange-500 text-white' : ''}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${selectedType === 'Particulier' ? 'text-white' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-2-2a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span className={selectedType === 'Particulier' ? 'text-white' : ''}>Particulier</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="Entreprise"
-                aria-label="Toggle entreprise"
-                className={`w-full ${selectedType === 'Entreprise' ? 'bg-gradient-to-r from-pink-500 to-orange-500 text-white' : ''}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${selectedType === 'Entreprise' ? 'text-white' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><path d="M10 12h4"/><path d="M12 17v-5"/><path d="M5 22v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/><path d="M15 22v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/><path d="M2 10l10-7 10 7"/></svg>
-                <span className={selectedType === 'Entreprise' ? 'text-white' : ''}>Entreprise</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="Organisme"
-                aria-label="Toggle organisme"
-                className={`w-full ${selectedType === 'Organisme' ? 'bg-gradient-to-r from-pink-500 to-orange-500 text-white' : ''}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${selectedType === 'Organisme' ? 'text-white' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                <span className={selectedType === 'Organisme' ? 'text-white' : ''}>Organisme</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-
-            {error && <p className="text-red-500">Error: {error}</p>}
-            {loading && <p>Loading persona data...</p>} {/* Keep loading message */}
-
-            {selectedType === 'Particulier' && personaData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-md p-4" style={{ backgroundColor: '#E1BEE7' }}> {/* Very light purple */}
-                  <h3 className="text-lg font-semibold mb-2">Profil Client</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Identité et profil du persona</h4>
-                    <p className="text-[#4B5563]">{personaData.identite}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Situation personnelle et environnement</h4>
-                    <p className="text-[#4B5563]">{personaData.contexte_personnel}</p>
-                  </div>
+            <div className="rounded-md p-4 bg-aurentia-orange-light-3">
+              <h3 className="text-lg font-semibold mb-2">Processus Décisionnel</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.processus_decision}</p>
                 </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#FFF9C4' }}> {/* Very light yellow */}
-                  <h3 className="text-lg font-semibold mb-2">Psychologie Client</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Motivations principales et valeurs</h4>
-                    <p className="text-[#4B5563]">{personaData.motivations_valeurs}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Défis rencontrés et frustrations</h4>
-                    <p className="text-[#4B5563]">{personaData.defis_frustrations}</p>
-                  </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Méthodes de recherche d'infos</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.recherche_information}</p>
                 </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#C8E6C9' }}> {/* Very light green */}
-                  <h3 className="text-lg font-semibold mb-2">Comportement d'Achat</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Habitudes et comportements d'achat</h4>
-                    <p className="text-[#4B5563]">{personaData.comportement_achat}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Présence et activité sur les canaux digitaux</h4>
-                    <p className="text-[#4B5563]">{personaData.presence_digitale}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#BBDEFB' }}> {/* Very light blue */}
-                  <h3 className="text-lg font-semibold mb-2">Stratégies Recommandées</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Stratégies marketing recommandées</h4>
-                    <p className="text-[#4B5563]">{personaData.strategies_marketing}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Approche de vente adaptée</h4>
-                    <p className="text-[#4B5563]">{personaData.approche_vente}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {selectedType === 'Entreprise' && personaBusinessData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-md p-4" style={{ backgroundColor: '#E1BEE7' }}> {/* Very light purple */}
-                  <h3 className="text-lg font-semibold mb-2">Profil Professionnel</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Identité et profil professionnel</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.identite_professionnelle}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.contexte_organisationnel}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#FFF9C4' }}> {/* Very light yellow */}
-                  <h3 className="text-lg font-semibold mb-2">Contexte Business</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Responsabilités principales</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.responsabilites_cles}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Enjeux et défis business</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.enjeux_business}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#C8E6C9' }}> {/* Very light green */}
-                  <h3 className="text-lg font-semibold mb-2">Processus Décisionnel</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.processus_decision}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Méthodes de recherche d'infos</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.recherche_information}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#BBDEFB' }}> {/* Very light blue */}
-                  <h3 className="text-lg font-semibold mb-2">Stratégies d'Approche</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Objections et freins</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.objections_courantes}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Stratégie d'approche</h4>
-                    <p className="text-[#4B5563]">{personaBusinessData.strategie_approche}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {selectedType === 'Organisme' && personaOrganismeData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-md p-4" style={{ backgroundColor: '#E1BEE7' }}> {/* Very light purple */}
-                  <h3 className="text-lg font-semibold mb-2">Profil Institutionnel</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Identité et profil institutionnel</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.identite_institutionnelle}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.contexte_organisationnel}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#FFF9C4' }}> {/* Very light yellow */}
-                  <h3 className="text-lg font-semibold mb-2">Mission et Contraintes</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Mission et responsabilités de l'organisme</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.mission_responsabilites}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contraintes et limitations budgétaires</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.contraintes_budgetaires}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#C8E6C9' }}> {/* Very light green */}
-                  <h3 className="text-lg font-semibold mb-2">Enjeux et Décisions</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Enjeux et priorités principales</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.enjeux_prioritaires}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.processus_decision}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-md p-4" style={{ backgroundColor: '#BBDEFB' }}> {/* Very light blue */}
-                  <h3 className="text-lg font-semibold mb-2">Valeurs et Stratégies</h3>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Valeurs et attentes de l'organisme</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.valeurs_attentes}</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Stratégie d'approche recommandée</h4>
-                    <p className="text-[#4B5563]">{personaOrganismeData.strategie_approche}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Recommandations Section */}
-            <div className="mt-6">
-              <h2 className="text-xl font-bold mb-2">Recommandations</h2>
-              <div className="bg-gray-100 rounded-md p-4">
-                {selectedType === 'Particulier' && personaData?.recommandations_b2c?.split('\n').filter(Boolean).map((item, index) => (
-                  <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                ))}
-                {selectedType === 'Entreprise' && personaBusinessData?.recommandations_b2b?.split('\n').filter(Boolean).map((item, index) => (
-                  <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                ))}
-                {selectedType === 'Organisme' && personaOrganismeData?.recommandations_organisme?.split('\n').filter(Boolean).map((item, index) => (
-                  <p key={index} className="text-[#4B5563] mb-2" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                ))}
               </div>
             </div>
 
+            <div className="rounded-md p-4 bg-aurentia-orange-light-4">
+              <h3 className="text-lg font-semibold mb-2">Stratégies d'Approche</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Objections et freins</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.objections_courantes}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Stratégie d'approche</h4>
+                  <p className="text-[#4B5563]">{personaBusinessData.strategie_approche}</p>
+                </div>
+              </div>
             </div>
           </div>
-          {/* Define keyframes for the animation */}
-          <style>
-            {`
-              @keyframes scaleIn {
-                to {
-                  opacity: 1;
-                  transform: scale(1);
-                }
-              }
-            `}
-          </style>
+        </div>
+      )}
+
+      {selectedType === 'Organisme' && personaOrganismeData && (
+        <div>
+          {personaOrganismeData.recommandations_organisme && (
+            <Accordion type="single" collapsible className="w-full mb-6">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="text-lg font-semibold">Recommandations spécifiques</AccordionTrigger>
+                <AccordionContent>
+                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                    <p className="text-[#4B5563]">{formatText(personaOrganismeData.recommandations_organisme)}</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
+          <div className="grid grid-cols-1 gap-6"> {/* Changed to grid-cols-1 */}
+            <div className="rounded-md p-4 bg-aurentia-orange-light-1">
+              <h3 className="text-lg font-semibold mb-2">Profil Institutionnel</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Identité et profil institutionnel</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.identite_institutionnelle}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.contexte_organisationnel}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md p-4 bg-aurentia-orange-light-2">
+              <h3 className="text-lg font-semibold mb-2">Mission et Contraintes</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Mission et responsabilités de l'organisme</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.mission_responsabilites}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Contraintes et limitations budgétaires</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.contraintes_budgetaires}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md p-4 bg-aurentia-orange-light-3">
+              <h3 className="text-lg font-semibold mb-2">Enjeux et Décisions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Enjeux et priorités principales</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.enjeux_prioritaires}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.processus_decision}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md p-4 bg-aurentia-orange-light-4">
+              <h3 className="text-lg font-semibold mb-2">Valeurs et Stratégies</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Valeurs et attentes de l'organisme</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.valeurs_attentes}</p>
+                </div>
+                <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                  <h4 className="text-sm font-semibold mb-2">Stratégie d'approche recommandée</h4>
+                  <p className="text-[#4B5563]">{personaOrganismeData.strategie_approche}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </>
   );
+
+  return (
+    <>
+      {/* Utilisation de la carte harmonisée */}
+      <HarmonizedDeliverableCard
+        title={title}
+        description={personaData?.justification_avis}
+        avis={personaData?.avis || 'Commentaire'}
+        iconSrc="/icones-livrables/persona-icon.png"
+        onClick={handleTemplateClick}
+      />
+
+      {/* Utilisation de la modal harmonisée */}
+      <HarmonizedDeliverableModal
+        isOpen={isPopupOpen}
+        onClose={handlePopupClose}
+        title={title}
+        iconSrc="/icones-livrables/persona-icon.png"
+        contentComponent={personaContent}
+        recommendations={getGeneralRecommendations()} // Utilisation de la nouvelle fonction
+        definition={definition}
+        importance={importanceText} // Passage de la nouvelle prop 'importance'
+        showContentTab={true}
+      />
+    </>
+  );
 };
 
-export default PersonaExpressLivrable;
+export default PersonaExpressLivrable;<environment_details>
+# VSCode Visible Files
+src/components/deliverables/shared/HarmonizedDeliverableModal.tsx
+
+# VSCode Open Tabs
+src/components/collaboration/StatusBadge.jsx
+src/components/collaboration/ProjectSelector.jsx
+src/components/collaboration/InviteModal.jsx
+src/hooks/useCollaborators.js
+src/components/collaboration/CollaboratorStats.jsx
+src/components/collaboration/CollaboratorsTable.jsx
+src/pages/WarningPage.tsx
+src/components/tools/ToolCard.jsx
+src/components/tools/ToolModal.jsx
+src/pages/Automatisations.tsx
+src/components/ui/ComingSoonDialog.tsx
+src/data/creatorsData.js
+src/data/submissionsData.js
+src/data/categoriesData.js
+src/utils/revenueCalculator.js
+../../../../Downloads/Lobby.json
+index.html
+src/utils/fileValidator.js
+src/utils/priceFormatter.js
+src/hooks/useFilters.js
+src/hooks/useCreator.js
+src/hooks/useSubmissions.js
+src/components/marketplace/FilterSidebar.jsx
+src/components/marketplace/ResourceGrid.jsx
+src/pages/MarketplacePage.jsx
+src/components/creator/SubmissionCard.jsx
+src/components/creator/StatsOverview.jsx
+src/pages/CreatorDashboard.jsx
+src/contexts/CreatorContext.jsx
+src/contexts/AdminContext.jsx
+src/hooks/useFavorites.js
+../../../../Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+src/components/marketplace/SimpleTest.jsx
+src/pages/MarketplaceTestPage.jsx
+src/components/marketplace/CartSidebar.jsx
+src/components/marketplace/MarketplaceTest.jsx
+src/contexts/MarketplaceContext.jsx
+src/data/resourcesData.js
+src/hooks/useResources.js
+src/components/marketplace/ResourceCard.jsx
+src/pages/Ressources.tsx
+src/components/marketplace/FilterPanel.jsx
+src/components/marketplace/ResourceModal.jsx
+src/pages/Collaborateurs.tsx
+src/components/ui/multi-select.tsx
+src/data/automationsData.js
+src/hooks/useAutomations.js
+src/components/automation/AutomationMarketplace.jsx
+db_marketplace_migration.sql
+src/components/marketplace/ToolCard.jsx
+src/components/marketplace/DynamicForm.jsx
+src/hooks/useTools.js
+src/lib/supabaseClient.js
+.env
+src/components/admin/ToolForm.jsx
+src/pages/AdminOutils.tsx
+db_add_user_credits_table.sql
+src/hooks/useCredits.js
+db_credits_functions.sql
+src/components/marketplace/ToolModal.jsx
+src/components/credits/CreditBalance.jsx
+src/pages/Outils.tsx
+src/pages/AnalyticsOutils.tsx
+db_tools_marketplace_migration.sql
+src/components/automation/AutomationCard.jsx
+src/components/automation/CreditBalance.jsx
+src/components/automation/AutomationModal.jsx
+src/components/automation/FilterBar.jsx
+db_tools_migration.sql
+src/data/toolsDatabase.js
+src/components/tools/ToolFilters.jsx
+src/components/tools/ToolGrid.jsx
+src/components/MobileNavbar.tsx
+src/hooks/useMounted.tsx
+src/components/AurentiaLogo.tsx
+src/components/ProjectSelector.tsx
+src/components/ProtectedLayout.tsx
+src/components/chat/MessageList.tsx
+src/components/chat/ChatHeader.tsx
+src/lib/emailService.ts
+src/hooks/use-responsive.tsx
+src/pages/invtation.tsx
+src/pages/invitation.tsx
+src/components/collaboration/InvitationDialog.tsx
+src/pages/test-collaboration.tsx
+src/services/collaborationManager.ts
+src/components/tools/ToolsMarketplace.jsx
+src/pages/ProjectsDashboard.tsx
+src/components/collaboration/DeliverableInviteButton.tsx
+src/components/chat/ChatInput.tsx
+db_migrations/20250716_add_on_delete_cascade_to_project_summary_fkey.sql
+db.sql
+db_migrations/20250716_add_on_delete_cascade_to_project_fkeys.sql
+src/hooks/useDeliverableProgress.tsx
+db_billing_schema_migration.sql
+src/hooks/useCredits.tsx
+src/hooks/useStripePayment.tsx
+src/components/ui/CreditBalance.tsx
+backup_pre_migration.sh
+supabase_backup_verification.sql
+supabase_post_migration_verification.sql
+supabase/migrations/20250101_create_payment_intents_table.sql
+apply_payment_intents_migration.sql
+src/services/stripeService.ts
+src/components/ui/textarea.tsx
+src/hooks/useFreeDeliverableProgress.tsx
+src/contexts/ProjectContext.tsx
+src/pages/FormBusinessIdea.tsx
+src/components/deliverables/FreeDeliverableProgressContainer.tsx
+docs/stripe-webhook-configuration.md
+supabase_migration_step1.sql
+supabase_backup_export.sql
+supabase_migration_step2.sql
+MIGRATION_INSTRUCTIONS.md
+DEPLOYMENT_SUMMARY.md
+db_billing_functions.sql
+src/pages/Beta.tsx
+src/pages/Partenaires.tsx
+src/pages/ChatbotPage.tsx
+src/pages/Login.tsx
+src/components/ui/input.tsx
+src/components/deliverables/BlurredDeliverableWrapper.tsx
+src/components/deliverables/DeliverableCommentWrapper.tsx
+src/components/ui/dialog.tsx
+src/hooks/useSubscriptionStatus.tsx
+src/pages/Roadmap.tsx
+src/components/ui/PlanCard.tsx
+src/components/ui/UnlockFeaturesPopup.tsx
+src/pages/Dashboard.tsx
+src/components/Sidebar.tsx
+src/App.tsx
+src/pages/TemplatePage.tsx
+src/pages/ToolTemplatePage.tsx
+../../../../Library/Application Support/Claude/claude_desktop_config.json
+src/components/deliverables/RetranscriptionConceptLivrable.tsx
+src/components/deliverables/MaSuccessStoryLivrable.tsx
+src/components/deliverables/PitchLivrable.tsx
+src/components/deliverables/CadreJuridiqueLivrable.tsx
+src/components/deliverables/TemplateLivrable.tsx
+src/components/deliverables/shared/HarmonizedDeliverableCard.tsx
+src/components/deliverables/shared/useHarmonizedModal.ts
+src/components/deliverables/BusinessModelLivrable.tsx
+src/components/deliverables/VisionMissionValeursLivrable.tsx
+src/components/deliverables/DeliverableProgressContainer.tsx
+src/pages/ProjectBusiness.tsx
+src/components/deliverables/AnalyseDeLaConcurrenceLivrable.tsx
+src/components/deliverables/PropositionDeValeurLivrable.tsx
+src/components/deliverables/AnalyseDesRessourcesLivrable.tsx
+src/components/deliverables/AnalyseDeMarcheLivrable.tsx
+src/index.css
+tailwind.config.ts
+src/components/deliverables/PersonaExpressLivrable.tsx
+src/components/deliverables/MiniSwotLivrable.tsx
+src/components/deliverables/shared/HarmonizedDeliverableModal.tsx
+src/components/deliverables/DeliverableCard.tsx
+src/components/marketplace/MarketplaceLayout.jsx
+src/hooks/useChatConversation.tsx
+src/hooks/useRobustDeliverableProgress.tsx
+src/hooks/useRobustFreeDeliverableProgress.tsx
+src/hooks/useRobustPremiumDeliverableProgress.tsx
+
+# Current Time
+03/09/2025 10:53:56 PM (Europe/Paris, UTC+2:00)
+
+# Context Window Usage
+108 840 / 1 048,576K tokens used (10%)
+
+# Current Mode
+ACT MODE
+</environment_details>

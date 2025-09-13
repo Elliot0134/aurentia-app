@@ -21,7 +21,10 @@ import Partenaires from "./pages/Partenaires";
 import Roadmap from "./pages/Roadmap";
 import Ressources from "./pages/Ressources"; // Import the new Ressources component
 import Collaborateurs from "./pages/Collaborateurs"; // Import the new Collaborateurs component
+import TemplatePage from "./pages/TemplatePage"; // Import the new TemplatePage component
+import ToolTemplatePage from "./pages/ToolTemplatePage"; // Import the new ToolTemplatePage component
 import ChatbotPage from "./pages/ChatbotPage";
+import PlanActionPage from "./pages/PlanActionPage"; // Import the new PlanActionPage component
 import ProtectedLayout from "./components/ProtectedLayout";
 import { ProjectProvider } from "./contexts/ProjectContext";
 
@@ -164,6 +167,9 @@ const App = () => {
                     <Route path="/partenaires" element={<Partenaires />} />
                     <Route path="/ressources" element={<Ressources />} /> {/* New route for Ressources */}
                     <Route path="/collaborateurs" element={<Collaborateurs />} /> {/* New route for Collaborateurs */}
+                    <Route path="/template" element={<TemplatePage />} /> {/* New route for TemplatePage */}
+                    <Route path="/template/tool-template" element={<ToolTemplatePage />} /> {/* New route for ToolTemplatePage */}
+                    <Route path="/plan-action" element={<PlanActionPage />} /> {/* New route for PlanActionPage */}
                     <Route path="/roadmap/:id" element={<Roadmap />} />
                     <Route path="/chatbot/:projectId" element={<ChatbotPage />} />
                   </Route>

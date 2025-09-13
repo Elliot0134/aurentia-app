@@ -31,18 +31,13 @@ const FreeDeliverableProgressContainer: React.FC<FreeDeliverableProgressContaine
   return (
     <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
       {/* Icône et nom du livrable */}
-      <div className="flex items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-md flex items-center justify-center border border-gray-200"
-          style={{ backgroundColor: deliverable.color }}
-        >
-          <img
-            src={deliverable.icon}
-            alt={deliverable.name}
-            className="w-6 h-6 object-contain filter brightness-0 invert"
-          />
-        </div>
-        <span className="text-sm font-medium text-gray-800">
+      <div className="flex items-center gap-4">
+        <img
+          src={deliverable.icon}
+          alt={deliverable.name}
+          className="w-8 h-8 object-contain"
+        />
+        <span className="text-base text-gray-800">
           {deliverable.name}
         </span>
       </div>

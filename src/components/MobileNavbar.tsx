@@ -119,7 +119,7 @@ const MobileNavbar = () => {
               <div className="flex items-center justify-center gap-2 text-sm">
                 <Zap size={16} className="text-yellow-500" />
                 <span className="font-medium text-gray-700">
-                  {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
+                  {creditsLoading ? '...' : `${userCredits.monthly_remaining} / ${userCredits.monthly_limit}`}
                 </span>
                 <span className="text-xs text-gray-500">crédits</span>
               </div>

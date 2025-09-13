@@ -8,28 +8,40 @@ interface DeliverableCardProps {
   onClick: () => void;
   isBlurred?: boolean;
   onUnlockClick?: () => void;
+  avis?: string | null; // Add avis prop
 }
 
 const DeliverableCard: React.FC<DeliverableCardProps> = ({
   title,
   description,
   iconSrc,
-  bgColor,
+  bgColor, // This prop will now be ignored for background color, but kept for compatibility
   onClick,
   isBlurred = false,
   onUnlockClick,
+  avis,
 }) => {
   return (
     <div
-      className={`relative border rounded-lg p-4 transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex flex-col justify-between h-full ${bgColor}`}
+      className={`border border-gray-200 rounded-lg p-4 bg-white text-black transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-full`}
       onClick={onClick}
     >
-      <div className="flex-grow mr-4">
-        <h2 className="text-xl font-bold mb-2 text-white">{title}</h2>
-        {description && <p className="text-white text-sm">{description}</p>}
+      <div className="flex-grow flex flex-col">
+        <h2 className="text-xl font-bold mb-2 text-black">{title}</h2>
+        {description && <p className="text-gray-700 mb-4 line-clamp-3">{description}</p>}
+        <div className="flex-grow">
+          {/* Children for the template content */}
+        </div>
+        <div className="flex-shrink-0 mt-auto">
+          {avis && (
+            <button className={`text-xs px-2 py-1 rounded-full cursor-default pointer-events-none`} style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}>
+              {avis}
+            </button>
+          )}
+        </div>
       </div>
-      <div className="flex-shrink-0 mt-4 self-end">
-        <img src={iconSrc} alt={`${title} Icon`} className="w-8 h-8 object-cover" />
+      <div className="flex-shrink-0">
+        <img src={iconSrc} alt={`${title} Icon`} className="w-8 h-8 object-cover self-start" />
       </div>
 
       {isBlurred && (

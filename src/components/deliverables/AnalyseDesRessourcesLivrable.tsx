@@ -1,29 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { supabase } from '../../integrations/supabase/client';
-import DeliverableCard from './DeliverableCard';
+import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
+import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
+import { useHarmonizedModal } from './shared/useHarmonizedModal';
 
-interface AnalyseDesRessourcesLivrableProps {
-  // No specific props needed for this deliverable as data is fetched internally
-}
-
-const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> = () => {
+const AnalyseDesRessourcesLivrable: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const supabaseClient = supabase;
-
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
-  const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
+  
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openSubCategories, setOpenSubCategories] = useState<Record<string, boolean>>({});
   const [selectedCategory, setSelectedCategory] = useState<string | null>('materielles');
 
-  const deliverableTitle = "Analyse des ressources";
+  const deliverableTitle = "Ressources requises";
   const deliverableDescription = "Identification et planification des ressources nécessaires au projet";
   const deliverableDefinition = "L'analyse des ressources consiste à identifier, quantifier et planifier l'ensemble des moyens matériels, humains et techniques nécessaires à la réalisation et au fonctionnement d'un projet d'entreprise.";
   const deliverableImportance = "Cette analyse est cruciale car elle permet d'évaluer les investissements requis, de planifier les recrutements, d'anticiper les coûts et de s'assurer que tous les moyens nécessaires seront disponibles au moment opportun pour le lancement et la croissance de l'entreprise.";
+
+  // Utilisation du hook harmonisé pour la modal
+  const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
+    hasContent: true,
+    hasDefinition: true
+  });
 
   // Fonction utilitaire pour parser les données JSON avec gestion d'erreurs
   const parseJsonData = (jsonString: string | null) => {
@@ -63,9 +64,9 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
       }
 
       try {
-        const { data: ressourcesData, error } = await supabaseClient
+        const { data: ressourcesData, error } = await supabase
           .from('ressources_requises')
-          .select('*')
+          .select('*, avis')
           .eq('project_id', projectId)
           .single();
 
@@ -108,17 +109,7 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
     };
 
     fetchData();
-  }, [projectId, supabaseClient]);
-
-  const handleTemplateClick = () => {
-    setIsPopupOpen(true);
-  };
-
-  const handlePopupClose = () => {
-    setIsPopupOpen(false);
-    setShowDefinitionPlaceholder(false);
-    setShowRecommendationPlaceholder(false);
-  };
+  }, [projectId]);
 
   const renderResourceCategory = (categoryObject: any, openCategories: Record<string, boolean>, setOpenCategories: React.Dispatch<React.SetStateAction<Record<string, boolean>>>) => {
     if (!categoryObject || !categoryObject.categorie || !Array.isArray(categoryObject.elements)) {
@@ -256,216 +247,105 @@ const AnalyseDesRessourcesLivrable: React.FC<AnalyseDesRessourcesLivrableProps> 
     (data.ressources_techniques?.categories_ressources && data.ressources_techniques.categories_ressources.length > 0)
   );
 
-  // Si pas de données, afficher un message
-  if (!data || !hasResourceData) {
-    console.log("AnalyseDesRessourcesLivrable: No resource data available or data is empty.");
-    return (
-      <>
-        <DeliverableCard
-          title={deliverableTitle}
-          description={deliverableDescription}
-          iconSrc="/icones-livrables/ressources-icon.png"
-          bgColor="bg-aurentia-deliverable-resource"
-          onClick={handleTemplateClick}
-        />
+  // Contenu spécifique avec sélecteur de catégories de ressources
+  const ressourcesContent = hasResourceData ? (
+    <>
+      <ToggleGroup type="single" value={selectedCategory} onValueChange={setSelectedCategory} className="flex-row mb-4 mt-4 justify-start">
+        <ToggleGroupItem
+          value="materielles"
+          aria-label="Toggle matérielles"
+          className={`px-3 py-1 text-sm mr-2 ${selectedCategory === 'materielles' ? 'bg-aurentia-orange-aurentia text-white' : 'bg-gray-200'}`}
+        >
+          <span className={selectedCategory === 'materielles' ? 'text-white' : ''}>Ressources matérielles</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="humaines"
+          aria-label="Toggle humaines"
+          className={`px-3 py-1 text-sm mr-2 ${selectedCategory === 'humaines' ? 'bg-aurentia-orange-aurentia text-white' : 'bg-gray-200'}`}
+        >
+          <span className={selectedCategory === 'humaines' ? 'text-white' : ''}>Ressources humaines</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="techniques"
+          aria-label="Toggle techniques"
+          className={`px-3 py-1 text-sm mr-2 ${selectedCategory === 'techniques' ? 'bg-aurentia-orange-aurentia text-white' : 'bg-gray-200'}`}
+        >
+          <span className={selectedCategory === 'techniques' ? 'text-white' : ''}>Ressources techniques</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
 
-        {/* Livrable Popup Part (shows message if no data) */}
-        {isPopupOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handlePopupClose}>
-            <div
-              className="bg-white text-black rounded-lg w-full mx-2.5 md:w-9/10 relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-              style={{ animation: 'scaleIn 0.3s ease-out forwards' }}
-            >
-              {/* Sticky Header */}
-              <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-                <h2 className="text-xl font-bold">{deliverableTitle}</h2>
-                <button
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                  onClick={handlePopupClose}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+      {selectedCategory === 'materielles' && (
+        <div className="mb-6">
+          <h3 className="text-xl font-bold mb-4">Ressources matérielles</h3>
+          {data?.ressources_materielles?.categories_ressources && data.ressources_materielles.categories_ressources.length > 0 ? (
+            data.ressources_materielles.categories_ressources.map((categoryObject: any, index: number) => (
+              <div key={index}>
+                {renderResourceCategory(categoryObject, openSubCategories, setOpenSubCategories)}
               </div>
-              
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-6 pt-4">
-                <p className="mt-4">Aucune donnée de ressource disponible pour ce projet.</p>
+            ))
+          ) : (
+            <p>Aucune ressource matérielle trouvée.</p>
+          )}
+        </div>
+      )}
+
+      {selectedCategory === 'humaines' && (
+        <div className="mb-6">
+          <h3 className="text-xl font-bold mb-4">Ressources humaines</h3>
+          {data?.ressources_humaines?.categories_ressources && data.ressources_humaines.categories_ressources.length > 0 ? (
+            data.ressources_humaines.categories_ressources.map((categoryObject: any, index: number) => (
+              <div key={index}>
+                {renderResourceCategory(categoryObject, openSubCategories, setOpenSubCategories)}
               </div>
-            </div>
-            <style>
-              {`
-                @keyframes scaleIn {
-                  to {
-                    opacity: 1;
-                    transform: scale(1);
-                  }
-                }
-              `}
-            </style>
-          </div>
-        )}
-      </>
-    );
-  }
+            ))
+          ) : (
+            <p>Aucune ressource humaine trouvée.</p>
+          )}
+        </div>
+      )}
+
+      {selectedCategory === 'techniques' && (
+        <div className="mb-6">
+          <h3 className="text-xl font-bold mb-4">Ressources techniques</h3>
+          {data?.ressources_techniques?.categories_ressources && data.ressources_techniques.categories_ressources.length > 0 ? (
+            data.ressources_techniques.categories_ressources.map((categoryObject: any, index: number) => (
+              <div key={index}>
+                {renderResourceCategory(categoryObject, openSubCategories, setOpenSubCategories)}
+              </div>
+            ))
+          ) : (
+            <p>Aucune ressource technique trouvée.</p>
+          )}
+        </div>
+      )}
+    </>
+  ) : (
+    <p className="mt-4">Aucune donnée de ressource disponible pour ce projet.</p>
+  );
 
   return (
     <>
-      <DeliverableCard
+      {/* Utilisation de la carte harmonisée */}
+      <HarmonizedDeliverableCard
         title={deliverableTitle}
         description={deliverableDescription}
+        avis={data?.avis || 'Commentaire'}
         iconSrc="/icones-livrables/ressources-icon.png"
-        bgColor="bg-aurentia-deliverable-resource"
         onClick={handleTemplateClick}
       />
 
-      {/* Livrable Popup Part */}
-      {isPopupOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handlePopupClose}>
-          <div
-            className="bg-white text-black rounded-lg w-full mx-2.5 md:w-9/10 relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-            style={{ animation: 'scaleIn 0.3s ease-out forwards' }}
-          >
-            {/* Sticky Header */}
-            <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-              <h2 className="text-xl font-bold">{deliverableTitle}</h2>
-              <button
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-                onClick={handlePopupClose}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 pt-4">
-              <div className="flex gap-2 mb-4">
-                <button
-                  className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                    showDefinitionPlaceholder
-                      ? `bg-aurentia-deliverable-resource text-white`
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
-                  onClick={() => {
-                    setShowDefinitionPlaceholder(!showDefinitionPlaceholder);
-                    // setShowRecommendationPlaceholder(false); // Removed as per user request
-                  }}
-                >
-                  Définition
-                </button>
-              </div>
-
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out mt-4 ${ // Added mt-4 here
-                  showDefinitionPlaceholder ? 'max-h-screen' : 'max-h-0'
-                }`}
-              >
-                <div className="mt-2">
-                  <div className="bg-gray-100 rounded-md p-4 mb-2">
-                    <p className="text-[#4B5563]"><strong>Définition :</strong> {deliverableDefinition}</p>
-                  </div>
-                  <div className="bg-gray-100 rounded-md p-4">
-                    <p className="text-[#4B5563]"><strong>Importance :</strong> {deliverableImportance}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 mb-4">
-                <button
-                  className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                    selectedCategory === 'materielles'
-                      ? `bg-aurentia-deliverable-resource text-white`
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
-                  onClick={() => setSelectedCategory('materielles')}
-                >
-                  Ressources matérielles
-                </button>
-                <button
-                  className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                    selectedCategory === 'humaines'
-                      ? `bg-aurentia-deliverable-resource text-white`
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
-                  onClick={() => setSelectedCategory('humaines')}
-                >
-                  Ressources humaines
-                </button>
-                <button
-                  className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                    selectedCategory === 'techniques'
-                      ? `bg-aurentia-deliverable-resource text-white`
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
-                  onClick={() => setSelectedCategory('techniques')}
-                >
-                  Ressources techniques
-                </button>
-              </div>
-
-              {selectedCategory === 'materielles' && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold mb-4">Ressources matérielles</h3>
-                  {data?.ressources_materielles?.categories_ressources && data.ressources_materielles.categories_ressources.length > 0 ? (
-                    data.ressources_materielles.categories_ressources.map((categoryObject: any, index: number) => (
-                      <div key={index}>
-                        {renderResourceCategory(categoryObject, openSubCategories, setOpenSubCategories)}
-                      </div>
-                    ))
-                  ) : (
-                    <p>Aucune ressource matérielle trouvée.</p>
-                  )}
-                </div>
-              )}
-
-              {selectedCategory === 'humaines' && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold mb-4">Ressources humaines</h3>
-                  {data?.ressources_humaines?.categories_ressources && data.ressources_humaines.categories_ressources.length > 0 ? (
-                    data.ressources_humaines.categories_ressources.map((categoryObject: any, index: number) => (
-                      <div key={index}>
-                        {renderResourceCategory(categoryObject, openSubCategories, setOpenSubCategories)}
-                      </div>
-                    ))
-                  ) : (
-                    <p>Aucune ressource humaine trouvée.</p>
-                  )}
-                </div>
-              )}
-
-              {selectedCategory === 'techniques' && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold mb-4">Ressources techniques</h3>
-                  {data?.ressources_techniques?.categories_ressources && data.ressources_techniques.categories_ressources.length > 0 ? (
-                    data.ressources_techniques.categories_ressources.map((categoryObject: any, index: number) => (
-                      <div key={index}>
-                        {renderResourceCategory(categoryObject, openSubCategories, setOpenSubCategories)}
-                      </div>
-                    ))
-                  ) : (
-                    <p>Aucune ressource technique trouvée.</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <style>
-            {`
-              @keyframes scaleIn {
-                to {
-                  opacity: 1;
-                  transform: scale(1);
-                }
-              }
-            `}
-          </style>
-        </div>
-      )}
+      {/* Utilisation de la modal harmonisée */}
+      <HarmonizedDeliverableModal
+        isOpen={isPopupOpen}
+        onClose={handlePopupClose}
+        title={deliverableTitle}
+        iconSrc="/icones-livrables/ressources-icon.png"
+        contentComponent={ressourcesContent}
+        definition={deliverableDefinition}
+        importance={deliverableImportance}
+        showContentTab={true}
+        modalWidthClass="md:w-[90%]"
+      />
     </>
   );
 };

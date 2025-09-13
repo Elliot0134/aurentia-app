@@ -17,7 +17,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useFreeDeliverableProgress } from "@/hooks/useFreeDeliverableProgress";
 import FreeDeliverableProgressContainer from "@/components/deliverables/FreeDeliverableProgressContainer";
 
-
+// Mapping des noms de livrables aux chemins d'icônes
+const deliverableIcons: { [key: string]: string } = {
+  "Analyse de marché": "/icones-livrables/market-icon.png",
+  "Analyse de la concurrence": "/icones-livrables/concurrence-icon.png",
+  "Persona Express": "/icones-livrables/persona-icon.png",
+  "Proposition de valeur": "/icones-livrables/proposition-valeur-icon.png",
+  "Business Model Canvas": "/icones-livrables/business-model-icon.png",
+  "Vision, Mission, Valeurs": "/icones-livrables/vision-icon.png",
+  "Analyse des ressources": "/icones-livrables/ressources-icon.png",
+  "Success Story": "/icones-livrables/story-icon.png", // Correction du nom pour correspondre à useFreeDeliverableProgress
+  "Pitch": "/icones-livrables/pitch-icon.png",
+  "Retranscription du concept": "/icones-livrables/retranscription-icon.png",
+  "Mini SWOT": "/icones-livrables/market-icon.png",
+  "Vision, Mission & Valeurs": "/icones-livrables/vision-icon.png", // Correction du nom pour correspondre à useFreeDeliverableProgress
+  // Ajoutez d'autres livrables ici si nécessaire
+};
 
 const Form = () => {
   const navigate = useNavigate();
@@ -32,12 +47,8 @@ const Form = () => {
   const [previousStep, setPreviousStep] = useState(currentStep);
 
   const handleFieldClick = (field, content, title) => {
-    if (isMobile) {
-      setCurrentField(field);
-      setPopupContent(content);
-      setPopupTitle(title);
-      setIsPopupOpen(true);
-    }
+    // Supprimer l'option de popup en version mobile
+    // Laisser le champ éditable directement
   };
 
   const handlePopupSave = () => {
@@ -674,9 +685,9 @@ const Form = () => {
       case 9:
         return (
           <div className="space-y-4">
-            <div className="text-center text-base md:text-lg font-semibold mb-3 p-3 rounded-md bg-gradient-to-r from-red-500 to-orange-500 text-white">
+            <div className="text-center text-xl md:text-2xl font-semibold mb-3 p-3 rounded-md bg-gradient-to-r from-red-500 to-orange-500 text-white">
               Modifiez les réponses un maximum.
-              <p className="text-xs font-normal mt-1">Plus vous donnez d'informations sur votre concept, plus la génération des livrables sera développé en conséquence.</p>
+              <p className="text-base font-normal mt-1">Plus vous donnez d'informations sur votre concept, plus la génération des livrables sera développé en conséquence.</p>
             </div>
 
             <h2 className="text-lg md:text-xl font-semibold mb-3">Retranscription du concept</h2>
@@ -684,81 +695,81 @@ const Form = () => {
               <div className="text-center text-pink-500 text-base md:text-lg">Chargement de la retranscription du concept...</div>
             ) : (
               <div className="space-y-3">
-                <div className="bg-[#F9F6F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">Description synthétique</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">Description synthétique</p>
                   <Textarea
                     placeholder="Décrivez votre concept de manière concise."
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={descriptionSynthetique}
                     onClick={() => handleFieldClick('descriptionSynthetique', descriptionSynthetique, 'Description synthétique')}
                     onChange={(e) => setDescriptionSynthetique(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">Produit / Service</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">Produit / Service</p>
                   <Textarea
                     placeholder="Détaillez les produits ou services que vous proposez."
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={produitServiceRetranscription}
                     onClick={() => handleFieldClick('produitServiceRetranscription', produitServiceRetranscription, 'Produit / Service')}
                     onChange={(e) => setProduitServiceRetranscription(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">Proposition de valeur</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">Proposition de valeur</p>
                   <Textarea
                     placeholder="Quelle valeur unique apportez-vous à vos clients ?"
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={propositionValeur}
                     onClick={() => handleFieldClick('propositionValeur', propositionValeur, 'Proposition de valeur')}
                     onChange={(e) => setPropositionValeur(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">Élément distinctif</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">Élément distinctif</p>
                   <Textarea
                     placeholder="Qu'est-ce qui vous différencie de la concurrence ?"
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={elementDistinctif}
                     onClick={() => handleFieldClick('elementDistinctif', elementDistinctif, 'Élément distinctif')}
                     onChange={(e) => setElementDistinctif(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">Clientèle cible</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">Clientèle cible</p>
                   <Textarea
                     placeholder="Décrivez votre public idéal."
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={clienteleCibleRetranscription}
                     onClick={() => handleFieldClick('clienteleCibleRetranscription', clienteleCibleRetranscription, 'Clientèle cible')}
                     onChange={(e) => setClienteleCibleRetranscription(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">Problème à résoudre</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">Problème à résoudre</p>
                   <Textarea
                     placeholder="Quel problème majeur votre solution résout-elle ?"
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={problemResoudreRetranscription}
                     onClick={() => handleFieldClick('problemResoudreRetranscription', problemResoudreRetranscription, 'Problème à résoudre')}
                     onChange={(e) => setProblemResoudreRetranscription(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">Mon Pourquoi</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">Mon Pourquoi</p>
                   <Textarea
                     placeholder="Décrivez vos motivations profondes pour ce projet."
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={monPourquoiRetranscription}
                     onClick={() => handleFieldClick('monPourquoiRetranscription', monPourquoiRetranscription, 'Mon Pourquoi')}
                     onChange={(e) => setMonPourquoiRetranscription(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#F9F9F2] rounded-md p-3">
-                  <p className="font-medium mb-1 text-sm">L'équipe fondatrice</p>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium mb-1 text-base">L'équipe fondatrice</p>
                   <Textarea
                     placeholder="Décrivez l'équipe fondatrice et ses compétences clés."
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md text-base"
                     value={equipeFondatrice}
                     onClick={() => handleFieldClick('equipeFondatrice', equipeFondatrice, 'L\'équipe fondatrice')}
                     onChange={(e) => setEquipeFondatrice(e.target.value)}
@@ -818,7 +829,10 @@ const Form = () => {
                  {deliverables.map((deliverable) => (
                    <FreeDeliverableProgressContainer
                      key={deliverable.key}
-                     deliverable={deliverable}
+                     deliverable={{
+                       ...deliverable,
+                       icon: deliverableIcons[deliverable.name] || "/placeholder.svg", // Utilise l'icône mappée ou une icône par défaut
+                     }}
                    />
                  ))}
                </div>
@@ -847,7 +861,7 @@ const Form = () => {
             <Textarea
               value={popupContent}
               onChange={(e) => setPopupContent(e.target.value)}
-              className="w-full h-40 border border-gray-300 rounded-md p-2"
+              className="w-full border border-gray-300 rounded-md p-2"
             />
             <DialogFooter>
               <Button onClick={handlePopupSave}>Enregistrer</Button>

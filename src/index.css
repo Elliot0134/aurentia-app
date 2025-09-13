@@ -1,4 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Display:wght@300;400;500;600;700&display=swap');
+@font-face {
+  font-family: 'BIZ UDPMincho';
+  src: url('/fonts/biz-udpmincho/BIZUDPMincho-Regular.ttf') format('truetype');
+  font-weight: 400; /* Regular */
+  font-style: normal;
+}
 
 @tailwind base;
 @tailwind components;
@@ -196,17 +202,17 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 95%; /* #F4F4F1 */
+    --foreground: 0 0% 8.2%; /* #151515 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 8.2%; /* #151515 */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 8.2%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 15 100% 58.2%; /* #FF592C */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -214,8 +220,8 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 15 100% 58.2%; /* Orange Aurentia */
+    --accent-foreground: 0 0% 100%; /* Texte blanc pour l'accent */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -271,19 +277,18 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
 
 @layer base {
   * {
     @apply border-border;
   }
   
-  body {
-    @apply bg-[#F9F6F2] text-foreground font-poppins text-sm;
-  }
+body {
+  @apply bg-[#F4F4F1] text-[#151515] font-inter text-[15px];
+}
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold;
+    @apply font-biz-ud-mincho text-[#151515];
   }
 
   .card-shadow {
@@ -291,11 +296,11 @@
   }
 
   .gradient-primary {
-    @apply bg-gradient-to-r from-aurentia-pink to-aurentia-orange;
+    @apply bg-aurentia-orange-aurentia;
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white font-medium px-5 py-2 text-sm rounded-full transition-all duration-300 hover:shadow-md;
+    @apply bg-aurentia-orange-aurentia text-white font-medium px-5 py-2 text-sm rounded-full transition-all duration-300 hover:shadow-md;
   }
 
   .btn-outline {
@@ -386,15 +391,6 @@
 
 
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
 .markdown-content {
   @apply text-sm leading-relaxed;
 }
@@ -437,4 +433,5 @@
 }
 .markdown-content input[type="checkbox"] {
   @apply mr-2 align-middle;
+}
 }

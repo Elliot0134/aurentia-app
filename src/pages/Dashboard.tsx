@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { FileText, Plus, Zap, Book, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useProject } from "@/contexts/ProjectContext";
 import {
   AlertDialog,
@@ -97,6 +98,12 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-3 flex justify-end mb-4">
+            <Button onClick={() => navigate("/warning")} className="flex items-center gap-2">
+              <Plus size={16} />
+              Créer un nouveau projet
+            </Button>
+          </div>
           <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.1s"}}>
             <h2 className="text-base font-semibold mb-4">Vos projets</h2>
             {userProjectsLoading ? (

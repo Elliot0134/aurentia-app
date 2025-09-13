@@ -4,8 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { useProject } from '@/contexts/ProjectContext';
 
-export const useChatConversation = (projectId: string | undefined) => {
-  const { updateUserCredits } = useProject();
+export const useChatConversation = (
+  projectId: string | undefined,
+  entityId?: string,
+  entityType?: 'phase' | 'jalon' | 'tache'
+) => {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isConversationLoading, setIsConversationLoading] = useState(false);
@@ -20,13 +23,13 @@ export const useChatConversation = (projectId: string | undefined) => {
   const lastSentTime = useRef<number>(0);
   const lastErrorTime = useRef<number>(0);
   const errorCooldown = 2000;
-  const initializedProjectId = useRef<string | undefined>(undefined);
+  const initializedParams = useRef<{ projectId?: string, entityId?: string, entityType?: string }>({});
 
   // Load conversation history and initialize
   useEffect(() => {
     const loadConversationHistory = async () => {
-      if (!projectId) return;
-      
+      if (!projectId) return; // projectId est toujours requis
+
       setIsHistoryLoading(true);
       
       try {
@@ -39,13 +42,21 @@ export const useChatConversation = (projectId: string | undefined) => {
 
         const userId = session.user.id;
         
-        // Charger l'historique des conversations pour ce projet
+        // Charger l'historique des conversations pour le projet
         const conversations = await chatbotService.getUserConversationsFromDB(userId, projectId);
         setConversationHistory(conversations);
         
-        console.log(`ℹ️ ${conversations.length} conversation(s) trouvée(s) pour ce projet`);
+        console.log(`ℹ️ ${conversations.length} conversation(s) trouvée(s) pour le projet ${projectId}`);
         
-        initializedProjectId.current = projectId;
+        // Si une conversation existe déjà pour ce projet, la charger
+        if (conversations.length > 0) {
+          await loadConversation(conversations[0].id);
+        } else {
+          setCurrentConversation(null);
+          setConversationId(null);
+        }
+
+        initializedParams.current = { projectId }; // entityId et entityType ne sont plus pertinents ici
       } catch (error) {
         console.error('❌ Erreur chargement historique:', error);
         toast.error('Erreur lors du chargement de l\'historique');
@@ -54,11 +65,12 @@ export const useChatConversation = (projectId: string | undefined) => {
       }
     };
 
-    // Charger l'historique dès que le projectId est disponible et a changé
-    if (projectId && initializedProjectId.current !== projectId) {
+    // Charger l'historique dès que les paramètres sont disponibles et ont changé
+    if (projectId && 
+        (initializedParams.current.projectId !== projectId)) { // entityId et entityType ne sont plus pertinents ici
       loadConversationHistory();
     }
-  }, [projectId]);
+  }, [projectId]); // entityId et entityType ne sont plus des dépendances ici
 
   // Écouter les changements de titre de conversation
   useEffect(() => {
@@ -67,12 +79,13 @@ export const useChatConversation = (projectId: string | undefined) => {
       console.log('🎯 Titre de conversation changé:', { conversationId, newTitle });
       
       // Rafraîchir l'historique pour mettre à jour le select
-      if (!projectId) return;
+      if (!projectId) return; // S'assurer que projectId est présent
       
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
         
+        // Utiliser les paramètres d'entité pour rafraîchir l'historique pertinent
         const conversations = await chatbotService.getUserConversationsFromDB(session.user.id, projectId);
         setConversationHistory(conversations);
       } catch (error) {
@@ -90,13 +103,13 @@ export const useChatConversation = (projectId: string | undefined) => {
     return () => {
       window.removeEventListener('conversationTitleChanged', handleTitleChange as EventListener);
     };
-  }, [currentConversation, projectId]);
+  }, [currentConversation, projectId]); // entityId et entityType ne sont plus des dépendances ici
 
   // Charger une conversation spécifique
-  const loadConversation = async (conversationId: string) => {
+  const loadConversation = async (convId: string) => {
     try {
       setIsConversationLoading(true);
-      const conversation = await chatbotService.loadConversationFromDB(conversationId);
+      const conversation = await chatbotService.loadConversationFromDB(convId);
       if (conversation) {
         setCurrentConversation(conversation);
         setConversationId(conversation.id);
@@ -114,12 +127,13 @@ export const useChatConversation = (projectId: string | undefined) => {
 
   // Mettre à jour l'historique après une action
   const refreshHistory = async () => {
-    if (!projectId) return;
+    if (!projectId) return; // S'assurer que projectId est présent
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
       
+      // Utiliser les paramètres d'entité pour rafraîchir l'historique pertinent
       const conversations = await chatbotService.getUserConversationsFromDB(session.user.id, projectId);
       setConversationHistory(conversations);
     } catch (error) {
@@ -180,47 +194,23 @@ export const useChatConversation = (projectId: string | undefined) => {
     lastSentTime.current = currentTime;
 
     try {
-      // Vérifier et décrémenter les crédits utilisateur
+      // La gestion des crédits est maintenant gérée par le workflow N8N.
+      // Nous n'avons plus besoin de vérifier ou de décrémenter les crédits côté client.
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         toast.error('Vous devez être connecté pour envoyer un message');
         return false;
       }
 
-      // Récupérer le profil utilisateur pour vérifier les crédits
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('credits_restants')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error('❌ Erreur récupération profil:', profileError);
-        toast.error('Erreur lors de la vérification de vos crédits');
-        return false;
-      }
-
-      const currentCredits = parseInt(profile.credits_restants || '0', 10);
-      
-      if (currentCredits <= 0) {
-        toast.error('Vous n\'avez plus de crédits disponibles. Veuillez acheter un plan pour continuer.');
-        return false;
-      }
-
-      // Décrémenter les crédits
-      const newCredits = currentCredits - 1;
-      await updateUserCredits(newCredits);
-
-      console.log(`💳 Crédit utilisé. Crédits restants: ${newCredits}`);
-
       // Créer une nouvelle conversation si nécessaire
       let conversationToUse = currentConversation;
       if (!conversationToUse) {
         if (!session?.user || !projectId) {
-          toast.error('Impossible de créer une nouvelle conversation');
+          toast.error('Impossible de créer une nouvelle conversation: utilisateur ou projet manquant');
           return false;
         }
 
+        // Appeler createNewConversation sans entityId et entityType
         const newConversation = await chatbotService.createNewConversation(session.user.id, projectId);
         if (!newConversation) {
           toast.error('Échec de création de la conversation');
@@ -266,13 +256,42 @@ export const useChatConversation = (projectId: string | undefined) => {
           projectSearchMode: selectedSearchModes.includes('project_rag'),
           selectedDeliverables: selectedDeliverables,
           isFirstMessage: isFirstMessage,
-          convId: conversationToUse.id
+          convId: conversationToUse.id,
+          entityId: entityId, // Ajouter entityId
+          entityType: entityType // Ajouter entityType
         }),
       });
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
-      const botResponse = await response.text();
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      let botResponse: string;
+      const responseText = await response.text(); // Lire la réponse en texte une seule fois
+      console.log('Réponse brute du chatbot (avant parsing):', responseText); // Nouveau log
+
+      try {
+        const jsonResponse = JSON.parse(responseText); // Tenter de parser le texte en JSON
+        console.log('Réponse JSON du chatbot:', jsonResponse); // Log pour débogage
+        if (jsonResponse && typeof jsonResponse === 'object' && 'credits' in jsonResponse && (jsonResponse.credits === false || jsonResponse.credits === 'false')) {
+          console.warn('Crédits insuffisants détectés dans la réponse du chatbot.');
+          const creditsNeededValue = jsonResponse.credits_needed ? String(jsonResponse.credits_needed) : undefined;
+          console.log('Credits needed (processed):', creditsNeededValue); // Ajout du log
+          if (window.triggerCreditsInsufficientDialog) {
+            window.triggerCreditsInsufficientDialog(creditsNeededValue);
+          }
+          // Arrêter le traitement normal si les crédits sont insuffisants
+          setIsLoading(false);
+          setIsSubmitting(false);
+          return false;
+        }
+        // Si ce n'est pas le JSON de crédits, le texte est la réponse du bot
+        botResponse = responseText;
+      } catch (e) {
+        console.log('La réponse du chatbot n\'est pas un JSON valide, traitement comme texte.', e); // Log pour débogage
+        // Si le parsing JSON échoue, le texte est la réponse du bot
+        botResponse = responseText;
+      }
 
       // Add bot message with streaming
       const botMessage = await chatbotService.addMessageWithDB(conversationToUse.id, 'bot', '');
@@ -341,38 +360,13 @@ export const useChatConversation = (projectId: string | undefined) => {
     
     setIsLoading(true);
     try {
-      // Vérifier et décrémenter les crédits utilisateur pour la régénération
+      // La gestion des crédits est maintenant gérée par le workflow N8N.
+      // Nous n'avons plus besoin de vérifier ou de décrémenter les crédits côté client.
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         toast.error('Vous devez être connecté pour régénérer une réponse');
         return;
       }
-
-      // Récupérer le profil utilisateur pour vérifier les crédits
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('credits_restants')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error('❌ Erreur récupération profil:', profileError);
-        toast.error('Erreur lors de la vérification de vos crédits');
-        return;
-      }
-
-      const currentCredits = parseInt(profile.credits_restants || '0', 10);
-      
-      if (currentCredits <= 0) {
-        toast.error('Vous n\'avez plus de crédits disponibles pour régénérer une réponse.');
-        return;
-      }
-
-      // Décrémenter les crédits
-      const newCredits = currentCredits - 1;
-      await updateUserCredits(newCredits);
-
-      console.log(`💳 Crédit utilisé pour régénération. Crédits restants: ${newCredits}`);
 
       const webhookUrl = "https://n8n.srv906204.hstgr.cloud/webhook/chatbot-global";
       const response = await fetch(webhookUrl, {
@@ -388,12 +382,36 @@ export const useChatConversation = (projectId: string | undefined) => {
           projectSearchMode: selectedSearchModes.includes('project_rag'),
           selectedDeliverables: selectedDeliverables,
           isFirstMessage: false,
-          convId: currentConversation.id
+          convId: currentConversation.id,
+          entityId: entityId, // Ajouter entityId
+          entityType: entityType // Ajouter entityType
         }),
       });
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const newResponse = await response.text();
+      
+      let newResponse: string;
+      const responseText = await response.text(); // Lire la réponse en texte une seule fois
+      console.log('Réponse brute du chatbot (régénération, avant parsing):', responseText); // Nouveau log
+      try {
+        const jsonResponse = JSON.parse(responseText); // Tenter de parser le texte en JSON
+        console.log('Réponse JSON du chatbot (régénération):', jsonResponse); // Log pour débogage
+        if (jsonResponse && typeof jsonResponse === 'object' && 'credits' in jsonResponse && (jsonResponse.credits === false || jsonResponse.credits === 'false')) {
+          console.warn('Crédits insuffisants détectés dans la réponse du chatbot (régénération).');
+          const creditsNeededValue = jsonResponse.credits_needed ? String(jsonResponse.credits_needed) : undefined;
+          console.log('Credits needed (regeneration processed):', creditsNeededValue); // Ajout du log
+          if (window.triggerCreditsInsufficientDialog) {
+            window.triggerCreditsInsufficientDialog(creditsNeededValue);
+          }
+          // Arrêter le traitement normal si les crédits sont insuffisants
+          setIsLoading(false);
+          return;
+        }
+        newResponse = responseText;
+      } catch (e) {
+        console.log('La réponse du chatbot (régénération) n\'est pas un JSON valide, traitement comme texte.', e); // Log pour débogage
+        newResponse = responseText;
+      }
 
       // Vider temporairement le message pour l'effet de streaming
       const messageToUpdate = currentConversation.messages[messageIndex];
@@ -454,6 +472,7 @@ export const useChatConversation = (projectId: string | undefined) => {
           try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user) return [];
+            // Utiliser les paramètres d'entité pour charger l'historique pertinent
             return await chatbotService.getUserConversationsFromDB(session.user.id, projectId);
           } catch {
             return [];

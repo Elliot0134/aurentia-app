@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Separator } from "@/components/ui/separator";
 import ComingSoonDialog from '@/components/ui/ComingSoonDialog';
+import UnlockFeaturesPopup from '@/components/ui/UnlockFeaturesPopup';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import {
   DndContext,
   closestCenter,
@@ -426,10 +428,28 @@ const Roadmap = () => {
   });
 
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+  const [isUnlockPopupOpen, setIsUnlockPopupOpen] = useState(false);
+  const { subscriptionStatus } = useSubscriptionStatus();
+  const { userProjects } = useProject();
+  const [projectTitle, setProjectTitle] = useState<string>("Votre projet");
 
   useEffect(() => {
-    setIsComingSoonOpen(true);
-  }, []);
+    // Vérifier le statut de l'utilisateur et ouvrir le bon popup
+    if (subscriptionStatus === "inactive") {
+      setIsUnlockPopupOpen(true);
+    }
+    // Ne plus afficher automatiquement le popup "fonctionnalité à venir"
+  }, [subscriptionStatus]);
+
+  useEffect(() => {
+    // Récupérer le titre du projet
+    if (projectId) {
+      const project = userProjects.find(p => p.project_id === projectId);
+      if (project) {
+        setProjectTitle(project.nom_projet);
+      }
+    }
+  }, [projectId, userProjects]);
 
   return (
     <div className="container mx-auto py-8">
@@ -572,24 +592,11 @@ const Roadmap = () => {
         </DialogContent>
       </Dialog>
 
-      <ComingSoonDialog
-        isOpen={isComingSoonOpen}
-        onClose={() => setIsComingSoonOpen(false)}
-        description={
-          <>
-            Bientôt, Aurentia IA pourra générer automatiquement un plan d'action complet et personnalisé pour votre projet d'entreprise. L'IA analysera votre idée et créera :
-            <br /><br />
-            ✅ Des catégories adaptées à votre secteur d'activité
-            <br />
-            ✅ Une liste de tâches concrètes à accomplir
-            <br />
-            ✅ Une répartition des responsabilités par profil/personne
-            <br />
-            ✅ Un classement par ordre de priorité pour optimiser votre progression
-            <br /><br />
-            Fini les plans d'action génériques ! Votre feuille de route sera entièrement adaptée à votre projet et prête à être mise en œuvre.
-          </>
-        }
+      <UnlockFeaturesPopup
+        isOpen={isUnlockPopupOpen}
+        onClose={() => setIsUnlockPopupOpen(false)}
+        projectTitle={projectTitle}
+        projectId={projectId}
       />
     </div>
   );

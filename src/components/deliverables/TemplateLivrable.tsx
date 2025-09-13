@@ -1,66 +1,156 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import ReactMarkdown from 'react-markdown';
+
+interface StructureContent {
+  title: string;
+  content: string;
+}
+
+interface StructureSection {
+  title: string;
+  items: StructureContent[];
+}
 
 interface LivrableProps {
-  // Props for the template part
   title: string;
-  description?: string;
-  children?: React.ReactNode;
-  textColor?: string; // Add textColor prop for the template button
-
-  // Props for the popup part (if needed, or manage internally)
-  // For now, let's manage popup state internally
-  buttonColor?: string; // Add buttonColor prop for the popup buttons
+  avis: string; // Texte de l'étiquette de la carte
+  justification_avis: string; // Description de la carte
+  structure: StructureSection[]; // Contenu du popup en JSON B
+  iconSrc?: string; // Add iconSrc prop for the card image
+  definition?: string; // Nouvelle prop pour la définition
+  recommendations?: string; // Nouvelle prop pour les recommandations
 }
 
 const Livrable: React.FC<LivrableProps> = ({
   title,
-  description,
-  children,
-  textColor,
-  buttonColor,
+  avis,
+  justification_avis,
+  structure,
+  iconSrc = "/icones-livrables/market-icon.png", // Default icon
+  definition,
+  recommendations,
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [showDefinitionPlaceholder, setShowDefinitionPlaceholder] = useState(false);
-  const [showRecommendationPlaceholder, setShowRecommendationPlaceholder] = useState(false);
+  const [activeTab, setActiveTab] = useState<'structure' | 'definition' | 'recommendations'>(
+    structure.length > 0 ? 'structure' : (recommendations ? 'recommendations' : (definition ? 'definition' : 'structure'))
+  );
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [contentHeight, setContentHeight] = useState<number>(0);
+  const [modalHeight, setModalHeight] = useState<string>('auto');
+  
+  const contentRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
+    setActiveTab(structure.length > 0 ? 'structure' : (recommendations ? 'recommendations' : (definition ? 'definition' : 'structure')));
   };
 
   const handlePopupClose = () => {
     setIsPopupOpen(false);
-    // Reset placeholder states when closing popup
-    setShowDefinitionPlaceholder(false);
-    setShowRecommendationPlaceholder(false);
+  };
+
+  // Fonction pour mesurer la hauteur du contenu
+  const measureContentHeight = () => {
+    if (contentRef.current) {
+      const height = contentRef.current.scrollHeight;
+      setContentHeight(height);
+      return height;
+    }
+    return 0;
+  };
+
+  // UseLayoutEffect pour mesurer la hauteur initiale et surveiller les changements d'accordéons
+  useLayoutEffect(() => {
+    if (isPopupOpen && contentRef.current && modalRef.current) {
+      const contentHeight = contentRef.current.scrollHeight;
+      const headerHeight = modalRef.current.querySelector('.sticky')?.clientHeight || 100;
+      const tabsHeight = modalRef.current.querySelector('.border-b')?.clientHeight || 50;
+      const paddingHeight = 48; // p-6 pt-4 = 24+16 = 40px + petit margin
+      
+      const totalHeight = contentHeight + headerHeight + tabsHeight + paddingHeight;
+      setContentHeight(contentHeight);
+      setModalHeight(`${totalHeight}px`);
+
+      // Observer les changements de taille du contenu (accordéons qui s'ouvrent/ferment)
+      const resizeObserver = new ResizeObserver(() => {
+        if (contentRef.current && !isTransitioning && modalRef.current) {
+          const newContentHeight = contentRef.current.scrollHeight;
+          if (newContentHeight !== contentHeight) {
+            const newTotalHeight = newContentHeight + headerHeight + tabsHeight + paddingHeight;
+            setContentHeight(newContentHeight);
+            setModalHeight(`${newTotalHeight}px`);
+          }
+        }
+      });
+
+      resizeObserver.observe(contentRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [isPopupOpen, activeTab, isTransitioning]);
+
+  const handleTabChange = (newTab: 'structure' | 'definition' | 'recommendations') => {
+    if (newTab === activeTab || isTransitioning) return;
+    
+    setIsTransitioning(true);
+    
+    // Phase 1: Flou du contenu actuel (plus rapide)
+    setTimeout(() => {
+      // Change le contenu
+      setActiveTab(newTab);
+      
+      // Phase 2: Mesure la nouvelle hauteur et anime vers celle-ci
+      setTimeout(() => {
+        if (contentRef.current && modalRef.current) {
+          const newContentHeight = contentRef.current.scrollHeight;
+          const headerHeight = modalRef.current.querySelector('.sticky')?.clientHeight || 100;
+          const tabsHeight = modalRef.current.querySelector('.border-b')?.clientHeight || 50;
+          const paddingHeight = 48;
+          
+          const newTotalHeight = newContentHeight + headerHeight + tabsHeight + paddingHeight;
+          setContentHeight(newContentHeight);
+          setModalHeight(`${newTotalHeight}px`);
+        }
+        
+        // Phase 3: Retire le flou (plus rapide)
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 60);
+      }, 30);
+    }, 100);
   };
 
   return (
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 bg-black text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-48"
+        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-full"
         onClick={handleTemplateClick}
+        style={{ borderColor: '#e2e8f0', backgroundColor: 'white' }}
       >
-        <div className="flex-grow mr-4"> {/* Container for text content */}
-          <h2 className="text-xl font-bold mb-2">{title}</h2>
-          {description && <p className="text-white mb-4">{description}</p>}
-          <div>
-            {/* Children for the template content */}
-            {/* The actual deliverable content might go here or be passed via children */}
+        <div className="flex-grow flex flex-col">
+          <h2 className="text-xl font-bold mb-2 text-black">{title}</h2>
+          {justification_avis && <p className="text-gray-700 mb-4 line-clamp-3">{justification_avis}</p>}
+          <div className="flex-grow">
+            {/* Content will be dynamically generated */}
           </div>
-          <button className={`text-xs bg-white ${textColor || 'text-black'} px-2 py-1 rounded-full mt-2 cursor-default pointer-events-none font-bold`}>
-            Commentaire {/* Assuming "Commentaire" is the desired text */}
-          </button>
+          <div className="flex-shrink-0 mt-auto">
+            <button className={`text-xs px-2 py-1 rounded-full cursor-default pointer-events-none`} style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}>
+              {avis}
+            </button>
+          </div>
         </div>
-        <div className="flex-shrink-0"> {/* Container for image */}
-          {/* Placeholder for image */}
-          <img src="/placeholder.svg" alt="Placeholder Image" className="w-8 h-8 object-cover self-start" />
+        <div className="flex-shrink-0">
+          <img src={iconSrc} alt="Template Icon" className="w-8 h-8 object-cover self-start" />
         </div>
       </div>
 
@@ -68,13 +158,22 @@ const Livrable: React.FC<LivrableProps> = ({
       {isPopupOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handlePopupClose}>
           <div
-            className="bg-white text-black rounded-lg w-full mx-2.5 md:w-3/4 relative transform transition-all duration-300 ease-out scale-95 opacity-0 max-h-[calc(100vh-100px)] overflow-hidden flex flex-col"
+            ref={modalRef}
+            className="bg-white text-black rounded-lg w-full mx-2.5 md:w-3/4 relative transform scale-95 opacity-0 overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the popup
-            style={{ animation: 'scaleIn 0.3s ease-out forwards' }} // Apply animation
+            style={{
+              animation: 'scaleIn 0.3s ease-out forwards',
+              height: modalHeight,
+              maxHeight: 'calc(100vh - 100px)',
+              transition: 'height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s ease-out'
+            }} // Animation fluide et plus rapide
           >
             {/* Sticky Header */}
             <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-              <h2 className="text-xl font-bold">{title}</h2>
+              <div className="flex items-center">
+                <img src={iconSrc} alt="Template Icon" className="w-8 h-8 object-cover mr-3" />
+                <h2 className="text-xl font-bold">{title}</h2>
+              </div>
               <button
                 className="text-gray-600 hover:text-gray-900 transition-colors"
                 onClick={handlePopupClose}
@@ -85,86 +184,95 @@ const Livrable: React.FC<LivrableProps> = ({
               </button>
             </div>
             
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 pt-4">
-            <div className="flex gap-2 mb-4">
+            {/* Tab Navigation */}
+            <div className="flex bg-white border-b border-gray-100">
+              {structure.length > 0 && (
+                <button
+                  className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'structure' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+                  onClick={() => handleTabChange('structure')}
+                >
+                  Contenu
+                </button>
+              )}
               <button
-                className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                  showDefinitionPlaceholder
-                    ? `${buttonColor || 'bg-gray-200 text-gray-700'}`
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                onClick={() => {
-                  setShowDefinitionPlaceholder(!showDefinitionPlaceholder);
-                  setShowRecommendationPlaceholder(false); // Optional: hide other placeholders
-                }}
+                className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'recommendations' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+                onClick={() => handleTabChange('recommendations')}
+              >
+                Recommandations
+              </button>
+              <button
+                className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'definition' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+                onClick={() => handleTabChange('definition')}
               >
                 Définition
               </button>
-              <button
-                className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
-                  showRecommendationPlaceholder
-                    ? `${buttonColor || 'bg-gray-200 text-gray-700'}`
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                onClick={() => {
-                  setShowRecommendationPlaceholder(!showRecommendationPlaceholder);
-                  setShowDefinitionPlaceholder(false); // Optional: hide other placeholders
-                }}
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 pt-4">
+              <div
+                ref={contentRef}
+                className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 blur-sm transform translate-y-2' : 'opacity-100 blur-0 transform translate-y-0'}`}
               >
-                Recommandation
-              </button>
-            </div>
+              {activeTab === 'structure' && (
+                <>
+                  {structure.length > 0 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      {structure.map((section, sectionIndex) => (
+                        <AccordionItem value={`section-${sectionIndex}`} key={sectionIndex}>
+                          <AccordionTrigger className="text-lg">{section.title}</AccordionTrigger>
+                          <AccordionContent>
+                            {section.items.map((item, itemIndex) => (
+                              <div key={itemIndex} className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                                <h4 className="text-sm font-semibold mb-2">{item.title}</h4>
+                                <div className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>
+                                  <ReactMarkdown>{item.content}</ReactMarkdown>
+                                </div>
+                              </div>
+                            ))}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  ) : (
+                    <div className="prose max-w-none">
+                      <p className="text-gray-500">Aucun contenu disponible pour le moment.</p>
+                    </div>
+                  )}
+                </>
+              )}
 
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                showDefinitionPlaceholder ? 'max-h-screen' : 'max-h-0'
-              }`}
-            >
-              <div className="mt-2">
-                <div className="bg-gray-100 rounded-md p-4 mb-2">
-                  <p className="text-[#4B5563]"><strong>Définition :</strong> [Placeholder pour la définition]</p>
+              {activeTab === 'recommendations' && (
+                <div className="prose max-w-none">
+                  <h3 className="text-lg font-bold mb-2">Recommandations</h3>
+                  {recommendations ? (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>
+                      <ReactMarkdown>{recommendations}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">Aucune recommandation disponible pour le moment.</p>
+                  )}
                 </div>
-                <div className="bg-gray-100 rounded-md p-4">
-                  <p className="text-[#4B5563]"><strong>Importance :</strong> [Placeholder pour l'importance]</p>
+              )}
+
+              {activeTab === 'definition' && (
+                <div className="prose max-w-none">
+                  <h3 className="text-lg font-bold mb-2">Définition</h3>
+                  {definition ? (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>
+                      <ReactMarkdown>{definition}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">Aucune définition disponible pour le moment.</p>
+                  )}
+
+                  <h3 className="text-lg font-bold mb-2 mt-6">Importance</h3>
+                  <div className="text-gray-500" style={{ whiteSpace: 'pre-wrap' }}>
+                    <ReactMarkdown>L'importance de cette définition réside dans sa capacité à clarifier les concepts clés et à fournir une base solide pour la compréhension du livrable. Elle permet d'aligner toutes les parties prenantes sur une vision commune et d'assurer la cohérence des actions.</ReactMarkdown>
+                  </div>
                 </div>
+              )}
               </div>
-            </div>
-
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                showRecommendationPlaceholder ? 'max-h-screen' : 'max-h-0'
-              }`}
-            >
-              <div className="mt-2">
-                <div className="bg-gray-100 rounded-md p-4">
-                  <p className="text-[#4B5563]">[Placeholder pour la recommandation]</p>
-                </div>
-              </div>
-            </div>
-
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="section-template">
-                <AccordionTrigger className="text-lg">Section template</AccordionTrigger>
-                <AccordionContent>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contenu de la section 1</h4>
-                    {/* Placeholder for Supabase data */}
-                    <p className="text-[#4B5563]">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur? Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur? Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</p>
-                    {/* Children for the popup content */}
-                    {children}
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Contenu de la section 2</h4>
-                    <p className="text-[#4B5563]">Placeholder for another section.</p>
-                  </div>
-                  <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                    <h4 className="text-sm font-semibold mb-2">Contenu de la section 3</h4>
-                    <p className="text-[#4B5563]">Placeholder for a third section.</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
             </div>
           </div>
           {/* Define keyframes for the animation */}

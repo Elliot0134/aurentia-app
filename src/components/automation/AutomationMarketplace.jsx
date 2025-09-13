@@ -10,7 +10,7 @@ import AutomationModal from './AutomationModal';
 import FilterBar from './FilterBar';
 import CreditBalance from './CreditBalance';
 import useAutomations from '@/hooks/useAutomations';
-import useCredits from '@/hooks/useCredits';
+import { useCreditsSimple } from '@/hooks/useCreditsSimple';
 
 const AutomationMarketplace = () => {
   const [selectedAutomation, setSelectedAutomation] = useState(null);
@@ -35,11 +35,15 @@ const AutomationMarketplace = () => {
   } = useAutomations();
 
   const {
-    credits,
-    deductCredits,
-    hasEnoughCredits,
-    loading: creditsLoading
-  } = useCredits();
+    monthlyRemaining,
+    hasCredits,
+    isLoading: creditsLoading
+  } = useCreditsSimple();
+
+  // Fonction helper pour vérifier si l'utilisateur a assez de crédits
+  const hasEnoughCredits = (requiredCredits) => {
+    return monthlyRemaining >= requiredCredits;
+  };
 
   const handleActivateAutomation = async (automation) => {
     try {
@@ -48,11 +52,8 @@ const AutomationMarketplace = () => {
         return;
       }
 
-      await deductCredits(
-        automation.price, 
-        `Activation - ${automation.name}`,
-        automation.id
-      );
+      // TODO: Implémenter la déduction de crédits via une fonction SQL
+      // await deductCredits(automation.price, `Activation - ${automation.name}`, automation.id);
       
       await toggleAutomation(automation.id);
       setSelectedAutomation(null);
@@ -82,7 +83,7 @@ const AutomationMarketplace = () => {
           </p>
         </div>
         <div className="mt-4 lg:mt-0">
-          <CreditBalance credits={credits} />
+          <CreditBalance />
         </div>
       </div>
 
@@ -271,7 +272,7 @@ const AutomationMarketplace = () => {
           onActivate={handleActivateAutomation}
           onDeactivate={handleDeactivateAutomation}
           hasEnoughCredits={hasEnoughCredits(selectedAutomation.price)}
-          credits={credits}
+          credits={monthlyRemaining}
           loading={loading || creditsLoading}
         />
       )}

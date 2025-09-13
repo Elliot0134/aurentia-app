@@ -89,13 +89,13 @@ const RetranscriptionConceptLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
+        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-full"
         onClick={handleTemplateClick}
-        style={{ background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' }}
+        style={{ background: 'white' }}
       >
-        <div className="flex-grow mr-4"> {/* Container for text content */}
-          <h2 className="text-3xl font-bold mb-2">{projectSummary?.nom_projet || "Retranscription du concept"}</h2>
-          <p className="text-sm text-white mb-4">{projectSummary?.description_synthetique || "Synthèse complète de votre projet d'entreprise"}</p>
+        <div className="flex-grow"> {/* Container for text content */}
+          <h2 className="text-3xl font-bold mb-2 text-black">{projectSummary?.nom_projet || "Retranscription du concept"}</h2>
+          <p className="text-sm text-gray-700 mb-4 line-clamp-3">{projectSummary?.description_synthetique || "Synthèse complète de votre projet d'entreprise"}</p>
           <div>
             {/* Children for the template content */}
             {/* The actual deliverable content might go here or be passed via children */}
@@ -133,7 +133,7 @@ const RetranscriptionConceptLivrable: React.FC = () => {
               <button
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer ${
                   showDefinitionPlaceholder
-                    ? `bg-gray-200 text-gray-700`
+                    ? 'bg-aurentia-orange text-white'
                     : 'bg-gray-200 text-gray-700'
                 }`}
                 onClick={() => {

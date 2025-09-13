@@ -44,16 +44,11 @@ const DeliverableProgressContainer: React.FC<DeliverableProgressContainerProps> 
     <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
       {/* Icône et nom du livrable */}
       <div className="flex items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-md flex items-center justify-center"
-          style={{ backgroundColor: deliverable.color }}
-        >
           <img
             src={getIconImage(deliverable.key)}
             alt={deliverable.name}
-            className="w-5 h-5 object-contain filter brightness-0 invert"
+            className="w-8 h-8 object-contain"
           />
-        </div>
         <span className="text-sm font-medium text-gray-800">
           {deliverable.name}
         </span>

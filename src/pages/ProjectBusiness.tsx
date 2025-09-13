@@ -20,6 +20,8 @@ import PropositionDeValeurLivrable from "@/components/deliverables/PropositionDe
 import AnalyseDeMarcheLivrable from "@/components/deliverables/AnalyseDeMarcheLivrable"; // Import the new deliverable
 import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRessourcesLivrable";
 import VisionMissionValeursLivrable from "@/components/deliverables/VisionMissionValeursLivrable"; // Import the new deliverable
+import CadreJuridiqueLivrable from "@/components/deliverables/CadreJuridiqueLivrable"; // Import CadreJuridiqueLivrable
+import TemplateLivrable from "@/components/deliverables/TemplateLivrable"; // Import TemplateLivrable
 import BlurredDeliverableWrapper from "@/components/deliverables/BlurredDeliverableWrapper"; // Import the new wrapper
 import DeliverableProgressContainer from "@/components/deliverables/DeliverableProgressContainer"; // Import the new progress container
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
@@ -36,6 +38,12 @@ const ProjectBusiness = () => {
   const [selectedPersonaExpress, setSelectedPersonaExpress] = useState<'Particulier' | 'Entreprise' | 'Organismes'>('Particulier');
   const [loading, setLoading] = useState(true); // Set loading to true initially
   const [project, setProject] = useState<{ nom_projet?: string; description_projet?: string } | null>(null); // State for project data
+
+  useEffect(() => {
+    if (!projectId) {
+      navigate('/projects-dashboard'); // Redirect to projects dashboard if projectId is missing
+    }
+  }, [projectId, navigate]);
   const [projectStatus, setProjectStatus] = useState<string | null>(null); // State for project status
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
@@ -48,11 +56,20 @@ const ProjectBusiness = () => {
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false); // State for ComingSoonDialog
   
   // Stripe payment hook
-  const { isLoading: isPaymentLoading, paymentStatus, isWaitingPayment, isWaitingDeliverables, initiatePayment, cancelPayment } = useStripePayment();
+  const { isLoading: isPaymentLoading, paymentStatus, isWaitingSubscription, isWaitingDeliverables, initiateSubscription, cancelSubscription } = useStripePayment();
   const { userProjects } = useProject();
   
   // Deliverable progress hook - actif seulement pendant l'attente des livrables
   const { deliverables, isLoading: isDeliverablesLoading, error: deliverablesError } = useDeliverableProgress(projectId, isWaitingDeliverables || paymentStatus === 'processing');
+
+  // Définir les livrables de niveau 2 avec leurs clés pour les icônes
+  const level2Deliverables = [
+    { key: 'concurrence', id: 'statut_concurrence', name: 'Analyse de la Concurrence', status: null, icon: '/icones-livrables/concurrence-icon.png', color: '#e74c3c' },
+    { key: 'pestel', id: 'statut_pestel', name: 'Analyse du Marché (PESTEL)', status: null, icon: '/icones-livrables/market-icon.png', color: '#3498db' },
+    { key: 'proposition_valeur', id: 'statut_proposition_valeur', name: 'Proposition de Valeur', status: null, icon: '/icones-livrables/proposition-valeur-icon.png', color: '#9b59b6' },
+    { key: 'business_model', id: 'statut_business_model', name: 'Business Model', status: null, icon: '/icones-livrables/business-model-icon.png', color: '#57a68b' },
+    { key: 'ressources', id: 'statut_ressources', name: 'Analyse des Ressources', status: null, icon: '/icones-livrables/ressources-icon.png', color: '#f39c12' },
+  ];
 
   const handlePayment = async (planId: string) => {
     console.log("handlePayment called. planId:", planId);
@@ -65,8 +82,8 @@ const ProjectBusiness = () => {
       return;
     }
     
-    await initiatePayment(planId, projectId);
-    console.log("initiatePayment finished. isPaymentLoading:", isPaymentLoading, "paymentStatus:", paymentStatus, "isWaitingPayment:", isWaitingPayment);
+    await initiateSubscription(projectId);
+    console.log("initiateSubscription finished. isPaymentLoading:", isPaymentLoading, "paymentStatus:", paymentStatus, "isWaitingSubscription:", isWaitingSubscription);
   };
 
   const openPopup = (title: React.ReactNode, content: React.ReactNode, buttonColor?: string) => {
@@ -82,10 +99,10 @@ const ProjectBusiness = () => {
   const handleUnlockClick = () => {
     const commonDeliverables = [
       "Analyse concurrentielle",
-      <>Analyse du marché <span className="text-gray-500 italic">(PESTEL)</span></>,
+      <>Analyse du marché <span className="text-gray-500 italic text-lg">(PESTEL)</span></>,
       "Proposition de valeur",
       "Business model",
-      <>Analyse des ressources requises <span className="text-gray-500 italic">(Impréssionant)</span></>,
+      <>Analyse des ressources requises <span className="text-gray-500 italic text-lg">(Impréssionant)</span></>,
     ];
 
     const niveau1Deliverables = commonDeliverables;
@@ -104,15 +121,27 @@ const ProjectBusiness = () => {
       </>,
       <div className="flex flex-col md:flex-row gap-8 justify-center items-stretch mt-8">
         <PlanCard
-          title="Niveau 1"
-          price="3,90€"
-          oldPrice="12,90€"
-          deliverables={niveau1Deliverables}
-          buttonText="J'en profite !"
+          title="Pack Entrepreneur"
+          price={
+            <>
+              12,90€<span className="text-sm">/mois</span>
+            </>
+          }
+          oldPrice=""
+          deliverables={[
+            "Plan d'action personnalisé",
+            "Livrables premium",
+            "3 000 crédits",
+            "Exportation PDF",
+            "Accès à toutes les fonctionnalités",
+            "Collaboration utilisateurs",
+            "Support prioritaire",
+          ]}
+          buttonText="Let's go !"
           creditsSection={
             <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
               <div className="flex items-center justify-center gap-2">
-                <span className="font-bold">50 crédits Aurentia IA</span>
+                <span className="font-bold">3 000 crédits Aurentia IA</span>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -135,39 +164,6 @@ const ProjectBusiness = () => {
           }
           className="flex-1"
           onButtonClick={() => handlePayment('plan1')}
-        />
-        <PlanCard
-          title="Niveau 2"
-          price="6,90€"
-          oldPrice="24,90€"
-          deliverables={niveau2Deliverables}
-          buttonText="J'en profite encore + !"
-          onButtonClick={() => handlePayment('plan2')}
-          creditsSection={
-            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <span className="font-bold">200 crédits Aurentia IA</span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
-                        </PopoverTrigger>
-                        <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
-                          <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
-                        </PopoverContent>
-                      </Popover>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
-          }
-          className="flex-1"
         />
       </div>
     );
@@ -256,9 +252,9 @@ const ProjectBusiness = () => {
 
   // Refetch project status when waiting for payment
   useEffect(() => {
-    if (!projectId || !isWaitingPayment) return;
+    if (!projectId || !isWaitingSubscription) return;
 
-    console.log("Polling useEffect started. isWaitingPayment:", isWaitingPayment);
+    console.log("Polling useEffect started. isWaitingSubscription:", isWaitingSubscription);
     const interval = setInterval(async () => {
       console.log("Polling for project status...");
       const { data, error } = await supabase
@@ -279,11 +275,11 @@ const ProjectBusiness = () => {
       clearInterval(interval);
       console.log("Polling useEffect cleaned up.");
     };
-  }, [projectId, isWaitingPayment]);
+  }, [projectId, isWaitingSubscription]);
 
   // Refetch project status when waiting for payment
   useEffect(() => {
-    if (!projectId || !isWaitingPayment) return;
+    if (!projectId || !isWaitingSubscription) return;
 
     const interval = setInterval(async () => {
       const { data, error } = await supabase
@@ -298,7 +294,7 @@ const ProjectBusiness = () => {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [projectId, isWaitingPayment]);
+  }, [projectId, isWaitingSubscription]);
 
   // Listen for project status updates (e.g., when payment is cancelled)
   useEffect(() => {
@@ -401,46 +397,73 @@ const ProjectBusiness = () => {
           </div>
         </div>
 
-        {/* Level 1 Deliverables */}
-        <div className="grid grid-cols-12 gap-4 md:gap-5">
-          {/* Retranscription du concept Deliverable */}
-          <div className="col-span-12">
-            <RetranscriptionConceptLivrable />
+        {/* Retranscription du concept Deliverable */}
+        <div className="col-span-full">
+          <RetranscriptionConceptLivrable />
+        </div>
+
+        {/* Level 1 Deliverables (rest of them in a grid) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 items-stretch auto-rows-fr min-h-[200px]">
+          <div className="md:h-full">
+            <PersonaExpressLivrable />
           </div>
-          <div className="col-span-12 md:grid md:grid-cols-2 md:gap-5">
-            <div className="col-span-12 md:col-span-1 md:h-full">
-              <PersonaExpressLivrable />
-            </div>
-            <div className="col-span-12 md:col-span-1 md:h-full">
-              <MiniSwotLivrable />
-            </div>
+          <div className="md:h-full">
+            <MiniSwotLivrable />
           </div>
-          <div className="col-span-12 md:grid md:grid-cols-2 md:gap-5 mt-4 md:mt-0">
-            <div className="col-span-12 md:col-span-1 md:h-full">
-              <MaSuccessStoryLivrable />
-            </div>
-            <div className="col-span-12 md:col-span-1 md:h-full">
-              <PitchLivrable />
-            </div>
+          <div className="md:h-full">
+            <MaSuccessStoryLivrable />
           </div>
-          <div className="col-span-12 md:grid md:grid-cols-2 md:gap-5 mt-4 md:mt-0">
-            <div className="col-span-12 md:col-span-1 md:h-full">
-              <VisionMissionValeursLivrable projectId={projectId} />
-            </div>
+          <div className="md:h-full">
+            <PitchLivrable />
+          </div>
+          <div className="md:h-full">
+            <VisionMissionValeursLivrable projectId={projectId} />
+          </div>
+          <div className="md:h-full">
+            <TemplateLivrable
+              title="Livrable Template"
+              avis="Nouveau"
+              justification_avis="Ceci est un livrable template pour démonstration, avec la nouvelle structure."
+              iconSrc="/icones-livrables/market-icon.png"
+              structure={[
+                {
+                  title: "Section 1: Introduction",
+                  items: [
+                    { title: "Sous-section 1.1", content: "Contenu de la sous-section 1.1." },
+                    { title: "Sous-section 1.2", content: "Contenu de la sous-section 1.2." },
+                  ],
+                },
+                {
+                  title: "Section 2: Détails",
+                  items: [
+                    { title: "Sous-section 2.1", content: "Contenu de la sous-section 2.1." },
+                  ],
+                },
+              ]}
+            />
+          </div>
+          {/* Cadre Juridique Livrable */}
+          <div className="md:h-full">
+            <CadreJuridiqueLivrable
+              title="Cadre Juridique"
+              projectId={projectId}
+            />
           </div>
         </div>
 
         {/* Level 2 Deliverables */}
-        {projectStatus === 'free' && (
-          <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
-            <div className="col-span-12 text-center">
+        <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
+          <div className="col-span-12 text-center">
+            {projectStatus === 'free' ? (
               <button className="btn-primary" onClick={handleUnlockClick}>Débloquer les prochains livrables</button>
-            </div>
+            ) : (
+              <button className="btn-primary">Niveau 2</button>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Analyse de la Concurrence and Analyse de Marché Deliverables */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mt-8 items-stretch">
+        {/* Analyse de la Concurrence, Analyse de Marché, Proposition de Valeur et Business Model Deliverables */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
           {/* Analyse de la Concurrence Deliverable */}
           <div className="md:h-full">
             <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
@@ -454,19 +477,16 @@ const ProjectBusiness = () => {
               <AnalyseDeMarcheLivrable projectId={projectId} />
             </BlurredDeliverableWrapper>
           </div>
-        </div>
 
-        {/* Level 3 Deliverables - Two Column Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mt-8">
           {/* Proposition de Valeur Deliverable */}
-          <div>
+          <div className="md:h-full">
             <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
               <PropositionDeValeurLivrable />
             </BlurredDeliverableWrapper>
           </div>
 
           {/* Business Model Deliverable */}
-          <div>
+          <div className="md:h-full">
             <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
               <BusinessModelLivrable
                 title="Business Model"
@@ -479,8 +499,8 @@ const ProjectBusiness = () => {
         </div>
 
         {/* Level 4 Deliverables */}
-        <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
-          <div className="col-span-12 mb-16 md:mb-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
+          <div className="md:h-full">
             <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
               <AnalyseDesRessourcesLivrable />
             </BlurredDeliverableWrapper>
@@ -489,25 +509,25 @@ const ProjectBusiness = () => {
       </div>
 
       {/* Payment Loading Dialog */}
-      <Dialog open={isPaymentLoading || isWaitingPayment || isWaitingDeliverables} onOpenChange={() => {}}>
+      <Dialog open={isPaymentLoading || isWaitingSubscription || isWaitingDeliverables} onOpenChange={() => {}}>
         <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
           <DialogHeader>
             <DialogTitle className="text-2xl">
-              {isWaitingPayment ? '⏳ En attente du paiement...' : '☕️ Une pause café ?'}
+              {isWaitingSubscription ? '⏳ En attente du paiement...' : '☕️ Une pause café ?'}
             </DialogTitle>
-            <DialogDescription>
-              {isWaitingPayment
+            <div className="text-sm text-muted-foreground">
+              {isWaitingSubscription
                 ? <>Votre navigateur va s'ouvrir dans un nouvel onglet pour finaliser le paiement. <br /><br /> Une fois le paiement effectué, nous générerons automatiquement vos livrables premium.</>
                 : <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
               }
-            </DialogDescription>
+            </div>
           </DialogHeader>
           
           {/* Deliverable Progress Section - Only show when not waiting for payment */}
-          {!isWaitingPayment && (
+          {!isWaitingSubscription && (
             <div className="mt-6 space-y-3">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
-              {deliverables.map((deliverable) => (
+              {level2Deliverables.map((deliverable) => ( // Utiliser level2Deliverables ici
                 <DeliverableProgressContainer
                   key={deliverable.key}
                   deliverable={deliverable}
@@ -524,11 +544,11 @@ const ProjectBusiness = () => {
               <div className="square"></div>
             </div>
           </div>
-          {isWaitingPayment && (
+          {isWaitingSubscription && (
             <DialogFooter className="flex justify-center">
               <Button
                 variant="outline"
-                onClick={cancelPayment}
+                onClick={cancelSubscription}
                 className="text-gray-600 hover:text-gray-800"
               >
                 Annuler le paiement
@@ -543,12 +563,14 @@ const ProjectBusiness = () => {
         <DialogContent className="w-[90vw] md:w-[70vw] max-w-none overflow-y-auto max-h-[90vh] md:h-[90vh] rounded-lg md:flex md:flex-col md:justify-center md:items-center"> {/* Set width to 90% on mobile, 70% on desktop, remove max-width, add scrollability, and rounded corners */}
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-[#2D2D2D]">{popupContent?.title}</DialogTitle>
-            <DialogDescription>
+            <div className="mt-4">
               <p className="text-center text-base mb-4">
                 <span className="font-bold text-[#2D2D2D]">{project.nom_projet || "Votre projet"}</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
               </p>
+            </div>
+            <div>
               {popupContent?.content}
-            </DialogDescription>
+            </div>
           </DialogHeader>
         </DialogContent>
       </Dialog>

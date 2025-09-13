@@ -11,7 +11,7 @@ const BlurredDeliverableWrapper: React.FC<BlurredDeliverableWrapperProps> = ({ c
 
   return (
     <div
-      className="relative"
+      className="relative h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -32,7 +32,7 @@ const BlurredDeliverableWrapper: React.FC<BlurredDeliverableWrapperProps> = ({ c
           </button>
         </div>
       )}
-      <div> {/* Removed conditional blur from here */}
+      <div className="h-full"> {/* Removed conditional blur from here */}
         {children}
       </div>
     </div>

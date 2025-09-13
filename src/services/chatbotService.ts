@@ -34,8 +34,13 @@ class ChatbotService {
   // === MÉTHODES DE PERSISTENCE EN BASE DE DONNÉES ===
 
   // Créer une conversation en DB
-  async createConversationInDB(userId: string, projectId: string, title?: string): Promise<string | null> {
+  async createConversationInDB(
+    userId: string,
+    projectId: string,
+    title?: string
+  ): Promise<string | null> {
     try {
+      console.log('Attempting to create conversation in DB with:', { userId, projectId, title });
       const { data, error } = await supabase
         .from('conversation')
         .insert({
@@ -47,13 +52,14 @@ class ChatbotService {
         .single();
 
       if (error) {
-        console.error('Erreur création conversation DB:', error);
+        console.error('Erreur création conversation DB:', error.message, error.details, error.hint);
         return null;
       }
 
+      console.log('Conversation created in DB:', data.id);
       return data.id;
-    } catch (error) {
-      console.error('Erreur création conversation DB:', error);
+    } catch (error: any) {
+      console.error('Erreur création conversation DB (catch):', error.message);
       return null;
     }
   }
@@ -139,15 +145,19 @@ class ChatbotService {
     }
   }
 
-  // Lister les conversations d'un utilisateur pour un projet
-  async getUserConversationsFromDB(userId: string, projectId: string): Promise<Conversation[]> {
+  // Lister les conversations d'un utilisateur pour un projet ou une entité spécifique
+  async getUserConversationsFromDB(
+    userId: string,
+    projectId: string
+  ): Promise<Conversation[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('conversation')
         .select('*')
         .eq('user_id', userId)
-        .eq('project_id', projectId)
-        .order('updated_at', { ascending: false });
+        .eq('project_id', projectId);
+
+      const { data, error } = await query.order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Erreur chargement conversations DB:', error);
@@ -286,7 +296,10 @@ class ChatbotService {
   }
 
   // Créer une nouvelle conversation avec persistence DB
-  async createNewConversation(userId: string, projectId: string): Promise<Conversation | null> {
+  async createNewConversation(
+    userId: string,
+    projectId: string
+  ): Promise<Conversation | null> {
     try {
       // Créer en DB d'abord
       const dbConversationId = await this.createConversationInDB(userId, projectId);
@@ -718,4 +731,4 @@ ${projectContext ? `Pour votre projet :\n${projectContext}\n\n` : ''}Quel aspect
   }
 }
 
-export const chatbotService = new ChatbotService(); 
+export const chatbotService = new ChatbotService();

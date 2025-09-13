@@ -76,8 +76,8 @@ export const MessageList: React.FC<MessageListProps> = ({
                 message.sender === 'user'
                   ? 'bg-[#f0efe6] text-gray-900'
                   : ''
-              } rounded-2xl px-3 py-2 sm:px-4 sm:py-3 markdown-content w-full overflow-hidden max-w-full`}>
-                <div className="prose prose-base sm:prose max-w-none break-words overflow-wrap-anywhere [&>*]:text-sm [&>*]:sm:text-sm"> {/* Changed text-base to text-sm */}
+              } rounded-2xl px-3 py-2 sm:px-4 sm:py-3 markdown-content w-full overflow-hidden ${message.sender === 'bot' ? 'max-w-[90vw] sm:max-w-full' : 'max-w-full'}`}>
+                <div className="prose prose-base sm:prose max-w-none break-words overflow-wrap-anywhere [&>*]:text-[15px] [&>*]:sm:text-[15px]"> {/* Changed text-base to text-sm */}
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}
@@ -96,7 +96,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => onCopyMessage(message.text)}
-                        className="h-5 sm:h-6 px-1 sm:px-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-[#F0EFE6]"
+                        className="h-5 sm:h-6 px-1 sm:px-2 text-[13px] text-gray-500 hover:text-gray-700 hover:bg-[#F0EFE6]"
                       >
                         <Copy size={10} className="sm:mr-1" />
                         <span className="hidden sm:inline">Copier</span>
@@ -105,7 +105,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => onRegenerateResponse(message.id)}
-                        className="h-5 sm:h-6 px-1 sm:px-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-[#F0EFE6]"
+                        className="h-5 sm:h-6 px-1 sm:px-2 text-[13px] text-gray-500 hover:text-gray-700 hover:bg-[#F0EFE6]"
                         disabled={isLoading}
                       >
                         <RefreshCw size={10} className="sm:mr-1" />

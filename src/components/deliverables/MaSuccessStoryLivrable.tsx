@@ -12,6 +12,7 @@ interface SuccessStoryData {
   projections_cinq_ans_titre: string;
   projections_cinq_ans_vision: string;
   message_motivation: string;
+  avis: string | null;
 }
 
 const MaSuccessStoryLivrable: React.FC = () => {
@@ -73,7 +74,7 @@ const MaSuccessStoryLivrable: React.FC = () => {
 
       const { data, error } = await supabase
         .from('success_story')
-        .select('*')
+        .select('*, avis')
         .eq('project_id', projectId)
         .single();
 
@@ -112,19 +113,20 @@ const MaSuccessStoryLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 bg-blue-400 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-30"
+        className="border border-gray-200 rounded-lg p-4 mb-4 bg-white text-black transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-full"
         onClick={handleTemplateClick}
       >
-        <div className="flex-grow mr-4 flex flex-col"> {/* Container for text content */}
-          <h2 className="text-xl font-bold mb-2">{deliverableTitle}</h2>
-          {deliverableDescription && <p className="text-white mb-4">{deliverableDescription}</p>}
+        <div className="flex-grow flex flex-col"> {/* Container for text content */}
+          <h2 className="text-xl font-bold mb-2 text-black">{deliverableTitle}</h2>
+          {deliverableDescription && <p className="text-gray-700 mb-4 line-clamp-3">{deliverableDescription}</p>}
           <div className="flex-grow">
             {/* Children for the template content */}
             {/* The actual deliverable content might go here or be passed via children */}
           </div>
-          {/* MaSuccessStoryLivrable doesn't have a comment button in the main view, but adding a placeholder div with mt-auto for consistency */}
           <div className="flex-shrink-0 mt-auto">
-            {/* Placeholder for button */}
+            <button className={`text-xs px-2 py-1 rounded-full cursor-default pointer-events-none`} style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}>
+              {successStoryData?.avis || 'Commentaire'}
+            </button>
           </div>
         </div>
         <div className="flex-shrink-0"> {/* Container for image */}

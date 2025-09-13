@@ -17,10 +17,11 @@ interface MultiSelectProps {
   disabled?: boolean;
   className?: string;
   trigger?: React.ReactNode; // New prop for custom trigger
+  onAddOption?: (newOption: MultiSelectOption) => void; // New prop for adding options
 }
 
 export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
-  ({ options, value, onChange, placeholder = "Sélectionner...", disabled = false, className, trigger }, ref) => {
+  ({ options, value, onChange, placeholder = "Sélectionner...", disabled = false, className, trigger, onAddOption }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -72,13 +73,22 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               "disabled:cursor-not-allowed disabled:opacity-50"
             )}
           >
-            <div className="flex flex-1 items-center overflow-hidden">
+            <div className="flex flex-1 flex-wrap items-center gap-1 overflow-hidden">
               {selectedOptions.length === 0 ? (
                 <span className="text-muted-foreground truncate">{placeholder}</span>
-              ) : selectedOptions.length === 1 ? (
-                <span className="truncate">{selectedOptions[0].label}</span>
               ) : (
-                <span className="truncate">{selectedOptions.length} livrables sélectionnés</span>
+                selectedOptions.map((option) => (
+                  <span
+                    key={option.value}
+                    className="flex items-center gap-1 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700"
+                  >
+                    {option.label}
+                    <X
+                      className="h-3 w-3 cursor-pointer text-gray-500 hover:text-gray-800"
+                      onClick={(e) => handleRemove(option.value, e)}
+                    />
+                  </span>
+                ))
               )}
             </div>
             <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform", isOpen && "rotate-180")} />
@@ -86,7 +96,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         )}
 
         {isOpen && (
-          <div className="absolute bottom-full z-50 mb-1 left-0 w-max rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+          <div className="absolute top-full z-[1001] mt-1 left-0 w-max min-w-[calc(100%+2px)] rounded-md border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
             <div>
               {/* Available options */}
               {options.length === 0 ? (
@@ -117,6 +127,26 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   );
                 })
               )}
+              <div className="p-1">
+                <input
+                  type="text"
+                  placeholder="Ajouter un rôle..."
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.currentTarget.value.trim() !== '') {
+                      const newRoleLabel = e.currentTarget.value.trim();
+                      const newRoleValue = newRoleLabel.toLowerCase().replace(/\s/g, '_');
+                      const newOption = { value: newRoleValue, label: newRoleLabel };
+                      
+                      if (!options.some(opt => opt.value === newOption.value)) {
+                        onAddOption?.(newOption); // Call the new prop to add the option
+                      }
+                      handleSelect(newOption.value); // Select the new/existing option
+                      e.currentTarget.value = ''; // Clear input
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
         )}

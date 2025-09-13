@@ -1,12 +1,13 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, ChevronLeft, Library, Users } from "lucide-react"; // Import Library and Users
+import { LayoutDashboard, FileText, Settings, BookOpen, LogOut, MessageSquare, Handshake, LandPlot, ChevronLeft, Library, Users, Coins } from "lucide-react"; // Import Library, Users, and Coins
 import { cn } from "@/lib/utils";
 import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
 import MobileNavbar from "./MobileNavbar"; // Import the new MobileNavbar component
 import { useProject } from "@/contexts/ProjectContext";
 import { Zap } from "lucide-react";
+import { useCreditsSimple } from "@/hooks/useCreditsSimple";
 import AurentiaLogo from "./AurentiaLogo"; // Import the AurentiaLogo component
 
 interface SidebarProps {
@@ -18,7 +19,7 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { projectId } = useParams(); // Get project ID from URL
-  const { currentProjectId, userProjects, userCredits, creditsLoading } = useProject(); // Get project data and credits from context
+  const { currentProjectId, userProjects } = useProject(); // Get project data from context
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -58,7 +59,7 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     },
     {
       name: "Plan d'action",
-      path: `/roadmap/${activeProjectId}`,
+      path: `/plan-action`,
       icon: <LandPlot size={20} />
     },
     {
@@ -80,6 +81,11 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
       name: "Ressources",
       path: "/ressources",
       icon: <Library size={20} />
+    },
+    {
+      name: "Template",
+      path: "/template",
+      icon: <FileText size={20} />
     },
     {
       isDivider: true, // Custom property to indicate a divider
@@ -157,7 +163,7 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                   (item.name === "Assistant IA" && location.pathname.startsWith("/chatbot/")) ||
                   (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
                   (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
-                  (item.name === "Plan d'action" && location.pathname.startsWith("/roadmap"))
+                  (item.name === "Plan d'action" && location.pathname.startsWith("/plan-action"))
                     ? "bg-gradient-primary text-white font-medium"
                     : "text-gray-700 hover:bg-gray-100"
                 )}
@@ -171,21 +177,9 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
 
         {/* Profile section for desktop */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-3">
-          {user && userCredits && (
-            <div className={cn("px-3 mb-2", isCollapsed && "flex justify-center")}> {/* Adjusted padding and added margin-bottom, added justify-center for collapsed state */}
-              <div className={cn("flex items-center gap-2 py-2.5 px-4 rounded-md text-sm bg-gray-50", isCollapsed && "w-fit flex-col justify-center gap-0.5")}> {/* Added w-fit, flex-col, justify-center, gap-0.5 for collapsed state */}
-                <Zap size={16} className="text-yellow-500" />
-                {!isCollapsed && (
-                  <span className="font-medium text-gray-700">
-                    {creditsLoading ? '...' : `${userCredits.current} / ${userCredits.max}`}
-                  </span>
-                )}
-                {isCollapsed && (
-                  <span className="font-medium text-gray-700 text-center"> {/* Added text-center for collapsed state */}
-                    {creditsLoading ? '...' : `${userCredits.current}/${userCredits.max}`}
-                  </span>
-                )}
-              </div>
+          {user && (
+            <div className={cn("px-3 mb-3", isCollapsed && "flex flex-col items-center")}>
+              <CreditInfo isCollapsed={isCollapsed} />
             </div>
           )}
           {user ? (
@@ -248,5 +242,40 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     </>
   );
 });
+
+interface CreditInfoProps {
+  isCollapsed: boolean;
+}
+
+const CreditInfo = ({ isCollapsed }: CreditInfoProps) => {
+  const { monthlyRemaining, monthlyLimit, purchasedRemaining, isLoading, error } = useCreditsSimple();
+
+  if (isLoading) {
+    return <p className="text-xs text-gray-500">Chargement crédits...</p>;
+  }
+
+  if (error) {
+    return <p className="text-xs text-red-500">Erreur crédits</p>;
+  }
+
+  return (
+    <div className={cn("flex flex-col gap-2 w-full", isCollapsed ? "items-center" : "items-start")}>
+      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
+        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
+          <Coins size={16} className="text-gray-600" />
+          <span className="text-sm font-medium text-gray-700">Mensuels:</span>
+          <span className="text-sm text-gray-600">{monthlyRemaining} / {monthlyLimit}</span>
+        </div>
+      </div>
+      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
+        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
+          <Coins size={16} className="text-gray-600" />
+          <span className="text-sm font-medium text-gray-700">Achetés:</span>
+          <span className="text-sm text-gray-600">{purchasedRemaining}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default Sidebar;

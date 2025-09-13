@@ -17,37 +17,46 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import useCredits from '@/hooks/useCredits';
+import { useCreditsSimple } from '@/hooks/useCreditsSimple';
 
-const CreditBalance = ({ credits }) => {
+const CreditBalance = ({ credits: propCredits }) => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const { 
-    creditPacks, 
-    lowCreditThreshold, 
-    addCredits, 
-    loading,
-    getCreditStats,
-    getPackValue,
-    getBestValuePack
-  } = useCredits();
+  
+  // Utiliser le nouveau système de crédits
+  const {
+    monthlyRemaining,
+    isLoading,
+    error
+  } = useCreditsSimple();
 
-  const stats = getCreditStats();
-  const isLowCredits = credits <= lowCreditThreshold;
-  const bestValuePack = getBestValuePack();
+  // Si pas de crédits du nouveau système, utiliser les props (fallback)
+  const credits = monthlyRemaining || propCredits || 0;
+  const isLowCredits = credits <= 20; // Seuil fixe temporaire
+  
+  // Stats temporaires pour ne pas casser l'interface
+  const stats = {
+    currentBalance: credits,
+    totalPurchased: 0,
+    totalSpent: 0,
+    thisMonthSpent: 0
+  };
+  // Packs temporaires (à remplacer par la vraie logique d'achat plus tard)
+  const creditPacks = [
+    { id: 'basic', name: 'Pack Basic', credits: 100, price: 10, bonus: 0, popular: false, description: 'Pack de base' }
+  ];
+  const bestValuePack = creditPacks[0];
 
   const handlePurchaseCredits = async (pack) => {
     try {
-      const totalCredits = pack.credits + pack.bonus;
-      await addCredits(
-        totalCredits,
-        `Achat de crédits - ${pack.name}`,
-        'stripe'
-      );
+      // TODO: Implémenter la vraie logique d'achat avec le nouveau système
+      console.log('Achat de crédits à implémenter:', pack);
       setShowPurchaseModal(false);
     } catch (error) {
       console.error('Erreur lors de l\'achat:', error);
     }
   };
+
+  const getPackValue = (pack) => (pack.price / (pack.credits + pack.bonus)).toFixed(3);
 
   return (
     <TooltipProvider>

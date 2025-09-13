@@ -34,11 +34,11 @@ export default {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
-				background: 'hsl(var(--background))',
-				foreground: 'hsl(var(--foreground))',
+				background: '#F4F4F1', // Nouvelle couleur de fond
+				foreground: '#151515', // Nouvelle couleur de texte
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					DEFAULT: '#FF592C', // Nouvelle couleur primaire (boutons)
+					foreground: '#FFFFFF' // Texte blanc pour les boutons
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -61,10 +61,15 @@ export default {
 					foreground: 'hsl(var(--popover-foreground))'
 				},
 				card: {
-					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))'
+					DEFAULT: '#FFFFFF', // Nouvelle couleur de fond des cartes
+					foreground: '#151515' // Nouvelle couleur de titre de cartes
 				},
 				aurentia: {
+					'orange-aurentia': '#FF592C',
+					'orange-light-1': '#FFF4F0', // HSL(15, 100%, 95%)
+					'orange-light-2': '#FFE8E0', // HSL(15, 100%, 90%)
+					'orange-light-3': '#FFDCD0', // HSL(15, 100%, 85%)
+					'orange-light-4': '#FFC4B0', // HSL(15, 100%, 75%)
 					pink: '#EF4A6D',
 					orange: '#F67B47',
 					yellow: '#E9C46A',
@@ -83,7 +88,8 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-				poppins: ['Poppins', 'sans-serif'],
+				inter: ['Inter Display', 'sans-serif'],
+				'biz-ud-mincho': ['BIZ UDPMincho', 'sans-serif'],
 			},
 			keyframes: {
 				'accordion-down': {
@@ -128,9 +134,9 @@ export default {
 				spin: 'spin 1s linear infinite' // Added spin animation
 			},
 			backgroundImage: {
-				'gradient-primary': 'linear-gradient(90deg, #EF4A6D, #F67B47)',
-				'gradient-concept': 'linear-gradient(90deg, #EF4A6D, #F67B47)',
-				'gradient-recommendations': 'linear-gradient(90deg, #9C27B0, #E91E63)',
+				'gradient-primary': 'linear-gradient(90deg, #FF592C, #FF592C)',
+				'gradient-concept': 'linear-gradient(90deg, #FF592C, #FF592C)',
+				'gradient-recommendations': 'linear-gradient(90deg, #FF592C, #FF592C)',
 			}
 		}
 	},
