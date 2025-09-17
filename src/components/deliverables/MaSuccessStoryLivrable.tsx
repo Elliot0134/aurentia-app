@@ -113,7 +113,7 @@ const MaSuccessStoryLivrable: React.FC = () => {
     <>
       {/* Livrable Template Part */}
       <div
-        className="border border-gray-200 rounded-lg p-4 mb-4 bg-white text-black transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-full"
+        className="border border-gray-200 rounded-xl p-4 mb-4 bg-white text-black cursor-pointer flex justify-between h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
         onClick={handleTemplateClick}
       >
         <div className="flex-grow flex flex-col"> {/* Container for text content */}

@@ -85,7 +85,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={onToggleHistoryMobile}
-                className="text-gray-500 hover:text-gray-700 p-2 sm:hidden"
+                className="text-gray-500 hover:text-white p-2 sm:hidden"
               >
                 <History size={16} />
               </Button>
@@ -96,7 +96,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               variant="ghost"
               size="sm"
               onClick={onNewChat}
-              className="text-gray-500 hover:text-gray-700 px-2 sm:px-3"
+              className="text-gray-500 hover:text-white px-2 sm:px-3"
             >
               <Plus size={16} className="mr-0 sm:mr-1" />
               <span className="hidden sm:inline text-sm">Nouveau</span>
@@ -109,7 +109,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onRenameConversation}
-                  className="text-gray-500 hover:text-gray-700 p-2"
+                  className="text-gray-500 hover:text-white p-2"
                 >
                   <Pencil size={14} />
                 </Button>
@@ -117,7 +117,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onDeleteConversation}
-                  className="text-gray-500 hover:text-red-600 p-2"
+                  className="text-gray-500 hover:text-white p-2"
                 >
                   <Trash2 size={14} />
                 </Button>

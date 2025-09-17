@@ -31,6 +31,8 @@ const deliverableIcons: { [key: string]: string } = {
   "Retranscription du concept": "/icones-livrables/retranscription-icon.png",
   "Mini SWOT": "/icones-livrables/market-icon.png",
   "Vision, Mission & Valeurs": "/icones-livrables/vision-icon.png", // Correction du nom pour correspondre à useFreeDeliverableProgress
+  "Cadre juridique": "/icones-livrables/juridique-icon.png", // Ajout du livrable Cadre juridique
+  "Note globale": "/icones-livrables/score-icon.png", // Ajout du livrable Note globale avec la bonne icône
   // Ajoutez d'autres livrables ici si nécessaire
 };
 

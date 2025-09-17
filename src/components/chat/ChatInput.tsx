@@ -104,8 +104,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 {/* Style de communication */}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 bg-gray-100 border border-transparent hover:border-gray-700">
-                      <PenTool className="h-5 w-5 text-gray-600" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 bg-gray-100 border border-transparent hover:border-transparent hover:text-white">
+                      <PenTool className="h-5 w-5" />
                       <span className="sr-only">Select communication style</span>
                     </Button>
                   </PopoverTrigger>
@@ -134,8 +134,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   disabled={deliverableNames.length === 0}
                   className="w-auto"
                   trigger={
-                    <Button variant="ghost" size="icon" className="h-9 w-9 bg-gray-100 border border-transparent hover:border-gray-700">
-                      <FileText className="h-5 w-5 text-gray-600" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 bg-gray-100 border border-transparent hover:border-transparent hover:text-white">
+                      <FileText className="h-5 w-5" />
                       <span className="sr-only">Select deliverables</span>
                     </Button>
                   }
@@ -163,8 +163,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   placeholder="Sélectionner les modes..."
                   className="w-auto"
                   trigger={
-                    <Button variant="ghost" size="icon" className="h-9 w-9 bg-gray-100 border border-transparent hover:border-gray-700">
-                      <Plus className="h-5 w-5 text-gray-600" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 bg-gray-100 border border-transparent hover:border-transparent hover:text-white">
+                      <Plus className="h-5 w-5" />
                       <span className="sr-only">Select search modes</span>
                     </Button>
                   }
@@ -179,12 +179,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   disabled={isInputEmpty || isLoading || isSubmitting}
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 bg-gray-100 border border-transparent hover:border-gray-700"
+                  className="h-9 w-9 bg-gray-100 border border-transparent hover:border-transparent hover:text-white"
                 >
                   {isLoading || isSubmitting ? (
-                    <Loader2 className="h-5 w-5 text-gray-600 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <Sparkles className="h-5 w-5 text-gray-600" />
+                    <Sparkles className="h-5 w-5" />
                   )}
                   <span className="sr-only">Reformuler la question</span>
                 </Button>

@@ -162,47 +162,6 @@ const MiniSwotLivrable: React.FC = () => {
     </>
   );
 
-  // Fonction utilitaire pour formater le texte avec des sauts de ligne et du gras
-  const formatText = (text: string | null | undefined) => {
-    if (!text) return null;
-    
-    // Convertir le texte en éléments React avec mise en forme
-    const formatLine = (line: string) => {
-      // Expression régulière pour trouver le texte en gras (entouré de ** ou __)
-      const boldRegex = /(\*\*|__)(.*?)\1/g;
-      const parts = [];
-      let lastIndex = 0;
-      let match;
-      
-      while ((match = boldRegex.exec(line)) !== null) {
-        // Ajouter le texte avant le gras
-        if (match.index > lastIndex) {
-          parts.push(line.substring(lastIndex, match.index));
-        }
-        
-        // Ajouter le texte en gras
-        parts.push(<strong key={`${line}-${match.index}`}>{match[2]}</strong>);
-        lastIndex = match.index + match[0].length;
-      }
-      
-      // Ajouter le reste du texte après le dernier élément en gras
-      if (lastIndex < line.length) {
-        parts.push(line.substring(lastIndex));
-      }
-      
-      return parts;
-    };
-    
-    // Convertir les sauts de ligne en balises <br />
-    const lines = text.split('\n');
-    return lines.map((line, index) => (
-      <React.Fragment key={index}>
-        {index > 0 && <br />}
-        {formatLine(line)}
-      </React.Fragment>
-    ));
-  };
-
   return (
     <>
       {/* Utilisation de la carte harmonisée */}
@@ -219,9 +178,9 @@ const MiniSwotLivrable: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={title}
-        iconSrc="/icones-livrables/market-icon.png"
+        iconComponent={<img src="/icones-livrables/market-icon.png" alt="Mini SWOT Icon" className="w-full h-full object-contain" />}
         contentComponent={swotContent}
-        recommendations={formatText(swotData?.recommandations)}
+        recommendations={swotData?.recommandations} // Passer directement la chaîne de caractères
         definition={definition}
         importance={importance}
         showContentTab={true}

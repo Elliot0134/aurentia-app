@@ -8,6 +8,7 @@ export interface FreeDeliverableStatus {
   status: string | null;
   icon: string;
   color: string;
+  status_score_viabilite?: string | null; // Ajout du statut du score de viabilité
 }
 
 export const useFreeDeliverableProgress = (projectId: string | undefined, isActive: boolean = true) => {
@@ -51,6 +52,20 @@ export const useFreeDeliverableProgress = (projectId: string | undefined, isActi
       name: 'Vision, Mission & Valeurs',
       icon: '/icones-livrables/vision-icon.png',
       color: '#f39c12'
+    },
+    {
+      key: 'juridique',
+      id: 'statut_juridique',
+      name: 'Cadre juridique',
+      icon: '/icones-livrables/juridique-icon.png',
+      color: '#8e44ad' // Couleur arbitraire, peut être ajustée
+    },
+    {
+      key: 'note_globale',
+      id: 'status_score_viabilite',
+      name: 'Note globale',
+      icon: '/icones-livrables/score-icon.png', // Icône mise à jour
+      color: '#FFD700' // Couleur arbitraire
     }
   ];
 
@@ -68,7 +83,7 @@ export const useFreeDeliverableProgress = (projectId: string | undefined, isActi
       
       const { data, error } = await supabase
         .from('project_summary')
-        .select('statut_persona_express, statut_mini_swot, statut_success_story, statut_pitch, statut_vision_mission_valeurs')
+        .select('statut_persona_express, statut_mini_swot, statut_success_story, statut_pitch, statut_vision_mission_valeurs, statut_juridique, status_score_viabilite')
         .eq('project_id', projectId)
         .single();
 
@@ -84,7 +99,9 @@ export const useFreeDeliverableProgress = (projectId: string | undefined, isActi
         
         const updatedDeliverables = deliverablesConfig.map(config => ({
           ...config,
-          status: data[config.id as keyof typeof data] || null
+          status: (data[config.id as keyof typeof data] !== null && data[config.id as keyof typeof data] !== undefined)
+                    ? String(data[config.id as keyof typeof data])
+                    : null
         }));
         
         console.log('📋 [FREE DELIVERABLES] Livrables mis à jour:', updatedDeliverables);

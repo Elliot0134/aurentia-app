@@ -19,9 +19,9 @@ const HarmonizedDeliverableCard: React.FC<HarmonizedDeliverableCardProps> = ({
 }) => {
   return (
     <div
-      className={`border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-full ${className}`}
+      className={`border border-gray-200 rounded-xl p-4 mb-4 text-white cursor-pointer flex justify-between h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${className}`}
       onClick={onClick}
-      style={{ borderColor: '#e2e8f0', backgroundColor: 'white' }}
+      style={{ backgroundColor: 'white' }}
     >
       <div className="flex-grow flex flex-col">
         <h2 className="text-xl font-bold mb-2 text-black">{title}</h2>

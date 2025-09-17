@@ -26,7 +26,9 @@ const DeliverableProgressContainer: React.FC<DeliverableProgressContainerProps> 
     }
   };
 
-  const statusDisplay = getStatusDisplay(deliverable.status);
+  // Utiliser le statut juridique si le livrable est "juridique"
+  const currentStatus = deliverable.key === 'juridique' ? deliverable.statut_juridique : deliverable.status;
+  const statusDisplay = getStatusDisplay(currentStatus);
 
   // Mapping des icônes vers les images
   const getIconImage = (key: string) => {
@@ -35,7 +37,8 @@ const DeliverableProgressContainer: React.FC<DeliverableProgressContainerProps> 
       'pestel': '/icones-livrables/market-icon.png',
       'proposition_valeur': '/icones-livrables/proposition-valeur-icon.png',
       'business_model': '/icones-livrables/business-model-icon.png',
-      'ressources': '/icones-livrables/ressources-icon.png'
+      'ressources': '/icones-livrables/ressources-icon.png',
+      'juridique': '/icones-livrables/juridique-icon.png' // Ajout de l'icône juridique
     };
     return iconMap[key] || '/icones-livrables/market-icon.png';
   };

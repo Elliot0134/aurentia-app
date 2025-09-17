@@ -31,6 +31,7 @@ import ComingSoonDialog from "@/components/ui/ComingSoonDialog"; // Import Comin
 import { useStripePayment } from "@/hooks/useStripePayment";
 import { useProject } from "@/contexts/ProjectContext";
 import { useDeliverableProgress } from "@/hooks/useDeliverableProgress"; // Import the new hook
+import ProjectScoreCards from "@/components/project/ProjectScoreCards"; // Import ProjectScoreCards
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
@@ -38,6 +39,7 @@ const ProjectBusiness = () => {
   const [selectedPersonaExpress, setSelectedPersonaExpress] = useState<'Particulier' | 'Entreprise' | 'Organismes'>('Particulier');
   const [loading, setLoading] = useState(true); // Set loading to true initially
   const [project, setProject] = useState<{ nom_projet?: string; description_projet?: string } | null>(null); // State for project data
+  const [userSubscriptionStatus, setUserSubscriptionStatus] = useState<string | null>(null); // New state for user subscription status
 
   useEffect(() => {
     if (!projectId) {
@@ -47,6 +49,8 @@ const ProjectBusiness = () => {
   const [projectStatus, setProjectStatus] = useState<string | null>(null); // State for project status
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
+  const [isGenerateDeliverablesConfirmOpen, setIsGenerateDeliverablesConfirmOpen] = useState(false); // New state for confirmation popup
+  const [showCoffeeBreakPopup, setShowCoffeeBreakPopup] = useState(false); // New state to control "Pause café" popup
   
   // États pour le popup d'invitation
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -56,11 +60,11 @@ const ProjectBusiness = () => {
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false); // State for ComingSoonDialog
   
   // Stripe payment hook
-  const { isLoading: isPaymentLoading, paymentStatus, isWaitingSubscription, isWaitingDeliverables, initiateSubscription, cancelSubscription } = useStripePayment();
+  const { isLoading: isPaymentLoading, paymentStatus, isWaitingSubscription, isWaitingDeliverables, initiateSubscription, cancelSubscription, generatePremiumDeliverables } = useStripePayment();
   const { userProjects } = useProject();
   
   // Deliverable progress hook - actif seulement pendant l'attente des livrables
-  const { deliverables, isLoading: isDeliverablesLoading, error: deliverablesError } = useDeliverableProgress(projectId, isWaitingDeliverables || paymentStatus === 'processing');
+  const { deliverables, isLoading: isDeliverablesLoading, error: deliverablesError } = useDeliverableProgress(projectId, isWaitingDeliverables || paymentStatus === 'processing' || showCoffeeBreakPopup);
 
   // Définir les livrables de niveau 2 avec leurs clés pour les icônes
   const level2Deliverables = [
@@ -96,7 +100,46 @@ const ProjectBusiness = () => {
     setPopupContent(null);
   };
 
+  const handleGenerateDeliverables = async () => {
+    setIsGenerateDeliverablesConfirmOpen(false);
+    if (!projectId) {
+      toast({
+        title: "Erreur",
+        description: "ID du projet manquant",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Call the generatePremiumDeliverables function from the useStripePayment hook
+      // This function already handles calling the webhook and starting the deliverables polling
+      // which will eventually lead to redirection.
+      await generatePremiumDeliverables(projectId);
+
+      // The showCoffeeBreakPopup state is now controlled by the useStripePayment hook's internal logic
+      // related to isWaitingDeliverables. So, we don't need to set it explicitly here.
+      // The Dialog open condition already includes isWaitingDeliverables.
+      // However, to ensure the popup shows immediately, we can still set showCoffeeBreakPopup to true.
+      // This will make the Dialog open, and then useStripePayment will take over the polling.
+      setShowCoffeeBreakPopup(true);
+
+    } catch (error) {
+      console.error("Error calling generatePremiumDeliverables:", error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la génération des livrables.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleUnlockClick = () => {
+    if (userSubscriptionStatus === 'active') {
+      setIsGenerateDeliverablesConfirmOpen(true);
+      return;
+    }
+
     const commonDeliverables = [
       "Analyse concurrentielle",
       <>Analyse du marché <span className="text-gray-500 italic text-lg">(PESTEL)</span></>,
@@ -250,6 +293,28 @@ const ProjectBusiness = () => {
     fetchProject();
   }, [projectId]); // Refetch when projectId changes
 
+  // Fetch user's subscription status
+  useEffect(() => {
+    const fetchUserSubscriptionStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('subscription_status')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching user subscription status:", error);
+        } else {
+          setUserSubscriptionStatus(data?.subscription_status || null);
+        }
+      }
+    };
+
+    fetchUserSubscriptionStatus();
+  }, []);
+
   // Refetch project status when waiting for payment
   useEffect(() => {
     if (!projectId || !isWaitingSubscription) return;
@@ -338,6 +403,22 @@ const ProjectBusiness = () => {
     };
   }, [projectId]);
 
+  // Effect to close the coffee break popup when deliverables are completed
+  useEffect(() => {
+    const handleDeliverablesCompletedForCoffeeBreak = (event: CustomEvent) => {
+      const { projectId: completedProjectId } = event.detail;
+      if (completedProjectId === projectId) {
+        setShowCoffeeBreakPopup(false);
+      }
+    };
+
+    window.addEventListener('deliverablesCompleted', handleDeliverablesCompletedForCoffeeBreak as EventListener);
+    
+    return () => {
+      window.removeEventListener('deliverablesCompleted', handleDeliverablesCompletedForCoffeeBreak as EventListener);
+    };
+  }, [projectId]);
+
   if (loading) {
     return <div>Chargement...</div>; // Or a loading spinner component
   }
@@ -396,6 +477,9 @@ const ProjectBusiness = () => {
             </Button>
           </div>
         </div>
+
+        {/* Project Score Cards */}
+        <ProjectScoreCards className="mb-8" /> {/* Ajout de la classe mb-8 pour la marge */}
 
         {/* Retranscription du concept Deliverable */}
         <div className="col-span-full">
@@ -509,7 +593,7 @@ const ProjectBusiness = () => {
       </div>
 
       {/* Payment Loading Dialog */}
-      <Dialog open={isPaymentLoading || isWaitingSubscription || isWaitingDeliverables} onOpenChange={() => {}}>
+      <Dialog open={isPaymentLoading || isWaitingSubscription || isWaitingDeliverables || showCoffeeBreakPopup} onOpenChange={() => {}}>
         <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
           <DialogHeader>
             <DialogTitle className="text-2xl">
@@ -527,12 +611,14 @@ const ProjectBusiness = () => {
           {!isWaitingSubscription && (
             <div className="mt-6 space-y-3">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
-              {level2Deliverables.map((deliverable) => ( // Utiliser level2Deliverables ici
-                <DeliverableProgressContainer
-                  key={deliverable.key}
-                  deliverable={deliverable}
-                />
-              ))}
+              {deliverables
+                .filter(deliverable => deliverable.key !== 'juridique') // Exclure le livrable juridique
+                .map((deliverable) => (
+                  <DeliverableProgressContainer
+                    key={deliverable.key}
+                    deliverable={deliverable}
+                  />
+                ))}
             </div>
           )}
           
@@ -555,6 +641,26 @@ const ProjectBusiness = () => {
               </Button>
             </DialogFooter>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Deliverables Confirmation Dialog */}
+      <Dialog open={isGenerateDeliverablesConfirmOpen} onOpenChange={setIsGenerateDeliverablesConfirmOpen}>
+        <DialogContent className="w-[95vw] max-w-[400px] rounded-lg sm:w-full">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center">Générer les livrables ?</DialogTitle>
+            <DialogDescription className="text-center">
+              Êtes-vous sûr de vouloir générer les livrables premium pour ce projet ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-center gap-4">
+            <Button variant="outline" onClick={() => setIsGenerateDeliverablesConfirmOpen(false)} className="flex-1">
+              Non
+            </Button>
+            <Button onClick={handleGenerateDeliverables} className="flex-1 bg-gradient-primary hover:opacity-90">
+              Oui
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

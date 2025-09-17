@@ -8,6 +8,7 @@ export interface DeliverableStatus {
   status: string | null;
   icon: string;
   color: string;
+  statut_juridique?: string | null; // Ajout du statut juridique
 }
 
 export const useDeliverableProgress = (projectId: string | undefined, isActive: boolean = true) => {
@@ -51,6 +52,13 @@ export const useDeliverableProgress = (projectId: string | undefined, isActive: 
       name: 'Analyse des ressources',
       icon: '/icones-livrables/ressources-icon.png',
       color: '#f39c12'
+    },
+    {
+      key: 'juridique',
+      id: 'statut_juridique',
+      name: 'Cadre juridique',
+      icon: '/icones-livrables/juridique-icon.png',
+      color: '#8e44ad' // Couleur arbitraire, peut être ajustée
     }
   ];
 
@@ -61,7 +69,7 @@ export const useDeliverableProgress = (projectId: string | undefined, isActive: 
       setIsLoading(true);
       const { data, error } = await supabase
         .from('project_summary')
-        .select('statut_concurrence, statut_pestel, statut_proposition_valeur, statut_business_model, statut_ressources')
+        .select('statut_concurrence, statut_pestel, statut_proposition_valeur, statut_business_model, statut_ressources, statut_juridique')
         .eq('project_id', projectId)
         .single();
 
@@ -71,6 +79,7 @@ export const useDeliverableProgress = (projectId: string | undefined, isActive: 
       }
 
       if (data) {
+        console.log('Fetched deliverable statuses from Supabase:', data); // Add this log
         const updatedDeliverables = deliverablesConfig.map(config => ({
           ...config,
           status: data[config.id as keyof typeof data] || null

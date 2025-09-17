@@ -328,7 +328,7 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
     <>
       {/* Livrable Template Part */}
       <div
-        className="border rounded-lg p-4 mb-4 text-white transition-transform duration-200 hover:-translate-y-1 cursor-pointer flex justify-between h-full"
+        className="border border-gray-200 rounded-xl p-4 mb-4 text-white cursor-pointer flex justify-between h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
         onClick={handleTemplateClick}
         style={{ borderColor: '#e2e8f0', backgroundColor: 'white' }}
       >

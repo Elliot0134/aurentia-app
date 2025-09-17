@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { formatRecommendations } from '@/utils/textFormatter';
 
 interface HarmonizedDeliverableModalProps {
   isOpen: boolean;
@@ -198,24 +199,15 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
             )}
 
             {activeTab === 'recommendations' && (
-              <>
+              <div className="prose max-w-none">
                 {recommendations ? (
-                  <div className="space-y-2">
-                    {String(recommendations).split('\n').map((line, index, array) => (
-                      line.trim() !== '' && (
-                        <React.Fragment key={index}>
-                          <p className="text-gray-700 text-[16px]">
-                            <span dangerouslySetInnerHTML={{ __html: line.trim().replace(/^(\d+\))/, '<strong>$1</strong>') }} />
-                          </p>
-                          {index < array.length - 1 && line.trim() !== '' && array[index + 1].trim() !== '' && <Separator className="my-4" />}
-                        </React.Fragment>
-                      )
-                    ))}
+                  <div style={{ whiteSpace: 'pre-wrap' }}>
+                    <ReactMarkdown>{formatRecommendations(String(recommendations))}</ReactMarkdown>
                   </div>
                 ) : (
                   <p className="text-gray-500">Aucune recommandation disponible pour le moment.</p>
                 )}
-              </>
+              </div>
             )}
 
             {activeTab === 'definition' && (

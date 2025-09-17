@@ -1943,6 +1943,50 @@ export type Database = {
           },
         ]
       }
+      score_projet: {
+        Row: {
+          project_id: string;
+          score_final: number;
+          analyse_juridique: Json;
+          marche_concurrence: Json;
+          faisabilite_business: Json;
+          innovation_risques: Json;
+          evaluation_finale: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          project_id: string;
+          score_final?: number;
+          analyse_juridique?: Json;
+          marche_concurrence?: Json;
+          faisabilite_business?: Json;
+          innovation_risques?: Json;
+          evaluation_finale?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          project_id?: string;
+          score_final?: number;
+          analyse_juridique?: Json;
+          marche_concurrence?: Json;
+          faisabilite_business?: Json;
+          innovation_risques?: Json;
+          evaluation_finale?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "score_projet_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: true;
+            referencedRelation: "project_summary";
+            referencedColumns: ["project_id"];
+          },
+        ];
+      };
     }
     Views: {
       [_ in never]: never

@@ -118,6 +118,23 @@ const PersonaExpressLivrable: React.FC = () => {
 
   // Prépare les recommandations générales pour l'onglet "Recommandations"
   // Fonction utilitaire pour formater le texte avec des sauts de ligne et du gras
+  const getGeneralRecommendations = (): string => {
+    let recommendationsContent = personaData?.recommandations;
+    if (Array.isArray(recommendationsContent)) {
+      // Si c'est un tableau, itérer sur les éléments et les convertir en chaîne
+      return recommendationsContent.map(item => {
+        if (typeof item === 'object' && item !== null) {
+          // Tenter d'extraire une propriété 'text' ou 'value', sinon stringify
+          return item.text || item.value || JSON.stringify(item);
+        }
+        return String(item);
+      }).join('\n\n'); // Joindre avec des doubles sauts de ligne pour le Markdown
+    }
+    return recommendationsContent || '';
+  };
+
+  // Fonction utilitaire pour formater le texte avec des sauts de ligne et du gras
+  // Cette fonction ne sera plus utilisée pour les recommandations générales, mais peut rester pour d'autres usages
   const formatText = (text: string | null | undefined) => {
     if (!text) return null;
     
@@ -156,10 +173,6 @@ const PersonaExpressLivrable: React.FC = () => {
         {formatLine(line)}
       </React.Fragment>
     ));
-  };
-
-  const getGeneralRecommendations = () => {
-    return formatText(personaData?.recommandations) || ''; // Utilise formatText pour mettre en gras les textes entre "**"
   };
 
   // Contenu spécifique de PersonaExpress avec le sélecteur
@@ -432,7 +445,7 @@ const PersonaExpressLivrable: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={title}
-        iconSrc="/icones-livrables/persona-icon.png"
+        iconComponent={<img src="/icones-livrables/persona-icon.png" alt="Persona Icon" className="w-full h-full object-contain" />}
         contentComponent={personaContent}
         recommendations={getGeneralRecommendations()} // Utilisation de la nouvelle fonction
         definition={definition}
