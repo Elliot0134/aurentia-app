@@ -50,7 +50,7 @@ const ToolTemplatePage = () => {
   };
 
   const handleBackClick = () => {
-    navigate('/template');
+    navigate('/individual/template/tool-template');
   };
 
   const handleToggleFavorite = () => {

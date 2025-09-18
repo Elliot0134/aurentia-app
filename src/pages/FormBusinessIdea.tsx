@@ -335,7 +335,7 @@ const Form = () => {
         const projectId = webhookData?.project_id;
 
         if (userId && projectId) {
-          navigate(`/project-business/${projectId}`);
+          navigate(`/individual/project-business/${projectId}`);
         } else {
           console.error('user_id or project_id not found in webhook response.');
           alert('Erreur lors du traitement de la réponse du formulaire.');

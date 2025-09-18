@@ -62,7 +62,7 @@ const TemplatePage = () => {
   };
 
   const handleCardClick = (cardId: number) => {
-    navigate(`/template/tool-template`);
+    navigate(`/individual/template/tool-template`);
   };
 
   const toggleFavorite = (cardId: number) => {
