@@ -213,10 +213,10 @@ const CreditBalance = ({ credits: propCredits }) => {
                         <Button
                           className="w-full"
                           onClick={() => handlePurchaseCredits(pack)}
-                          disabled={loading}
+                          disabled={isLoading}
                           variant={pack.popular ? "default" : "outline"}
                         >
-                          {loading ? "Traitement..." : "Acheter maintenant"}
+                          {isLoading ? "Traitement..." : "Acheter maintenant"}
                         </Button>
                       </div>
                     </CardContent>
