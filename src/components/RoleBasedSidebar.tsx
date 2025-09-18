@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { UserProfile } from '@/types/userTypes';
-import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AurentiaLogo from './AurentiaLogo';
@@ -84,7 +84,14 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
             { name: "Projets", path: "/admin/projects", icon: <FileText size={20} /> },
             { name: "Codes d'invitation", path: "/admin/invitations", icon: <Code size={20} /> },
             { name: "Analytics", path: "/admin/analytics", icon: <BarChart3 size={20} /> },
-            { name: "Paramètres", path: "/admin/settings", icon: <Settings size={20} /> }
+            { name: "Formulaires", path: "/admin/forms", icon: <FormInput size={20} /> },
+            { name: "Événements", path: "/admin/evenements", icon: <Calendar size={20} /> },
+            { name: "Mentors", path: "/admin/mentors", icon: <GraduationCap size={20} /> },
+            { name: "Partenaires", path: "/admin/partenaires", icon: <Handshake size={20} /> },
+            { name: "Livrables", path: "/admin/livrables", icon: <FileText size={20} /> },
+            { name: "Chatbot", path: "/admin/chatbot", icon: <Bot size={20} /> },
+            { name: "Paramètres", path: "/admin/settings", icon: <Settings size={20} /> },
+            { name: "Profil", path: "/admin/profile", icon: <UserCheck size={20} /> }
           ],
           branding: {
             name: userProfile.organization?.name || "Mon Incubateur",

@@ -86,8 +86,8 @@ const TemplatePage = () => {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
-      <div className="max-w-6xl mx-auto">
+    <div className="mx-auto py-8 min-h-screen animate-fade-in">
+      <div className="w-[80vw] md:w-11/12 mx-auto px-4">
         {/* En-tête avec titre, sous-titre et boutons */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

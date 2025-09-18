@@ -30,6 +30,18 @@ import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
 import IncubatorSpace from "./pages/member/IncubatorSpace";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import Entrepreneurs from "./pages/admin/Entrepreneurs"; // Import the new Entrepreneurs component
+import Projects from "./pages/admin/Projects"; // Import the new Projects component
+import Invitations from "./pages/admin/Invitations"; // Import the new Invitations component
+import Analytics from "./pages/admin/Analytics"; // Import the new Analytics component
+import Forms from "./pages/admin/Forms"; // Import the new Forms component
+import Settings from "./pages/admin/Settings"; // Import the new Settings component
+import Evenements from "./pages/admin/Evenements"; // Import the new Evenements component
+import Mentors from "./pages/admin/Mentors"; // Import the new Mentors component
+import AdminPartenaires from "./pages/admin/Partenaires"; // Import the new Partenaires component
+import Livrables from "./pages/admin/Livrables"; // Import the new Livrables component
+import Chatbot from "./pages/admin/Chatbot"; // Import the new Chatbot component
+import AdminProfile from "./pages/admin/Profile"; // Import the new Profile component for admin
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import RoleSelection from "./pages/RoleSelection";
 import { ProjectProvider } from "./contexts/ProjectContext";
@@ -211,11 +223,18 @@ const App = () => {
                     
                     {/* Admin incubateur */}
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                    <Route path="/admin/entrepreneurs" element={<div>Entrepreneurs - À créer</div>} />
-                    <Route path="/admin/projects" element={<div>Projets - À créer</div>} />
-                    <Route path="/admin/invitations" element={<div>Codes d'invitation - À créer</div>} />
-                    <Route path="/admin/analytics" element={<div>Analytics - À créer</div>} />
-                    <Route path="/admin/settings" element={<div>Paramètres Admin - À créer</div>} />
+                    <Route path="/admin/entrepreneurs" element={<Entrepreneurs />} />
+                    <Route path="/admin/projects" element={<Projects />} />
+                    <Route path="/admin/invitations" element={<Invitations />} />
+                    <Route path="/admin/analytics" element={<Analytics />} />
+                    <Route path="/admin/forms" element={<Forms />} />
+                    <Route path="/admin/settings" element={<Settings />} />
+                    <Route path="/admin/evenements" element={<Evenements />} />
+                    <Route path="/admin/mentors" element={<Mentors />} />
+                    <Route path="/admin/partenaires" element={<AdminPartenaires />} />
+                    <Route path="/admin/livrables" element={<Livrables />} />
+                    <Route path="/admin/chatbot" element={<Chatbot />} />
+                    <Route path="/admin/profile" element={<AdminProfile />} />
                     
                     {/* Super admin */}
                     <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
