@@ -1395,6 +1395,8 @@ export type Database = {
           nb_projects: string | null
           stripe_customer_id: string | null
           subscription_status: string | null
+          user_type: string | null
+          is_member: boolean | null
         }
         Insert: {
           abonnement?: string | null
@@ -1409,6 +1411,8 @@ export type Database = {
           nb_projects?: string | null
           stripe_customer_id?: string | null
           subscription_status?: string | null
+          user_type?: string | null
+          is_member?: boolean | null
         }
         Update: {
           abonnement?: string | null
@@ -1423,6 +1427,8 @@ export type Database = {
           nb_projects?: string | null
           stripe_customer_id?: string | null
           subscription_status?: string | null
+          user_type?: string | null
+          is_member?: boolean | null
         }
         Relationships: []
       }
