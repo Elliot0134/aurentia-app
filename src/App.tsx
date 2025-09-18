@@ -26,6 +26,24 @@ import ToolTemplatePage from "./pages/ToolTemplatePage"; // Import the new ToolT
 import ChatbotPage from "./pages/ChatbotPage";
 import PlanActionPage from "./pages/PlanActionPage"; // Import the new PlanActionPage component
 import ProtectedLayout from "./components/ProtectedLayout";
+import RoleBasedLayout from "./components/RoleBasedLayout";
+import RoleBasedRedirect from "./components/RoleBasedRedirect";
+import IncubatorSpace from "./pages/member/IncubatorSpace";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import Entrepreneurs from "./pages/admin/Entrepreneurs"; // Import the new Entrepreneurs component
+import Projects from "./pages/admin/Projects"; // Import the new Projects component
+import Invitations from "./pages/admin/Invitations"; // Import the new Invitations component
+import Analytics from "./pages/admin/Analytics"; // Import the new Analytics component
+import Forms from "./pages/admin/Forms"; // Import the new Forms component
+import Settings from "./pages/admin/Settings"; // Import the new Settings component
+import Evenements from "./pages/admin/Evenements"; // Import the new Evenements component
+import Mentors from "./pages/admin/Mentors"; // Import the new Mentors component
+import AdminPartenaires from "./pages/admin/Partenaires"; // Import the new Partenaires component
+import Livrables from "./pages/admin/Livrables"; // Import the new Livrables component
+import Chatbot from "./pages/admin/Chatbot"; // Import the new Chatbot component
+import AdminProfile from "./pages/admin/Profile"; // Import the new Profile component for admin
+import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
+import RoleSelection from "./pages/RoleSelection";
 import { ProjectProvider } from "./contexts/ProjectContext";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
@@ -129,7 +147,12 @@ const ProtectedRoute = () => {
   }
 
   console.log("Authenticated, rendering protected content");
-  return <Outlet />;
+  return (
+    <>
+      <RoleBasedRedirect />
+      <Outlet />
+    </>
+  );
 };
 
 
@@ -149,31 +172,88 @@ const App = () => {
                 <Route path="/beta" element={<Beta />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/role-selection" element={<RoleSelection />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
                 
-                {/* Protected routes with sidebar */}
+                {/* Protected routes with role-based redirection and layout */}
                 <Route element={<ProtectedRoute />}>
-                  <Route element={<ProtectedLayout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/automatisations" element={<Automatisations />} />
-                    <Route path="/knowledge" element={<Knowledge />} />
-                    <Route path="/project/:projectId" element={<Project />} />
-                    <Route path="/project-business/:projectId" element={<ProjectBusiness />} />
-                    <Route path="/project-business" element={<ProjectBusiness />} />
-                    <Route path="/warning" element={<WarningPage />} />
-                    <Route path="/form-business-idea" element={<FormBusinessIdea />} />
-                    <Route path="/outils" element={<Outils />} />
-                    <Route path="/partenaires" element={<Partenaires />} />
-                    <Route path="/ressources" element={<Ressources />} /> {/* New route for Ressources */}
-                    <Route path="/collaborateurs" element={<Collaborateurs />} /> {/* New route for Collaborateurs */}
-                    <Route path="/template" element={<TemplatePage />} /> {/* New route for TemplatePage */}
-                    <Route path="/template/tool-template" element={<ToolTemplatePage />} /> {/* New route for ToolTemplatePage */}
-                    <Route path="/plan-action" element={<PlanActionPage />} /> {/* New route for PlanActionPage */}
-                    <Route path="/roadmap/:id" element={<Roadmap />} />
-                    <Route path="/chatbot/:projectId" element={<ChatbotPage />} />
+                  <Route element={<RoleBasedLayout />}>
+                    
+                    {/* Individual (interface actuelle) */}
+                    <Route path="/individual/dashboard" element={<Dashboard />} />
+                    <Route path="/individual/profile" element={<Profile />} />
+                    <Route path="/individual/project-business/:projectId" element={<ProjectBusiness />} />
+                    <Route path="/individual/project-business" element={<ProjectBusiness />} />
+                    <Route path="/individual/chatbot/:projectId" element={<ChatbotPage />} />
+                    <Route path="/individual/outils" element={<Outils />} />
+                    <Route path="/individual/ressources" element={<Ressources />} />
+                    <Route path="/individual/collaborateurs" element={<Collaborateurs />} />
+                    <Route path="/individual/template" element={<TemplatePage />} />
+                    <Route path="/individual/template/tool-template" element={<ToolTemplatePage />} />
+                    <Route path="/individual/plan-action" element={<PlanActionPage />} />
+                    <Route path="/individual/roadmap/:id" element={<Roadmap />} />
+                    <Route path="/individual/project/:projectId" element={<Project />} />
+                    <Route path="/individual/form-business-idea" element={<FormBusinessIdea />} />
+                    <Route path="/individual/warning" element={<WarningPage />} />
+                    <Route path="/individual/automatisations" element={<Automatisations />} />
+                    <Route path="/individual/knowledge" element={<Knowledge />} />
+                    <Route path="/individual/partenaires" element={<Partenaires />} />
+                    
+                    {/* Member (même interface + espace incubateur) */}
+                    <Route path="/member/dashboard" element={<Dashboard />} />
+                    <Route path="/member/profile" element={<Profile />} />
+                    <Route path="/member/project-business/:projectId" element={<ProjectBusiness />} />
+                    <Route path="/member/project-business" element={<ProjectBusiness />} />
+                    <Route path="/member/chatbot/:projectId" element={<ChatbotPage />} />
+                    <Route path="/member/outils" element={<Outils />} />
+                    <Route path="/member/ressources" element={<Ressources />} />
+                    <Route path="/member/collaborateurs" element={<Collaborateurs />} />
+                    <Route path="/member/template" element={<TemplatePage />} />
+                    <Route path="/member/template/tool-template" element={<ToolTemplatePage />} />
+                    <Route path="/member/plan-action" element={<PlanActionPage />} />
+                    <Route path="/member/roadmap/:id" element={<Roadmap />} />
+                    <Route path="/member/project/:projectId" element={<Project />} />
+                    <Route path="/member/form-business-idea" element={<FormBusinessIdea />} />
+                    <Route path="/member/warning" element={<WarningPage />} />
+                    <Route path="/member/automatisations" element={<Automatisations />} />
+                    <Route path="/member/knowledge" element={<Knowledge />} />
+                    <Route path="/member/partenaires" element={<Partenaires />} />
+                    {/* Route spécifique member */}
+                    <Route path="/member/incubator" element={<IncubatorSpace />} />
+                    
+                    {/* Admin incubateur */}
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/admin/entrepreneurs" element={<Entrepreneurs />} />
+                    <Route path="/admin/projects" element={<Projects />} />
+                    <Route path="/admin/invitations" element={<Invitations />} />
+                    <Route path="/admin/analytics" element={<Analytics />} />
+                    <Route path="/admin/forms" element={<Forms />} />
+                    <Route path="/admin/settings" element={<Settings />} />
+                    <Route path="/admin/evenements" element={<Evenements />} />
+                    <Route path="/admin/mentors" element={<Mentors />} />
+                    <Route path="/admin/partenaires" element={<AdminPartenaires />} />
+                    <Route path="/admin/livrables" element={<Livrables />} />
+                    <Route path="/admin/chatbot" element={<Chatbot />} />
+                    <Route path="/admin/profile" element={<AdminProfile />} />
+                    
+                    {/* Super admin */}
+                    <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+                    <Route path="/super-admin/organizations" element={<div>Organisations - À créer</div>} />
+                    <Route path="/super-admin/users" element={<div>Utilisateurs - À créer</div>} />
+                    <Route path="/super-admin/analytics" element={<div>Analytics Global - À créer</div>} />
+                    <Route path="/super-admin/invitations" element={<div>Codes d'invitation - À créer</div>} />
+                    <Route path="/super-admin/settings" element={<div>Paramètres Super Admin - À créer</div>} />
+                    
                   </Route>
                 </Route>
+                
+                {/* Legacy routes - redirect to role-based paths */}
+                <Route path="/dashboard" element={<Navigate to="/individual/dashboard" replace />} />
+                <Route path="/profile" element={<Navigate to="/individual/profile" replace />} />
+                <Route path="/project-business" element={<Navigate to="/individual/project-business" replace />} />
+                <Route path="/outils" element={<Navigate to="/individual/outils" replace />} />
+                <Route path="/ressources" element={<Navigate to="/individual/ressources" replace />} />
+                <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
                 
                 <Route path="/" element={<Navigate to="/beta" replace />} />
                 <Route path="*" element={<NotFound />} />

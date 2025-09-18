@@ -119,7 +119,7 @@ const Dashboard = () => {
                   >
                     <div 
                       className="flex-1 cursor-pointer"
-                      onClick={() => navigate(`/project-business/${project.id}`)}
+                      onClick={() => navigate(`/individual/project-business/${project.id}`)}
                     >
                       <h3 className="font-medium text-sm">{project.title}</h3>
                     </div>
@@ -133,7 +133,7 @@ const Dashboard = () => {
                       </span>
                       <button 
                         className="ml-3 p-1.5 text-gray-500 hover:text-gray-700"
-                        onClick={() => navigate(`/project-business/${project.id}`)}
+                        onClick={() => navigate(`/individual/project-business/${project.id}`)}
                       >
                         <FileText size={16} />
                       </button>
