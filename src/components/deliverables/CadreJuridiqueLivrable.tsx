@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/accordion";
 import ReactMarkdown from 'react-markdown';
 import { createClient } from '@supabase/supabase-js';
+import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
+import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 
 // Initialiser Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -38,21 +40,12 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
   projectId,
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'structure' | 'definition' | 'recommendations'>(
-    'structure'
-  );
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [contentHeight, setContentHeight] = useState<number>(0);
-  const [modalHeight, setModalHeight] = useState<string>('auto');
   const [structureData, setStructureData] = useState<any>(null); // Données de la colonne 'structure'
   const [dbRecommendations, setDbRecommendations] = useState<string | null>(null); // Recommandations de la DB
   const [dbAvis, setDbAvis] = useState<string | null>(null); // Avis de la DB
   const [dbJustificationAvis, setDbJustificationAvis] = useState<string | null>(null); // Justification Avis de la DB
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const contentRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
 
   // Données statiques du livrable
   const staticDefinition = "Le cadre juridique d'une entreprise constitue l'architecture légale fondamentale qui détermine sa structure, son fonctionnement et ses obligations. Il englobe le choix de la forme juridique (SARL, SAS, etc.) qui définit les modalités de gouvernance, la répartition des pouvoirs, les responsabilités des dirigeants et associés, ainsi que le régime fiscal applicable.\n\nCette analyse comprend également l'identification et la maîtrise des risques juridiques spécifiques au secteur d'activité, incluant les obligations réglementaires, les certifications requises, les licences nécessaires et la conformité aux normes sectorielles. Elle intègre la mise en place de mesures préventives, la souscription d'assurances adaptées et la définition des protocoles de compliance.\n\nLe volet propriété intellectuelle constitue un pilier essentiel, couvrant la protection des marques, des brevets potentiels, des droits d'auteur et des secrets d'affaires. Il établit la stratégie de dépôt, de surveillance et de défense des actifs immatériels qui forment souvent la valeur différenciatrice de l'entreprise.";
@@ -99,91 +92,10 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
-    // Déterminer l'onglet actif initial en fonction des données disponibles
-    if (structureData) {
-      setActiveTab('structure');
-    } else if (dbRecommendations) {
-      setActiveTab('recommendations');
-    } else {
-      setActiveTab('definition');
-    }
   };
 
   const handlePopupClose = () => {
     setIsPopupOpen(false);
-  };
-
-  // Fonction pour mesurer la hauteur du contenu
-  const measureContentHeight = () => {
-    if (contentRef.current) {
-      const height = contentRef.current.scrollHeight;
-      setContentHeight(height);
-      return height;
-    }
-    return 0;
-  };
-
-  // UseLayoutEffect pour mesurer la hauteur initiale et surveiller les changements d'accordéons
-  useLayoutEffect(() => {
-    if (isPopupOpen && contentRef.current && modalRef.current) {
-      const contentHeight = contentRef.current.scrollHeight;
-      const headerHeight = modalRef.current.querySelector('.sticky')?.clientHeight || 100;
-      const tabsHeight = modalRef.current.querySelector('.border-b')?.clientHeight || 50;
-      const paddingHeight = 48; // p-6 pt-4 = 24+16 = 40px + petit margin
-      
-      const totalHeight = contentHeight + headerHeight + tabsHeight + paddingHeight;
-      setContentHeight(contentHeight);
-      setModalHeight(`${totalHeight}px`);
-
-      // Observer les changements de taille du contenu (accordéons qui s'ouvrent/ferment)
-      const resizeObserver = new ResizeObserver(() => {
-        if (contentRef.current && !isTransitioning && modalRef.current) {
-          const newContentHeight = contentRef.current.scrollHeight;
-          if (newContentHeight !== contentHeight) {
-            const newTotalHeight = newContentHeight + headerHeight + tabsHeight + paddingHeight;
-            setContentHeight(newContentHeight);
-            setModalHeight(`${newTotalHeight}px`);
-          }
-        }
-      });
-
-      resizeObserver.observe(contentRef.current);
-
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-  }, [isPopupOpen, activeTab, isTransitioning]);
-
-  const handleTabChange = (newTab: 'structure' | 'definition' | 'recommendations') => {
-    if (newTab === activeTab || isTransitioning) return;
-    
-    setIsTransitioning(true);
-    
-    // Phase 1: Flou du contenu actuel (plus rapide)
-    setTimeout(() => {
-      // Change le contenu
-      setActiveTab(newTab);
-      
-      // Phase 2: Mesure la nouvelle hauteur et anime vers celle-ci
-      setTimeout(() => {
-        if (contentRef.current && modalRef.current) {
-          const newContentHeight = contentRef.current.scrollHeight;
-          const headerHeight = modalRef.current.querySelector('.sticky')?.clientHeight || 100;
-          const tabsHeight = modalRef.current.querySelector('.border-b')?.clientHeight || 50;
-          const paddingHeight = 48;
-          
-          const newTotalHeight = newContentHeight + headerHeight + tabsHeight + paddingHeight;
-          setContentHeight(newContentHeight);
-          setModalHeight(`${newTotalHeight}px`);
-        }
-        
-        // Phase 3: Retire le flou (plus rapide)
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 60);
-      }, 30);
-    }, 100);
   };
 
   // Fonction pour rendre les listes (arrays)

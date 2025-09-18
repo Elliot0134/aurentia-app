@@ -1,9 +1,11 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatRecommendations } from '@/utils/textFormatter';
+import DeliverableModalHeader from './DeliverableModalHeader';
+import { useAdvancedModalTabs, TabType } from './useAdvancedModalTabs';
 
 interface HarmonizedDeliverableModalProps {
   isOpen: boolean;
@@ -34,85 +36,26 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
   children,
   modalWidthClass = "md:w-3/4", // Valeur par défaut
 }) => {
-  const [activeTab, setActiveTab] = useState<'structure' | 'definition' | 'recommendations' | 'chat'>(
-    showContentTab ? 'structure' : (recommendations ? 'recommendations' : (definition ? 'definition' : (importance ? 'definition' : (chatComponent ? 'chat' : 'structure'))))
-  );
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [contentHeight, setContentHeight] = useState<number>(0);
-  const [modalHeight, setModalHeight] = useState<string>('auto');
-  
-  const contentRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // UseLayoutEffect pour mesurer la hauteur initiale et surveiller les changements
-  useLayoutEffect(() => {
-    if (isOpen && contentRef.current && modalRef.current) {
-      const contentHeight = contentRef.current.scrollHeight;
-      const headerHeight = modalRef.current.querySelector('.sticky')?.clientHeight || 100;
-      const tabsHeight = modalRef.current.querySelector('.border-b')?.clientHeight || 50;
-      const paddingHeight = 48; // p-6 pt-4 = 24+16 = 40px + petit margin
-      
-      const totalHeight = contentHeight + headerHeight + tabsHeight + paddingHeight;
-      setContentHeight(contentHeight);
-      setModalHeight(`${totalHeight}px`);
-
-      // Observer les changements de taille du contenu
-      const resizeObserver = new ResizeObserver(() => {
-        if (contentRef.current && !isTransitioning && modalRef.current) {
-          const newContentHeight = contentRef.current.scrollHeight;
-          if (newContentHeight !== contentHeight) {
-            const newTotalHeight = newContentHeight + headerHeight + tabsHeight + paddingHeight;
-            setContentHeight(newContentHeight);
-            setModalHeight(`${newTotalHeight}px`);
-          }
-        }
-      });
-
-      resizeObserver.observe(contentRef.current);
-
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-  }, [isOpen, activeTab, isTransitioning]);
-
-  const handleTabChange = (newTab: 'structure' | 'definition' | 'recommendations' | 'chat') => {
-    if (newTab === activeTab || isTransitioning) return;
-    
-    setIsTransitioning(true);
-    
-    // Phase 1: Flou du contenu actuel (plus rapide)
-    setTimeout(() => {
-      // Change le contenu
-      setActiveTab(newTab);
-      
-      // Phase 2: Mesure la nouvelle hauteur et anime vers celle-ci
-      setTimeout(() => {
-        if (contentRef.current && modalRef.current) {
-          const newContentHeight = contentRef.current.scrollHeight;
-          const headerHeight = modalRef.current.querySelector('.sticky')?.clientHeight || 100;
-          const tabsHeight = modalRef.current.querySelector('.border-b')?.clientHeight || 50;
-          const paddingHeight = 48;
-          
-          const newTotalHeight = newContentHeight + headerHeight + tabsHeight + paddingHeight;
-          setContentHeight(newContentHeight);
-          setModalHeight(`${newTotalHeight}px`);
-        }
-        
-        // Phase 3: Retire le flou (plus rapide)
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 60);
-      }, 30);
-    }, 100);
-  };
+  // Utilisation du nouveau hook pour gérer les onglets
+  const {
+    activeTab,
+    isTransitioning,
+    modalHeight,
+    contentRef,
+    modalRef,
+    handleTabChange,
+    resetTab
+  } = useAdvancedModalTabs({
+    hasContent: showContentTab,
+    hasDefinition: !!definition,
+    hasRecommendations: !!recommendations,
+    hasChat: !!chatComponent,
+    defaultTab: showContentTab ? 'structure' : (recommendations ? 'recommendations' : (definition ? 'definition' : (chatComponent ? 'chat' : 'structure')))
+  });
 
   const handleModalClose = () => {
     onClose();
-    // Reset des états lors de la fermeture
-    setActiveTab(showContentTab ? 'structure' : (recommendations ? 'recommendations' : (definition ? 'definition' : (chatComponent ? 'chat' : 'structure'))));
-    setIsTransitioning(false);
-    setModalHeight('auto');
+    resetTab();
   };
 
   if (!isOpen) return null;
@@ -130,21 +73,12 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
           transition: 'height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s ease-out'
         }}
       >
-        {/* Sticky Header */}
-        <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-          <div className="flex flex-col sm:flex-row sm:items-center"> {/* Ajout de flex-col pour mobile et sm:flex-row pour desktop */}
-            {iconComponent && <div className="w-8 h-8 flex items-center justify-center mb-2 sm:mb-0 sm:mr-3">{iconComponent}</div>} {/* Ajout de mb-2 pour mobile et sm:mb-0 sm:mr-3 pour desktop */}
-            <h2 className="text-xl font-bold">{title}</h2>
-          </div>
-          <button
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-            onClick={handleModalClose}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        {/* Header */}
+        <DeliverableModalHeader
+          title={title}
+          iconComponent={iconComponent}
+          onClose={handleModalClose}
+        />
         
         {/* Tab Navigation */}
         <div className="flex bg-white border-b border-gray-100">
