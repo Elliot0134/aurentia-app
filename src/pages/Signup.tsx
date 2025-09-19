@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { validateInvitationCode, useInvitationCode } from "@/services/invitationService";
 import { InvitationValidationResult } from "@/types/userTypes";
+import { emailConfirmationService } from "@/services/emailConfirmationService";
+import { EmailConfirmationModal } from "@/components/auth/EmailConfirmationModal";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +19,8 @@ const Signup = () => {
   const [invitationCode, setInvitationCode] = useState("");
   const [codeValidation, setCodeValidation] = useState<InvitationValidationResult | null>(null);
   const [selectedRole, setSelectedRole] = useState<'individual' | 'admin' | null>(null);
+  const [showEmailConfirmationModal, setShowEmailConfirmationModal] = useState(false);
+  const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleCodeValidation = async () => {
@@ -33,7 +37,7 @@ const Signup = () => {
       if (validation.valid) {
         toast({
           title: "Code valide !",
-          description: `Vous rejoindrez ${validation.organization?.name || 'Aurentia'}`,
+          description: `Vous rejoindrez ${validation.organization?.name || 'Aurentia'} !`,
         });
       } else {
         toast({
@@ -67,7 +71,21 @@ const Signup = () => {
       return;
     }
 
+    console.log("handleSubmit: Début du processus d'inscription.");
     try {
+      if (password !== confirmPassword) {
+        console.log("handleSubmit: Mots de passe ne correspondent pas.");
+        toast({
+          title: "Erreur d'inscription",
+          description: "Les mots de passe ne correspondent pas.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log("handleSubmit: Appel à supabase.auth.signUp...");
+      // Étape 1: Créer le compte utilisateur
       const { error, data } = await supabase.auth.signUp({
         email,
         password,
@@ -77,36 +95,48 @@ const Signup = () => {
             last_name: lastName,
             phone_number: phoneNumber,
           },
+          // Désactiver la confirmation automatique de Supabase
+          emailRedirectTo: undefined,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("handleSubmit: Erreur lors de supabase.auth.signUp:", error);
+        throw error;
+      }
+      console.log("handleSubmit: supabase.auth.signUp réussi. Data:", data);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = data.user; // Utiliser directement l'utilisateur retourné par signUp
+
       if (user) {
-        // Si code d'invitation fourni, l'utiliser
+        console.log("handleSubmit: Utilisateur créé. ID:", user.id);
+        // Étape 2: Configurer le rôle utilisateur
+        let userRole: string | null = null;
+        
         if (invitationCode && codeValidation?.valid) {
+          console.log("handleSubmit: Gestion du code d'invitation...");
           // Cas avec code d'invitation
           try {
             await useInvitationCode(invitationCode, user.id);
+            userRole = codeValidation.role;
+            
             toast({
-              title: "Inscription réussie",
+              title: "Inscription réussie !",
               description: `Bienvenue dans ${codeValidation.organization?.name || 'Aurentia'} !`,
             });
-            // Rediriger vers le dashboard approprié selon le rôle
-            const roleBasePath = `/${codeValidation.role}/dashboard`;
-            navigate(roleBasePath);
-            return;
+            console.log("handleSubmit: Code d'invitation utilisé avec succès. Rôle:", userRole);
           } catch (invitationError: any) {
-            console.error("Erreur lors de l'utilisation du code:", invitationError);
+            console.error("handleSubmit: Erreur lors de l'utilisation du code:", invitationError);
             toast({
               title: "Erreur de code",
               description: invitationError.message || "Une erreur s'est produite lors de l'utilisation du code.",
               variant: "destructive",
             });
+            // Continuer malgré l'erreur pour permettre la confirmation d'email
           }
         } else if (selectedRole) {
-          // Cas avec sélection de rôle manuelle (sans code d'invitation)
+          console.log("handleSubmit: Gestion de la sélection de rôle manuelle...");
+          // Cas avec sélection de rôle manuelle
           try {
             const { error: updateError } = await supabase
               .from('profiles' as any)
@@ -114,44 +144,121 @@ const Signup = () => {
               .eq('id', user.id);
 
             if (updateError) {
-              throw new Error("Erreur lors de l'attribution du rôle");
+              console.warn("handleSubmit: Erreur lors de l'attribution du rôle:", updateError);
+              // Ne pas faire échouer l'inscription pour ça
+            } else {
+              userRole = selectedRole;
             }
-
+            
             toast({
-              title: "Inscription réussie",
+              title: "Inscription réussie !",
               description: `Bienvenue ! Vous êtes maintenant configuré en tant que ${selectedRole === 'individual' ? 'entrepreneur' : 'structure d\'accompagnement'}.`,
             });
-            
-            // Rediriger vers le dashboard approprié
-            const roleBasePath = `/${selectedRole}/dashboard`;
-            navigate(roleBasePath);
-            return;
+            console.log("handleSubmit: Rôle attribué avec succès. Rôle:", userRole);
           } catch (roleError: any) {
-            console.error("Erreur lors de l'attribution du rôle:", roleError);
+            console.warn("handleSubmit: Erreur lors de l'attribution du rôle:", roleError);
+            // Ne pas faire échouer l'inscription pour ça
+          }
+        }
+
+        console.log("handleSubmit: Appel à emailConfirmationService.sendConfirmationEmail...");
+        // Étape 3: Envoyer l'email de confirmation
+        try {
+          const confirmationResult = await emailConfirmationService.sendConfirmationEmail({
+            email,
+            userId: user.id,
+            isResend: false
+          });
+          console.log("handleSubmit: Résultat de sendConfirmationEmail:", confirmationResult);
+
+          // Toujours afficher le modal après l'inscription, que l'email ait été envoyé avec succès ou non
+          setRegisteredUserId(user.id);
+          setShowEmailConfirmationModal(true);
+
+          if (confirmationResult.success) {
+            console.log("handleSubmit: Email de confirmation envoyé avec succès. Affichage du modal.");
             toast({
-              title: "Erreur de rôle",
-              description: roleError.message || "Une erreur s'est produite lors de l'attribution du rôle.",
+              title: "Email de confirmation envoyé !",
+              description: "Vérifiez votre boîte de réception pour activer votre compte.",
+            });
+          } else {
+            console.log("handleSubmit: Email de confirmation non envoyé (success: false). Affichage du modal.");
+            toast({
+              title: "Inscription réussie",
+              description: confirmationResult.error || "Erreur d'envoi de l'email de confirmation. Veuillez vérifier votre boîte de réception ou demander un nouveau lien.",
               variant: "destructive",
             });
           }
-        }
-      }
+        } catch (emailError: any) {
+          console.error("handleSubmit: Erreur lors de l'envoi de l'email de confirmation:", emailError);
+          
+          // Inscription réussie mais email échoué, afficher le modal
+          setRegisteredUserId(user.id);
+          setShowEmailConfirmationModal(true);
 
-      // Fallback - inscription basique sans rôle spécifique
-      toast({
-        title: "Inscription réussie",
-        description: "Veuillez vérifier votre email pour confirmer votre compte.",
-      });
-      navigate("/individual/dashboard");
+          toast({
+            title: "Inscription réussie",
+            description: emailError.message || "Erreur d'envoi de l'email. Veuillez vérifier votre boîte de réception ou demander un nouveau lien.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        console.error("handleSubmit: data.user est null après supabase.auth.signUp réussi. Ceci est inattendu.");
+        // Si data.user est null, c'est une erreur inattendue après un signUp réussi.
+        // On affiche un toast d'erreur et on ne tente pas d'afficher le modal car il n'y a pas d'ID utilisateur valide.
+        toast({
+          title: "Erreur d'inscription",
+          description: "Un problème inattendu est survenu. Veuillez réessayer.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
+      console.error("handleSubmit: Erreur globale d'inscription:", error);
       toast({
         title: "Erreur d'inscription",
         description: error.message || "Une erreur s'est produite lors de l'inscription",
         variant: "destructive",
       });
     } finally {
+      console.log("handleSubmit: Fin du processus d'inscription. Loading:", false);
       setLoading(false);
     }
+  };
+
+  // Handler pour la confirmation d'email réussie
+  const handleEmailConfirmed = () => {
+    setShowEmailConfirmationModal(false);
+    
+    toast({
+      title: "Email confirmé !",
+      description: "Votre compte est maintenant actif. Redirection vers votre dashboard...",
+    });
+    
+    // Déterminer la redirection selon le rôle
+    let roleBasePath = "/individual/dashboard";
+    
+    if (invitationCode && codeValidation?.valid) {
+      roleBasePath = `/${codeValidation.role}/dashboard`;
+    } else if (selectedRole) {
+      roleBasePath = `/${selectedRole}/dashboard`;
+    }
+    
+    // Redirection avec un délai pour laisser le temps au toast
+    setTimeout(() => {
+      navigate(roleBasePath);
+    }, 1500);
+  };
+
+  // Handler pour fermer le modal (manuel)
+  const handleCloseEmailModal = () => {
+    setShowEmailConfirmationModal(false);
+    
+    // Proposer à l'utilisateur de continuer sans confirmation ou attendre
+    toast({
+      title: "Email de confirmation en attente",
+      description: "Veuillez confirmer votre email pour accéder à votre tableau de bord.",
+    });
+    // Ne pas rediriger, l'utilisateur reste sur la page d'inscription avec le modal fermé.
   };
 
   const handleGoogleSignIn = async () => {
@@ -519,6 +626,17 @@ const Signup = () => {
             </div>
           </form>
         </div>
+      )}
+
+      {/* Modal de confirmation d'email */}
+      {showEmailConfirmationModal && registeredUserId && (
+        <EmailConfirmationModal
+          isOpen={showEmailConfirmationModal}
+          onClose={handleCloseEmailModal}
+          email={email}
+          userId={registeredUserId}
+          onConfirmed={handleEmailConfirmed}
+        />
       )}
     </div>
   );

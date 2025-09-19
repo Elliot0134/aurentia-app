@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Edit2, Save, X } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
+import { User } from '@supabase/supabase-js';
+import { EmailConfirmationSection } from '@/components/auth/EmailConfirmationSection';
 
 interface ProfileData {
   id: string;
@@ -30,6 +32,7 @@ const Profile = () => {
     updated_at: ""
   });
   
+  const [authUser, setAuthUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editableFields, setEditableFields] = useState({
     full_name: "",
@@ -43,6 +46,9 @@ const Profile = () => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Stocker l'utilisateur auth pour la confirmation d'email
+        setAuthUser(session.user);
+        
         // In a real application, you would fetch the full user profile from your database
         // Fetch first_name from user_metadata
         const firstName = session.user.user_metadata?.first_name || "";
@@ -69,6 +75,17 @@ const Profile = () => {
     };
 
     fetchUser();
+
+    // Écouter les changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setAuthUser(session.user);
+      } else {
+        setAuthUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleEdit = () => {
@@ -145,8 +162,8 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold">Profil Utilisateur</h1>
           {!isEditing ? (
             <Button onClick={handleEdit} variant="outline" className="flex items-center gap-2">
@@ -155,16 +172,16 @@ const Profile = () => {
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button 
-                onClick={handleSave} 
+              <Button
+                onClick={handleSave}
                 disabled={isLoading}
                 className="flex items-center gap-2"
               >
                 <Save size={16} />
                 {isLoading ? "Sauvegarde..." : "Sauvegarder"}
               </Button>
-              <Button 
-                onClick={handleCancel} 
+              <Button
+                onClick={handleCancel}
                 variant="outline"
                 className="flex items-center gap-2"
               >
@@ -174,6 +191,11 @@ const Profile = () => {
             </div>
           )}
         </div>
+
+        {/* Section de confirmation d'email */}
+        {authUser && (
+          <EmailConfirmationSection user={authUser} />
+        )}
         
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-6">Informations du profil</h2>

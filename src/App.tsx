@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ConfirmEmail from "./pages/ConfirmEmail";
 import UpdatePassword from "./pages/UpdatePassword";
 import Beta from "./pages/Beta";
 import Dashboard from "./pages/Dashboard";
@@ -42,6 +43,7 @@ import AdminPartenaires from "./pages/admin/Partenaires"; // Import the new Part
 import Livrables from "./pages/admin/Livrables"; // Import the new Livrables component
 import Chatbot from "./pages/admin/Chatbot"; // Import the new Chatbot component
 import AdminProfile from "./pages/admin/Profile"; // Import the new Profile component for admin
+import EmailConfirmationsAdmin from "./pages/admin/EmailConfirmations"; // Import the new EmailConfirmations component
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import RoleSelection from "./pages/RoleSelection";
 import { ProjectProvider } from "./contexts/ProjectContext";
@@ -172,6 +174,7 @@ const App = () => {
                 <Route path="/beta" element={<Beta />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
                 <Route path="/role-selection" element={<RoleSelection />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
                 
@@ -234,6 +237,7 @@ const App = () => {
                     <Route path="/admin/partenaires" element={<AdminPartenaires />} />
                     <Route path="/admin/livrables" element={<Livrables />} />
                     <Route path="/admin/chatbot" element={<Chatbot />} />
+                    <Route path="/admin/email-confirmations" element={<EmailConfirmationsAdmin />} />
                     <Route path="/admin/profile" element={<AdminProfile />} />
                     
                     {/* Super admin */}

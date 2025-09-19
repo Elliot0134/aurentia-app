@@ -1,14 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import RoleBasedSidebar from './RoleBasedSidebar';
 import { Outlet } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { EmailConfirmationGuard } from './auth/EmailConfirmationGuard';
 
 const RoleBasedLayout = () => {
   const { userProfile, loading } = useUserRole();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  // Récupérer l'utilisateur actuel pour la confirmation d'email
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+      } catch (error) {
+        console.error('Erreur récupération utilisateur:', error);
+        setUser(null);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    getUser();
+
+    // Écouter les changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Chargement...</div>
@@ -28,7 +57,13 @@ const RoleBasedLayout = () => {
         "md:ml-0", // Mobile: no margin
         isCollapsed ? "md:ml-20" : "md:ml-64" // Desktop: adjust for sidebar
       )}>
-        <Outlet />
+        {user ? (
+          <EmailConfirmationGuard user={user} fallbackMode="banner">
+            <Outlet />
+          </EmailConfirmationGuard>
+        ) : (
+          <Outlet />
+        )}
       </main>
     </div>
   );
