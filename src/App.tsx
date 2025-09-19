@@ -187,6 +187,7 @@ const App = () => {
                     <Route path="/individual/profile" element={<Profile />} />
                     <Route path="/individual/project-business/:projectId" element={<ProjectBusiness />} />
                     <Route path="/individual/project-business" element={<ProjectBusiness />} />
+                    <Route path="/individual/chatbot" element={<ChatbotPage />} />
                     <Route path="/individual/chatbot/:projectId" element={<ChatbotPage />} />
                     <Route path="/individual/outils" element={<Outils />} />
                     <Route path="/individual/ressources" element={<Ressources />} />

@@ -24,11 +24,14 @@ import ActionPlanClassification from "@/components/actionplan/ActionPlanClassifi
 import ActionPlanLivrables from "@/components/actionplan/ActionPlanLivrables";
 import ActionPlanHierarchy from "@/components/actionplan/ActionPlanHierarchy";
 import ActionPlanModal from "@/components/actionplan/ActionPlanModal";
+import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
+import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 
 const PlanActionPage = () => {
   const navigate = useNavigate();
   const { projectId: urlProjectId } = useParams();
-  const { currentProjectId, userProjects } = useProject();
+  const { currentProjectId, userProjects, userProjectsLoading } = useProject(); // Add userProjectsLoading
+  const { userRole } = useUserRole(); // Get user role
   const activeProjectId = currentProjectId || urlProjectId || (userProjects.length > 0 ? userProjects[0].project_id : null);
 
   const [statusActionPlan, setStatusActionPlan] = useState<string | null>(null);
@@ -215,7 +218,7 @@ const PlanActionPage = () => {
       }));
       
       // Mise à jour en base de données en arrière-plan
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .schema('action_plan')
         .from('taches')
         .update({
@@ -488,6 +491,28 @@ const PlanActionPage = () => {
     }
   };
 
+  // Afficher le popup "Que l'aventure commence !" si aucun projet n'est sélectionné
+  if (userProjectsLoading) {
+    return <div>Chargement...</div>; // Ou un composant de chargement
+  }
+
+  if (!activeProjectId) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] animate-popup-appear">
+        <div className="container mx-auto px-4 py-8 text-center bg-white p-8 rounded-lg shadow-lg max-w-lg w-[90vw]">
+          <h2 className="text-3xl font-bold mb-4 text-gray-800">Que l'aventure commence !</h2>
+          <p className="text-gray-600 mb-6 text-lg">Créez un nouveau projet pour découvrir tout le potentiel de votre idée.</p>
+          <Button 
+            onClick={() => navigate(userRole === 'member' ? "/member/warning" : "/individual/warning")} 
+            className="mt-4 px-4 py-2 rounded-lg bg-gradient-primary hover:from-blue-600 hover:to-purple-700 text-white text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+          >
+            Créer un nouveau projet
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   useEffect(() => {
     const fetchStatusActionPlan = async () => {
       if (!activeProjectId) {
@@ -542,297 +567,299 @@ const PlanActionPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Plan d'action</h1>
-              <p className="text-gray-600 text-base">
-                Découvrez les étapes clés pour concrétiser votre projet.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="secondary" className="bg-white border border-gray-200 hover:bg-gray-50">
-                En savoir +
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Condition 1: Statut vide (null) */}
-        {statusActionPlan === null && (
-          <>
-            {!showForm && ( // Affiche le prompt initial si le formulaire n'est pas encore affiché
-              <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg p-6 text-center shadow-sm border border-gray-200">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">Générer un plan d'action</h2>
-                <p className="text-gray-600 text-base mb-6">
-                  Votre plan d'action n'a pas encore été généré. Cliquez sur le bouton ci-dessous pour commencer.
+    <ProjectRequiredGuard>
+      <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Plan d'action</h1>
+                <p className="text-gray-600 text-base">
+                  Découvrez les étapes clés pour concrétiser votre projet.
                 </p>
-                <Button
-                  style={{ backgroundColor: '#ff5932' }}
-                  className="hover:opacity-90 text-white px-8 py-4 text-lg"
-                  onClick={handleGeneratePlanClick}
-                >
-                  Générer le plan d'action
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="secondary" className="bg-white border border-gray-200 hover:bg-gray-50">
+                  En savoir +
                 </Button>
               </div>
-            )}
-            {showForm && ( // Affiche le questionnaire si showForm est true
-              <div className="min-h-screen bg-[#F8F6F1] flex flex-col md:justify-center py-10 container mx-auto px-4">
-                {/* Header */}
-                <div className="text-center">
-                  <h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-                    Questionnaire Plan d'Action
-                  </h1>
-                  <p className="text-gray-600 text-base mb-6">Répondez aux questions suivantes pour générer votre plan d'action personnalisé</p>
+            </div>
+          </div>
 
-                  {/* Progress Bar */}
-                  <div className="max-w-4xl mx-auto mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm font-medium text-gray-500">Étape {currentStep} sur {totalSteps}</span>
-                      <span className="text-sm font-medium text-gray-500">{Math.round((currentStep / totalSteps) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Form Content with Slide Animation */}
-                  <div className="max-w-4xl mx-auto">
-                    <div className="relative overflow-hidden min-h-[500px]">
-                      {isTransitioning ? (
-                        <>
-                          {/* Previous content sliding out */}
-                          <div 
-                            className={`absolute inset-0 ${
-                              slideDirection === 'next' ? 'animate-slide-out-left' : 'animate-slide-out-right'
-                            }`}
-                            style={{ willChange: 'transform' }}
-                          >
-                            <div className="p-4 md:p-6 text-left">
-                              {getStepContent(previousStep)}
-                            </div>
-                          </div>
-                          
-                          {/* New content sliding in */}
-                          <div 
-                            className={`absolute inset-0 ${
-                              slideDirection === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
-                            }`}
-                            style={{ willChange: 'transform' }}
-                          >
-                            <div className="p-4 md:p-6 text-left">
-                              {getStepContent()}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="p-4 md:p-6 text-left">
-                          {getStepContent()}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Navigation Buttons */}
-                    <div className="flex justify-between items-center mt-6 px-4 pb-[80px]">
-                      <button
-                        onClick={handlePrevious}
-                        disabled={currentStep === 1}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
-                          currentStep === 1
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                        }`}
-                      >
-                        <ChevronLeft size={18} />
-                        <span>Précédent</span>
-                      </button>
-
-                      {currentStep < totalSteps ? (
-                        <button
-                          onClick={handleNext}
-                          className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2 rounded-full font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                        >
-                          <span>Suivant</span>
-                          <ChevronRight size={18} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={handleSubmit}
-                          className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 rounded-full font-semibold hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                        >
-                          <span>Générer le plan d'action</span>
-                          <CheckCircle size={18} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+          {/* Condition 1: Statut vide (null) */}
+          {statusActionPlan === null && (
+            <>
+              {!showForm && ( // Affiche le prompt initial si le formulaire n'est pas encore affiché
+                <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg p-6 text-center shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Générer un plan d'action</h2>
+                  <p className="text-gray-600 text-base mb-6">
+                    Votre plan d'action n'a pas encore été généré. Cliquez sur le bouton ci-dessous pour commencer.
+                  </p>
+                  <Button
+                    style={{ backgroundColor: '#ff5932' }}
+                    className="hover:opacity-90 text-white px-8 py-4 text-lg"
+                    onClick={handleGeneratePlanClick}
+                  >
+                    Générer le plan d'action
+                  </Button>
                 </div>
+              )}
+              {showForm && ( // Affiche le questionnaire si showForm est true
+                <div className="min-h-screen bg-[#F8F6F1] flex flex-col md:justify-center py-10 container mx-auto px-4">
+                  {/* Header */}
+                  <div className="text-center">
+                    <h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                      Questionnaire Plan d'Action
+                    </h1>
+                    <p className="text-gray-600 text-base mb-6">Répondez aux questions suivantes pour générer votre plan d'action personnalisé</p>
 
-                {/* CSS for slide animations */}
-                <style>{`
-                  .animate-slide-out-left {
-                    animation: slide-out-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    animation-fill-mode: forwards;
-                  }
-                  
-                  .animate-slide-out-right {
-                    animation: slide-out-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    animation-fill-mode: forwards;
-                  }
-                  
-                  .animate-slide-in-left {
-                    animation: slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    animation-fill-mode: forwards;
-                  }
-                  
-                  .animate-slide-in-right {
-                    animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    animation-fill-mode: forwards;
-                  }
-                  
-                  @keyframes slide-out-left {
-                    0% {
-                      transform: translate3d(0, 0, 0);
-                      opacity: 1;
-                    }
-                    100% {
-                      transform: translate3d(-100%, 0, 0);
-                      opacity: 0;
-                    }
-                  }
-                  
-                  @keyframes slide-out-right {
-                    0% {
-                      transform: translate3d(0, 0, 0);
-                      opacity: 1;
-                    }
-                    100% {
-                      transform: translate3d(100%, 0, 0);
-                      opacity: 0;
-                    }
-                  }
-                  
-                  @keyframes slide-in-left {
-                    0% {
-                      transform: translate3d(-100%, 0, 0);
-                      opacity: 0;
-                    }
-                    100% {
-                      transform: translate3d(0, 0, 0);
-                      opacity: 1;
-                    }
-                  }
-                  
-                  @keyframes slide-in-right {
-                    0% {
-                      transform: translate3d(100%, 0, 0);
-                      opacity: 0;
-                    }
-                    100% {
-                      transform: translate3d(0, 0, 0);
-                      opacity: 1;
-                    }
-                  }
-                `}</style>
-              </div>
-            )}
-          </>
-        )}
+                    {/* Progress Bar */}
+                    <div className="max-w-4xl mx-auto mb-8">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium text-gray-500">Étape {currentStep} sur {totalSteps}</span>
+                        <span className="text-sm font-medium text-gray-500">{Math.round((currentStep / totalSteps) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500 ease-out"
+                          style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
 
-        {/* Dialog d'avertissement (peut rester en dehors des conditions principales) */}
-        <Dialog open={showWarning} onOpenChange={setShowWarning}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-semibold text-gray-800">Attention !</DialogTitle>
-              <DialogDescription className="text-gray-600">
-                Écrivez bien, répondez le plus possible aux questions. Au plus vous répondez aux questions, au plus vous écrivez, au plus précis sera le plan d'action et correspondra à vos attentes.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex justify-end space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowWarning(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                onClick={handleConfirmWarning}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                Continuer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        
-        {/* Condition 2: Statut "En cours" */}
-        {statusActionPlan === 'En cours' && (
-          <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg p-6 text-center shadow-sm border border-gray-200">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Création de votre plan d'action personnalisé en cours...</h2>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-          </div>
-        )}
-        
-        {/* Condition 3: Statut "Terminé" */}
-        {statusActionPlan === 'Terminé' && (
-          <div className="space-y-6">
-            {actionPlanLoading && (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                <span className="ml-3 text-gray-600">Chargement du plan d'action...</span>
-              </div>
-            )}
+                    {/* Form Content with Slide Animation */}
+                    <div className="max-w-4xl mx-auto">
+                      <div className="relative overflow-hidden min-h-[500px]">
+                        {isTransitioning ? (
+                          <>
+                            {/* Previous content sliding out */}
+                            <div 
+                              className={`absolute inset-0 ${
+                                slideDirection === 'next' ? 'animate-slide-out-left' : 'animate-slide-out-right'
+                              }`}
+                              style={{ willChange: 'transform' }}
+                            >
+                              <div className="p-4 md:p-6 text-left">
+                                {getStepContent(previousStep)}
+                              </div>
+                            </div>
+                            
+                            {/* New content sliding in */}
+                            <div 
+                              className={`absolute inset-0 ${
+                                slideDirection === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+                              }`}
+                              style={{ willChange: 'transform' }}
+                            >
+                              <div className="p-4 md:p-6 text-left">
+                                {getStepContent()}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="p-4 md:p-6 text-left">
+                            {getStepContent()}
+                          </div>
+                        )}
+                      </div>
 
-            {actionPlanError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800">Erreur lors du chargement : {actionPlanError}</p>
-              </div>
-            )}
+                      {/* Navigation Buttons */}
+                      <div className="flex justify-between items-center mt-6 px-4 pb-[80px]">
+                        <button
+                          onClick={handlePrevious}
+                          disabled={currentStep === 1}
+                          className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
+                            currentStep === 1
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                          }`}
+                        >
+                          <ChevronLeft size={18} />
+                          <span>Précédent</span>
+                        </button>
 
-            {!actionPlanLoading && !actionPlanError && mergedActionPlanData && (
-              <>
-                {/* Section 1: Classification du projet */}
-                <ActionPlanClassification
-                  userResponses={mergedActionPlanData.userResponses}
-                  classificationProjet={mergedActionPlanData.classificationProjet}
-                />
+                        {currentStep < totalSteps ? (
+                          <button
+                            onClick={handleNext}
+                            className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2 rounded-full font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                          >
+                            <span>Suivant</span>
+                            <ChevronRight size={18} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleSubmit}
+                            className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 rounded-full font-semibold hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                          >
+                            <span>Générer le plan d'action</span>
+                            <CheckCircle size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Section 2: Livrables */}
-                <ActionPlanLivrables
-                  livrables={mergedActionPlanData.livrables}
-                />
+                  {/* CSS for slide animations */}
+                  <style>{`
+                    .animate-slide-out-left {
+                      animation: slide-out-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                      animation-fill-mode: forwards;
+                    }
+                    
+                    .animate-slide-out-right {
+                      animation: slide-out-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                      animation-fill-mode: forwards;
+                    }
+                    
+                    .animate-slide-in-left {
+                      animation: slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                      animation-fill-mode: forwards;
+                    }
+                    
+                    .animate-slide-in-right {
+                      animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                      animation-fill-mode: forwards;
+                    }
+                    
+                    @keyframes slide-out-left {
+                      0% {
+                        transform: translate3d(0, 0, 0);
+                        opacity: 1;
+                      }
+                      100% {
+                        transform: translate3d(-100%, 0, 0);
+                        opacity: 0;
+                      }
+                    }
+                    
+                    @keyframes slide-out-right {
+                      0% {
+                        transform: translate3d(0, 0, 0);
+                        opacity: 1;
+                      }
+                      100% {
+                        transform: translate3d(100%, 0, 0);
+                        opacity: 0;
+                      }
+                    }
+                    
+                    @keyframes slide-in-left {
+                      0% {
+                        transform: translate3d(-100%, 0, 0);
+                        opacity: 0;
+                      }
+                      100% {
+                        transform: translate3d(0, 0, 0);
+                        opacity: 1;
+                      }
+                    }
+                    
+                    @keyframes slide-in-right {
+                      0% {
+                        transform: translate3d(100%, 0, 0);
+                        opacity: 0;
+                      }
+                      100% {
+                        transform: translate3d(0, 0, 0);
+                        opacity: 1;
+                      }
+                    }
+                  `}</style>
+                </div>
+              )}
+            </>
+          )}
 
-                {/* Section 3: Hiérarchie Phases → Jalons → Tâches */}
-                <ActionPlanHierarchy
-                  hierarchicalData={mergedActionPlanData.hierarchicalData}
-                  onElementClick={handleElementClick}
-                  onStatusChange={handleStatusChange}
-                />
+          {/* Dialog d'avertissement (peut rester en dehors des conditions principales) */}
+          <Dialog open={showWarning} onOpenChange={setShowWarning}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-semibold text-gray-800">Attention !</DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  Écrivez bien, répondez le plus possible aux questions. Au plus vous répondez aux questions, au plus vous écrivez, au plus précis sera le plan d'action et correspondra à vos attentes.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowWarning(false)}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={handleConfirmWarning}
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  Continuer
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Condition 2: Statut "En cours" */}
+          {statusActionPlan === 'En cours' && (
+            <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg p-6 text-center shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Création de votre plan d'action personnalisé en cours...</h2>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+            </div>
+          )}
+          
+          {/* Condition 3: Statut "Terminé" */}
+          {statusActionPlan === 'Terminé' && (
+            <div className="space-y-6">
+              {actionPlanLoading && (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                  <span className="ml-3 text-gray-600">Chargement du plan d'action...</span>
+                </div>
+              )}
 
-                {/* Modal de détails */}
-                <ActionPlanModal
-                  isOpen={isModalOpen}
-                  onClose={handleCloseModal}
-                  element={selectedElement}
-                />
-              </>
-            )}
-          </div>
-        )}
+              {actionPlanError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-800">Erreur lors du chargement : {actionPlanError}</p>
+                </div>
+              )}
 
-        {/* Ce bloc n'est plus nécessaire si les 3 conditions ci-dessus sont exhaustives */}
-        {/* {statusActionPlan && statusActionPlan !== 'En cours' && statusActionPlan !== 'Terminé' && !showForm && (
-          <div className="flex justify-center items-center h-64">
-            <p className="text-gray-600">Votre plan d'action est : {statusActionPlan}</p>
-          </div>
-        )} */}
+              {!actionPlanLoading && !actionPlanError && mergedActionPlanData && (
+                <>
+                  {/* Section 1: Classification du projet */}
+                  <ActionPlanClassification
+                    userResponses={mergedActionPlanData.userResponses}
+                    classificationProjet={mergedActionPlanData.classificationProjet}
+                  />
+
+                  {/* Section 2: Livrables */}
+                  <ActionPlanLivrables
+                    livrables={mergedActionPlanData.livrables}
+                  />
+
+                  {/* Section 3: Hiérarchie Phases → Jalons → Tâches */}
+                  <ActionPlanHierarchy
+                    hierarchicalData={mergedActionPlanData.hierarchicalData}
+                    onElementClick={handleElementClick}
+                    onStatusChange={handleStatusChange}
+                  />
+
+                  {/* Modal de détails */}
+                  <ActionPlanModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    element={selectedElement}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Ce bloc n'est plus nécessaire si les 3 conditions ci-dessus sont exhaustives */}
+          {/* {statusActionPlan && statusActionPlan !== 'En cours' && statusActionPlan !== 'Terminé' && !showForm && (
+            <div className="flex justify-center items-center h-64">
+              <p className="text-gray-600">Votre plan d'action est : {statusActionPlan}</p>
+            </div>
+          )} */}
+        </div>
       </div>
-    </div>
+    </ProjectRequiredGuard>
   );
 };
 

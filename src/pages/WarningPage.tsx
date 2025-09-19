@@ -1,16 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button'; // Garder le bouton Shadcn UI
 
 const WarningPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleProceed = () => {
-    navigate('/form-business-idea');
+    navigate('/individual/form-business-idea');
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-screen">
+    <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-screen animate-popup-appear">
       <div className="bg-white w-[95%] md:w-3/4 lg:w-2/3 p-6 rounded-lg shadow-md flex flex-col items-center text-center">
         <AlertTriangle size={48} className="text-aurentia-pink mb-4" />
         <h1 className="text-3xl font-bold mb-2">Regardez la vidéo avant de commencer</h1>
@@ -23,12 +24,12 @@ const WarningPage: React.FC = () => {
             className="absolute top-0 left-0 w-full h-full rounded-lg"
           ></iframe>
         </div>
-        <button
+        <Button
           onClick={handleProceed}
-          className="mt-4 px-4 py-2 rounded btn-primary text-base"
+          className="mt-4 px-4 py-2 rounded-lg bg-gradient-primary hover:from-blue-600 hover:to-purple-700 text-white text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
         >
           Continuer vers le formulaire
-        </button>
+        </Button>
       </div>
     </div>
   );

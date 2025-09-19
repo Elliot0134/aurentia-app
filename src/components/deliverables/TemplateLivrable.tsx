@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
+import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
+import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface StructureContent {
   title: string;
@@ -13,78 +21,76 @@ interface StructureSection {
 
 interface LivrableProps {
   title: string;
+  description: string;
   avis: string;
   justification_avis: string;
   structure: StructureSection[];
   iconSrc?: string;
   definition?: string;
   recommendations?: string;
+  importance?: string;
 }
 
 const TemplateLivrable: React.FC<LivrableProps> = ({
   title,
+  description,
   avis,
   justification_avis,
   structure,
   iconSrc = "/icones-livrables/market-icon.png",
   definition,
   recommendations,
+  importance,
 }) => {
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
+    hasContent: !!avis || !!justification_avis || (structure && structure.length > 0),
+    hasDefinition: !!definition,
+    hasRecommendations: !!recommendations,
+  });
 
-  const handleTemplateClick = () => {
-    setIsPopupOpen(true);
-  };
-
-  const handlePopupClose = () => {
-    setIsPopupOpen(false);
-  };
+  const modalContent = (
+    <div className="space-y-6">
+      {structure && structure.length > 0 && (
+        <Accordion type="single" collapsible className="w-full">
+          {structure.map((section, sectionIndex) => (
+            <AccordionItem value={`section-${sectionIndex}`} key={sectionIndex}>
+              <AccordionTrigger className="text-lg">{section.title}</AccordionTrigger>
+              <AccordionContent>
+                {section.items.map((item, itemIndex) => (
+                  <div key={itemIndex} className="bg-gray-50 rounded-md px-4 pb-4 pt-4 mb-4">
+                    <h5 className="font-medium text-gray-700 mb-2">{item.title}</h5>
+                    <p className="text-gray-600">{item.content}</p>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      )}
+    </div>
+  );
 
   return (
     <>
-      <div
-        className={`p-6 border rounded-lg shadow cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-indigo-300 bg-white hover:border-indigo-500`}
+      <HarmonizedDeliverableCard
+        title={title}
+        description={description}
+        avis={avis || 'Non généré'}
+        iconSrc={iconSrc}
         onClick={handleTemplateClick}
-      >
-        <img src={iconSrc} alt={`${title} icon`} className="mb-4 h-16 w-16 object-contain" />
-        <h3 className={`text-xl font-semibold mb-2 text-indigo-700`}>{title}</h3>
-        
-        {avis && (
-          <div className="mt-4">
-            <span className="inline-block px-3 py-1 text-sm font-medium text-green-800 bg-green-100 rounded-full">
-              ✅ Généré
-            </span>
-          </div>
-        )}
-      </div>
+      />
 
       <HarmonizedDeliverableModal
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
-        iconSrc={iconSrc}
         title={title}
+        iconComponent={<img src={iconSrc} alt={`${title} icon`} className="h-16 w-16 object-contain" />}
+        contentComponent={modalContent}
         definition={definition}
+        importance={importance}
         recommendations={recommendations}
-        hasContent={!!avis}
-        hasDefinition={!!definition}
-        structure={structure}
-      >
-        <div className="space-y-6">
-          {avis && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="text-lg font-semibold text-blue-800 mb-2">Avis Expert</h4>
-              <p className="text-blue-700">{avis}</p>
-            </div>
-          )}
-
-          {justification_avis && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <h4 className="text-lg font-semibold text-amber-800 mb-2">Justification</h4>
-              <p className="text-amber-700">{justification_avis}</p>
-            </div>
-          )}
-        </div>
-      </HarmonizedDeliverableModal>
+        showContentTab={true}
+      />
     </>
   );
 };

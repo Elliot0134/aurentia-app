@@ -286,7 +286,7 @@ const TemplatePage = () => {
                 {/* Informations de bas de carte */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <Zap className="h-4 w-4 text-yellow-500" />
+                    <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
                     <span className="text-sm font-medium">{card.credits}</span>
                   </div>
                   <div className="flex items-center gap-2">

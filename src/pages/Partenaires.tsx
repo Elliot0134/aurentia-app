@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import ComingSoonDialog from '@/components/ui/ComingSoonDialog';
 import {
   Dialog,
@@ -16,6 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { ArrowUp, Loader2, Search, Filter, Star, MapPin, Mail, Phone, Globe, Users, Award, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
+import { useProject } from '@/contexts/ProjectContext'; // Import useProject
+import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 
 interface Partner {
   id: number;
@@ -180,6 +184,8 @@ const mockPartners: Partner[] = [
 ];
 
 const Partenaires = () => {
+  const navigate = useNavigate(); // Initialize useNavigate
+  const { currentProjectId, userProjectsLoading } = useProject(); // Use userProjectsLoading
   const [showPopup, setShowPopup] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -292,184 +298,208 @@ const Partenaires = () => {
     setIsComingSoonOpen(true);
   }, []);
 
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Partenaires Aurentia</h1>
-          <p className="text-gray-600">Trouvez le partenaire idéal pour votre projet</p>
+  if (userProjectsLoading) {
+    return <div>Chargement...</div>; // Ou un composant de chargement
+  }
+
+  if (!currentProjectId) {
+    const { userRole } = useUserRole(); // Get user role
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] animate-popup-appear">
+        <div className="container mx-auto px-4 py-8 text-center bg-white p-8 rounded-lg shadow-lg max-w-lg w-[90vw]">
+          <h2 className="text-3xl font-bold mb-4 text-gray-800">Que l'aventure commence !</h2>
+          <p className="text-gray-600 mb-6 text-lg">Créez un nouveau projet pour découvrir tout le potentiel de votre idée.</p>
+          <Button 
+            onClick={() => navigate(userRole === 'member' ? "/member/warning" : "/individual/warning")} 
+            className="mt-4 px-4 py-2 rounded-lg bg-gradient-primary hover:from-blue-600 hover:to-purple-700 text-white text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+          >
+            Créer un nouveau projet
+          </Button>
         </div>
-        <Button 
-          onClick={() => setShowPopup(true)}
-          className="bg-gradient-primary hover:from-blue-600 hover:to-purple-700"
-        >
-          Devenir Partenaire
-        </Button>
       </div>
+    );
+  }
 
-      {/* Filtres */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtres et Recherche
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Barre de recherche */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Rechercher par nom, agence ou spécialité..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+  return (
+    <ProjectRequiredGuard>
+      <>
+        <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Partenaires Aurentia</h1>
+            <p className="text-gray-600">Trouvez le partenaire idéal pour votre projet</p>
           </div>
+          <Button 
+            onClick={() => setShowPopup(true)}
+            className="bg-gradient-primary hover:from-blue-600 hover:to-purple-700"
+          >
+            Devenir Partenaire
+          </Button>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Filtre par domaine */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Domaine</label>
-              <Select value={selectedDomain} onValueChange={setSelectedDomain}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous les domaines" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les domaines</SelectItem>
-                  {domains.map(domain => (
-                    <SelectItem key={domain} value={domain}>{domain}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Filtres */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtres et Recherche
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Barre de recherche */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Rechercher par nom, agence ou spécialité..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
 
-            {/* Filtre par disponibilité */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Disponibilité</label>
-              <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes</SelectItem>
-                  <SelectItem value="Disponible">Disponible</SelectItem>
-                  <SelectItem value="Partiellement disponible">Partiellement disponible</SelectItem>
-                  <SelectItem value="Occupé">Occupé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Filtre par domaine */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Domaine</label>
+                <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tous les domaines" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les domaines</SelectItem>
+                    {domains.map(domain => (
+                      <SelectItem key={domain} value={domain}>{domain}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Tri */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Trier par</label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rating">Note</SelectItem>
-                  <SelectItem value="price-low">Prix croissant</SelectItem>
-                  <SelectItem value="price-high">Prix décroissant</SelectItem>
-                  <SelectItem value="experience">Expérience</SelectItem>
-                  <SelectItem value="projects">Projets réalisés</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              {/* Filtre par disponibilité */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Disponibilité</label>
+                <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Toutes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes</SelectItem>
+                    <SelectItem value="Disponible">Disponible</SelectItem>
+                    <SelectItem value="Partiellement disponible">Partiellement disponible</SelectItem>
+                    <SelectItem value="Occupé">Occupé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Nombre de résultats */}
-            <div className="flex items-end">
-              <div className="text-sm text-gray-600">
-                {filteredAndSortedPartners.length} partenaire{filteredAndSortedPartners.length > 1 ? 's' : ''} trouvé{filteredAndSortedPartners.length > 1 ? 's' : ''}
+              {/* Tri */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trier par</label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rating">Note</SelectItem>
+                    <SelectItem value="price-low">Prix croissant</SelectItem>
+                    <SelectItem value="price-high">Prix décroissant</SelectItem>
+                    <SelectItem value="experience">Expérience</SelectItem>
+                    <SelectItem value="projects">Projets réalisés</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Nombre de résultats */}
+              <div className="flex items-end">
+                <div className="text-sm text-gray-600">
+                  {filteredAndSortedPartners.length} partenaire{filteredAndSortedPartners.length > 1 ? 's' : ''} trouvé{filteredAndSortedPartners.length > 1 ? 's' : ''}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Filtre de prix */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Fourchette de prix: {priceRange[0]}€ - {priceRange[1]}€
-            </label>
-            <Slider
-              value={priceRange}
-              onValueChange={setPriceRange}
-              max={5000}
-              min={0}
-              step={100}
-              className="w-full"
-            />
-          </div>
-        </CardContent>
-      </Card>
+            {/* Filtre de prix */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Fourchette de prix: {priceRange[0]}€ - {priceRange[1]}€
+              </label>
+              <Slider
+                value={priceRange}
+                onValueChange={setPriceRange}
+                max={5000}
+                min={0}
+                step={100}
+                className="w-full"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Grille des partenaires */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAndSortedPartners.map((partner) => (
-          <Card key={partner.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedPartner(partner)}>
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={partner.image}
-                    alt={partner.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                  <div>
-                    <CardTitle className="text-lg">{partner.name}</CardTitle>
-                    <CardDescription className="text-sm">{partner.agency}</CardDescription>
+        {/* Grille des partenaires */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredAndSortedPartners.map((partner) => (
+            <Card key={partner.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedPartner(partner)}>
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={partner.image}
+                      alt={partner.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div>
+                      <CardTitle className="text-lg">{partner.name}</CardTitle>
+                      <CardDescription className="text-sm">{partner.agency}</CardDescription>
+                    </div>
+                  </div>
+                  <Badge className={getAvailabilityColor(partner.availability)}>
+                    {partner.availability}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Badge variant="outline" className="mb-2">{partner.domain}</Badge>
+                  <p className="text-sm text-gray-600 line-clamp-2">{partner.description}</p>
+                </div>
+
+                <div className="flex flex-wrap gap-1">
+                  {partner.specialties.slice(0, 3).map((specialty) => (
+                    <Badge key={specialty} variant="secondary" className="text-xs">
+                      {specialty}
+                    </Badge>
+                  ))}
+                  {partner.specialties.length > 3 && (
+                    <Badge variant="secondary" className="text-xs">
+                      +{partner.specialties.length - 3}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium">{partner.rating}</span>
+                    <span className="text-gray-500">({partner.reviewCount})</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <MapPin className="h-4 w-4" />
+                    <span>{partner.location.split(',')[0]}</span>
                   </div>
                 </div>
-                <Badge className={getAvailabilityColor(partner.availability)}>
-                  {partner.availability}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Badge variant="outline" className="mb-2">{partner.domain}</Badge>
-                <p className="text-sm text-gray-600 line-clamp-2">{partner.description}</p>
-              </div>
 
-              <div className="flex flex-wrap gap-1">
-                {partner.specialties.slice(0, 3).map((specialty) => (
-                  <Badge key={specialty} variant="secondary" className="text-xs">
-                    {specialty}
-                  </Badge>
-                ))}
-                {partner.specialties.length > 3 && (
-                  <Badge variant="secondary" className="text-xs">
-                    +{partner.specialties.length - 3}
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-medium">{partner.rating}</span>
-                  <span className="text-gray-500">({partner.reviewCount})</span>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <span className="font-medium text-green-600">
+                      {partner.priceRange.min}€ - {partner.priceRange.max}€
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <Clock className="h-3 w-3" />
+                    <span>Répond {partner.responseTime}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-gray-500">
-                  <MapPin className="h-4 w-4" />
-                  <span>{partner.location.split(',')[0]}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <span className="font-medium text-green-600">
-                    {partner.priceRange.min}€ - {partner.priceRange.max}€
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <Clock className="h-3 w-3" />
-                  <span>Répond {partner.responseTime}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
         ))}
-      </div>
+        </div> {/* Balise de fermeture manquante pour la grille des partenaires */}
 
       {filteredAndSortedPartners.length === 0 && (
         <div className="text-center py-12">
@@ -719,7 +749,9 @@ const Partenaires = () => {
           </DialogHeader>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </>
+    </ProjectRequiredGuard>
   );
 };
 

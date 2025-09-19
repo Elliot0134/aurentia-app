@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import { createClient } from '@supabase/supabase-js';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
+import { useHarmonizedModal } from './shared/useHarmonizedModal'; // Import the new hook
 
 // Initialiser Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -27,6 +28,7 @@ interface StructureSection {
 
 interface LivrableProps {
   title: string;
+  description: string; // Ajout de la description
   iconSrc?: string; // Add iconSrc prop for the card image
   definition?: string; // Nouvelle prop pour la définition
   importance?: string; // Nouvelle prop pour l'importance
@@ -36,10 +38,10 @@ interface LivrableProps {
 
 const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
   title,
+  description, // Récupération de la description
   iconSrc = "/icones-livrables/juridique-icon.png", // Default icon for Cadre Juridique
   projectId,
 }) => {
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [structureData, setStructureData] = useState<any>(null); // Données de la colonne 'structure'
   const [dbRecommendations, setDbRecommendations] = useState<string | null>(null); // Recommandations de la DB
   const [dbAvis, setDbAvis] = useState<string | null>(null); // Avis de la DB
@@ -50,6 +52,13 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
   // Données statiques du livrable
   const staticDefinition = "Le cadre juridique d'une entreprise constitue l'architecture légale fondamentale qui détermine sa structure, son fonctionnement et ses obligations. Il englobe le choix de la forme juridique (SARL, SAS, etc.) qui définit les modalités de gouvernance, la répartition des pouvoirs, les responsabilités des dirigeants et associés, ainsi que le régime fiscal applicable.\n\nCette analyse comprend également l'identification et la maîtrise des risques juridiques spécifiques au secteur d'activité, incluant les obligations réglementaires, les certifications requises, les licences nécessaires et la conformité aux normes sectorielles. Elle intègre la mise en place de mesures préventives, la souscription d'assurances adaptées et la définition des protocoles de compliance.\n\nLe volet propriété intellectuelle constitue un pilier essentiel, couvrant la protection des marques, des brevets potentiels, des droits d'auteur et des secrets d'affaires. Il établit la stratégie de dépôt, de surveillance et de défense des actifs immatériels qui forment souvent la valeur différenciatrice de l'entreprise.";
   const staticImportance = "Le cadre juridique est le socle de sécurité et de crédibilité de toute entreprise. Une structuration juridique inadéquate peut entraîner des conséquences dramatiques : responsabilité personnelle illimitée des dirigeants, exposition patrimoniale maximale, difficultés de financement, problèmes de gouvernance, conflits entre associés non anticipés, et impossibilité de céder ou transmettre l'entreprise dans de bonnes conditions.\n\nL'absence de maîtrise des risques sectoriels expose l'entrepreneur à des sanctions administratives, pénales ou civiles, des rappels de produits, des dommages-intérêts, une perte de réputation irréversible et potentiellement la fermeture de l'activité. Dans des secteurs réglementés, l'ignorance de la compliance peut coûter l'existence même de l'entreprise.\n\nLa négligence de la propriété intellectuelle représente un risque majeur de spoliation. Sans protection adéquate, les concurrents peuvent s'approprier librement les innovations, la marque, l'image de marque et les développements techniques, anéantissant l'avantage concurrentiel et la valeur de l'entreprise. Inversement, l'entrepreneur non protégé s'expose aux actions en contrefaçon de tiers.\n\nUn cadre juridique solide facilite les levées de fonds, rassure les partenaires commerciaux, optimise la fiscalité, préserve la flexibilité opérationnelle et prépare les évolutions futures de l'entreprise. Il constitue un facteur déterminant de pérennité et de croissance.";
+
+  // Utilisation du hook harmonisé pour la modal
+  const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
+    hasContent: !!structureData,
+    hasDefinition: !!staticDefinition,
+    hasRecommendations: !!dbRecommendations,
+  });
 
   useEffect(() => {
     const fetchJuridiqueData = async () => {
@@ -89,14 +98,6 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
       fetchJuridiqueData();
     }
   }, [projectId]);
-
-  const handleTemplateClick = () => {
-    setIsPopupOpen(true);
-  };
-
-  const handlePopupClose = () => {
-    setIsPopupOpen(false);
-  };
 
   // Fonction pour rendre les listes (arrays)
   const renderList = (items: string[] | undefined): JSX.Element => {
@@ -238,145 +239,27 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
 
   return (
     <>
-      {/* Livrable Template Part */}
-      <div
-        className="border border-gray-200 rounded-xl p-4 mb-4 text-white cursor-pointer flex justify-between h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+      {/* Utilisation de la carte harmonisée */}
+      <HarmonizedDeliverableCard
+        title={title}
+        description={dbJustificationAvis || description}
+        avis={dbAvis || 'Non généré'}
+        iconSrc={iconSrc}
         onClick={handleTemplateClick}
-        style={{ borderColor: '#e2e8f0', backgroundColor: 'white' }}
-      >
-        <div className="flex-grow flex flex-col">
-          <h2 className="text-xl font-bold mb-2 text-black">{title}</h2>
-          {dbJustificationAvis && <p className="text-gray-700 mb-4 line-clamp-3">{dbJustificationAvis}</p>}
-          <div className="flex-grow">
-            {/* Content will be dynamically generated */}
-          </div>
-          <div className="flex-shrink-0 mt-auto">
-            <button className={`text-xs px-2 py-1 rounded-full cursor-default pointer-events-none`} style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}>
-              {dbAvis}
-            </button>
-          </div>
-        </div>
-        <div className="flex-shrink-0">
-          <img src={iconSrc} alt="Template Icon" className="w-8 h-8 object-cover self-start" />
-        </div>
-      </div>
+      />
 
-      {/* Livrable Popup Part */}
-      {isPopupOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handlePopupClose}>
-          <div
-            ref={modalRef}
-            className="bg-white text-black rounded-lg w-full mx-2.5 md:w-3/4 relative transform scale-95 opacity-0 overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the popup
-            style={{
-              animation: 'scaleIn 0.3s ease-out forwards',
-              height: modalHeight,
-              maxHeight: 'calc(100vh - 100px)',
-              transition: 'height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s ease-out'
-            }} // Animation fluide et plus rapide
-          >
-            {/* Sticky Header */}
-            <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-6 pb-4 flex justify-between items-start">
-              <div className="flex items-center">
-                <img src={iconSrc} alt="Template Icon" className="w-8 h-8 object-cover mr-3" />
-                <h2 className="text-xl font-bold">{title}</h2>
-              </div>
-              <button
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-                onClick={handlePopupClose}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Tab Navigation */}
-            <div className="flex bg-white border-b border-gray-100">
-              {structureData && (
-                <button
-                  className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'structure' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
-                  onClick={() => handleTabChange('structure')}
-                >
-                  Contenu
-                </button>
-              )}
-              {dbRecommendations && (
-                <button
-                  className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'recommendations' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
-                  onClick={() => handleTabChange('recommendations')}
-                >
-                  Recommandations
-                </button>
-              )}
-              {(staticDefinition || staticImportance) && (
-                <button
-                  className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'definition' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
-                  onClick={() => handleTabChange('definition')}
-                >
-                  Définition
-                </button>
-              )}
-            </div>
-            
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 pt-4">
-              <div
-                ref={contentRef}
-                className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 blur-sm transform translate-y-2' : 'opacity-100 blur-0 transform translate-y-0'}`}
-              >
-              {activeTab === 'structure' && renderStructureContent()}
-
-              {activeTab === 'recommendations' && (
-                <div className="prose max-w-none">
-                  <h3 className="text-lg font-bold mb-2">Recommandations</h3>
-                  {dbRecommendations ? (
-                    <div style={{ whiteSpace: 'pre-wrap' }}>
-                      <ReactMarkdown>{dbRecommendations}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Aucune recommandation disponible pour le moment.</p>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'definition' && (
-                <div className="prose max-w-none">
-                  <h3 className="text-lg font-bold mb-2">Définition</h3>
-                  {staticDefinition ? (
-                    <div className="text-gray-500" style={{ whiteSpace: 'pre-wrap' }}>
-                      <ReactMarkdown>{staticDefinition}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Aucune définition disponible pour le moment.</p>
-                  )}
-
-                  <h3 className="text-lg font-bold mb-2 mt-6">Importance</h3>
-                  {staticImportance ? (
-                    <div className="text-gray-500" style={{ whiteSpace: 'pre-wrap' }}>
-                      <ReactMarkdown>{staticImportance}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Aucune importance spécifiée pour le moment.</p>
-                  )}
-                </div>
-              )}
-              </div>
-            </div>
-          </div>
-          {/* Define keyframes for the animation */}
-          <style>
-            {`
-              @keyframes scaleIn {
-                to {
-                  opacity: 1;
-                  transform: scale(1);
-                }
-              }
-            `}
-          </style>
-        </div>
-      )}
+      {/* Utilisation de la modal harmonisée */}
+      <HarmonizedDeliverableModal
+        isOpen={isPopupOpen}
+        onClose={handlePopupClose}
+        title={title}
+        iconComponent={<img src={iconSrc} alt={`${title} icon`} className="h-16 w-16 object-contain" />}
+        contentComponent={renderStructureContent()}
+        definition={staticDefinition}
+        importance={staticImportance}
+        recommendations={dbRecommendations}
+        showContentTab={true}
+      />
     </>
   );
 };

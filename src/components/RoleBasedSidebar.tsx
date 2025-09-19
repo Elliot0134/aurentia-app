@@ -39,6 +39,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const { currentProjectId, userProjects } = useProject();
   const [isMobile, setIsMobile] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const credits = useCreditsSimple();
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -106,8 +107,8 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         return {
           menuItems: [
             { name: "Tableau de bord", path: "/member/dashboard", icon: <LayoutDashboard size={20} /> },
-            { name: "Livrables", path: activeProjectId ? `/member/project-business/${activeProjectId}` : "/member/warning", icon: <FileText size={20} /> },
-            { name: "Assistant IA", path: activeProjectId ? `/member/chatbot/${activeProjectId}` : "/member/warning", icon: <MessageSquare size={20} /> },
+            { name: "Livrables", path: activeProjectId ? `/member/project-business/${activeProjectId}` : "/member/project-business", icon: <FileText size={20} /> },
+            { name: "Assistant IA", path: activeProjectId ? `/member/chatbot/${activeProjectId}` : "/member/chatbot", icon: <MessageSquare size={20} /> },
             { isDivider: true },
             { name: "Plan d'action", path: "/member/plan-action", icon: <LandPlot size={20} /> },
             { name: "Outils", path: "/member/outils", icon: <Settings size={20} /> },
@@ -136,8 +137,8 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const getIndividualConfig = (): SidebarConfig => ({
     menuItems: [
       { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
-      { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/warning", icon: <FileText size={20} /> },
-      { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/warning", icon: <MessageSquare size={20} /> },
+      { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+      { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
       { isDivider: true },
       { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
       { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
@@ -186,25 +187,15 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   // Desktop sidebar
   const DesktopSidebar = () => (
     <div className={cn("hidden md:block h-screen fixed top-0 left-0 z-10 transition-all duration-300", isCollapsed ? "w-20" : "w-64")}>
-      <div className="bg-white h-full rounded-r-xl shadow-sm border-r border-gray-100 relative">
+      <div className="bg-white/80 backdrop-blur-sm h-full rounded-r-xl shadow-sm border-r border-gray-100 relative">
         <div className="flex items-center p-4 gap-2 relative">
-          {config.branding.logo ? (
-            <img src={config.branding.logo} alt="Logo" className="h-8 w-8 rounded" />
-          ) : (
+          {isCollapsed ? (
             <div className="h-8 w-8">
-              <AurentiaLogo />
+              <img src="/picto-aurentia.svg" alt="Aurentia Picto" className="h-full w-full" />
             </div>
-          )}
-          {!isCollapsed && (
-            <div>
-              <h1 className="text-lg font-semibold">{config.branding.name}</h1>
-              {userProfile?.user_role && userProfile.user_role !== 'individual' && (
-                <p className="text-xs text-gray-500 capitalize">
-                  {userProfile.user_role === 'super_admin' ? 'Super Admin' :
-                   userProfile.user_role === 'admin' ? 'Admin' :
-                   userProfile.user_role === 'member' ? 'Entrepreneur' : ''}
-                </p>
-              )}
+          ) : (
+            <div className="h-8 w-auto"> {/* Adjust width for the long logo */}
+              <img src="/Aurentia-logo-long.svg" alt="Aurentia Logo" className="h-full w-auto" />
             </div>
           )}
           <button
@@ -219,7 +210,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         {/* Project Selector */}
         {config.showProjectSelector && (
           <div className={cn("mb-6 px-3")}>
-            <ProjectSelector isCollapsed={isCollapsed} />
+            <ProjectSelector isCollapsed={isCollapsed} userRole={userProfile?.user_role || 'individual'} />
           </div>
         )}
 
@@ -254,7 +245,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-3">
           {user && config.showCredits && (
             <div className={cn("px-3 mb-3", isCollapsed && "flex flex-col items-center")}>
-              <CreditInfo isCollapsed={isCollapsed} />
+              <CreditInfo isCollapsed={isCollapsed} {...credits} />
             </div>
           )}
           {user ? (
@@ -378,8 +369,8 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
       case 'member':
         return [
           { name: "Tableau de bord", path: "/member/dashboard", icon: <LayoutDashboard size={20} /> },
-          { name: "Livrables", path: activeProjectId ? `/member/project-business/${activeProjectId}` : "/member/warning", icon: <FileText size={20} /> },
-          { name: "Assistant IA", path: activeProjectId ? `/member/chatbot/${activeProjectId}` : "/member/warning", icon: <MessageSquare size={20} /> },
+          { name: "Livrables", path: activeProjectId ? `/member/project-business/${activeProjectId}` : "/member/project-business", icon: <FileText size={20} /> },
+          { name: "Assistant IA", path: activeProjectId ? `/member/chatbot/${activeProjectId}` : "/member/chatbot", icon: <MessageSquare size={20} /> },
           { name: "Plan d'action", path: "/member/plan-action", icon: <LandPlot size={20} /> },
           { name: "Outils", path: "/member/outils", icon: <Settings size={20} /> },
           { name: "Automatisations", path: "/member/automatisations", icon: <Zap size={20} /> },
@@ -397,8 +388,8 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
 
   const getIndividualMobileItems = () => [
     { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
-    { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/warning", icon: <FileText size={20} /> },
-    { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/warning", icon: <MessageSquare size={20} /> },
+    { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+    { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
     { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
     { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
     { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
@@ -436,11 +427,10 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
           {user && userCredits && (userProfile?.user_role === 'individual' || userProfile?.user_role === 'member') && (
             <div className="bg-white px-4 py-2 border-b border-gray-200">
               <div className="flex items-center justify-center gap-2 text-sm">
-                <Zap size={16} className="text-yellow-500" />
+                <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
                 <span className="font-medium text-gray-700">
-                  {creditsLoading ? '...' : `${userCredits.monthly_remaining} / ${userCredits.monthly_limit}`}
+                  {creditsLoading ? '...' : `${((userCredits.monthly_remaining || 0) + (userCredits.purchased_remaining || 0))} / ${userCredits.monthly_limit}`}
                 </span>
-                <span className="text-xs text-gray-500">crédits</span>
               </div>
             </div>
           )}
@@ -514,11 +504,21 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
 
 interface CreditInfoProps {
   isCollapsed: boolean;
+  monthlyRemaining: number | null;
+  monthlyLimit: number | null;
+  purchasedRemaining: number | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
-const CreditInfo = ({ isCollapsed }: CreditInfoProps) => {
-  const { monthlyRemaining, monthlyLimit, purchasedRemaining, isLoading, error } = useCreditsSimple();
-
+const CreditInfo = ({ 
+  isCollapsed, 
+  monthlyRemaining, 
+  monthlyLimit, 
+  purchasedRemaining, 
+  isLoading, 
+  error 
+}: CreditInfoProps) => {
   if (isLoading) {
     return <p className="text-xs text-gray-500">Chargement crédits...</p>;
   }
@@ -527,21 +527,33 @@ const CreditInfo = ({ isCollapsed }: CreditInfoProps) => {
     return <p className="text-xs text-red-500">Erreur crédits</p>;
   }
 
+  const totalCredits = (monthlyRemaining || 0) + (purchasedRemaining || 0);
+
   return (
     <div className={cn("flex flex-col gap-2 w-full", isCollapsed ? "items-center" : "items-start")}>
-      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
-        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
-          <Coins size={16} className="text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Mensuels:</span>
-          <span className="text-sm text-gray-600">{monthlyRemaining} / {monthlyLimit}</span>
-        </div>
-      </div>
-      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
-        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
-          <Coins size={16} className="text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Achetés:</span>
-          <span className="text-sm text-gray-600">{purchasedRemaining}</span>
-        </div>
+      <div className={cn(
+        "bg-gray-100/80 backdrop-blur-sm p-2 rounded-md transition-all duration-300",
+        isCollapsed ? "w-14 h-auto flex flex-col items-center justify-center" : "w-full text-left"
+      )}>
+        {isCollapsed ? (
+          <div className="flex flex-col items-center gap-0.5 py-2">
+            <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
+            <span className="font-medium text-gray-700 text-sm">
+              {totalCredits}
+            </span>
+            <div className="w-4 h-px bg-gray-300 my-0.5"></div>
+            <span className="font-medium text-gray-700 text-sm">
+              {monthlyLimit}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
+            <span className="text-sm font-medium text-gray-700">
+              {totalCredits} / {monthlyLimit}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

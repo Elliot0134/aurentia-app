@@ -90,6 +90,7 @@ export default {
 			fontFamily: {
 				inter: ['Inter Display', 'sans-serif'],
 				'biz-ud-mincho': ['BIZ UDPMincho', 'sans-serif'],
+				gordita: ['Gordita', 'sans-serif'],
 			},
 			keyframes: {
 				'accordion-down': {

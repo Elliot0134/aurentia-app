@@ -32,10 +32,13 @@ import { useStripePayment } from "@/hooks/useStripePayment";
 import { useProject } from "@/contexts/ProjectContext";
 import { useDeliverableProgress } from "@/hooks/useDeliverableProgress"; // Import the new hook
 import ProjectScoreCards from "@/components/project/ProjectScoreCards"; // Import ProjectScoreCards
+import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
+import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { userRole } = useUserRole(); // Get user role
   const [selectedPersonaExpress, setSelectedPersonaExpress] = useState<'Particulier' | 'Entreprise' | 'Organismes'>('Particulier');
   const [loading, setLoading] = useState(true); // Set loading to true initially
   const [project, setProject] = useState<{ nom_projet?: string; description_projet?: string } | null>(null); // State for project data
@@ -43,7 +46,7 @@ const ProjectBusiness = () => {
 
   useEffect(() => {
     if (!projectId) {
-      navigate('/projects-dashboard'); // Redirect to projects dashboard if projectId is missing
+      navigate('/individual/project-business'); // Redirect to projects dashboard if projectId is missing
     }
   }, [projectId, navigate]);
   const [projectStatus, setProjectStatus] = useState<string | null>(null); // State for project status
@@ -424,342 +427,359 @@ const ProjectBusiness = () => {
   }
 
   if (!project) {
-    return <div>Projet non trouvé.</div>; // Or an error message
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] animate-popup-appear"> {/* Ajusté pour centrer verticalement et ajouter une animation de popup */}
+        <div className="container mx-auto px-4 py-8 text-center bg-white p-8 rounded-lg shadow-lg max-w-lg w-[90vw]"> {/* Ajout de fond blanc, padding, ombre et largeur maximale, avec une largeur de 90vw pour mobile */}
+          <h2 className="text-3xl font-bold mb-4 text-gray-800">Que l'aventure commence !</h2> {/* Nouveau titre */}
+          <p className="text-gray-600 mb-6 text-lg">Créez un nouveau projet pour découvrir tout le potentiel de votre idée.</p> {/* Nouveau sous-titre */}
+          <Button 
+            onClick={() => navigate(userRole === 'member' ? "/member/warning" : "/individual/warning")} 
+            className="mt-4 px-4 py-2 rounded-lg bg-gradient-primary hover:from-blue-600 hover:to-purple-700 text-white text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+          >
+            Créer un nouveau projet
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto py-8 animate-fade-in">
-      <div className="w-[95vw] md:w-11/12 mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-          <div className="flex flex-col w-full md:w-1/2 md:order-first">
-            <h1 className="text-3xl font-semibold">Mes livrables</h1>
-          </div>
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
-            <div className="flex items-center gap-3 w-full">
-              <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
-                if (projectStatus === 'free') {
-                  handleUnlockClick();
-                } else {
-                  // TODO: Implement actual modify functionality here
-                  toast({
-                    title: "Modification",
-                    description: "La fonctionnalité de modification sera bientôt disponible.",
-                    duration: 3000,
-                  });
-                }
-              }}>
-                <Settings size={16} />
-                Modifier
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
-                if (projectStatus === 'free') {
-                  handleUnlockClick();
-                } else {
-                  // TODO: Implement actual export functionality here
-                  toast({
-                    title: "Exportation",
-                    description: "La fonctionnalité d'exportation sera bientôt disponible.",
-                    duration: 3000,
-                  });
-                }
-              }}>
-                <Download size={16} />
-                Exporter
-              </Button>
+    <ProjectRequiredGuard>
+      <div className="mx-auto py-8 animate-fade-in">
+        <div className="w-[95vw] md:w-11/12 mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+            <div className="flex flex-col w-full md:w-1/2 md:order-first">
+              <h1 className="text-3xl font-semibold">Mes livrables</h1>
             </div>
-            <Button
-              onClick={() => setIsComingSoonOpen(true)}
-              className="flex items-center gap-2 bg-gradient-primary hover:opacity-90 transition-opacity w-full"
-              size="sm"
-            >
-              <UserPlus size={16} />
-              Inviter un collaborateur
-            </Button>
-          </div>
-        </div>
-
-        {/* Project Score Cards */}
-        <ProjectScoreCards className="mb-8" /> {/* Ajout de la classe mb-8 pour la marge */}
-
-        {/* Retranscription du concept Deliverable */}
-        <div className="col-span-full">
-          <RetranscriptionConceptLivrable />
-        </div>
-
-        {/* Level 1 Deliverables (rest of them in a grid) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 items-stretch auto-rows-fr min-h-[200px]">
-          <div className="md:h-full">
-            <PersonaExpressLivrable />
-          </div>
-          <div className="md:h-full">
-            <MiniSwotLivrable />
-          </div>
-          <div className="md:h-full">
-            <MaSuccessStoryLivrable />
-          </div>
-          <div className="md:h-full">
-            <PitchLivrable />
-          </div>
-          <div className="md:h-full">
-            <VisionMissionValeursLivrable projectId={projectId} />
-          </div>
-          <div className="md:h-full">
-            <TemplateLivrable
-              title="Livrable Template"
-              avis="Nouveau"
-              justification_avis="Ceci est un livrable template pour démonstration, avec la nouvelle structure."
-              iconSrc="/icones-livrables/market-icon.png"
-              structure={[
-                {
-                  title: "Section 1: Introduction",
-                  items: [
-                    { title: "Sous-section 1.1", content: "Contenu de la sous-section 1.1." },
-                    { title: "Sous-section 1.2", content: "Contenu de la sous-section 1.2." },
-                  ],
-                },
-                {
-                  title: "Section 2: Détails",
-                  items: [
-                    { title: "Sous-section 2.1", content: "Contenu de la sous-section 2.1." },
-                  ],
-                },
-              ]}
-            />
-          </div>
-          {/* Cadre Juridique Livrable */}
-          <div className="md:h-full">
-            <CadreJuridiqueLivrable
-              title="Cadre Juridique"
-              projectId={projectId}
-            />
-          </div>
-        </div>
-
-        {/* Level 2 Deliverables */}
-        <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
-          <div className="col-span-12 text-center">
-            {projectStatus === 'free' ? (
-              <button className="btn-primary" onClick={handleUnlockClick}>Débloquer les prochains livrables</button>
-            ) : (
-              <button className="btn-primary">Niveau 2</button>
-            )}
-          </div>
-        </div>
-
-        {/* Analyse de la Concurrence, Analyse de Marché, Proposition de Valeur et Business Model Deliverables */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
-          {/* Analyse de la Concurrence Deliverable */}
-          <div className="md:h-full">
-            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
-              <AnalyseDeLaConcurrenceLivrable projectStatus={projectStatus} />
-            </BlurredDeliverableWrapper>
-          </div>
-
-          {/* Analyse de Marché Deliverable */}
-          <div className="md:h-full">
-            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
-              <AnalyseDeMarcheLivrable projectId={projectId} />
-            </BlurredDeliverableWrapper>
-          </div>
-
-          {/* Proposition de Valeur Deliverable */}
-          <div className="md:h-full">
-            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
-              <PropositionDeValeurLivrable />
-            </BlurredDeliverableWrapper>
-          </div>
-
-          {/* Business Model Deliverable */}
-          <div className="md:h-full">
-            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
-              <BusinessModelLivrable
-                title="Business Model"
-                description="Modèle économique structuré de votre entreprise"
-                textColor="#57a68b"
-                buttonColor="#57a68b"
-              />
-            </BlurredDeliverableWrapper>
-          </div>
-        </div>
-
-        {/* Level 4 Deliverables */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
-          <div className="md:h-full">
-            <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
-              <AnalyseDesRessourcesLivrable />
-            </BlurredDeliverableWrapper>
-          </div>
-        </div>
-      </div>
-
-      {/* Payment Loading Dialog */}
-      <Dialog open={isPaymentLoading || isWaitingSubscription || isWaitingDeliverables || showCoffeeBreakPopup} onOpenChange={() => {}}>
-        <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
-          <DialogHeader>
-            <DialogTitle className="text-2xl">
-              {isWaitingSubscription ? '⏳ En attente du paiement...' : '☕️ Une pause café ?'}
-            </DialogTitle>
-            <div className="text-sm text-muted-foreground">
-              {isWaitingSubscription
-                ? <>Votre navigateur va s'ouvrir dans un nouvel onglet pour finaliser le paiement. <br /><br /> Une fois le paiement effectué, nous générerons automatiquement vos livrables premium.</>
-                : <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
-              }
-            </div>
-          </DialogHeader>
-          
-          {/* Deliverable Progress Section - Only show when not waiting for payment */}
-          {!isWaitingSubscription && (
-            <div className="mt-6 space-y-3">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
-              {deliverables
-                .filter(deliverable => deliverable.key !== 'juridique') // Exclure le livrable juridique
-                .map((deliverable) => (
-                  <DeliverableProgressContainer
-                    key={deliverable.key}
-                    deliverable={deliverable}
-                  />
-                ))}
-            </div>
-          )}
-          
-          <div className="flex justify-center items-center py-4">
-            <div className="loader">
-              <div className="circle"></div>
-              <div className="circle"></div>
-              <div className="circle"></div>
-              <div className="square"></div>
-            </div>
-          </div>
-          {isWaitingSubscription && (
-            <DialogFooter className="flex justify-center">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
+              <div className="flex items-center gap-3 w-full">
+                <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
+                  if (projectStatus === 'free') {
+                    handleUnlockClick();
+                  } else {
+                    // TODO: Implement actual modify functionality here
+                    toast({
+                      title: "Modification",
+                      description: "La fonctionnalité de modification sera bientôt disponible.",
+                      duration: 3000,
+                    });
+                  }
+                }}>
+                  <Settings size={16} />
+                  Modifier
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
+                  if (projectStatus === 'free') {
+                    handleUnlockClick();
+                  } else {
+                    // TODO: Implement actual export functionality here
+                    toast({
+                      title: "Exportation",
+                      description: "La fonctionnalité d'exportation sera bientôt disponible.",
+                      duration: 3000,
+                    });
+                  }
+                }}>
+                  <Download size={16} />
+                  Exporter
+                </Button>
+              </div>
               <Button
-                variant="outline"
-                onClick={cancelSubscription}
-                className="text-gray-600 hover:text-gray-800"
+                onClick={() => setIsComingSoonOpen(true)}
+                className="flex items-center gap-2 bg-gradient-primary hover:opacity-90 transition-opacity w-full"
+                size="sm"
               >
-                Annuler le paiement
+                <UserPlus size={16} />
+                Inviter un collaborateur
+              </Button>
+            </div>
+          </div>
+
+          {/* Project Score Cards */}
+          <ProjectScoreCards className="mb-8" /> {/* Ajout de la classe mb-8 pour la marge */}
+
+          {/* Retranscription du concept Deliverable */}
+          <div className="col-span-full">
+            <RetranscriptionConceptLivrable />
+          </div>
+
+          {/* Level 1 Deliverables (rest of them in a grid) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 items-stretch auto-rows-fr min-h-[200px]">
+            <div className="md:h-full">
+              <PersonaExpressLivrable />
+            </div>
+            <div className="md:h-full">
+              <MiniSwotLivrable />
+            </div>
+            <div className="md:h-full">
+              <MaSuccessStoryLivrable />
+            </div>
+            <div className="md:h-full">
+              <PitchLivrable />
+            </div>
+            <div className="md:h-full">
+              <VisionMissionValeursLivrable projectId={projectId} />
+            </div>
+            <div className="md:h-full">
+              <TemplateLivrable
+                title="Livrable Template"
+                description="Ceci est un livrable template pour démonstration."
+                avis="Nouveau"
+                justification_avis="Ceci est un livrable template pour démonstration, avec la nouvelle structure."
+                iconSrc="/icones-livrables/market-icon.png"
+                structure={[
+                  {
+                    title: "Section 1: Introduction",
+                    items: [
+                      { title: "Sous-section 1.1", content: "Contenu de la sous-section 1.1." },
+                      { title: "Sous-section 1.2", content: "Contenu de la sous-section 1.2." },
+                    ],
+                  },
+                  {
+                    title: "Section 2: Détails",
+                    items: [
+                      { title: "Sous-section 2.1", content: "Contenu de la sous-section 2.1." },
+                    ],
+                  },
+                ]}
+              />
+            </div>
+            {/* Cadre Juridique Livrable */}
+            <div className="md:h-full">
+              <CadreJuridiqueLivrable
+                title="Cadre Juridique"
+                description="Analyse du cadre légal et réglementaire de votre projet."
+                projectId={projectId}
+              />
+            </div>
+          </div>
+
+          {/* Level 2 Deliverables */}
+          <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
+            <div className="col-span-12 text-center">
+              {projectStatus === 'free' ? (
+                <button className="btn-primary" onClick={handleUnlockClick}>Débloquer les prochains livrables</button>
+              ) : (
+                <button className="btn-primary">Niveau 2</button>
+              )}
+            </div>
+          </div>
+
+          {/* Analyse de la Concurrence, Analyse de Marché, Proposition de Valeur et Business Model Deliverables */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
+            {/* Analyse de la Concurrence Deliverable */}
+            <div className="md:h-full">
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+                <AnalyseDeLaConcurrenceLivrable projectStatus={projectStatus} />
+              </BlurredDeliverableWrapper>
+            </div>
+
+            {/* Analyse de Marché Deliverable */}
+            <div className="md:h-full">
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+                <AnalyseDeMarcheLivrable projectId={projectId} />
+              </BlurredDeliverableWrapper>
+            </div>
+
+            {/* Proposition de Valeur Deliverable */}
+            <div className="md:h-full">
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+                <PropositionDeValeurLivrable />
+              </BlurredDeliverableWrapper>
+            </div>
+
+            {/* Business Model Deliverable */}
+            <div className="md:h-full">
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+                <BusinessModelLivrable
+                  title="Business Model"
+                  description="Modèle économique structuré de votre entreprise"
+                  textColor="#57a68b"
+                  buttonColor="#57a68b"
+                />
+              </BlurredDeliverableWrapper>
+            </div>
+          </div>
+
+          {/* Level 4 Deliverables */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
+            <div className="md:h-full">
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+                <AnalyseDesRessourcesLivrable />
+              </BlurredDeliverableWrapper>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Loading Dialog */}
+        <Dialog open={isPaymentLoading || isWaitingSubscription || isWaitingDeliverables || showCoffeeBreakPopup} onOpenChange={() => {}}>
+          <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">
+                {isWaitingSubscription ? '⏳ En attente du paiement...' : '☕️ Une pause café ?'}
+              </DialogTitle>
+              <div className="text-sm text-muted-foreground">
+                {isWaitingSubscription
+                  ? <>Votre navigateur va s'ouvrir dans un nouvel onglet pour finaliser le paiement. <br /><br /> Une fois le paiement effectué, nous générerons automatiquement vos livrables premium.</>
+                  : <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
+                }
+              </div>
+            </DialogHeader>
+            
+            {/* Deliverable Progress Section - Only show when not waiting for payment */}
+            {!isWaitingSubscription && (
+              <div className="mt-6 space-y-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
+                {deliverables
+                  .filter(deliverable => deliverable.key !== 'juridique') // Exclure le livrable juridique
+                  .map((deliverable) => (
+                    <DeliverableProgressContainer
+                      key={deliverable.key}
+                      deliverable={deliverable}
+                    />
+                  ))}
+              </div>
+            )}
+            
+            <div className="flex justify-center items-center py-4">
+              <div className="loader">
+                <div className="circle"></div>
+                <div className="circle"></div>
+                <div className="circle"></div>
+                <div className="square"></div>
+              </div>
+            </div>
+            {isWaitingSubscription && (
+              <DialogFooter className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={cancelSubscription}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  Annuler le paiement
+                </Button>
+              </DialogFooter>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Generate Deliverables Confirmation Dialog */}
+        <Dialog open={isGenerateDeliverablesConfirmOpen} onOpenChange={setIsGenerateDeliverablesConfirmOpen}>
+          <DialogContent className="w-[95vw] max-w-[400px] rounded-lg sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-2xl text-center">Générer les livrables ?</DialogTitle>
+              <DialogDescription className="text-center">
+                Êtes-vous sûr de vouloir générer les livrables premium pour ce projet ?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex justify-center gap-4">
+              <Button variant="outline" onClick={() => setIsGenerateDeliverablesConfirmOpen(false)} className="flex-1">
+                Non
+              </Button>
+              <Button onClick={handleGenerateDeliverables} className="flex-1 bg-gradient-primary hover:opacity-90">
+                Oui
               </Button>
             </DialogFooter>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* Generate Deliverables Confirmation Dialog */}
-      <Dialog open={isGenerateDeliverablesConfirmOpen} onOpenChange={setIsGenerateDeliverablesConfirmOpen}>
-        <DialogContent className="w-[95vw] max-w-[400px] rounded-lg sm:w-full">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-center">Générer les livrables ?</DialogTitle>
-            <DialogDescription className="text-center">
-              Êtes-vous sûr de vouloir générer les livrables premium pour ce projet ?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex justify-center gap-4">
-            <Button variant="outline" onClick={() => setIsGenerateDeliverablesConfirmOpen(false)} className="flex-1">
-              Non
-            </Button>
-            <Button onClick={handleGenerateDeliverables} className="flex-1 bg-gradient-primary hover:opacity-90">
-              Oui
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* Popup Dialog */}
+        <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
+          <DialogContent className="w-[90vw] md:w-[70vw] max-w-none overflow-y-auto max-h-[90vh] md:h-[90vh] rounded-lg md:flex md:flex-col md:justify-center md:items-center"> {/* Set width to 90% on mobile, 70% on desktop, remove max-width, add scrollability, and rounded corners */}
+            <DialogHeader>
+              <DialogTitle className="text-center text-2xl font-bold text-[#2D2D2D]">{popupContent?.title}</DialogTitle>
+              <div className="mt-4">
+                <p className="text-center text-base mb-4">
+                  <span className="font-bold text-[#2D2D2D]">{project.nom_projet || "Votre projet"}</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
+                </p>
+              </div>
+              <div>
+                {popupContent?.content}
+              </div>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
 
-      {/* Popup Dialog */}
-      <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
-        <DialogContent className="w-[90vw] md:w-[70vw] max-w-none overflow-y-auto max-h-[90vh] md:h-[90vh] rounded-lg md:flex md:flex-col md:justify-center md:items-center"> {/* Set width to 90% on mobile, 70% on desktop, remove max-width, add scrollability, and rounded corners */}
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold text-[#2D2D2D]">{popupContent?.title}</DialogTitle>
-            <div className="mt-4">
-              <p className="text-center text-base mb-4">
-                <span className="font-bold text-[#2D2D2D]">{project.nom_projet || "Votre projet"}</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
-              </p>
+        {/* Popup d'invitation */}
+        <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+          <DialogContent className="rounded-xl w-[90vw] mx-auto my-4 sm:max-w-[425px] sm:w-full">
+            <DialogHeader>
+              <DialogTitle>Inviter un nouveau collaborateur</DialogTitle>
+              <DialogDescription>
+                Envoyez une invitation par email pour donner accès à votre projet.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Adresse email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="collaborateur@example.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="placeholder:text-xs"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Rôle</Label>
+                <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'Lecteur' | 'Éditeur')}>
+                  <SelectTrigger id="role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Lecteur">
+                      <div className="flex items-center">
+                        <Eye className="w-4 h-4 mr-2" />
+                        Lecteur - Peut consulter le projet
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Éditeur">
+                      <div className="flex items-center">
+                        <Edit className="w-4 h-4 mr-2" />
+                        Éditeur - Peut modifier le projet
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="projects">Projets</Label>
+                <MultiSelect
+                  options={userProjects.map(project => ({
+                    value: project.project_id,
+                    label: (
+                      <div className="flex items-center gap-2">
+                        <FolderSearch className="w-4 h-4" />
+                        {project.nom_projet}
+                      </div>
+                    ),
+                  }))}
+                  value={inviteProjects}
+                  onChange={setInviteProjects}
+                  placeholder="Sélectionner les projets..."
+                />
+              </div>
             </div>
-            <div>
-              {popupContent?.content}
-            </div>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="mr-2 flex-1">
+                Annuler
+              </Button>
+              <Button onClick={handleInvite} className="flex-1">
+                Envoyer l'invitation
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Popup d'invitation */}
-      <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
-        <DialogContent className="rounded-xl w-[90vw] mx-auto my-4 sm:max-w-[425px] sm:w-full">
-          <DialogHeader>
-            <DialogTitle>Inviter un nouveau collaborateur</DialogTitle>
-            <DialogDescription>
-              Envoyez une invitation par email pour donner accès à votre projet.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Adresse email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="collaborateur@example.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                className="placeholder:text-xs"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="role">Rôle</Label>
-              <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'Lecteur' | 'Éditeur')}>
-                <SelectTrigger id="role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Lecteur">
-                    <div className="flex items-center">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Lecteur - Peut consulter le projet
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Éditeur">
-                    <div className="flex items-center">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Éditeur - Peut modifier le projet
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="projects">Projets</Label>
-              <MultiSelect
-                options={userProjects.map(project => ({
-                  value: project.project_id,
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <FolderSearch className="w-4 h-4" />
-                      {project.nom_projet}
-                    </div>
-                  ),
-                }))}
-                value={inviteProjects}
-                onChange={setInviteProjects}
-                placeholder="Sélectionner les projets..."
-              />
-            </div>
-          </div>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="mr-2 flex-1">
-              Annuler
-            </Button>
-            <Button onClick={handleInvite} className="flex-1">
-              Envoyer l'invitation
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Coming Soon Dialog */}
-      <ComingSoonDialog
-        isOpen={isComingSoonOpen}
-        onClose={() => setIsComingSoonOpen(false)}
-        description="La fonctionnalité d'invitation de collaborateurs sera bientôt disponible. Restez à l'écoute pour les mises à jour !"
-      />
-    </div>
+        {/* Coming Soon Dialog */}
+        <ComingSoonDialog
+          isOpen={isComingSoonOpen}
+          onClose={() => setIsComingSoonOpen(false)}
+          description="La fonctionnalité d'invitation de collaborateurs sera bientôt disponible. Restez à l'écoute pour les mises à jour !"
+        />
+      </div>
+    </ProjectRequiredGuard>
   );
 };
 

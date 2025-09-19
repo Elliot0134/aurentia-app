@@ -4,11 +4,14 @@ import { ArrowRight, Plus, FolderSearch } from "lucide-react"; // Import FolderS
 import { useProject } from "@/contexts/ProjectContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { UserRole } from '@/types/userTypes';
+
 interface ProjectSelectorProps {
   isCollapsed: boolean;
+  userRole: UserRole;
 }
 
-const ProjectSelector = memo(({ isCollapsed }: ProjectSelectorProps) => {
+const ProjectSelector = memo(({ isCollapsed, userRole }: ProjectSelectorProps) => {
   const navigate = useNavigate();
   const { projectId } = useParams(); // Get project ID from URL
   const [isOpen, setIsOpen] = useState(false);
@@ -61,13 +64,18 @@ const ProjectSelector = memo(({ isCollapsed }: ProjectSelectorProps) => {
 
   const goToProject = (project: { project_id: string; nom_projet: string; created_at: string }) => {
     if (project) {
-      navigate(`/project-business/${project.project_id}`);
+      const basePath = userRole === 'individual' ? '/individual' : '';
+      navigate(`${basePath}/project-business/${project.project_id}`);
     }
   };
 
   const handleCreateNewProject = () => {
     setIsOpen(false);
-    navigate("/warning");
+    if (userRole === 'individual') {
+      navigate("/individual/warning");
+    } else {
+      navigate("/warning"); // Default for other roles or if not specified
+    }
   };
 
   const toggleDropdown = () => {
@@ -90,9 +98,10 @@ const ProjectSelector = memo(({ isCollapsed }: ProjectSelectorProps) => {
   }
 
   if (userProjects.length === 0) {
+    const warningPath = userRole === 'individual' ? "/individual/warning" : "/warning";
     return (
       <button
-        onClick={() => navigate("/warning")}
+        onClick={() => navigate(warningPath)}
         className="w-full py-2 px-3 text-left font-medium text-sm rounded-md flex items-center gap-2 bg-gray-100"
       >
         <FolderSearch size={18} />

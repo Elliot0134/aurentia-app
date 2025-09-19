@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
+import { useCreditsSimple } from '@/hooks/useCreditsSimple';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Edit2, Save, X } from "lucide-react";
+import { Edit2, Save, X, ShieldCheck } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
 import { User } from '@supabase/supabase-js';
-import { EmailConfirmationSection } from '@/components/auth/EmailConfirmationSection';
 
 interface ProfileData {
   id: string;
@@ -41,6 +42,9 @@ const Profile = () => {
     location: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("Informations");
+  const { subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
+  const { credits, isLoading: creditsLoading } = useCreditsSimple();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -161,122 +165,292 @@ const Profile = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 animate-fade-in">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
+    <div className="mx-auto py-8 min-h-screen animate-fade-in">
+      <div className="w-[90vw] md:w-11/12 mx-auto px-4">
+        <div className="mb-8">
           <h1 className="text-2xl font-semibold">Profil Utilisateur</h1>
-          {!isEditing ? (
-            <Button onClick={handleEdit} variant="outline" className="flex items-center gap-2">
-              <Edit2 size={16} />
-              Modifier
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="flex items-center gap-2"
-              >
-                <Save size={16} />
-                {isLoading ? "Sauvegarde..." : "Sauvegarder"}
-              </Button>
-              <Button
-                onClick={handleCancel}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <X size={16} />
-                Annuler
-              </Button>
-            </div>
-          )}
         </div>
 
-        {/* Section de confirmation d'email */}
-        {authUser && (
-          <EmailConfirmationSection user={authUser} />
-        )}
-        
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-6">Informations du profil</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Informations personnelles</h3>
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Email</Label>
-                <p className="mt-1 text-gray-900">{user.email || "Non renseigné"}</p>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Prénom</Label>
-                {isEditing ? (
-                  <Input
-                    value={editableFields.full_name}
-                    onChange={(e) => handleFieldChange('full_name', e.target.value)}
-                    placeholder="Entrez votre prénom"
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{displayValue(user.full_name)}</p>
-                )}
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Téléphone</Label>
-                {isEditing ? (
-                  <Input
-                    value={editableFields.phone}
-                    onChange={(e) => handleFieldChange('phone', e.target.value)}
-                    placeholder="Entrez votre numéro de téléphone"
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{displayValue(user.phone)}</p>
-                )}
-              </div>
-            </div>
+        <div className="md:border-b md:border-gray-200">
+          <nav className="grid grid-cols-2 gap-2 md:flex md:flex-row md:-mb-px md:space-x-8" aria-label="Tabs">
+            {["Informations", "Facturation", "Documents", "Sécurité", "Intégrations"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`
+                  py-2 px-4 font-medium text-base text-center rounded-md
+                  ${
+                    activeTab === tab
+                      ? 'bg-aurentia-orange-aurentia text-white'
+                      : 'bg-white border border-gray-200 text-gray-700'
+                  }
+                  md:whitespace-nowrap md:py-3 md:px-2 md:border-b-2 md:rounded-none md:bg-transparent md:text-center
+                  ${
+                    activeTab === tab
+                      ? 'md:border-aurentia-orange-aurentia md:text-aurentia-orange-aurentia'
+                      : 'md:border-transparent md:text-gray-500 md:hover:text-gray-700 md:hover:border-transparent'
+                  }
+                `}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Informations professionnelles</h3>
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Entreprise</Label>
-                {isEditing ? (
-                  <Input
-                    value={editableFields.company}
-                    onChange={(e) => handleFieldChange('company', e.target.value)}
-                    placeholder="Entrez le nom de votre entreprise"
-                    className="mt-1"
-                  />
+        <div className="mt-8 animate-popup-appear" key={activeTab}>
+          {activeTab === "Informations" && (
+            <div>
+              <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-800">Informations du profil</h2>
+                {!isEditing ? (
+                  <Button onClick={handleEdit} variant="outline" className="flex items-center gap-2">
+                    <Edit2 size={16} />
+                    Modifier
+                  </Button>
                 ) : (
-                  <p className="mt-1 text-gray-900">{displayValue(user.company)}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSave}
+                      disabled={isLoading}
+                      className="flex items-center gap-2"
+                    >
+                      <Save size={16} />
+                      {isLoading ? "Sauvegarde..." : "Sauvegarder"}
+                    </Button>
+                    <Button
+                      onClick={handleCancel}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <X size={16} />
+                      Annuler
+                    </Button>
+                  </div>
                 )}
               </div>
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Localisation</Label>
-                {isEditing ? (
-                  <Input
-                    value={editableFields.location}
-                    onChange={(e) => handleFieldChange('location', e.target.value)}
-                    placeholder="Entrez votre localisation"
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{displayValue(user.location)}</p>
-                )}
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Membre depuis</Label>
-                <p className="mt-1 text-gray-900">
-                  {user.created_at ? new Date(user.created_at).toLocaleDateString('fr-FR') : "Non renseigné"}
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Informations personnelles */}
+                <div className="p-6 rounded-lg bg-white shadow-md">
+                  <h3 className="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Informations personnelles</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Email</Label>
+                      <p className="mt-1 text-gray-900">{user.email || "Non renseigné"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Prénom</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editableFields.full_name}
+                          onChange={(e) => handleFieldChange('full_name', e.target.value)}
+                          placeholder="Entrez votre prénom"
+                          className="mt-1"
+                        />
+                      ) : (
+                        <p className="mt-1 text-gray-900">{displayValue(user.full_name)}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Téléphone</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editableFields.phone}
+                          onChange={(e) => handleFieldChange('phone', e.target.value)}
+                          placeholder="Entrez votre numéro de téléphone"
+                          className="mt-1"
+                        />
+                      ) : (
+                        <p className="mt-1 text-gray-900">{displayValue(user.phone)}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations professionnelles */}
+                <div className="p-6 rounded-lg bg-white shadow-md">
+                  <h3 className="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Informations professionnelles</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Entreprise</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editableFields.company}
+                          onChange={(e) => handleFieldChange('company', e.target.value)}
+                          placeholder="Entrez le nom de votre entreprise"
+                          className="mt-1"
+                        />
+                      ) : (
+                        <p className="mt-1 text-gray-900">{displayValue(user.company)}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Localisation</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editableFields.location}
+                          onChange={(e) => handleFieldChange('location', e.target.value)}
+                          placeholder="Entrez votre localisation"
+                          className="mt-1"
+                        />
+                      ) : (
+                        <p className="mt-1 text-gray-900">{displayValue(user.location)}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Membre depuis</Label>
+                      <p className="mt-1 text-gray-900">
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString('fr-FR') : "Non renseigné"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          )}
+          {activeTab === "Facturation" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-slate-800">Facturation & Abonnements</h2>
+              {subscriptionLoading || creditsLoading ? (
+                <div className="flex justify-center items-center h-48">
+                  <p className="text-slate-500">Chargement des informations...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Section Abonnement */}
+                  <div className="lg:col-span-1 p-6 rounded-lg bg-white shadow-md flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <ShieldCheck className="text-aurentia-orange-aurentia" size={28} />
+                        <h3 className="text-xl font-bold text-slate-700">Abonnement</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium text-slate-500">Statut</p>
+                          <span className={`mt-1 inline-block px-3 py-1 text-sm font-semibold rounded-full ${
+                            subscriptionStatus === 'active' 
+                              ? 'bg-emerald-100 text-emerald-800' 
+                              : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {subscriptionStatus === 'active' ? 'Actif' : 'Inactif'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-500">Prochain renouvellement</p>
+                          <p className="font-semibold text-slate-700">19 Oct, 2025</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full mt-6 text-lg font-bold py-5">Gérer l'abonnement</Button>
+                  </div>
+
+                  {/* Section Crédits */}
+                  <div className="lg:col-span-2 p-6 rounded-lg bg-white shadow-md flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <img src="/credit-image.svg" alt="Crédits" className="h-7 w-7" />
+                        <h3 className="text-xl font-bold text-slate-700">Crédits Disponibles</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 text-center">
+                          <p className="text-sm font-medium text-blue-800">Crédits Mensuels</p>
+                          <p className="text-4xl font-bold text-blue-900 mt-2">
+                            {credits?.monthly_remaining ?? 'N/A'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">se renouvelle le 1er Oct</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-gradient-to-br from-violet-50 to-violet-100 text-center">
+                          <p className="text-sm font-medium text-violet-800">Crédits Achetés</p>
+                          <p className="text-4xl font-bold text-violet-900 mt-2">
+                            {credits?.purchased_remaining ?? 'N/A'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">n'expirent jamais</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Button className="w-full mt-6 bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90 text-white text-lg font-bold py-5">
+                      Acheter plus de crédits
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === "Sécurité" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-slate-800">Sécurité du compte</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Changer le mot de passe */}
+                <div className="p-6 rounded-lg bg-white shadow-md flex flex-col">
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Changer le mot de passe</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600" htmlFor="current-password">
+                          Mot de passe actuel
+                        </Label>
+                        <Input id="current-password" type="password" placeholder="••••••••" className="mt-1" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600" htmlFor="new-password">
+                          Nouveau mot de passe
+                        </Label>
+                        <Input id="new-password" type="password" placeholder="••••••••" className="mt-1" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600" htmlFor="confirm-password">
+                          Confirmer le nouveau mot de passe
+                        </Label>
+                        <Input id="confirm-password" type="password" placeholder="••••••••" className="mt-1" />
+                      </div>
+                    </div>
+                  </div>
+                  <Button className="mt-6 self-end">Sauvegarder le mot de passe</Button>
+                </div>
+
+                {/* Changer l'adresse e-mail */}
+                <div className="p-6 rounded-lg bg-white shadow-md flex flex-col">
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Changer l'adresse e-mail</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">
+                          Email actuel
+                        </Label>
+                        <div className="mt-1">
+                          <div className="inline-block p-2 bg-gray-100 rounded-md">
+                            <p className="text-gray-900">{user.email || "Non renseigné"}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600" htmlFor="new-email">
+                          Nouvelle adresse e-mail
+                        </Label>
+                        <Input id="new-email" type="email" placeholder="nouvel.email@exemple.com" className="mt-1" />
+                      </div>
+                    </div>
+                  </div>
+                  <Button className="mt-6 self-end">Mettre à jour l'e-mail</Button>
+                </div>
+              </div>
+            </div>
+          )}
+          {activeTab === "Intégrations" && (
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold">Intégrations</h2>
+              <p className="mt-4">Contenu des intégrations à venir.</p>
+            </Card>
+          )}
+          {activeTab === "Documents" && (
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold">Fonctionnalité à venir</h2>
+              <p className="mt-4">
+                Prochainement, vous pourrez ajouter des documents concernant votre projet d'entreprise, afin de personnalisé en plus les réponses de l'agent IA, recommandations etc.
+              </p>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

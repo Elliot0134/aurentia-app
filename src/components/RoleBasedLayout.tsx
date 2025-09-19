@@ -5,7 +5,6 @@ import { Outlet } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { EmailConfirmationGuard } from './auth/EmailConfirmationGuard';
 
 const RoleBasedLayout = () => {
   const { userProfile, loading } = useUserRole();
@@ -30,11 +29,11 @@ const RoleBasedLayout = () => {
     getUser();
 
     // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } = {} } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, []);
   
   if (loading || userLoading) {
@@ -46,7 +45,7 @@ const RoleBasedLayout = () => {
   }
   
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-[#F4F4F1]">
       <RoleBasedSidebar
         userProfile={userProfile}
         isCollapsed={isCollapsed}
@@ -57,13 +56,7 @@ const RoleBasedLayout = () => {
         "md:ml-0", // Mobile: no margin
         isCollapsed ? "md:ml-20" : "md:ml-64" // Desktop: adjust for sidebar
       )}>
-        {user ? (
-          <EmailConfirmationGuard user={user} fallbackMode="banner">
-            <Outlet />
-          </EmailConfirmationGuard>
-        ) : (
-          <Outlet />
-        )}
+        <Outlet />
       </main>
     </div>
   );
