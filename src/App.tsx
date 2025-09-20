@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ConfirmEmail from "./pages/ConfirmEmail";
+import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
 import UpdatePassword from "./pages/UpdatePassword";
 import Beta from "./pages/Beta";
 import Dashboard from "./pages/Dashboard";
@@ -175,6 +176,7 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
+                <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 <Route path="/role-selection" element={<RoleSelection />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
                 

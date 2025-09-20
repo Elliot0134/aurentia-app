@@ -193,13 +193,13 @@ const Login = () => {
               onClick={async () => {
                 setLoading(true);
                 try {
-                  const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
-                    redirectTo: window.location.origin + '/update-password', // You'll need to create this page
+                  const { data, error } = await supabase.functions.invoke('send-password-reset', {
+                    body: { email: forgotPasswordEmail },
                   });
                   if (error) throw error;
                   toast({
                     title: "Email envoyé",
-                    description: "Veuillez vérifier votre email pour le lien de réinitialisation.",
+                    description: data.message || "Veuillez vérifier votre email pour le lien de réinitialisation.",
                   });
                   setShowForgotPassword(false);
                   setForgotPasswordEmail("");

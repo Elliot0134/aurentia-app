@@ -22,6 +22,7 @@ interface ProfileData {
 }
 
 const Profile = () => {
+  const [newEmail, setNewEmail] = useState('');
   const [user, setUser] = useState<ProfileData>({
     id: "",
     email: "",
@@ -42,6 +43,7 @@ const Profile = () => {
     location: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("Informations");
   const { subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
   const { credits, isLoading: creditsLoading } = useCreditsSimple();
@@ -158,6 +160,59 @@ const Profile = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 1. Validation côté client
+    if (!newEmail) {
+      toast({ title: "Erreur", description: "Le champ email est obligatoire.", variant: "destructive" });
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(newEmail)) {
+      toast({ title: "Erreur", description: "Le format de l'email est invalide.", variant: "destructive" });
+      return;
+    }
+    if (newEmail === user.email) {
+      toast({ title: "Erreur", description: "La nouvelle adresse e-mail doit être différente de l'actuelle.", variant: "destructive" });
+      return;
+    }
+    // 2. Vérifier que l'utilisateur est connecté
+    if (!authUser) {
+      toast({ title: "Erreur", description: "Utilisateur non authentifié.", variant: "destructive" });
+      return;
+    }
+
+    setEmailLoading(true);
+    try {
+      // 3. Appeler l'Edge Function dédiée
+      const { error } = await supabase.functions.invoke('update-email-request', {
+        body: { new_email: newEmail },
+      });
+
+      if (error) throw error;
+
+      // 4. Gérer le succès
+      toast({
+        title: "Emails de confirmation envoyés",
+        description: "Des e-mails de confirmation ont été envoyés à votre ancienne ET nouvelle adresse. Vous devez confirmer dans les DEUX emails pour finaliser le changement.",
+      });
+      setNewEmail('');
+
+    } catch (error: any) {
+      // 5. Gérer les erreurs
+      console.error('Error invoking update-email-request function:', error);
+      // Essayer d'extraire un message d'erreur plus précis de la réponse de la fonction
+      const errorMessage = error.context?.json?.error || error.message || "Impossible de demander le changement d'e-mail.";
+      toast({
+        title: "Erreur de la fonction",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setEmailLoading(false);
+    }
   };
 
   const displayValue = (value: string) => {
@@ -409,7 +464,7 @@ const Profile = () => {
                 </div>
 
                 {/* Changer l'adresse e-mail */}
-                <div className="p-6 rounded-lg bg-white shadow-md flex flex-col">
+                <form onSubmit={handleChangeEmail} className="p-6 rounded-lg bg-white shadow-md flex flex-col">
                   <div className="flex-grow">
                     <h3 className="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Changer l'adresse e-mail</h3>
                     <div className="space-y-4">
@@ -427,12 +482,26 @@ const Profile = () => {
                         <Label className="text-sm font-medium text-gray-600" htmlFor="new-email">
                           Nouvelle adresse e-mail
                         </Label>
-                        <Input id="new-email" type="email" placeholder="nouvel.email@exemple.com" className="mt-1" />
+                        <Input
+                          id="new-email"
+                          type="email"
+                          placeholder="nouvel.email@exemple.com"
+                          className="mt-1"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          disabled={emailLoading}
+                        />
                       </div>
                     </div>
                   </div>
-                  <Button className="mt-6 self-end">Mettre à jour l'e-mail</Button>
-                </div>
+                  <Button
+                    type="submit"
+                    className="mt-6 self-end"
+                    disabled={emailLoading}
+                  >
+                    {emailLoading ? "Mise à jour en cours..." : "Mettre à jour l'e-mail"}
+                  </Button>
+                </form>
               </div>
             </div>
           )}
