@@ -40,7 +40,7 @@ class AurentiaStripeService {
   async getOrCreateCustomer(userId: string, email: string, name?: string): Promise<string> {
     try {
       // 1. Vérifier si le client existe dans notre DB
-      const { data: existingCustomer } = await supabase
+      const { data: existingCustomer } = await (supabase as any)
         .from('stripe_customers')
         .select('stripe_customer_id')
         .eq('user_id', userId)
@@ -68,7 +68,7 @@ class AurentiaStripeService {
   }
 
   private async saveCustomerToDb(customerId: string, userId: string, email: string, name?: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('stripe_customers')
       .upsert({
         stripe_customer_id: customerId,
@@ -90,7 +90,7 @@ class AurentiaStripeService {
   async getUserSubscriptionStatus(userId: string): Promise<UserSubscriptionInfo> {
     try {
       // 1. Récupérer le customer ID
-      const { data: customerData } = await supabase
+      const { data: customerData } = await (supabase as any)
         .from('stripe_customers')
         .select('stripe_customer_id')
         .eq('user_id', userId)
@@ -101,7 +101,7 @@ class AurentiaStripeService {
       }
 
       // 2. Récupérer les abonnements depuis notre DB locale
-      const { data: subscriptions, error } = await supabase
+      const { data: subscriptions, error } = await (supabase as any)
         .from('stripe_subscriptions')
         .select('*')
         .eq('user_id', userId)
@@ -313,7 +313,7 @@ class AurentiaStripeService {
   // ====== MÉTHODES PRIVÉES ======
 
   private async saveSubscriptionIntent(userId: string, projectId: string, customerId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('subscription_intents')
       .insert({
         user_id: userId,
@@ -359,7 +359,7 @@ class AurentiaStripeService {
     if (currentPeriodEnd) updateData.current_period_end = currentPeriodEnd;
     if (cancelAtPeriodEnd !== undefined) updateData.cancel_at_period_end = cancelAtPeriodEnd;
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('stripe_subscriptions')
       .update(updateData)
       .eq('stripe_subscription_id', subscriptionId);
@@ -390,7 +390,7 @@ class AurentiaStripeService {
    */
   async getSubscriptionStats(): Promise<any> {
     try {
-      const { data: stats } = await supabase
+      const { data: stats } = await (supabase as any)
         .from('stripe_subscriptions')
         .select(`
           status,
