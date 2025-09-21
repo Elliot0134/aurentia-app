@@ -3,6 +3,7 @@ import { FormEvent, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,11 +11,15 @@ const Login = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const navigate = useNavigate();
+  const { getDefaultDashboard } = useUserRole(); // Utiliser le hook pour obtenir la fonction de redirection
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        navigate("/dashboard");
+        // Attendre que le profil utilisateur soit chargé pour obtenir le rôle
+        // et rediriger vers le tableau de bord par défaut
+        const defaultDashboardPath = getDefaultDashboard();
+        navigate(defaultDashboardPath);
       }
     });
 
@@ -22,7 +27,8 @@ const Login = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        const defaultDashboardPath = getDefaultDashboard();
+        navigate(defaultDashboardPath);
       }
     };
     
@@ -34,7 +40,7 @@ const Login = () => {
         authListener.subscription.unsubscribe();
       }
     };
-  }, [navigate]);
+  }, [navigate, getDefaultDashboard]); // Ajouter getDefaultDashboard aux dépendances
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -49,6 +55,9 @@ const Login = () => {
       if (error) throw error;
       
       // Auth state listener will handle navigation
+      // For direct sign-in, we can also explicitly navigate here
+      const defaultDashboardPath = getDefaultDashboard();
+      navigate(defaultDashboardPath);
     } catch (error: any) {
       toast({
         title: "Erreur de connexion",
@@ -70,7 +79,7 @@ const Login = () => {
             access_type: 'offline',
             prompt: 'consent',
           },
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/role-selection`,
         },
       });
       
