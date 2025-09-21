@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCreditsSimple } from '../../hooks/useCreditsSimple';
+import { useCredits } from '../../hooks/useCreditsSimple';
 import { Loader2, Coins } from 'lucide-react';
 
 interface CreditDisplayProps {
@@ -11,7 +11,7 @@ export const CreditDisplay: React.FC<CreditDisplayProps> = ({
   compact = false,
   className = ""
 }) => {
-  const { monthlyRemaining, monthlyLimit, isLoading, error } = useCreditsSimple();
+  const { monthlyRemaining, monthlyLimit, isLoading, error } = useCredits();
 
   if (isLoading) {
     return (

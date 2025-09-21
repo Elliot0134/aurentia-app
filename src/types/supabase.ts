@@ -1961,7 +1961,6 @@ export type Database = {
           abonnement: string | null
           conv_limit: string | null
           created_at: string | null
-          credit_limit: string | null
           drive_folder_id: string | null
           drive_folder_rag: string | null
           drive_folder_url: string | null
@@ -1973,9 +1972,13 @@ export type Database = {
           invitation_code_used: string | null
           is_member: boolean | null
           last_name: string | null
+          last_credit_reset: string
+          monthly_credits_limit: number
+          monthly_credits_remaining: number
           nb_projects: string | null
           organization_id: string | null
           phone: string | null
+          purchased_credits_remaining: number
           stripe_customer_id: string | null
           subscription_status: string | null
           user_role: string | null
@@ -1984,7 +1987,6 @@ export type Database = {
           abonnement?: string | null
           conv_limit?: string | null
           created_at?: string | null
-          credit_limit?: string | null
           drive_folder_id?: string | null
           drive_folder_rag?: string | null
           drive_folder_url?: string | null
@@ -1996,9 +1998,13 @@ export type Database = {
           invitation_code_used?: string | null
           is_member?: boolean | null
           last_name?: string | null
+          last_credit_reset?: string
+          monthly_credits_limit?: number
+          monthly_credits_remaining?: number
           nb_projects?: string | null
           organization_id?: string | null
           phone?: string | null
+          purchased_credits_remaining?: number
           stripe_customer_id?: string | null
           subscription_status?: string | null
           user_role?: string | null
@@ -2007,7 +2013,6 @@ export type Database = {
           abonnement?: string | null
           conv_limit?: string | null
           created_at?: string | null
-          credit_limit?: string | null
           drive_folder_id?: string | null
           drive_folder_rag?: string | null
           drive_folder_url?: string | null
@@ -2019,9 +2024,13 @@ export type Database = {
           invitation_code_used?: string | null
           is_member?: boolean | null
           last_name?: string | null
+          last_credit_reset?: string
+          monthly_credits_limit?: number
+          monthly_credits_remaining?: number
           nb_projects?: string | null
           organization_id?: string | null
           phone?: string | null
+          purchased_credits_remaining?: number
           stripe_customer_id?: string | null
           subscription_status?: string | null
           user_role?: string | null

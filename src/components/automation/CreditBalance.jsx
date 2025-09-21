@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useCreditsSimple } from '@/hooks/useCreditsSimple';
+import { useCredits } from '@/hooks/useCreditsSimple';
 
 const CreditBalance = ({ credits: propCredits }) => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -26,8 +26,9 @@ const CreditBalance = ({ credits: propCredits }) => {
   const {
     monthlyRemaining,
     isLoading,
-    error
-  } = useCreditsSimple();
+    error,
+    addPurchasedCredits
+  } = useCredits();
 
   // Si pas de crédits du nouveau système, utiliser les props (fallback)
   const credits = monthlyRemaining || propCredits || 0;
@@ -48,9 +49,14 @@ const CreditBalance = ({ credits: propCredits }) => {
 
   const handlePurchaseCredits = async (pack) => {
     try {
-      // TODO: Implémenter la vraie logique d'achat avec le nouveau système
-      console.log('Achat de crédits à implémenter:', pack);
-      setShowPurchaseModal(false);
+      // Utiliser la nouvelle fonction d'ajout de crédits
+      const success = await addPurchasedCredits(pack.credits + pack.bonus);
+      if (success) {
+        console.log('Crédits ajoutés avec succès:', pack);
+        setShowPurchaseModal(false);
+      } else {
+        console.error('Erreur lors de l\'ajout des crédits');
+      }
     } catch (error) {
       console.error('Erreur lors de l\'achat:', error);
     }
@@ -213,10 +219,10 @@ const CreditBalance = ({ credits: propCredits }) => {
                         <Button
                           className="w-full"
                           onClick={() => handlePurchaseCredits(pack)}
-                          disabled={loading}
+                          disabled={isLoading}
                           variant={pack.popular ? "default" : "outline"}
                         >
-                          {loading ? "Traitement..." : "Acheter maintenant"}
+                          {isLoading ? "Traitement..." : "Acheter maintenant"}
                         </Button>
                       </div>
                     </CardContent>

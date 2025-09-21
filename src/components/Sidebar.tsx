@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MobileNavbar from "./MobileNavbar"; // Import the new MobileNavbar component
 import { useProject } from "@/contexts/ProjectContext";
 import { Zap } from "lucide-react";
-import { useCreditsSimple } from "@/hooks/useCreditsSimple";
+import { useCredits } from "@/hooks/useCreditsSimple";
 import AurentiaLogo from "./AurentiaLogo"; // Import the AurentiaLogo component
 
 interface SidebarProps {
@@ -248,7 +248,7 @@ interface CreditInfoProps {
 }
 
 const CreditInfo = ({ isCollapsed }: CreditInfoProps) => {
-  const { monthlyRemaining, monthlyLimit, purchasedRemaining, isLoading, error } = useCreditsSimple();
+  const { monthlyRemaining, monthlyLimit, purchasedRemaining, isLoading, error } = useCredits();
 
   if (isLoading) {
     return <p className="text-xs text-gray-500">Chargement crédits...</p>;
