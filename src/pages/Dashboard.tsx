@@ -99,7 +99,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-3 flex justify-end mb-4">
-            <Button onClick={() => navigate("/warning")} className="flex items-center gap-2">
+            <Button onClick={() => navigate("/individual/warning")} className="flex items-center gap-2">
               <Plus size={16} />
               Créer un nouveau projet
             </Button>
@@ -177,7 +177,7 @@ const Dashboard = () => {
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">Vous n'avez pas encore de projets</p>
                 <button
-                  onClick={() => navigate("/warning")}
+                  onClick={() => navigate("/individual/warning")}
                   className="btn-primary"
                 >
                   Créer votre premier projet
@@ -204,7 +204,7 @@ const Dashboard = () => {
           {/* Bouton créer un projet - visible uniquement en mobile */}
           <div className="md:hidden mt-6">
             <button
-              onClick={() => navigate("/warning")}
+              onClick={() => navigate("/individual/warning")}
               className="btn-primary w-full flex items-center justify-center gap-2 px-4 py-3"
             >
               <Plus size={20} />

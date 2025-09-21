@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import { useCreditsSimple } from '@/hooks/useCreditsSimple';
 import { Input } from "@/components/ui/input";
+import SubscriptionManager from '@/components/subscription/SubscriptionManager';
+import { useProject } from '@/contexts/ProjectContext';
 import { Label } from "@/components/ui/label";
 import { Edit2, Save, X, ShieldCheck } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
 import { User } from '@supabase/supabase-js';
+import { userInitializationService } from '@/services/userInitializationService';
 
 interface ProfileData {
   id: string;
@@ -47,6 +50,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("Informations");
   const { subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
   const { credits, isLoading: creditsLoading } = useCreditsSimple();
+  const { currentProjectId, userProjectsLoading } = useProject();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -54,6 +58,9 @@ const Profile = () => {
       if (session) {
         // Stocker l'utilisateur auth pour la confirmation d'email
         setAuthUser(session.user);
+        
+        // S'assurer que l'utilisateur a des crédits initialisés
+        await userInitializationService.ensureUserCreditsExist(session.user.id);
         
         // In a real application, you would fetch the full user profile from your database
         // Fetch first_name from user_metadata
@@ -366,67 +373,18 @@ const Profile = () => {
           {activeTab === "Facturation" && (
             <div>
               <h2 className="text-2xl font-bold mb-6 text-slate-800">Facturation & Abonnements</h2>
-              {subscriptionLoading || creditsLoading ? (
+              {userProjectsLoading ? (
                 <div className="flex justify-center items-center h-48">
                   <p className="text-slate-500">Chargement des informations...</p>
                 </div>
+              ) : user.id && currentProjectId ? (
+                <SubscriptionManager userId={user.id} projectId={currentProjectId} />
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Section Abonnement */}
-                  <div className="lg:col-span-1 p-6 rounded-lg bg-white shadow-md flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <ShieldCheck className="text-aurentia-orange-aurentia" size={28} />
-                        <h3 className="text-xl font-bold text-slate-700">Abonnement</h3>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium text-slate-500">Statut</p>
-                          <span className={`mt-1 inline-block px-3 py-1 text-sm font-semibold rounded-full ${
-                            subscriptionStatus === 'active' 
-                              ? 'bg-emerald-100 text-emerald-800' 
-                              : 'bg-rose-100 text-rose-800'
-                          }`}>
-                            {subscriptionStatus === 'active' ? 'Actif' : 'Inactif'}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-500">Prochain renouvellement</p>
-                          <p className="font-semibold text-slate-700">19 Oct, 2025</p>
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="outline" className="w-full mt-6 text-lg font-bold py-5">Gérer l'abonnement</Button>
-                  </div>
-
-                  {/* Section Crédits */}
-                  <div className="lg:col-span-2 p-6 rounded-lg bg-white shadow-md flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <img src="/credit-image.svg" alt="Crédits" className="h-7 w-7" />
-                        <h3 className="text-xl font-bold text-slate-700">Crédits Disponibles</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 text-center">
-                          <p className="text-sm font-medium text-blue-800">Crédits Mensuels</p>
-                          <p className="text-4xl font-bold text-blue-900 mt-2">
-                            {credits?.monthly_remaining ?? 'N/A'}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-1">se renouvelle le 1er Oct</p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-gradient-to-br from-violet-50 to-violet-100 text-center">
-                          <p className="text-sm font-medium text-violet-800">Crédits Achetés</p>
-                          <p className="text-4xl font-bold text-violet-900 mt-2">
-                            {credits?.purchased_remaining ?? 'N/A'}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-1">n'expirent jamais</p>
-                        </div>
-                      </div>
-                    </div>
-                    <Button className="w-full mt-6 bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90 text-white text-lg font-bold py-5">
-                      Acheter plus de crédits
-                    </Button>
-                  </div>
+                <div className="text-center p-8 bg-gray-50 rounded-lg">
+                  <p className="text-slate-600">Vous n'avez pas encore de projet actif.</p>
+                  <p className="text-slate-500 mt-2">Veuillez créer un projet pour gérer votre abonnement.</p>
+                  {/* Optionnel : Ajouter un bouton pour créer un projet */}
+                  {/* <Button className="mt-4">Créer un projet</Button> */}
                 </div>
               )}
             </div>

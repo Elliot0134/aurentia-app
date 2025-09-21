@@ -65,9 +65,6 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: "http://app.aurentia.fr/dashboard"
-        }
       });
       
       if (error) throw error;

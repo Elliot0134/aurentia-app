@@ -266,9 +266,6 @@ const Signup = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: "http://app.aurentia.fr/role-selection"
-        }
       });
       
       if (error) throw error;

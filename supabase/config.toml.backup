@@ -1,0 +1,12 @@
+[project]
+ref = "llcliurrrrxnkquwmwsi"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "billing", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322

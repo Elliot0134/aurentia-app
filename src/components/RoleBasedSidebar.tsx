@@ -2,6 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { UserProfile } from '@/types/userTypes';
 import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import AurentiaLogo from './AurentiaLogo';
 import ProjectSelector from "./ProjectSelector";
@@ -519,8 +520,22 @@ const CreditInfo = ({
   isLoading, 
   error 
 }: CreditInfoProps) => {
-  if (isLoading) {
-    return <p className="text-xs text-gray-500">Chargement crédits...</p>;
+  const { currentProjectId, userProjectsLoading } = useProject();
+  const navigate = useNavigate();
+
+  if (isLoading || userProjectsLoading) {
+    return <p className="text-xs text-gray-500">Chargement...</p>;
+  }
+
+  if (!currentProjectId && !userProjectsLoading) {
+    return (
+      <Button 
+        onClick={() => navigate('/individual/warning')}
+        className="bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90 text-white w-full"
+      >
+        {isCollapsed ? <Briefcase size={20} /> : "Créer un projet"}
+      </Button>
+    );
   }
 
   if (error) {
