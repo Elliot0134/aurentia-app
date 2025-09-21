@@ -6,8 +6,26 @@ CREATE TABLE public.Template (
   project_id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT Template_pkey PRIMARY KEY (user_id),
-  CONSTRAINT Template_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
-  CONSTRAINT Template_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT Template_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT Template_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id)
+);
+CREATE TABLE public.backup_profiles (
+  id uuid NOT NULL,
+  email text,
+  credits_restants text,
+  credit_limit text,
+  created_at timestamp with time zone,
+  CONSTRAINT backup_profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT backup_profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.backup_project_summary (
+  project_id uuid,
+  user_id uuid,
+  statut_project text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  CONSTRAINT backup_project_summary_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT backup_project_summary_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.business_model (
   user_id uuid NOT NULL,
@@ -29,7 +47,7 @@ CREATE TABLE public.business_model (
   flux_revenus_liste_des_revenus text,
   CONSTRAINT business_model_pkey PRIMARY KEY (project_id),
   CONSTRAINT business_model_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT business_model_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id)
+  CONSTRAINT business_model_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.concurrence (
   user_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -108,8 +126,8 @@ CREATE TABLE public.concurrence (
   recommandations text,
   justification_avis text,
   CONSTRAINT concurrence_pkey PRIMARY KEY (project_id),
-  CONSTRAINT concurrence_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
-  CONSTRAINT concurrence_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT concurrence_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT concurrence_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.conversation (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -119,8 +137,88 @@ CREATE TABLE public.conversation (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT conversation_pkey PRIMARY KEY (id),
-  CONSTRAINT conversation_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT conversation_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT conversation_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT conversation_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.deliverables (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  organization_id uuid,
+  project_id uuid,
+  entrepreneur_id uuid,
+  title text NOT NULL,
+  description text,
+  type text NOT NULL CHECK (type = ANY (ARRAY['business-model'::text, 'market-analysis'::text, 'pitch'::text, 'legal'::text, 'financial'::text, 'prototype'::text, 'presentation'::text, 'other'::text])),
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'in-progress'::text, 'completed'::text, 'reviewed'::text, 'approved'::text])),
+  quality_score integer CHECK (quality_score >= 0 AND quality_score <= 100),
+  due_date timestamp with time zone,
+  completed_at timestamp with time zone,
+  file_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT deliverables_pkey PRIMARY KEY (id),
+  CONSTRAINT deliverables_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT deliverables_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT deliverables_entrepreneur_id_fkey FOREIGN KEY (entrepreneur_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.email_confirmation_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  confirmation_id uuid,
+  user_id uuid,
+  action text NOT NULL CHECK (action = ANY (ARRAY['sent'::text, 'clicked'::text, 'confirmed'::text, 'failed'::text, 'resent'::text, 'expired'::text, 'cancelled'::text])),
+  ip_address inet,
+  user_agent text,
+  success boolean DEFAULT true,
+  error_message text,
+  response_time_ms integer,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT email_confirmation_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT email_confirmation_logs_confirmation_id_fkey FOREIGN KEY (confirmation_id) REFERENCES public.email_confirmations(id),
+  CONSTRAINT email_confirmation_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.email_confirmations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  email text NOT NULL,
+  token_hash text NOT NULL UNIQUE,
+  expires_at timestamp with time zone NOT NULL,
+  confirmed_at timestamp with time zone,
+  attempts integer DEFAULT 0,
+  max_attempts integer DEFAULT 5,
+  last_sent_at timestamp with time zone,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'expired'::text, 'failed'::text, 'cancelled'::text])),
+  ip_address inet,
+  user_agent text,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  old_email_confirmed_at timestamp with time zone,
+  new_email_confirmed_at timestamp with time zone,
+  old_email_token_hash text,
+  new_email_token_hash text,
+  confirmation_type text DEFAULT 'double'::text CHECK (confirmation_type = ANY (ARRAY['single'::text, 'double'::text])),
+  CONSTRAINT email_confirmations_pkey PRIMARY KEY (id),
+  CONSTRAINT email_confirmations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  organization_id uuid,
+  title text NOT NULL,
+  description text,
+  start_date timestamp with time zone NOT NULL,
+  end_date timestamp with time zone NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['workshop'::text, 'meeting'::text, 'webinar'::text, 'networking'::text, 'presentation'::text, 'training'::text, 'other'::text])),
+  location text,
+  organizer_id uuid,
+  is_recurring boolean DEFAULT false,
+  max_participants integer,
+  participants ARRAY DEFAULT '{}'::text[],
+  status text DEFAULT 'planned'::text CHECK (status = ANY (ARRAY['planned'::text, 'ongoing'::text, 'completed'::text, 'cancelled'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT events_pkey PRIMARY KEY (id),
+  CONSTRAINT events_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT events_organizer_id_fkey FOREIGN KEY (organizer_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.form_business_idea (
   user_id uuid NOT NULL,
@@ -139,6 +237,63 @@ CREATE TABLE public.form_business_idea (
   equipe_fondatrice text,
   CONSTRAINT form_business_idea_pkey PRIMARY KEY (project_id),
   CONSTRAINT form_business_idea_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.form_submissions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  form_id uuid,
+  submitted_by uuid,
+  data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'reviewed'::text, 'approved'::text, 'rejected'::text])),
+  submitted_at timestamp with time zone DEFAULT now(),
+  reviewed_by uuid,
+  reviewed_at timestamp with time zone,
+  notes text,
+  CONSTRAINT form_submissions_pkey PRIMARY KEY (id),
+  CONSTRAINT form_submissions_form_id_fkey FOREIGN KEY (form_id) REFERENCES public.form_templates(id),
+  CONSTRAINT form_submissions_submitted_by_fkey FOREIGN KEY (submitted_by) REFERENCES public.profiles(id),
+  CONSTRAINT form_submissions_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.form_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  organization_id uuid,
+  title text NOT NULL,
+  description text,
+  category text NOT NULL CHECK (category = ANY (ARRAY['onboarding'::text, 'feedback'::text, 'evaluation'::text, 'survey'::text, 'application'::text, 'custom'::text])),
+  fields jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_by uuid,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT form_templates_pkey PRIMARY KEY (id),
+  CONSTRAINT form_templates_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT form_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.invitation_code (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  code text NOT NULL UNIQUE,
+  type text NOT NULL CHECK (type = ANY (ARRAY['super_admin'::text, 'incubator_main_admin'::text, 'incubator_member'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  organization_id uuid,
+  created_by uuid,
+  expires_at timestamp with time zone,
+  max_uses integer DEFAULT 1,
+  current_uses integer DEFAULT 0,
+  is_active boolean DEFAULT true,
+  CONSTRAINT invitation_code_pkey PRIMARY KEY (id),
+  CONSTRAINT invitation_code_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT invitation_code_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.juridique (
+  project_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  avis text,
+  justification_avis text,
+  structure jsonb,
+  recommandations text,
+  CONSTRAINT juridique_pkey PRIMARY KEY (project_id),
+  CONSTRAINT juridique_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT juridique_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.marche (
   user_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -274,8 +429,38 @@ CREATE TABLE public.marche (
   avis text,
   justification_avis text,
   CONSTRAINT marche_pkey PRIMARY KEY (project_id),
-  CONSTRAINT marche_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT marche_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT marche_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT marche_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.mentor_assignments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  mentor_id uuid,
+  entrepreneur_id uuid,
+  project_id uuid,
+  assigned_at timestamp with time zone DEFAULT now(),
+  status text DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'cancelled'::text])),
+  notes text,
+  CONSTRAINT mentor_assignments_pkey PRIMARY KEY (id),
+  CONSTRAINT mentor_assignments_mentor_id_fkey FOREIGN KEY (mentor_id) REFERENCES public.mentors(id),
+  CONSTRAINT mentor_assignments_entrepreneur_id_fkey FOREIGN KEY (entrepreneur_id) REFERENCES public.profiles(id),
+  CONSTRAINT mentor_assignments_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.mentors (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  organization_id uuid,
+  expertise ARRAY DEFAULT '{}'::text[],
+  bio text,
+  linkedin_url text,
+  status text DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'pending'::text])),
+  total_entrepreneurs integer DEFAULT 0,
+  success_rate numeric DEFAULT 0,
+  rating numeric DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT mentors_pkey PRIMARY KEY (id),
+  CONSTRAINT mentors_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
+  CONSTRAINT mentors_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -283,8 +468,12 @@ CREATE TABLE public.messages (
   sender text NOT NULL CHECK (sender = ANY (ARRAY['user'::text, 'bot'::text])),
   content text NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  user_id uuid,
+  project_id uuid,
   CONSTRAINT messages_pkey PRIMARY KEY (id),
-  CONSTRAINT messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversation(id)
+  CONSTRAINT messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversation(id),
+  CONSTRAINT messages_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT messages_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.mini_swot (
   user_id uuid NOT NULL,
@@ -313,31 +502,60 @@ CREATE TABLE public.mini_swot (
   CONSTRAINT mini_swot_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
   CONSTRAINT mini_swot_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
-CREATE TABLE public.organisms (
-  user_id uuid NOT NULL DEFAULT gen_random_uuid(),
+CREATE TABLE public.organizations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  type text CHECK (type = ANY (ARRAY['incubator'::text, 'accelerator'::text, 'school'::text, 'other'::text])),
+  domain text UNIQUE,
+  logo_url text,
+  primary_color text DEFAULT '#F04F6A'::text,
+  secondary_color text DEFAULT '#F7774A'::text,
+  welcome_message text,
+  newsletter_enabled boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  created_by uuid,
+  logo text,
+  website text,
+  email text,
+  phone text,
+  address text,
+  updated_at timestamp with time zone DEFAULT now(),
+  settings jsonb DEFAULT '{"branding": {"primaryColor": "#ff5932", "secondaryColor": "#1a1a1a"}, "security": {"passwordPolicy": "medium", "sessionTimeout": 480, "twoFactorRequired": false}, "notifications": {"systemAlerts": true, "weeklyReports": false, "projectUpdates": true, "mentorAssignments": true, "emailNotifications": true}}'::jsonb,
+  CONSTRAINT organizations_pkey PRIMARY KEY (id),
+  CONSTRAINT organizations_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.partners (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  organization_id uuid,
+  name text NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['investor'::text, 'accelerator'::text, 'incubator'::text, 'corporate'::text, 'government'::text, 'university'::text, 'other'::text])),
+  description text,
+  logo text,
+  website text,
+  email text,
+  phone text,
+  collaboration_type ARRAY DEFAULT '{}'::text[],
+  rating integer DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
+  status text DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'prospect'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT partners_pkey PRIMARY KEY (id),
+  CONSTRAINT partners_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
+);
+CREATE TABLE public.payment_intents (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  payment_intent_id text NOT NULL UNIQUE,
+  user_id uuid NOT NULL,
   project_id uuid NOT NULL,
-  organism_segments_principaux text,
-  organism_caracteristiques_distinctives text,
-  organism_taille_accessibilite text,
-  organism_hierarchisation_potentiel text,
-  organism_profils_demographiques text,
-  organism_traits_psychographiques text,
-  organism_comportements_achat text,
-  organism_facteurs_influence text,
-  organism_etapes_decisionnelles text,
-  organism_points_contact_critiques text,
-  organism_facteurs_conversion_friction text,
-  organism_influences_externes text,
-  organism_besoins_explicites text,
-  organism_besoins_implicites text,
-  organism_motivations_profondes text,
-  organism_declencheurs_achat text,
-  organism_personas_detailles text,
-  organism_facteurs_decisionnels_cles text,
-  organism_strategies_engagement text,
-  organism_recommandations_marketing text,
-  CONSTRAINT organisms_pkey PRIMARY KEY (project_id),
-  CONSTRAINT organisms_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text, 'cancelled'::text])),
+  stripe_payment_intent_id text,
+  amount integer,
+  currency text DEFAULT 'eur'::text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  completed_at timestamp with time zone,
+  CONSTRAINT payment_intents_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_intents_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.persona_express_b2b (
   user_id uuid NOT NULL,
@@ -390,8 +608,8 @@ CREATE TABLE public.persona_express_organismes (
   strategie_approche text,
   recommandations_organisme text,
   CONSTRAINT persona_express_organismes_pkey PRIMARY KEY (project_id),
-  CONSTRAINT persona_express_organismes_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT buyer_organismes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT buyer_organismes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT persona_express_organismes_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.pitch (
   user_id uuid NOT NULL,
@@ -403,6 +621,7 @@ CREATE TABLE public.pitch (
   pitch_court_appel_action text,
   pitch_complet_texte text,
   pitch_complet_appel_action text,
+  avis text,
   CONSTRAINT pitch_pkey PRIMARY KEY (project_id),
   CONSTRAINT Pitch_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT Pitch_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
@@ -411,44 +630,55 @@ CREATE TABLE public.profiles (
   id uuid NOT NULL,
   email text,
   created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
   nb_projects text DEFAULT '2'::text,
   drive_folder_url text,
   drive_folder_id text,
   drive_folder_rag text,
   conv_limit text,
-  credits_restants text DEFAULT '5'::text,
   credit_limit text DEFAULT '5'::text,
+  abonnement text,
+  stripe_customer_id text,
+  subscription_status text DEFAULT 'inactive'::text,
+  is_member boolean,
+  user_role text DEFAULT 'individual'::text CHECK (user_role = ANY (ARRAY['individual'::text, 'member'::text, 'admin'::text, 'super_admin'::text])),
+  organization_id uuid,
+  invitation_code_used text,
+  email_confirmed_at timestamp with time zone,
+  email_confirmation_required boolean DEFAULT true,
+  first_name text,
+  last_name text,
+  phone text,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.project_collaborators (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   project_id uuid NOT NULL,
   user_id uuid NOT NULL,
-  role text DEFAULT 'read'::text CHECK (role = ANY (ARRAY['read'::text, 'write'::text, 'admin'::text])),
-  invited_by uuid,
-  invited_at timestamp with time zone DEFAULT now(),
-  accepted_at timestamp with time zone,
-  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])),
+  role text NOT NULL CHECK (role = ANY (ARRAY['read'::text, 'write'::text, 'admin'::text])),
+  status text NOT NULL DEFAULT 'accepted'::text CHECK (status = ANY (ARRAY['accepted'::text, 'suspended'::text])),
+  invited_by uuid NOT NULL,
+  invited_at timestamp with time zone NOT NULL DEFAULT now(),
+  accepted_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT project_collaborators_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_project_collaborators_invited_by FOREIGN KEY (invited_by) REFERENCES public.profiles(id),
-  CONSTRAINT fk_project_collaborators_user_id FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT fk_project_collaborators_project_id FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+  CONSTRAINT project_collaborators_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT project_collaborators_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES auth.users(id),
+  CONSTRAINT project_collaborators_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.project_invitations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   project_id uuid NOT NULL,
   email text NOT NULL,
-  role text DEFAULT 'read'::text CHECK (role = ANY (ARRAY['read'::text, 'write'::text, 'admin'::text])),
-  invited_by uuid,
-  invited_at timestamp with time zone DEFAULT now(),
-  expires_at timestamp with time zone DEFAULT (now() + '7 days'::interval),
+  role text NOT NULL CHECK (role = ANY (ARRAY['read'::text, 'write'::text, 'admin'::text])),
+  invited_by uuid NOT NULL,
   token text NOT NULL UNIQUE,
-  used boolean DEFAULT false,
+  expires_at timestamp with time zone NOT NULL,
+  used boolean NOT NULL DEFAULT false,
+  invited_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT project_invitations_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_project_invitations_project_id FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT fk_project_invitations_invited_by FOREIGN KEY (invited_by) REFERENCES public.profiles(id)
+  CONSTRAINT project_invitations_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES auth.users(id),
+  CONSTRAINT project_invitations_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.project_summary (
   project_id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -474,7 +704,7 @@ CREATE TABLE public.project_summary (
   project_type text,
   budget text,
   statut text,
-  statut_persona_epxress text,
+  statut_persona_express text,
   statut_mini_swot text,
   Motivation_entrepreneur text,
   statut_success_story text,
@@ -490,6 +720,13 @@ CREATE TABLE public.project_summary (
   statut_vision_mission_valeurs text,
   statut_project text,
   equipe_fondatrice text,
+  date_relance_free_to_premium text,
+  statut_relance_free_to_premium text,
+  date_paiement date,
+  date_mail_avis date,
+  statut_juridique text,
+  status_action_plan text,
+  status_score_viabilite text,
   CONSTRAINT project_summary_pkey PRIMARY KEY (project_id),
   CONSTRAINT project_summary_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
   CONSTRAINT project_summary_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
@@ -517,10 +754,8 @@ CREATE TABLE public.proposition_valeur (
   organismes_carte_valeur_createurs_benefices text,
   organismes_carte_valeur_solutions text,
   CONSTRAINT proposition_valeur_pkey PRIMARY KEY (project_id),
-  CONSTRAINT proposition_valeur_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT proposition_valeur_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
-  CONSTRAINT proposition_valeur_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT proposition_valeur_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+  CONSTRAINT proposition_valeur_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT proposition_valeur_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.rag (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -531,8 +766,8 @@ CREATE TABLE public.rag (
   embedding USER-DEFINED,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT rag_pkey PRIMARY KEY (id),
-  CONSTRAINT rag_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT rag_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT rag_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT rag_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.ressources_requises (
   user_id uuid NOT NULL,
@@ -541,9 +776,77 @@ CREATE TABLE public.ressources_requises (
   ressources_materielles text,
   ressources_humaines text,
   ressources_techniques text,
+  avis text,
   CONSTRAINT ressources_requises_pkey PRIMARY KEY (project_id),
   CONSTRAINT ressources_requises_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT ressources_requises_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.score_projet (
+  project_id uuid NOT NULL,
+  user_id uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  analyse_juridique jsonb,
+  marche_concurrence jsonb,
+  faisabilite_business jsonb,
+  innovation_risques jsonb,
+  evaluation_finale jsonb,
+  score_final integer CHECK (score_final >= 1 AND score_final <= 5),
+  CONSTRAINT score_projet_pkey PRIMARY KEY (project_id),
+  CONSTRAINT score_projet_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT score_projet_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.stripe_customers (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  stripe_customer_id text NOT NULL UNIQUE,
+  user_id uuid UNIQUE,
+  email text NOT NULL,
+  name text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT stripe_customers_pkey PRIMARY KEY (id),
+  CONSTRAINT stripe_customers_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.stripe_subscriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  stripe_subscription_id text NOT NULL UNIQUE,
+  stripe_customer_id text NOT NULL,
+  user_id uuid,
+  product_id text NOT NULL,
+  price_id text NOT NULL,
+  status text NOT NULL,
+  current_period_start timestamp with time zone,
+  current_period_end timestamp with time zone,
+  cancel_at_period_end boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT stripe_subscriptions_pkey PRIMARY KEY (id),
+  CONSTRAINT stripe_subscriptions_stripe_customer_id_fkey FOREIGN KEY (stripe_customer_id) REFERENCES public.stripe_customers(stripe_customer_id),
+  CONSTRAINT stripe_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.stripe_webhook_events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  stripe_event_id text NOT NULL UNIQUE,
+  event_type text NOT NULL,
+  processed boolean DEFAULT false,
+  data jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  processed_at timestamp with time zone,
+  CONSTRAINT stripe_webhook_events_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.subscription_intents (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  project_id uuid,
+  stripe_customer_id text,
+  product_id text NOT NULL,
+  price_id text NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text,
+  stripe_subscription_id text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT subscription_intents_pkey PRIMARY KEY (id),
+  CONSTRAINT subscription_intents_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.success_story (
   user_id uuid NOT NULL,
@@ -556,9 +859,10 @@ CREATE TABLE public.success_story (
   projections_cinq_ans_titre text,
   projections_cinq_ans_vision text,
   message_motivation text,
+  avis text,
   CONSTRAINT success_story_pkey PRIMARY KEY (project_id),
-  CONSTRAINT success_story_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT success_story_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT success_story_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT success_story_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );
 CREATE TABLE public.vision_mission_valeurs (
   user_id uuid NOT NULL,
@@ -568,9 +872,10 @@ CREATE TABLE public.vision_mission_valeurs (
   mission text,
   valeurs text,
   coherence_strategique text,
+  avis text,
   CONSTRAINT vision_mission_valeurs_pkey PRIMARY KEY (project_id),
-  CONSTRAINT vision_mission_valeurs_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT vision_mission_valeurs_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
+  CONSTRAINT vision_mission_valeurs_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id),
   CONSTRAINT vision_mission_valeurs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT vision_mission_valeurs_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.form_business_idea(project_id)
+  CONSTRAINT vision_mission_valeurs_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT vision_mission_valeurs_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );

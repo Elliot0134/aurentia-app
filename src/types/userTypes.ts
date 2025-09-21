@@ -1,5 +1,12 @@
-export type UserRole = 'individual' | 'member' | 'admin' | 'super_admin';
-export type InvitationType = 'super_admin' | 'incubator_main_admin' | 'incubator_member';
+export type UserRole = 'individual' | 'member' | 'staff' | 'organisation' | 'super_admin';
+export type InvitationType = 'super_admin' | 'organisation_staff' | 'organisation_member';
+
+// Organization roles breakdown:
+// - 'individual': Standalone users (current individual)
+// - 'member': Entrepreneurs/clients within an organization (current member) 
+// - 'staff': Organization employees with admin privileges (current admin)
+// - 'organisation': Organization owners/main admins (renamed from admin)
+// - 'super_admin': Platform administrators
 
 export interface Organization {
   id: string;
@@ -53,8 +60,8 @@ export interface InvitationCode {
 // Mapping des codes vers rôles
 export const CODE_TO_ROLE_MAPPING: Record<InvitationType, UserRole> = {
   'super_admin': 'super_admin',
-  'incubator_main_admin': 'admin', 
-  'incubator_member': 'member'
+  'organisation_staff': 'staff', 
+  'organisation_member': 'member'
 } as const;
 
 // Types pour la validation des codes d'invitation

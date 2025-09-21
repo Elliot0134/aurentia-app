@@ -6,6 +6,8 @@ import { validateInvitationCode, useInvitationCode } from "@/services/invitation
 import { InvitationValidationResult } from "@/types/userTypes";
 import { emailConfirmationService } from "@/services/emailConfirmationService";
 import { EmailConfirmationModal } from "@/components/auth/EmailConfirmationModal";
+import { createOrganisation } from "@/services/organisationService";
+import OrganisationSetupForm from "@/components/organisation/OrganisationSetupForm";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -15,12 +17,13 @@ const Signup = () => {
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(0); // 0: code invitation, 1: sélection rôle, 2: inscription
+  const [step, setStep] = useState(0); // 0: sélection rôle, 1: code invitation, 2: inscription
   const [invitationCode, setInvitationCode] = useState("");
   const [codeValidation, setCodeValidation] = useState<InvitationValidationResult | null>(null);
-  const [selectedRole, setSelectedRole] = useState<'individual' | 'admin' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'individual' | 'organisation' | null>(null);
   const [showEmailConfirmationModal, setShowEmailConfirmationModal] = useState(false);
   const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
+  const [showOrganisationSetup, setShowOrganisationSetup] = useState(false);
   const navigate = useNavigate();
 
   const handleCodeValidation = async () => {
@@ -138,23 +141,47 @@ const Signup = () => {
           console.log("handleSubmit: Gestion de la sélection de rôle manuelle...");
           // Cas avec sélection de rôle manuelle
           try {
-            const { error: updateError } = await supabase
-              .from('profiles' as any)
-              .update({ user_role: selectedRole })
-              .eq('id', user.id);
-
-            if (updateError) {
-              console.warn("handleSubmit: Erreur lors de l'attribution du rôle:", updateError);
-              // Ne pas faire échouer l'inscription pour ça
-            } else {
-              userRole = selectedRole;
-            }
+            let updateData: any = { user_role: selectedRole };
             
-            toast({
-              title: "Inscription réussie !",
-              description: `Bienvenue ! Vous êtes maintenant configuré en tant que ${selectedRole === 'individual' ? 'entrepreneur' : 'structure d\'accompagnement'}.`,
-            });
-            console.log("handleSubmit: Rôle attribué avec succès. Rôle:", userRole);
+            // Pour les individus, on configure directement le rôle
+            if (selectedRole === 'individual') {
+              const { error: updateError } = await supabase
+                .from('profiles' as any)
+                .update(updateData)
+                .eq('id', user.id);
+
+              if (updateError) {
+                console.warn("handleSubmit: Erreur lors de l'attribution du rôle:", updateError);
+                // Ne pas faire échouer l'inscription pour ça
+              } else {
+                userRole = selectedRole;
+              }
+              
+              toast({
+                title: "Inscription réussie",
+                description: "Bienvenue ! Vous êtes maintenant configuré en tant qu'entrepreneur.",
+              });
+              
+              // Rediriger vers le dashboard approprié après confirmation d'email
+            } else if (selectedRole === 'organisation') {
+              // Pour les organisations, on ne configure que le rôle utilisateur
+              // La création de l'organisation se fera dans une étape séparée après confirmation d'email
+              const { error: updateError } = await supabase
+                .from('profiles' as any)
+                .update({ user_role: 'individual' }) // Temporairement individual en attendant la création d'organisation
+                .eq('id', user.id);
+
+              if (updateError) {
+                console.warn("handleSubmit: Erreur lors de l'attribution du rôle temporaire:", updateError);
+              }
+              
+              userRole = 'individual'; // Temporaire
+              
+              toast({
+                title: "Inscription réussie",
+                description: "Veuillez confirmer votre email, puis vous pourrez configurer votre organisation.",
+              });
+            }
           } catch (roleError: any) {
             console.warn("handleSubmit: Erreur lors de l'attribution du rôle:", roleError);
             // Ne pas faire échouer l'inscription pour ça
@@ -231,22 +258,27 @@ const Signup = () => {
     
     toast({
       title: "Email confirmé !",
-      description: "Votre compte est maintenant actif. Redirection vers votre dashboard...",
+      description: "Votre compte est maintenant actif.",
     });
     
-    // Déterminer la redirection selon le rôle
-    let roleBasePath = "/individual/dashboard";
-    
-    if (invitationCode && codeValidation?.valid) {
-      roleBasePath = `/${codeValidation.role}/dashboard`;
-    } else if (selectedRole) {
-      roleBasePath = `/${selectedRole}/dashboard`;
+    // Si l'utilisateur a choisi "organisation", afficher le formulaire de configuration
+    if (selectedRole === 'organisation') {
+      setShowOrganisationSetup(true);
+    } else {
+      // Pour les autres rôles, rediriger directement
+      let roleBasePath = "/individual/dashboard";
+      
+      if (invitationCode && codeValidation?.valid) {
+        roleBasePath = `/${codeValidation.role}/dashboard`;
+      } else if (selectedRole) {
+        roleBasePath = `/${selectedRole}/dashboard`;
+      }
+      
+      // Redirection avec un délai pour laisser le temps au toast
+      setTimeout(() => {
+        navigate(roleBasePath);
+      }, 1500);
     }
-    
-    // Redirection avec un délai pour laisser le temps au toast
-    setTimeout(() => {
-      navigate(roleBasePath);
-    }, 1500);
   };
 
   // Handler pour fermer le modal (manuel)
@@ -259,6 +291,25 @@ const Signup = () => {
       description: "Veuillez confirmer votre email pour accéder à votre tableau de bord.",
     });
     // Ne pas rediriger, l'utilisateur reste sur la page d'inscription avec le modal fermé.
+  };
+
+  // Handler pour le succès de la création d'organisation
+  const handleOrganisationSetupSuccess = () => {
+    setShowOrganisationSetup(false);
+    // La redirection est gérée par le composant OrganisationSetupForm
+  };
+
+  // Handler pour revenir en arrière depuis le formulaire d'organisation
+  const handleOrganisationSetupBack = () => {
+    setShowOrganisationSetup(false);
+    // Rester sur la page de signup, permettre à l'utilisateur de choisir une autre option
+    toast({
+      title: "Configuration annulée",
+      description: "Vous pouvez choisir de configurer votre organisation plus tard depuis votre profil.",
+    });
+    
+    // Rediriger vers le dashboard individual en attendant
+    navigate("/individual/dashboard");
   };
 
   const handleGoogleSignIn = async () => {
@@ -285,15 +336,109 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-73px)] flex items-center justify-center p-4">
-      {step === 0 && (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      {/* Étape de configuration d'organisation */}
+      {showOrganisationSetup && registeredUserId && (
+        <OrganisationSetupForm
+          userId={registeredUserId}
+          userEmail={email}
+          userName={`${firstName} ${lastName}`.trim() || email}
+          onSuccess={handleOrganisationSetupSuccess}
+          onBack={handleOrganisationSetupBack}
+        />
+      )}
+
+      {!showOrganisationSetup && step === 0 && (
         <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">
-              Rejoindre Aurentia
+              Choisissez votre profil
             </h1>
             <p className="text-gray-600">
-              Avez-vous un code d'invitation ?
+              Sélectionnez le type de compte qui correspond le mieux à votre situation
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {/* Carte Entrepreneur */}
+            <div
+              className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                selectedRole === 'individual'
+                ? 'border-aurentia-pink bg-aurentia-pink/5'
+                : 'border-gray-200 hover:border-aurentia-pink hover:bg-aurentia-pink/5'
+              }`}
+              onClick={() => setSelectedRole('individual')}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-aurentia-pink to-aurentia-orange rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Entrepreneur
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Je porte un projet entrepreneurial
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Carte Structure d'accompagnement */}
+            <div
+              className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                selectedRole === 'organisation'
+                ? 'border-aurentia-orange bg-aurentia-orange/5'
+                : 'border-gray-200 hover:border-aurentia-orange hover:bg-aurentia-orange/5'
+              }`}
+              onClick={() => setSelectedRole('organisation')}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-aurentia-orange to-yellow-500 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Structure d'accompagnement
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    J'accompagne des entrepreneurs
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <button
+              type="button"
+              className="w-full px-6 py-3 bg-aurentia-pink text-white rounded-lg hover:bg-aurentia-pink/90 transition disabled:opacity-50 flex items-center justify-center gap-2 group"
+              onClick={() => setStep(1)}
+              disabled={!selectedRole}
+            >
+              Continuer
+              <span className="transition-transform duration-300 group-hover:translate-x-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!showOrganisationSetup && step === 1 && (
+        <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">
+              Code d'invitation
+            </h1>
+            <p className="text-gray-600">
+              Avez-vous un code d'invitation pour rejoindre une organisation ?
             </p>
           </div>
           
@@ -337,7 +482,8 @@ const Signup = () => {
                   </span>
                 </div>
                 <p className="text-sm text-green-600 mt-1">
-                  {codeValidation.role === 'admin' && 'en tant qu\'administrateur'}
+                  {codeValidation.role === 'organisation' && 'en tant qu\'administrateur d\'organisation'}
+                  {codeValidation.role === 'staff' && 'en tant que membre du staff'}
                   {codeValidation.role === 'member' && 'en tant qu\'entrepreneur'}
                   {codeValidation.role === 'super_admin' && 'en tant que super administrateur'}
                 </p>
@@ -351,97 +497,7 @@ const Signup = () => {
             )}
           </div>
 
-          <div className="pt-2">
-            <button
-              type="button"
-              className="w-full py-3 flex items-center justify-center gap-2 bg-aurentia-pink text-white rounded-lg hover:bg-aurentia-pink/90 transition group"
-              onClick={() => {
-                if (codeValidation?.valid) {
-                  // Avec code d'invitation, aller directement à l'inscription
-                  setStep(2);
-                } else {
-                  // Sans code, aller à la sélection de rôle
-                  setStep(1);
-                }
-              }}
-            >
-              {codeValidation?.valid ? 'Continuer l\'inscription' : 'S\'inscrire sans code'}
-              <span className="transition-transform duration-300 group-hover:translate-x-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 1 && (
-        <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">
-              Choisissez votre profil
-            </h1>
-            <p className="text-gray-600">
-              Sélectionnez le type de compte qui correspond le mieux à votre situation
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {/* Carte Entrepreneur */}
-            <div
-              className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
-                selectedRole === 'individual'
-                ? 'border-aurentia-pink bg-aurentia-pink/5'
-                : 'border-gray-200 hover:border-aurentia-pink hover:bg-aurentia-pink/5'
-              }`}
-              onClick={() => setSelectedRole('individual')}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-aurentia-pink to-aurentia-orange rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Entrepreneur
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Je porte un projet entrepreneurial
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Carte Structure d'accompagnement */}
-            <div
-              className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
-                selectedRole === 'admin'
-                ? 'border-aurentia-orange bg-aurentia-orange/5'
-                : 'border-gray-200 hover:border-aurentia-orange hover:bg-aurentia-orange/5'
-              }`}
-              onClick={() => setSelectedRole('admin')}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-aurentia-orange to-yellow-500 rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Structure d'accompagnement
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    J'accompagne des entrepreneurs
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between mt-8">
+          <div className="flex items-center justify-between pt-2">
             <button
               type="button"
               onClick={() => setStep(0)}
@@ -452,17 +508,21 @@ const Signup = () => {
             
             <button
               type="button"
-              className="px-6 py-2 bg-aurentia-pink text-white rounded-lg hover:bg-aurentia-pink/90 transition disabled:opacity-50"
+              className="px-6 py-3 bg-aurentia-pink text-white rounded-lg hover:bg-aurentia-pink/90 transition flex items-center gap-2 group"
               onClick={() => setStep(2)}
-              disabled={!selectedRole}
             >
-              Continuer
+              Continuer l'inscription
+              <span className="transition-transform duration-300 group-hover:translate-x-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </span>
             </button>
           </div>
         </div>
       )}
 
-      {step === 2 && (
+      {!showOrganisationSetup && step === 2 && (
         <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-sm animate-fade-in">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">

@@ -77,22 +77,24 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           showCredits: false
         };
         
-      case 'admin':
+      case 'organisation':
+      case 'staff':
+        const orgId = userProfile?.organization_id || '00000000-0000-0000-0000-000000000001';
         return {
           menuItems: [
-            { name: "Vue d'ensemble", path: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
-            { name: "Entrepreneurs", path: "/admin/entrepreneurs", icon: <Users size={20} /> },
-            { name: "Projets", path: "/admin/projects", icon: <FileText size={20} /> },
-            { name: "Codes d'invitation", path: "/admin/invitations", icon: <Code size={20} /> },
-            { name: "Analytics", path: "/admin/analytics", icon: <BarChart3 size={20} /> },
-            { name: "Formulaires", path: "/admin/forms", icon: <FormInput size={20} /> },
-            { name: "Événements", path: "/admin/evenements", icon: <Calendar size={20} /> },
-            { name: "Mentors", path: "/admin/mentors", icon: <GraduationCap size={20} /> },
-            { name: "Partenaires", path: "/admin/partenaires", icon: <Handshake size={20} /> },
-            { name: "Livrables", path: "/admin/livrables", icon: <FileText size={20} /> },
-            { name: "Chatbot", path: "/admin/chatbot", icon: <Bot size={20} /> },
-            { name: "Paramètres", path: "/admin/settings", icon: <Settings size={20} /> },
-            { name: "Profil", path: "/admin/profile", icon: <UserCheck size={20} /> }
+            { name: "Vue d'ensemble", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+            { name: "Entrepreneurs", path: `/organisation/${orgId}/entrepreneurs`, icon: <Users size={20} /> },
+            { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
+            { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
+            { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
+            { name: "Formulaires", path: `/organisation/${orgId}/forms`, icon: <FormInput size={20} /> },
+            { name: "Événements", path: `/organisation/${orgId}/evenements`, icon: <Calendar size={20} /> },
+            { name: "Mentors", path: `/organisation/${orgId}/mentors`, icon: <GraduationCap size={20} /> },
+            { name: "Partenaires", path: `/organisation/${orgId}/partenaires`, icon: <Handshake size={20} /> },
+            { name: "Livrables", path: `/organisation/${orgId}/livrables`, icon: <FileText size={20} /> },
+            { name: "Chatbot", path: `/organisation/${orgId}/chatbot`, icon: <Bot size={20} /> },
+            { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> },
+            { name: "Profil", path: `/organisation/${orgId}/profile`, icon: <UserCheck size={20} /> }
           ],
           branding: {
             name: userProfile.organization?.name || "Mon Incubateur",
@@ -356,14 +358,16 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
           { name: "Paramètres", path: "/super-admin/settings", icon: <Settings size={20} /> }
         ];
         
-      case 'admin':
+      case 'organisation':
+      case 'staff':
+        const orgId = userProfile?.organization_id || '00000000-0000-0000-0000-000000000001';
         return [
-          { name: "Vue d'ensemble", path: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
-          { name: "Entrepreneurs", path: "/admin/entrepreneurs", icon: <Users size={20} /> },
-          { name: "Projets", path: "/admin/projects", icon: <FileText size={20} /> },
-          { name: "Codes d'invitation", path: "/admin/invitations", icon: <Code size={20} /> },
-          { name: "Analytics", path: "/admin/analytics", icon: <BarChart3 size={20} /> },
-          { name: "Paramètres", path: "/admin/settings", icon: <Settings size={20} /> }
+          { name: "Vue d'ensemble", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+          { name: "Entrepreneurs", path: `/organisation/${orgId}/entrepreneurs`, icon: <Users size={20} /> },
+          { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
+          { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
+          { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
+          { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> }
         ];
         
       case 'member':

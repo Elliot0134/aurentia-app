@@ -31,9 +31,9 @@ class ChatbotService {
     return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
   }
 
-  // === MÉTHODES DE PERSISTENCE EN BASE DE DONNÉES ===
+  // === MÉTHODES DE PERSISTENCE EN BASE DE DONNÉES (using existing conversation/messages tables) ===
 
-  // Créer une conversation en DB
+  // Créer une conversation en DB (using existing conversation table)
   async createConversationInDB(
     userId: string,
     projectId: string,
@@ -64,7 +64,7 @@ class ChatbotService {
     }
   }
 
-  // Charger une conversation depuis la DB
+  // Charger une conversation depuis la DB (using existing tables)
   async loadConversationFromDB(conversationId: string): Promise<Conversation | null> {
     try {
       // Charger la conversation
@@ -114,7 +114,7 @@ class ChatbotService {
     }
   }
 
-  // Sauvegarder un message en DB
+  // Sauvegarder un message en DB (using existing messages table)
   async saveMessageToDB(conversationId: string, sender: 'user' | 'bot', content: string): Promise<string | null> {
     try {
       const { data, error } = await supabase
@@ -145,7 +145,7 @@ class ChatbotService {
     }
   }
 
-  // Lister les conversations d'un utilisateur pour un projet ou une entité spécifique
+  // Lister les conversations d'un utilisateur pour un projet (using existing conversation table)
   async getUserConversationsFromDB(
     userId: string,
     projectId: string
@@ -179,7 +179,7 @@ class ChatbotService {
     }
   }
 
-  // Mettre à jour le titre d'une conversation en DB
+  // Mettre à jour le titre d'une conversation en DB (using existing conversation table)
   async updateConversationTitleInDB(conversationId: string, title: string): Promise<boolean> {
     try {
       const { error } = await supabase
@@ -202,7 +202,7 @@ class ChatbotService {
     }
   }
 
-  // Supprimer une conversation de la DB
+  // Supprimer une conversation de la DB (using existing conversation table)
   async deleteConversationFromDB(conversationId: string): Promise<boolean> {
     try {
       const { error } = await supabase
@@ -222,7 +222,7 @@ class ChatbotService {
     }
   }
 
-  // Mettre à jour un message en DB
+  // Mettre à jour un message en DB (using existing messages table)
   async updateMessageInDB(messageId: string, content: string): Promise<boolean> {
     try {
       const { error } = await supabase

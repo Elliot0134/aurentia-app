@@ -92,7 +92,7 @@ export const useInvitationCode = async (code: string, userId: string): Promise<I
 
 // Créer un code d'invitation (pour les admins)
 export const createInvitationCode = async (
-  type: 'super_admin' | 'incubator_main_admin' | 'incubator_member',
+  type: 'super_admin' | 'organisation_staff' | 'organisation_member',
   organizationId?: string,
   maxUses: number = 1,
   expiresAt?: string

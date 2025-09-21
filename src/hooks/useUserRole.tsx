@@ -8,8 +8,12 @@ export const useUserRole = () => {
   
   const isIndividual = userRole === 'individual';
   const isMember = userRole === 'member';
-  const isAdmin = userRole === 'admin';
+  const isStaff = userRole === 'staff';
+  const isOrganisation = userRole === 'organisation';
   const isSuperAdmin = userRole === 'super_admin';
+  
+  // Backward compatibility
+  const isAdmin = isStaff || isOrganisation; // For components that still check isAdmin
   
   // Helper functions pour les vérifications de permissions
   const hasOrganizationAccess = () => {
@@ -17,11 +21,11 @@ export const useUserRole = () => {
   };
 
   const canManageUsers = () => {
-    return isAdmin || isSuperAdmin;
+    return isStaff || isOrganisation || isSuperAdmin;
   };
 
   const canCreateInvitationCodes = () => {
-    return isAdmin || isSuperAdmin;
+    return isStaff || isOrganisation || isSuperAdmin;
   };
 
   const canAccessSuperAdminFeatures = () => {
@@ -29,11 +33,19 @@ export const useUserRole = () => {
   };
 
   const canAccessAdminFeatures = () => {
-    return isAdmin || isSuperAdmin;
+    return isStaff || isOrganisation || isSuperAdmin;
   };
 
   const canAccessMemberFeatures = () => {
-    return isMember || isAdmin || isSuperAdmin;
+    return isMember || isStaff || isOrganisation || isSuperAdmin;
+  };
+
+  const canManageOrganization = () => {
+    return isOrganisation || isSuperAdmin;
+  };
+
+  const canManageStaff = () => {
+    return isOrganisation || isSuperAdmin;
   };
 
   // Fonction pour obtenir le chemin de base selon le rôle
@@ -41,8 +53,10 @@ export const useUserRole = () => {
     switch (userRole) {
       case 'super_admin':
         return '/super-admin';
-      case 'admin':
-        return '/admin';
+      case 'organisation':
+      case 'staff':
+        // Pour les admins d'organisation, retourner le chemin organisation avec l'ID
+        return userProfile?.organization_id ? `/organisation/${userProfile.organization_id}` : '/organisation/00000000-0000-0000-0000-000000000001';
       case 'member':
         return '/member';
       case 'individual':
@@ -62,14 +76,18 @@ export const useUserRole = () => {
     loading,
     isIndividual,
     isMember,
-    isAdmin,
+    isStaff,
+    isOrganisation,
     isSuperAdmin,
+    isAdmin, // Backward compatibility
     hasOrganizationAccess,
     canManageUsers,
     canCreateInvitationCodes,
     canAccessSuperAdminFeatures,
     canAccessAdminFeatures,
     canAccessMemberFeatures,
+    canManageOrganization,
+    canManageStaff,
     getBasePath,
     getDefaultDashboard
   };

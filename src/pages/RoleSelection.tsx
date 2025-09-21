@@ -33,8 +33,13 @@ const RoleSelection = () => {
       });
 
       // Rediriger vers le dashboard approprié
-      const basePath = role === 'individual' ? '/individual' : '/admin';
-      navigate(`${basePath}/dashboard`);
+      if (role === 'individual') {
+        navigate('/individual/dashboard');
+      } else {
+        // Pour admin, utiliser une organisation par défaut et laisser le système rediriger
+        // Le RoleBasedRedirect se chargera de la redirection correcte
+        navigate('/organisation/1/dashboard');
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
