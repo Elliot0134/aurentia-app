@@ -47,6 +47,7 @@ import AdminProfile from "./pages/admin/Profile"; // Import the new Profile comp
 import EmailConfirmationsAdmin from "./pages/admin/EmailConfirmations"; // Import the new EmailConfirmations component
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import RoleSelection from "./pages/RoleSelection";
+import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback component
 import { ProjectProvider } from "./contexts/ProjectContext";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
@@ -179,6 +180,7 @@ const App = () => {
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 <Route path="/role-selection" element={<RoleSelection />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
+                <Route path="/auth/callback" element={<AuthCallback />} /> {/* Nouvelle route pour le callback SSO */}
                 
                 {/* Protected routes with role-based redirection and layout */}
                 <Route element={<ProtectedRoute />}>

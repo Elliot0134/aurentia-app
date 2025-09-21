@@ -72,20 +72,20 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
           },
-          redirectTo: `${window.location.origin}/role-selection`,
+          redirectTo: `${window.location.origin}/auth/callback`, // Rediriger vers une page de callback pour gérer la redirection côté client
         },
       });
       
       if (error) throw error;
       
-      // Redirect is handled by Supabase
+      // La redirection sera gérée par le listener onAuthStateChange ou une page de callback
     } catch (error: any) {
       toast({
         title: "Erreur de connexion",
