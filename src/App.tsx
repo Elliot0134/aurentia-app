@@ -178,7 +178,7 @@ const App = () => {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
-                <Route path="/role-selection" element={<RoleSelection />} />
+                {/* <Route path="/role-selection" element={<RoleSelection />} /> */} {/* Supprimé car le rôle est attribué par défaut */}
                 <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="/auth/callback" element={<AuthCallback />} /> {/* Nouvelle route pour le callback SSO */}
                 
