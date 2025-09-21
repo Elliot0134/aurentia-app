@@ -22,26 +22,8 @@ const AuthCallback = () => {
               // Rôle déjà défini, rediriger vers le tableau de bord par défaut
               navigate(getDefaultDashboard(), { replace: true });
             } else {
-              // Pas de rôle défini, attribuer 'individual' par défaut et rediriger
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                const { error: updateError } = await supabase
-                  .from('profiles' as any)
-                  .update({ user_role: 'individual' })
-                  .eq('id', user.id);
-
-                if (updateError) {
-                  console.error("Erreur lors de l'attribution du rôle par défaut:", updateError);
-                  // En cas d'erreur, rediriger vers le login pour éviter une boucle
-                  navigate("/login", { replace: true });
-                  return;
-                }
-                // Après l'attribution du rôle, rediriger vers le tableau de bord par défaut
-                navigate(getDefaultDashboard(), { replace: true });
-              } else {
-                // Pas d'utilisateur, rediriger vers le login
-                navigate("/login", { replace: true });
-              }
+              // Pas de rôle défini, rediriger vers la page d'inscription pour la sélection de rôle
+              navigate("/signup", { replace: true });
             }
           }
         } else {

@@ -6,6 +6,7 @@ import { validateInvitationCode, useInvitationCode } from "@/services/invitation
 import { InvitationValidationResult } from "@/types/userTypes";
 import { emailConfirmationService } from "@/services/emailConfirmationService";
 import { EmailConfirmationModal } from "@/components/auth/EmailConfirmationModal";
+import { useUserRole } from "@/hooks/useUserRole"; // Import useUserRole
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -22,6 +23,18 @@ const Signup = () => {
   const [showEmailConfirmationModal, setShowEmailConfirmationModal] = useState(false);
   const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { getDefaultDashboard, userProfile, loading: userProfileLoading } = useUserRole(); // Utiliser le hook pour obtenir la fonction de redirection et le profil utilisateur
+
+  useEffect(() => {
+    const checkUserAndRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !userProfileLoading && !userProfile?.user_role) {
+        // Si l'utilisateur est connecté via SSO et n'a pas de rôle, passer à l'étape de sélection de rôle
+        setStep(1);
+      }
+    };
+    checkUserAndRole();
+  }, [userProfile, userProfileLoading]); // Dépendances pour re-vérifier quand le profil est chargé
 
   const handleCodeValidation = async () => {
     if (!invitationCode.trim()) {
@@ -234,18 +247,9 @@ const Signup = () => {
       description: "Votre compte est maintenant actif. Redirection vers votre dashboard...",
     });
     
-    // Déterminer la redirection selon le rôle
-    let roleBasePath = "/individual/dashboard";
-    
-    if (invitationCode && codeValidation?.valid) {
-      roleBasePath = `/${codeValidation.role}/dashboard`;
-    } else if (selectedRole) {
-      roleBasePath = `/${selectedRole}/dashboard`;
-    }
-    
-    // Redirection avec un délai pour laisser le temps au toast
+    // Redirection vers le dashboard par défaut en utilisant getDefaultDashboard
     setTimeout(() => {
-      navigate(roleBasePath);
+      navigate(getDefaultDashboard());
     }, 1500);
   };
 
@@ -266,11 +270,18 @@ const Signup = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          redirectTo: `${window.location.origin}/auth/callback`, // Rediriger vers la page de callback
+        },
       });
       
       if (error) throw error;
       
-      // Redirect is handled by Supabase
+      // La redirection sera gérée par la page de callback
     } catch (error: any) {
       toast({
         title: "Erreur d'inscription",
