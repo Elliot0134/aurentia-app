@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ConfirmEmail from "./pages/ConfirmEmail";
+import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
 import UpdatePassword from "./pages/UpdatePassword";
 import Beta from "./pages/Beta";
 import Dashboard from "./pages/Dashboard";
@@ -48,6 +49,7 @@ import {
 } from "./pages/organisation";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import RoleSelection from "./pages/RoleSelection";
+import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback component
 import { ProjectProvider } from "./contexts/ProjectContext";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
@@ -177,8 +179,10 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
-                <Route path="/role-selection" element={<RoleSelection />} />
+                <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
+                {/* <Route path="/role-selection" element={<RoleSelection />} /> */} {/* Supprimé car le rôle est attribué par défaut */}
                 <Route path="/update-password" element={<UpdatePassword />} />
+                <Route path="/auth/callback" element={<AuthCallback />} /> {/* Nouvelle route pour le callback SSO */}
                 
                 {/* Protected routes with role-based redirection and layout */}
                 <Route element={<ProtectedRoute />}>

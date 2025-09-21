@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import { useCreditsSimple } from '@/hooks/useCreditsSimple';
 import { Input } from "@/components/ui/input";
+import SubscriptionManager from '@/components/subscription/SubscriptionManager';
+import { useProject } from '@/contexts/ProjectContext';
 import { Label } from "@/components/ui/label";
 import { Edit2, Save, X, ShieldCheck } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
 import { User } from '@supabase/supabase-js';
+import { userInitializationService } from '@/services/userInitializationService';
 
 interface ProfileData {
   id: string;
@@ -22,6 +25,7 @@ interface ProfileData {
 }
 
 const Profile = () => {
+  const [newEmail, setNewEmail] = useState('');
   const [user, setUser] = useState<ProfileData>({
     id: "",
     email: "",
@@ -42,9 +46,11 @@ const Profile = () => {
     location: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("Informations");
   const { subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
   const { credits, isLoading: creditsLoading } = useCreditsSimple();
+  const { currentProjectId, userProjectsLoading } = useProject();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -52,6 +58,9 @@ const Profile = () => {
       if (session) {
         // Stocker l'utilisateur auth pour la confirmation d'email
         setAuthUser(session.user);
+        
+        // S'assurer que l'utilisateur a des crédits initialisés
+        await userInitializationService.ensureUserCreditsExist(session.user.id);
         
         // In a real application, you would fetch the full user profile from your database
         // Fetch first_name from user_metadata
@@ -158,6 +167,59 @@ const Profile = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 1. Validation côté client
+    if (!newEmail) {
+      toast({ title: "Erreur", description: "Le champ email est obligatoire.", variant: "destructive" });
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(newEmail)) {
+      toast({ title: "Erreur", description: "Le format de l'email est invalide.", variant: "destructive" });
+      return;
+    }
+    if (newEmail === user.email) {
+      toast({ title: "Erreur", description: "La nouvelle adresse e-mail doit être différente de l'actuelle.", variant: "destructive" });
+      return;
+    }
+    // 2. Vérifier que l'utilisateur est connecté
+    if (!authUser) {
+      toast({ title: "Erreur", description: "Utilisateur non authentifié.", variant: "destructive" });
+      return;
+    }
+
+    setEmailLoading(true);
+    try {
+      // 3. Appeler l'Edge Function dédiée
+      const { error } = await supabase.functions.invoke('update-email-request', {
+        body: { new_email: newEmail },
+      });
+
+      if (error) throw error;
+
+      // 4. Gérer le succès
+      toast({
+        title: "Emails de confirmation envoyés",
+        description: "Des e-mails de confirmation ont été envoyés à votre ancienne ET nouvelle adresse. Vous devez confirmer dans les DEUX emails pour finaliser le changement.",
+      });
+      setNewEmail('');
+
+    } catch (error: any) {
+      // 5. Gérer les erreurs
+      console.error('Error invoking update-email-request function:', error);
+      // Essayer d'extraire un message d'erreur plus précis de la réponse de la fonction
+      const errorMessage = error.context?.json?.error || error.message || "Impossible de demander le changement d'e-mail.";
+      toast({
+        title: "Erreur de la fonction",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setEmailLoading(false);
+    }
   };
 
   const displayValue = (value: string) => {
@@ -311,67 +373,18 @@ const Profile = () => {
           {activeTab === "Facturation" && (
             <div>
               <h2 className="text-2xl font-bold mb-6 text-slate-800">Facturation & Abonnements</h2>
-              {subscriptionLoading || creditsLoading ? (
+              {userProjectsLoading ? (
                 <div className="flex justify-center items-center h-48">
                   <p className="text-slate-500">Chargement des informations...</p>
                 </div>
+              ) : user.id && currentProjectId ? (
+                <SubscriptionManager userId={user.id} projectId={currentProjectId} />
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Section Abonnement */}
-                  <div className="lg:col-span-1 p-6 rounded-lg bg-white shadow-md flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <ShieldCheck className="text-aurentia-orange-aurentia" size={28} />
-                        <h3 className="text-xl font-bold text-slate-700">Abonnement</h3>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium text-slate-500">Statut</p>
-                          <span className={`mt-1 inline-block px-3 py-1 text-sm font-semibold rounded-full ${
-                            subscriptionStatus === 'active' 
-                              ? 'bg-emerald-100 text-emerald-800' 
-                              : 'bg-rose-100 text-rose-800'
-                          }`}>
-                            {subscriptionStatus === 'active' ? 'Actif' : 'Inactif'}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-500">Prochain renouvellement</p>
-                          <p className="font-semibold text-slate-700">19 Oct, 2025</p>
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="outline" className="w-full mt-6 text-lg font-bold py-5">Gérer l'abonnement</Button>
-                  </div>
-
-                  {/* Section Crédits */}
-                  <div className="lg:col-span-2 p-6 rounded-lg bg-white shadow-md flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <img src="/credit-image.svg" alt="Crédits" className="h-7 w-7" />
-                        <h3 className="text-xl font-bold text-slate-700">Crédits Disponibles</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 text-center">
-                          <p className="text-sm font-medium text-blue-800">Crédits Mensuels</p>
-                          <p className="text-4xl font-bold text-blue-900 mt-2">
-                            {credits?.monthly_remaining ?? 'N/A'}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-1">se renouvelle le 1er Oct</p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-gradient-to-br from-violet-50 to-violet-100 text-center">
-                          <p className="text-sm font-medium text-violet-800">Crédits Achetés</p>
-                          <p className="text-4xl font-bold text-violet-900 mt-2">
-                            {credits?.purchased_remaining ?? 'N/A'}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-1">n'expirent jamais</p>
-                        </div>
-                      </div>
-                    </div>
-                    <Button className="w-full mt-6 bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90 text-white text-lg font-bold py-5">
-                      Acheter plus de crédits
-                    </Button>
-                  </div>
+                <div className="text-center p-8 bg-gray-50 rounded-lg">
+                  <p className="text-slate-600">Vous n'avez pas encore de projet actif.</p>
+                  <p className="text-slate-500 mt-2">Veuillez créer un projet pour gérer votre abonnement.</p>
+                  {/* Optionnel : Ajouter un bouton pour créer un projet */}
+                  {/* <Button className="mt-4">Créer un projet</Button> */}
                 </div>
               )}
             </div>
@@ -409,7 +422,7 @@ const Profile = () => {
                 </div>
 
                 {/* Changer l'adresse e-mail */}
-                <div className="p-6 rounded-lg bg-white shadow-md flex flex-col">
+                <form onSubmit={handleChangeEmail} className="p-6 rounded-lg bg-white shadow-md flex flex-col">
                   <div className="flex-grow">
                     <h3 className="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Changer l'adresse e-mail</h3>
                     <div className="space-y-4">
@@ -427,12 +440,26 @@ const Profile = () => {
                         <Label className="text-sm font-medium text-gray-600" htmlFor="new-email">
                           Nouvelle adresse e-mail
                         </Label>
-                        <Input id="new-email" type="email" placeholder="nouvel.email@exemple.com" className="mt-1" />
+                        <Input
+                          id="new-email"
+                          type="email"
+                          placeholder="nouvel.email@exemple.com"
+                          className="mt-1"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          disabled={emailLoading}
+                        />
                       </div>
                     </div>
                   </div>
-                  <Button className="mt-6 self-end">Mettre à jour l'e-mail</Button>
-                </div>
+                  <Button
+                    type="submit"
+                    className="mt-6 self-end"
+                    disabled={emailLoading}
+                  >
+                    {emailLoading ? "Mise à jour en cours..." : "Mettre à jour l'e-mail"}
+                  </Button>
+                </form>
               </div>
             </div>
           )}

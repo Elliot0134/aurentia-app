@@ -8,4 +8,12 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    // Désactiver la confirmation automatique par email au niveau de Supabase
+    // pour que nous puissions gérer notre propre système de confirmation
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  }
+});

@@ -301,7 +301,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/login");
+    // navigate("/login"); // Removed as per new requirement
   };
 
   return (
@@ -433,7 +433,7 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
               <div className="flex items-center justify-center gap-2 text-sm">
                 <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
                 <span className="font-medium text-gray-700">
-                  {creditsLoading ? '...' : `${((userCredits.monthly_remaining || 0) + (userCredits.purchased_remaining || 0))} / ${userCredits.monthly_limit}`}
+                  {creditsLoading ? '...' : `${((userCredits.monthly_credits_remaining || 0) + (userCredits.purchased_credits_remaining || 0))} / ${userCredits.monthly_credits_limit}`}
                 </span>
               </div>
             </div>
@@ -523,8 +523,10 @@ const CreditInfo = ({
   isLoading, 
   error 
 }: CreditInfoProps) => {
-  if (isLoading) {
-    return <p className="text-xs text-gray-500">Chargement crédits...</p>;
+  const { userProjectsLoading } = useProject();
+
+  if (isLoading || userProjectsLoading) {
+    return <p className="text-xs text-gray-500">Chargement...</p>;
   }
 
   if (error) {
@@ -532,6 +534,7 @@ const CreditInfo = ({
   }
 
   const totalCredits = (monthlyRemaining || 0) + (purchasedRemaining || 0);
+  const displayMonthlyLimit = monthlyLimit || 0;
 
   return (
     <div className={cn("flex flex-col gap-2 w-full", isCollapsed ? "items-center" : "items-start")}>
@@ -547,14 +550,14 @@ const CreditInfo = ({
             </span>
             <div className="w-4 h-px bg-gray-300 my-0.5"></div>
             <span className="font-medium text-gray-700 text-sm">
-              {monthlyLimit}
+              {displayMonthlyLimit}
             </span>
           </div>
         ) : (
           <div className="flex items-center gap-1">
             <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
             <span className="text-sm font-medium text-gray-700">
-              {totalCredits} / {monthlyLimit}
+              {totalCredits} / {displayMonthlyLimit}
             </span>
           </div>
         )}

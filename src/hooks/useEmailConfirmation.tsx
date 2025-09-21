@@ -25,8 +25,8 @@ export interface UseEmailConfirmationReturn {
 
 export const useEmailConfirmation = (user: User | null): UseEmailConfirmationReturn => {
   const [state, setState] = useState<EmailConfirmationState>({
-    isRequired: false,
-    isConfirmed: true, // Par défaut confirmé pour éviter les blocages
+    isRequired: true, // Par défaut : confirmation requise
+    isConfirmed: false, // Par défaut : non confirmé
     isLoading: true,
     confirmationStatus: null,
     canResendAt: null,
@@ -91,9 +91,10 @@ export const useEmailConfirmation = (user: User | null): UseEmailConfirmationRet
         ...prev,
         isLoading: false,
         error: error.message || 'Erreur lors de la vérification',
-        // En cas d'erreur, considérer comme confirmé pour ne pas bloquer
-        isConfirmed: true,
-        isRequired: false,
+        // En cas d'erreur, ne pas bloquer seulement si l'utilisateur n'a pas d'email
+        // Pour les utilisateurs avec email, on doit vérifier la confirmation
+        isConfirmed: !user?.email,
+        isRequired: !!user?.email,
       }));
     }
   }, [user]);
@@ -226,7 +227,7 @@ export const useEmailConfirmationStatus = (user: User | null) => {
     isConfirmed: boolean;
     isLoading: boolean;
   }>({
-    isConfirmed: true, // Par défaut confirmé
+    isConfirmed: false, // Changé: par défaut non confirmé
     isLoading: false,
   });
 
@@ -252,8 +253,11 @@ export const useEmailConfirmationStatus = (user: User | null) => {
         }
       } catch (error) {
         if (mounted) {
-          // En cas d'erreur, considérer comme confirmé pour ne pas bloquer
-          setStatus({ isConfirmed: true, isLoading: false });
+          // En cas d'erreur, considérer comme confirmé SEULEMENT pour les utilisateurs sans email
+          setStatus({ 
+            isConfirmed: !user?.email, 
+            isLoading: false 
+          });
         }
       }
     };

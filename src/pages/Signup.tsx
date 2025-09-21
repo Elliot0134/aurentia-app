@@ -6,7 +6,7 @@ import { validateInvitationCode, useInvitationCode } from "@/services/invitation
 import { InvitationValidationResult } from "@/types/userTypes";
 import { emailConfirmationService } from "@/services/emailConfirmationService";
 import { EmailConfirmationModal } from "@/components/auth/EmailConfirmationModal";
-import { createOrganisation } from "@/services/organisationService";
+import { useUserRole } from "@/hooks/useUserRole";
 import OrganisationSetupForm from "@/components/organisation/OrganisationSetupForm";
 
 const Signup = () => {
@@ -25,6 +25,18 @@ const Signup = () => {
   const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
   const [showOrganisationSetup, setShowOrganisationSetup] = useState(false);
   const navigate = useNavigate();
+  const { getDefaultDashboard, userProfile, loading: userProfileLoading } = useUserRole(); // Utiliser le hook pour obtenir la fonction de redirection et le profil utilisateur
+
+  useEffect(() => {
+    const checkUserAndRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !userProfileLoading && !userProfile?.user_role) {
+        // Si l'utilisateur est connecté via SSO et n'a pas de rôle, passer à l'étape de sélection de rôle
+        setStep(1);
+      }
+    };
+    checkUserAndRole();
+  }, [userProfile, userProfileLoading]); // Dépendances pour re-vérifier quand le profil est chargé
 
   const handleCodeValidation = async () => {
     if (!invitationCode.trim()) {
@@ -88,7 +100,7 @@ const Signup = () => {
       }
 
       console.log("handleSubmit: Appel à supabase.auth.signUp...");
-      // Étape 1: Créer le compte utilisateur
+      // Étape 1: Créer le compte utilisateur SANS confirmation automatique
       const { error, data } = await supabase.auth.signUp({
         email,
         password,
@@ -98,7 +110,7 @@ const Signup = () => {
             last_name: lastName,
             phone_number: phoneNumber,
           },
-          // Désactiver la confirmation automatique de Supabase
+          // Désactiver la confirmation automatique de Supabase pour utiliser notre système
           emailRedirectTo: undefined,
         },
       });
@@ -109,10 +121,15 @@ const Signup = () => {
       }
       console.log("handleSubmit: supabase.auth.signUp réussi. Data:", data);
 
-      const user = data.user; // Utiliser directement l'utilisateur retourné par signUp
+      const user = data.user;
 
       if (user) {
         console.log("handleSubmit: Utilisateur créé. ID:", user.id);
+        
+        // IMPORTANT: Déconnecter immédiatement l'utilisateur pour empêcher l'accès
+        // jusqu'à ce que l'email soit confirmé
+        await supabase.auth.signOut();
+        console.log("handleSubmit: Utilisateur déconnecté pour forcer la confirmation d'email");
         // Étape 2: Configurer le rôle utilisateur
         let userRole: string | null = null;
         
@@ -198,7 +215,7 @@ const Signup = () => {
           });
           console.log("handleSubmit: Résultat de sendConfirmationEmail:", confirmationResult);
 
-          // Toujours afficher le modal après l'inscription, que l'email ait été envoyé avec succès ou non
+          // Toujours afficher le modal après l'inscription
           setRegisteredUserId(user.id);
           setShowEmailConfirmationModal(true);
 
@@ -318,13 +335,17 @@ const Signup = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "http://app.aurentia.fr/role-selection"
-        }
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          redirectTo: `${window.location.origin}/auth/callback`, // Rediriger vers la page de callback
+        },
       });
       
       if (error) throw error;
       
-      // Redirect is handled by Supabase
+      // La redirection sera gérée par la page de callback
     } catch (error: any) {
       toast({
         title: "Erreur d'inscription",
