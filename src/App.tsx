@@ -45,7 +45,8 @@ import {
   OrganisationForms,
   OrganisationSettings,
   OrganisationPartenaires,
-  OrganisationProfile
+  OrganisationProfile,
+  OrganisationFormCreate // Ajouter l'importation du composant de création de formulaire
 } from "./pages/organisation";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import RoleSelection from "./pages/RoleSelection";
@@ -238,6 +239,10 @@ const App = () => {
                     <Route path="/organisation/:id/invitations" element={<OrganisationInvitations />} />
                     <Route path="/organisation/:id/analytics" element={<OrganisationAnalytics />} />
                     <Route path="/organisation/:id/forms" element={<OrganisationForms />} />
+                    <Route path="/organisation/:id/forms/create" element={<OrganisationFormCreate />} />
+                    <Route path="/organisation/:id/forms/edit/:formId" element={<OrganisationFormCreate />} />
+                    <Route path="/organisation/:id/forms/responses/:formId" element={<div>Réponses - À créer</div>} />
+                    <Route path="/organisation/:id/forms/preview/:formId" element={<div>Aperçu - À créer</div>} />
                     <Route path="/organisation/:id/settings" element={<OrganisationSettings />} />
                     <Route path="/organisation/:id/evenements" element={<OrganisationEvenements />} />
                     <Route path="/organisation/:id/mentors" element={<OrganisationMentors />} />
@@ -264,7 +269,6 @@ const App = () => {
                 <Route path="/outils" element={<Navigate to="/individual/outils" replace />} />
                 <Route path="/ressources" element={<Navigate to="/individual/ressources" replace />} />
                 <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
-                
                 <Route path="/" element={<Navigate to="/beta" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
