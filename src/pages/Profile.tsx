@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
-import { useCreditsSimple } from '@/hooks/useCreditsSimple';
 import { Input } from "@/components/ui/input";
 import SubscriptionManager from '@/components/subscription/SubscriptionManager';
+import CreditsDisplay from '@/components/subscription/CreditsDisplay';
 import { useProject } from '@/contexts/ProjectContext';
 import { Label } from "@/components/ui/label";
 import { Edit2, Save, X, ShieldCheck } from "lucide-react";
@@ -49,7 +49,6 @@ const Profile = () => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("Informations");
   const { subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
-  const { credits, isLoading: creditsLoading } = useCreditsSimple();
   const { currentProjectId, userProjectsLoading } = useProject();
 
   useEffect(() => {
@@ -372,7 +371,8 @@ const Profile = () => {
           )}
           {activeTab === "Facturation" && (
             <div>
-              <h2 className="text-2xl font-bold mb-6 text-slate-800">Facturation & Abonnements</h2>
+              <CreditsDisplay />
+              <h2 className="text-2xl font-bold mb-6 text-slate-800 mt-8">Abonnements</h2>
               {userProjectsLoading ? (
                 <div className="flex justify-center items-center h-48">
                   <p className="text-slate-500">Chargement des informations...</p>
