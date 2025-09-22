@@ -7,7 +7,7 @@ import { InvitationValidationResult } from "@/types/userTypes";
 import { emailConfirmationService } from "@/services/emailConfirmationService";
 import { EmailConfirmationModal } from "@/components/auth/EmailConfirmationModal";
 import { useUserRole } from "@/hooks/useUserRole";
-import OrganisationSetupForm from "@/components/organisation/OrganisationSetupForm";
+import OrganisationFlowWrapper from "@/components/organisation/OrganisationFlowWrapper";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -71,6 +71,8 @@ const Signup = () => {
       setLoading(false);
     }
   };
+
+
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -181,18 +183,18 @@ const Signup = () => {
               
               // Rediriger vers le dashboard approprié après confirmation d'email
             } else if (selectedRole === 'organisation') {
-              // Pour les organisations, on ne configure que le rôle utilisateur
-              // La création de l'organisation se fera dans une étape séparée après confirmation d'email
+              // Pour les organisations, attribuer le rôle organisation mais sans organization_id
+              // L'organization_id sera ajouté après la création de l'organisation dans le setup
               const { error: updateError } = await supabase
                 .from('profiles' as any)
-                .update({ user_role: 'individual' }) // Temporairement individual en attendant la création d'organisation
+                .update({ user_role: 'organisation' }) // Attribuer le bon rôle dès le départ
                 .eq('id', user.id);
 
               if (updateError) {
-                console.warn("handleSubmit: Erreur lors de l'attribution du rôle temporaire:", updateError);
+                console.warn("handleSubmit: Erreur lors de l'attribution du rôle organisation:", updateError);
               }
               
-              userRole = 'individual'; // Temporaire
+              userRole = 'organisation';
               
               toast({
                 title: "Inscription réussie",
@@ -360,11 +362,11 @@ const Signup = () => {
     <div className="min-h-screen flex items-center justify-center p-4">
       {/* Étape de configuration d'organisation */}
       {showOrganisationSetup && registeredUserId && (
-        <OrganisationSetupForm
+        <OrganisationFlowWrapper
           userId={registeredUserId}
           userEmail={email}
           userName={`${firstName} ${lastName}`.trim() || email}
-          onSuccess={handleOrganisationSetupSuccess}
+          onComplete={handleOrganisationSetupSuccess}
           onBack={handleOrganisationSetupBack}
         />
       )}

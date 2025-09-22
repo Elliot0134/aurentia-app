@@ -266,6 +266,59 @@ export const getOrganisationInvitationCodes = async (organizationId: string) => 
   return data || [];
 };
 
+// Service pour vérifier le statut d'onboarding d'une organisation
+export const getOnboardingStatus = async (organizationId: string) => {
+  const { data, error } = await (supabase as any)
+    .from('organizations')
+    .select('onboarding_completed, onboarding_step')
+    .eq('id', organizationId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching onboarding status:', error);
+    return { onboarding_completed: false, onboarding_step: 0 };
+  }
+  
+  return {
+    onboarding_completed: data?.onboarding_completed || false,
+    onboarding_step: data?.onboarding_step || 0
+  };
+};
+
+// Service pour marquer l'onboarding comme terminé
+export const completeOnboarding = async (organizationId: string) => {
+  const { data, error } = await (supabase as any)
+    .from('organizations')
+    .update({
+      onboarding_completed: true,
+      onboarding_step: 6, // Supposons 6 étapes d'onboarding
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', organizationId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Service pour sauvegarder une étape d'onboarding
+export const saveOnboardingStep = async (organizationId: string, step: number, stepData: any) => {
+  const { data, error } = await (supabase as any)
+    .from('organizations')
+    .update({
+      ...stepData,
+      onboarding_step: step,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', organizationId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
 // Service pour créer un code d'invitation
 export const createInvitationCode = async (codeData: InvitationCodeData) => {
   const { data, error } = await (supabase as any)

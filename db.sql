@@ -156,9 +156,9 @@ CREATE TABLE public.deliverables (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT deliverables_pkey PRIMARY KEY (id),
-  CONSTRAINT deliverables_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
   CONSTRAINT deliverables_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id),
-  CONSTRAINT deliverables_entrepreneur_id_fkey FOREIGN KEY (entrepreneur_id) REFERENCES public.profiles(id)
+  CONSTRAINT deliverables_entrepreneur_id_fkey FOREIGN KEY (entrepreneur_id) REFERENCES public.profiles(id),
+  CONSTRAINT deliverables_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.email_confirmation_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -217,8 +217,8 @@ CREATE TABLE public.events (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT events_pkey PRIMARY KEY (id),
-  CONSTRAINT events_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
-  CONSTRAINT events_organizer_id_fkey FOREIGN KEY (organizer_id) REFERENCES public.profiles(id)
+  CONSTRAINT events_organizer_id_fkey FOREIGN KEY (organizer_id) REFERENCES public.profiles(id),
+  CONSTRAINT events_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.form_business_idea (
   user_id uuid NOT NULL,
@@ -265,13 +265,13 @@ CREATE TABLE public.form_templates (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT form_templates_pkey PRIMARY KEY (id),
-  CONSTRAINT form_templates_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
-  CONSTRAINT form_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+  CONSTRAINT form_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
+  CONSTRAINT form_templates_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.invitation_code (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   code text NOT NULL UNIQUE,
-  type text NOT NULL CHECK (type = ANY (ARRAY['super_admin'::text, 'incubator_main_admin'::text, 'incubator_member'::text])),
+  type text NOT NULL CHECK (type = ANY (ARRAY['super_admin'::text, 'organisation_staff'::text, 'organisation_member'::text])),
   created_at timestamp with time zone DEFAULT now(),
   organization_id uuid,
   created_by uuid,
@@ -280,8 +280,8 @@ CREATE TABLE public.invitation_code (
   current_uses integer DEFAULT 0,
   is_active boolean DEFAULT true,
   CONSTRAINT invitation_code_pkey PRIMARY KEY (id),
-  CONSTRAINT invitation_code_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
-  CONSTRAINT invitation_code_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+  CONSTRAINT invitation_code_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT invitation_code_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.juridique (
   project_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -635,12 +635,11 @@ CREATE TABLE public.profiles (
   drive_folder_id text,
   drive_folder_rag text,
   conv_limit text,
-  credit_limit text DEFAULT '5'::text,
   abonnement text,
   stripe_customer_id text,
   subscription_status text DEFAULT 'inactive'::text,
   is_member boolean,
-  user_role text DEFAULT 'individual'::text CHECK (user_role = ANY (ARRAY['individual'::text, 'member'::text, 'admin'::text, 'super_admin'::text])),
+  user_role text DEFAULT 'individual'::text CHECK (user_role = ANY (ARRAY['individual'::text, 'member'::text, 'staff'::text, 'organisation'::text, 'super_admin'::text])),
   organization_id uuid,
   invitation_code_used text,
   email_confirmed_at timestamp with time zone,
@@ -648,6 +647,10 @@ CREATE TABLE public.profiles (
   first_name text,
   last_name text,
   phone text,
+  monthly_credits_remaining integer NOT NULL DEFAULT 50,
+  purchased_credits_remaining integer NOT NULL DEFAULT 0,
+  monthly_credits_limit integer NOT NULL DEFAULT 50,
+  last_credit_reset timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)

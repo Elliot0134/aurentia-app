@@ -66,20 +66,33 @@ const OrganisationChatbot = () => {
     }))
   ];
 
-  // Suggestions spécifiques au contexte organisationnel
-  const organisationSuggestedPrompts = [
-    "Quels sont les projets les plus prometteurs de l'organisation ?",
-    "Analyse comparative des projets en cours",
-    "Recommandations pour améliorer l'engagement des entrepreneurs",
-    "Tendances des marchés ciblés par nos projets"
+  // Suggestions basées sur les données réelles de l'organisation
+  const organisationSuggestedPrompts = projects.length > 0 ? [
+    `Analyse les ${projects.length} projets de l'organisation`,
+    `Quels sont les secteurs les plus représentés parmi nos ${projects.length} projets ?`,
+    "Compare les performances des projets actifs vs terminés",
+    `Recommandations pour les ${projects.filter(p => p.statut === 'active' || p.statut === 'actif').length} projets en cours`
+  ] : [
+    "Comment démarrer le premier projet de l'organisation ?",
+    "Quelles sont les bonnes pratiques pour accompagner les entrepreneurs ?",
+    "Comment structurer un programme d'incubation ?",
+    "Stratégies de recrutement d'entrepreneurs"
   ];
 
-  const projectSpecificPrompts = [
-    "Comment améliorer la proposition de valeur de ce projet ?",
-    "Analyse des risques spécifiques à ce projet",
-    "Stratégies de développement recommandées",
-    "Opportunités de partenariats pour ce projet"
-  ];
+  const projectSpecificPrompts = selectedProject !== 'all' ? (() => {
+    const project = projects.find(p => p.project_id === selectedProject);
+    return project ? [
+      `Analyse du projet "${project.nom_projet}"`,
+      `Améliorer la proposition de valeur de "${project.nom_projet}"`,
+      `Stratégies de développement pour "${project.nom_projet}"`,
+      `Opportunités de partenariats pour ce projet ${project.statut}`
+    ] : [
+      "Comment améliorer la proposition de valeur de ce projet ?",
+      "Analyse des risques spécifiques à ce projet",
+      "Stratégies de développement recommandées",
+      "Opportunités de partenariats pour ce projet"
+    ];
+  })() : [];
 
   const currentPrompts = selectedProject === 'all' ? organisationSuggestedPrompts : projectSpecificPrompts;
 

@@ -19,7 +19,6 @@ const RoleBasedRedirect = () => {
   if (currentPath.startsWith('/login') || 
       currentPath.startsWith('/signup') ||
       currentPath.startsWith('/update-password') ||
-      currentPath.startsWith('/beta') ||
       currentPath.startsWith('/organisation')) {
     return null;
   }

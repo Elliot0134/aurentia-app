@@ -55,8 +55,14 @@ export const useUserRole = () => {
         return '/super-admin';
       case 'organisation':
       case 'staff':
-        // Pour les admins d'organisation, retourner le chemin organisation avec l'ID
-        return userProfile?.organization_id ? `/organisation/${userProfile.organization_id}` : '/organisation/00000000-0000-0000-0000-000000000001';
+        // Pour les admins d'organisation, vérifier que l'organization_id existe
+        if (userProfile?.organization_id) {
+          return `/organisation/${userProfile.organization_id}`;
+        } else {
+          // Si pas d'organization_id, rediriger vers setup au lieu du fallback
+          console.warn('Utilisateur organisation sans organization_id, redirection vers setup');
+          return '/setup-organization';
+        }
       case 'member':
         return '/member';
       case 'individual':

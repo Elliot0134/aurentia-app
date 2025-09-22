@@ -8,6 +8,7 @@ import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
 import { useCreditsSimple } from "@/hooks/useCreditsSimple";
+import { useOrganisationNavigation } from "@/hooks/useOrganisationNavigation";
 import clsx from 'clsx';
 
 interface SidebarConfig {
@@ -16,6 +17,7 @@ interface SidebarConfig {
     path?: string;
     icon?: React.ReactNode;
     isDivider?: boolean;
+    isCustomAction?: boolean; // New property for custom actions
   }>;
   branding: {
     name: string;
@@ -40,6 +42,8 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const [isMobile, setIsMobile] = useState(false);
   const [user, setUser] = useState<any>(null);
   const credits = useCreditsSimple();
+  const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
+  const isUserProfileLoading = !userProfile;
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -94,7 +98,9 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
             { name: "Livrables", path: `/organisation/${orgId}/livrables`, icon: <FileText size={20} /> },
             { name: "Chatbot", path: `/organisation/${orgId}/chatbot`, icon: <Bot size={20} /> },
             { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> },
-            { name: "Profil", path: `/organisation/${orgId}/profile`, icon: <UserCheck size={20} /> }
+            { name: "Profil", path: `/organisation/${orgId}/profile`, icon: <UserCheck size={20} /> },
+            { isDivider: true },
+            { name: "Retour à l'espace Entrepreneur", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true },
           ],
           branding: {
             name: userProfile.organization?.name || "Mon Incubateur",
@@ -149,6 +155,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
       { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
       { name: "Template", path: "/individual/template", icon: <FileText size={20} /> },
       { isDivider: true },
+      { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true },
       { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
     ],
     branding: { name: "Aurentia", primaryColor: "#F04F6A" },
@@ -220,6 +227,30 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           {config.menuItems.map((item, index) => (
             item.isDivider ? (
               <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
+            ) : item.isCustomAction && item.name === "Organisation" ? (
+              <button
+                key={`${item.path}-${item.name}-${index}`}
+                onClick={navigateToOrganisation}
+                disabled={orgNavigationLoading || isUserProfileLoading}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+                  (orgNavigationLoading || isUserProfileLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{orgNavigationLoading || isUserProfileLoading ? "Chargement..." : item.name}</span>}
+              </button>
+              ) : item.isCustomAction && item.name === "Retour à l'espace Entrepreneur" ? (
+                <button
+                  key={`${item.path}-${item.name}-${index}`}
+                  onClick={() => navigate('/individual/dashboard')}
+                  className={cn(
+                    "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
+                  )}
+                >
+                  {item.icon}
+                  {!isCollapsed && <span>{item.name}</span>}
+                </button>
             ) : (
               <Link
                 key={`${item.path}-${item.name}-${index}`}
@@ -314,10 +345,12 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
 // Role-based Mobile Navbar
 const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | null }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { projectId } = useParams();
   const { currentProjectId, userProjects, userCredits, creditsLoading } = useProject();
   const [user, setUser] = useState<any>(null);
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
+  const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -399,10 +432,15 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
     { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
     { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
     { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
+    { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true },
     { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
   ];
 
   const menuItems = getMobileMenuItems();
+    // Ajout du bouton retour pour organisation/staff
+    if (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff')) {
+      menuItems.push({ name: "Retour à l'espace Entrepreneur", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true });
+    }
 
   return (
     <>
@@ -443,25 +481,49 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
           <div className="px-3 py-3 overflow-x-auto scrollbar-hide">
             <div className="flex items-center space-x-3 min-w-max">
               {menuItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
-                    (location.pathname === item.path && location.pathname !== "/warning") ||
-                    (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
-                    (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
-                    (item.name === "Automatisations" && location.pathname.includes("/automatisations")) ||
-                    (item.name === "Partenaires" && location.pathname.includes("/partenaires")) ||
-                    (item.name === "Plan d'action" && location.pathname.includes("/plan-action")) ||
-                    (item.name === "Ressources" && location.pathname.includes("/ressources")) ||
-                    (item.name === "Collaborateurs" && location.pathname.includes("/collaborateurs"))
-                      ? 'bg-gradient-primary text-white shadow-md scale-110'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
-                  )}
-                >
-                  {item.icon}
-                </Link>
+                item.isCustomAction && item.name === "Organisation" ? (
+                  <button
+                    key={item.name}
+                    onClick={navigateToOrganisation}
+                    disabled={orgNavigationLoading}
+                    className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
+                      orgNavigationLoading ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                    )}
+                  >
+                    {item.icon}
+                  </button>
+                  ) : item.isCustomAction && item.name === "Retour à l'espace Entrepreneur" ? (
+                    <button
+                      key={item.name}
+                      onClick={() => navigate('/individual/dashboard')}
+                      className={cn(
+                        'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                      )}
+                    >
+                      {item.icon}
+                    </button>
+                ) : (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
+                      (location.pathname === item.path && location.pathname !== "/warning") ||
+                      (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
+                      (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
+                      (item.name === "Automatisations" && location.pathname.includes("/automatisations")) ||
+                      (item.name === "Partenaires" && location.pathname.includes("/partenaires")) ||
+                      (item.name === "Plan d'action" && location.pathname.includes("/plan-action")) ||
+                      (item.name === "Ressources" && location.pathname.includes("/ressources")) ||
+                      (item.name === "Collaborateurs" && location.pathname.includes("/collaborateurs"))
+                        ? 'bg-gradient-primary text-white shadow-md scale-110'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                    )}
+                  >
+                    {item.icon}
+                  </Link>
+                )
               ))}
               {user ? (
                 <Link

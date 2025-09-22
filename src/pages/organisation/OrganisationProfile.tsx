@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useOrganisationData, useOrganisationStats } from '@/hooks/useOrganisationData';
+import { updateOrganisation } from '@/services/organisationService';
 import {
   Building,
   Users,
@@ -28,6 +29,31 @@ import {
   Target,
   Info
 } from "lucide-react";
+
+// Options pour les spécialisations (alignées avec l'onboarding)
+const sectorOptions = [
+  "Tech", "Fintech", "Healthtech", "Edtech", "Agritech", "Cleantech",
+  "E-commerce", "SaaS", "IoT", "IA/Machine Learning", "Blockchain",
+  "Mobilité", "Immobilier", "Retail", "Manufacturing", "Services",
+  "Entertainment", "Autre"
+];
+
+const stageOptions = [
+  "Idéation", "Pré-seed", "Seed", "Série A", "Série B", "Série C+",
+  "Growth stage", "Scale-up", "Expansion internationale"
+];
+
+const geographicOptions = [
+  "France", "Europe", "Amérique du Nord", "Amérique du Sud",
+  "Afrique", "Asie", "Océanie", "International"
+];
+
+const supportTypeOptions = [
+  "Mentoring individuel", "Workshops collectifs", "Formations",
+  "Financement direct", "Mise en relation investisseurs",
+  "Espaces de coworking", "Support technique", "Support juridique",
+  "Développement commercial", "Networking"
+];
 
 interface OrganisationProfile {
   id: string;
@@ -84,67 +110,143 @@ const OrganisationProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-  // État local pour l'édition
+  // État local pour l'édition - ÉTENDU pour tous les champs d'onboarding
   const [editFormData, setEditFormData] = useState({
+    // Informations de base
     name: '',
     description: '',
     website: '',
     email: '',
     phone: '',
-    address: ''
+    address: '',
+    headquarters: '',
+    foundedYear: new Date().getFullYear(),
+    teamSize: 0,
+    
+    // Mission, Vision, Valeurs
+    mission: '',
+    vision: '',
+    values: [] as string[],
+    
+    // Spécialisations
+    sectors: [] as string[],
+    stages: [] as string[],
+    specializations: [] as string[],
+    
+    // Méthodologie
+    methodology: '',
+    programDurationMonths: 6,
+    successCriteria: '',
+    supportTypes: [] as string[],
+    
+    // Contact et social
+    geographicFocus: [] as string[],
+    socialMedia: {
+      linkedin: '',
+      twitter: '',
+      facebook: '',
+      website: ''
+    },
+    socialMediaLinkedin: '',
+    socialMediaTwitter: '',
+    socialMediaWebsite: '', // Aligné avec l'onboarding (pas Facebook/Instagram)
+    
+    // Paramètres
+    isPublic: true,
+    allowDirectApplications: true
   });
 
   // Adapter les données Supabase pour l'interface de profil
   const profile = organisation ? {
     id: organisation.id,
     name: organisation.name,
-    type: 'incubator' as const, // TODO: Ajouter type à la table organizations
-    description: organisation.description || 'Aucune description disponible',
-    foundedYear: 2018, // TODO: Ajouter founded_year à la table
+    type: (organisation as any).type || 'incubator' as const,
+    description: (organisation as any).description || 'Aucune description disponible',
+    foundedYear: (organisation as any).founded_year || 2018,
     headquarters: organisation.address || 'Non spécifié',
     website: organisation.website || '',
     email: organisation.email || 'Non spécifié',
-    phone: organisation.phone || 'Non spécifié',
+    phone: (organisation as any).phone || 'Non spécifié',
     
-    mission: 'Mission à définir', // TODO: Ajouter mission à la table
-    vision: 'Vision à définir', // TODO: Ajouter vision à la table
-    values: ['Innovation', 'Excellence'], // TODO: Ajouter values à la table
+    mission: (organisation as any).mission || 'Mission à définir',
+    vision: (organisation as any).vision || 'Vision à définir',
+    values: (organisation as any).values ? JSON.parse((organisation as any).values) : ['Innovation', 'Excellence'],
+    
+    // Méthodologie et programme
+    methodology: (organisation as any).methodology || '',
+    successCriteria: (organisation as any).success_criteria || '',
+    supportTypes: (organisation as any).support_types ? JSON.parse((organisation as any).support_types) : [],
     
     stats: {
       totalStartups: stats?.totalEntrepreneurs || 0,
       activePrograms: 3, // TODO: Calculer depuis les données
       totalInvestment: 0, // TODO: Ajouter tracking investissements
       successRate: stats?.successRate || 0,
-      teamSize: stats?.totalMentors || 0,
-      averageProgramDuration: stats?.averageProjectDuration || 0
+      teamSize: (organisation as any).team_size || stats?.totalMentors || 0,
+      averageProgramDuration: (organisation as any).program_duration_months || stats?.averageProjectDuration || 0
     },
     
-    sectors: ['Tech', 'Innovation'], // TODO: Ajouter sectors à la table
-    stages: ['Pré-seed', 'Seed'], // TODO: Ajouter stages à la table
-    geographicFocus: ['France'], // TODO: Ajouter geographic_focus à la table
+    sectors: (organisation as any).sectors ? JSON.parse((organisation as any).sectors) : ['Tech', 'Innovation'],
+    stages: (organisation as any).stages ? JSON.parse((organisation as any).stages) : ['Pré-seed', 'Seed'],
+    geographicFocus: (organisation as any).geographic_focus ? JSON.parse((organisation as any).geographic_focus) : ['France'],
     
-    socialMedia: {
+    socialMedia: (organisation as any).social_media ? JSON.parse((organisation as any).social_media) : {
       linkedin: '',
       twitter: '',
-      facebook: ''
-    }, // TODO: Ajouter social_media à la table
+      website: ''
+    },
     
-    isPublic: true, // TODO: Ajouter is_public à la table
-    allowDirectApplications: true, // TODO: Ajouter allow_applications à la table
+    isPublic: (organisation as any).is_public !== undefined ? (organisation as any).is_public : true,
+    allowDirectApplications: (organisation as any).allow_direct_applications !== undefined ? (organisation as any).allow_direct_applications : true,
     
     lastUpdated: new Date(organisation.updated_at || organisation.created_at)
   } : null;
 
-  // Initialiser le formulaire avec les données du profil
+  // Initialiser le formulaire avec les données du profil - ÉTENDU
   const initializeEditForm = () => {
     if (organisation) {
       setEditFormData({
+        // Informations de base
         name: organisation.name || '',
-        description: organisation.description || '',
+        description: (organisation as any).description || '',
         website: organisation.website || '',
         email: organisation.email || '',
-        phone: organisation.phone || '',
-        address: organisation.address || ''
+        phone: (organisation as any).phone || '',
+        address: organisation.address || '',
+        headquarters: organisation.address || '',
+        foundedYear: (organisation as any).founded_year || new Date().getFullYear(),
+        teamSize: (organisation as any).team_size || 0,
+        
+        // Mission, Vision, Valeurs
+        mission: (organisation as any).mission || '',
+        vision: (organisation as any).vision || '',
+        values: (organisation as any).values ? JSON.parse((organisation as any).values) : [],
+        
+        // Spécialisations
+        sectors: (organisation as any).sectors ? JSON.parse((organisation as any).sectors) : [],
+        stages: (organisation as any).stages ? JSON.parse((organisation as any).stages) : [],
+        specializations: (organisation as any).specializations ? JSON.parse((organisation as any).specializations) : [],
+        
+        // Méthodologie
+        methodology: (organisation as any).methodology || '',
+        programDurationMonths: (organisation as any).program_duration_months || 6,
+        successCriteria: (organisation as any).success_criteria || '',
+        supportTypes: (organisation as any).support_types ? JSON.parse((organisation as any).support_types) : [],
+        
+        // Contact et social
+        geographicFocus: (organisation as any).geographic_focus ? JSON.parse((organisation as any).geographic_focus) : [],
+        socialMedia: (organisation as any).social_media ? JSON.parse((organisation as any).social_media) : {
+          linkedin: '',
+          twitter: '',
+          website: ''
+        },
+        socialMediaLinkedin: (organisation as any).social_media ? JSON.parse((organisation as any).social_media).linkedin || '' : '',
+        socialMediaTwitter: (organisation as any).social_media ? JSON.parse((organisation as any).social_media).twitter || '' : '',
+        socialMediaWebsite: (organisation as any).social_media ? JSON.parse((organisation as any).social_media).website || '' : '',
+        
+        // Paramètres
+        isPublic: (organisation as any).is_public !== undefined ? (organisation as any).is_public : true,
+        allowDirectApplications: (organisation as any).allow_direct_applications !== undefined ? (organisation as any).allow_direct_applications : true
       });
     }
   };
@@ -153,6 +255,74 @@ const OrganisationProfile = () => {
     initializeEditForm();
     setIsEditing(true);
   };
+
+  // Fonctions utilitaires pour gérer les tableaux (secteurs, stages, etc.)
+  const handleArrayFieldToggle = (field: keyof typeof editFormData, value: string) => {
+    setEditFormData(prev => {
+      const currentArray = prev[field] as string[];
+      const newArray = currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value];
+      
+      return {
+        ...prev,
+        [field]: newArray
+      };
+    });
+  };
+
+  const addCustomValue = (field: keyof typeof editFormData, value: string) => {
+    if (value.trim()) {
+      setEditFormData(prev => {
+        const currentArray = prev[field] as string[];
+        if (!currentArray.includes(value.trim())) {
+          return {
+            ...prev,
+            [field]: [...currentArray, value.trim()]
+          };
+        }
+        return prev;
+      });
+    }
+  };
+
+  const removeValue = (field: keyof typeof editFormData, value: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: (prev[field] as string[]).filter(item => item !== value)
+    }));
+  };
+
+  // Options prédéfinies pour les sélections multiples
+  const sectorOptions = [
+    "Tech", "Fintech", "Healthtech", "Edtech", "Agritech", "Cleantech",
+    "E-commerce", "SaaS", "IoT", "IA/Machine Learning", "Blockchain",
+    "Mobilité", "Immobilier", "Retail", "Manufacturing", "Services",
+    "Entertainment", "Autre"
+  ];
+
+  const stageOptions = [
+    "Idéation", "Pré-seed", "Seed", "Série A", "Série B", "Série C+",
+    "Growth stage", "Scale-up", "Expansion internationale"
+  ];
+
+  const specializationOptions = [
+    "Accompagnement stratégique", "Développement produit", "Marketing digital",
+    "Financement", "Juridique", "RH", "Technologie", "International",
+    "Opérations", "Ventes", "Partenariats", "Pitch training"
+  ];
+
+  const supportTypeOptions = [
+    "Mentoring individuel", "Workshops collectifs", "Formations",
+    "Financement direct", "Mise en relation investisseurs",
+    "Espaces de coworking", "Support technique", "Support juridique",
+    "Développement commercial", "Networking"
+  ];
+
+  const geographicOptions = [
+    "France", "Europe", "Amérique du Nord", "Amérique du Sud",
+    "Afrique", "Asie", "Océanie", "International"
+  ];
 
   if (orgLoading || statsLoading) {
     return (
@@ -181,11 +351,57 @@ const OrganisationProfile = () => {
     setSaveStatus('saving');
     
     try {
-      // TODO: Implémenter la sauvegarde avec Supabase
-      console.log('Sauvegarde des données:', editFormData);
+      // Utiliser le service d'organisation pour sauvegarder - TOUS LES CHAMPS
+      const updateData = {
+        // Informations de base
+        name: editFormData.name,
+        description: editFormData.description,
+        website: editFormData.website,
+        email: editFormData.email,
+        phone: editFormData.phone,
+        address: editFormData.address,
+        founded_year: editFormData.foundedYear,
+        team_size: editFormData.teamSize,
+        
+        // Mission, Vision, Valeurs
+        mission: editFormData.mission,
+        vision: editFormData.vision,
+        values: JSON.stringify(editFormData.values),
+        
+        // Spécialisations
+        sectors: JSON.stringify(editFormData.sectors),
+        stages: JSON.stringify(editFormData.stages),
+        specializations: JSON.stringify(editFormData.specializations),
+        
+        // Méthodologie
+        methodology: editFormData.methodology,
+        program_duration_months: editFormData.programDurationMonths,
+        success_criteria: editFormData.successCriteria,
+        support_types: JSON.stringify(editFormData.supportTypes),
+        
+        // Contact et social
+        geographic_focus: JSON.stringify(editFormData.geographicFocus),
+        social_media: JSON.stringify({
+          linkedin: editFormData.socialMedia?.linkedin || editFormData.socialMediaLinkedin || '',
+          twitter: editFormData.socialMedia?.twitter || editFormData.socialMediaTwitter || '',
+          website: editFormData.socialMedia?.website || editFormData.socialMediaWebsite || ''
+        }),
+        
+        // Paramètres
+        is_public: editFormData.isPublic,
+        allow_direct_applications: editFormData.allowDirectApplications,
+        
+        updated_at: new Date().toISOString()
+      };
+
+      await updateOrganisation(organisation!.id, updateData);
+      
       setSaveStatus('saved');
       setIsEditing(false);
       setTimeout(() => setSaveStatus('idle'), 2000);
+      
+      // Recharger les données pour afficher les changements
+      window.location.reload();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       setSaveStatus('error');
@@ -393,9 +609,10 @@ const OrganisationProfile = () => {
                   <label className="text-sm font-medium mb-2 block">Mission</label>
                   {isEditing ? (
                     <Textarea 
-                      value={profile.mission}
+                      value={editFormData.mission}
                       onChange={(e) => setEditFormData(prev => ({ ...prev, mission: e.target.value }))}
                       rows={3}
+                      placeholder="Décrivez la mission de votre organisation..."
                     />
                   ) : (
                     <p className="text-gray-600">{profile.mission}</p>
@@ -406,9 +623,10 @@ const OrganisationProfile = () => {
                   <label className="text-sm font-medium mb-2 block">Vision</label>
                   {isEditing ? (
                     <Textarea 
-                      value={profile.vision}
+                      value={editFormData.vision}
                       onChange={(e) => setEditFormData(prev => ({ ...prev, vision: e.target.value }))}
                       rows={2}
+                      placeholder="Quelle est votre vision à long terme ?"
                     />
                   ) : (
                     <p className="text-gray-600">{profile.vision}</p>
@@ -417,13 +635,40 @@ const OrganisationProfile = () => {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Valeurs</label>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.values.map((value, index) => (
-                      <Badge key={index} variant="outline">
-                        {value}
-                      </Badge>
-                    ))}
-                  </div>
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <Input
+                        placeholder="Tapez une valeur et appuyez sur Entrée"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addCustomValue('values', e.currentTarget.value);
+                            e.currentTarget.value = '';
+                          }
+                        }}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        {editFormData.values.map((value, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="cursor-pointer hover:bg-red-50"
+                            onClick={() => removeValue('values', value)}
+                          >
+                            {value} ×
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.values.map((value, index) => (
+                        <Badge key={index} variant="outline">
+                          {value}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -439,35 +684,131 @@ const OrganisationProfile = () => {
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Secteurs d'activité</label>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.sectors.map((sector, index) => (
-                      <Badge key={index} variant="outline">
-                        {sector}
-                      </Badge>
-                    ))}
-                  </div>
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {sectorOptions.map(sector => (
+                          <Button
+                            key={sector}
+                            variant={editFormData.sectors.includes(sector) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleArrayFieldToggle('sectors', sector)}
+                            className={editFormData.sectors.includes(sector) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          >
+                            {sector}
+                          </Button>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Autre secteur..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addCustomValue('sectors', e.currentTarget.value);
+                            e.currentTarget.value = '';
+                          }
+                        }}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        {editFormData.sectors.filter(sector => !sectorOptions.includes(sector)).map((sector, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="cursor-pointer hover:bg-red-50"
+                            onClick={() => removeValue('sectors', sector)}
+                          >
+                            {sector} ×
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.sectors.map((sector, index) => (
+                        <Badge key={index} variant="outline">
+                          {sector}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Stades d'investissement</label>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.stages.map((stage, index) => (
-                      <Badge key={index} variant="outline">
-                        {stage}
-                      </Badge>
-                    ))}
-                  </div>
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {stageOptions.map(stage => (
+                          <Button
+                            key={stage}
+                            variant={editFormData.stages.includes(stage) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleArrayFieldToggle('stages', stage)}
+                            className={editFormData.stages.includes(stage) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          >
+                            {stage}
+                          </Button>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Autre stade..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addCustomValue('stages', e.currentTarget.value);
+                            e.currentTarget.value = '';
+                          }
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.stages.map((stage, index) => (
+                        <Badge key={index} variant="outline">
+                          {stage}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Zones géographiques</label>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.geographicFocus.map((zone, index) => (
-                      <Badge key={index} variant="outline">
-                        {zone}
-                      </Badge>
-                    ))}
-                  </div>
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {geographicOptions.map(zone => (
+                          <Button
+                            key={zone}
+                            variant={editFormData.geographicFocus.includes(zone) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleArrayFieldToggle('geographicFocus', zone)}
+                            className={editFormData.geographicFocus.includes(zone) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          >
+                            {zone}
+                          </Button>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Autre zone géographique..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addCustomValue('geographicFocus', e.currentTarget.value);
+                            e.currentTarget.value = '';
+                          }
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.geographicFocus.map((zone, index) => (
+                        <Badge key={index} variant="outline">
+                          {zone}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -592,8 +933,169 @@ const OrganisationProfile = () => {
 
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-gray-400" />
-                  <span>{profile.headquarters}</span>
+                  {isEditing ? (
+                    <Input 
+                      value={editFormData.headquarters}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, headquarters: e.target.value }))}
+                      className="flex-1"
+                      placeholder="Siège social"
+                    />
+                  ) : (
+                    <span>{profile.headquarters}</span>
+                  )}
                 </div>
+
+                {/* Méthodologie d'accompagnement */}
+                {(profile.methodology || isEditing) && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Méthodologie d'accompagnement</label>
+                    {isEditing ? (
+                      <Textarea 
+                        value={editFormData.methodology || ''}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, methodology: e.target.value }))}
+                        className="w-full"
+                        placeholder="Décrivez votre méthodologie..."
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">{profile.methodology}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Durée des programmes */}
+                {(profile.stats?.averageProgramDuration || isEditing) && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Durée des programmes (mois)</label>
+                    {isEditing ? (
+                      <Input 
+                        type="number"
+                        value={editFormData.programDurationMonths || ''}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, programDurationMonths: parseInt(e.target.value) || 0 }))}
+                        className="w-full"
+                        placeholder="ex: 6, 12..."
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">{profile.stats.averageProgramDuration} mois</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Critères de succès */}
+                {(profile.successCriteria || isEditing) && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Critères de succès</label>
+                    {isEditing ? (
+                      <Textarea 
+                        value={editFormData.successCriteria || ''}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, successCriteria: e.target.value }))}
+                        className="w-full"
+                        placeholder="Comment mesurez-vous le succès..."
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">{profile.successCriteria}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Types de support */}
+                {(profile.supportTypes?.length > 0 || isEditing) && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Types de support</label>
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {supportTypeOptions.map(type => (
+                            <Button
+                              key={type}
+                              variant={editFormData.supportTypes.includes(type) ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handleArrayFieldToggle('supportTypes', type)}
+                              className={editFormData.supportTypes.includes(type) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                            >
+                              {type}
+                            </Button>
+                          ))}
+                        </div>
+                        <Input
+                          placeholder="Autre type de support..."
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addCustomValue('supportTypes', e.currentTarget.value);
+                              e.currentTarget.value = '';
+                            }
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {profile.supportTypes.map((type, index) => (
+                          <Badge key={index} variant="outline">
+                            {type}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Réseaux sociaux */}
+                {(profile.socialMedia || isEditing) && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Réseaux sociaux</label>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <Input 
+                            value={editFormData.socialMedia?.linkedin || ''}
+                            onChange={(e) => setEditFormData(prev => ({ 
+                              ...prev, 
+                              socialMedia: { ...prev.socialMedia, linkedin: e.target.value }
+                            }))}
+                            placeholder="LinkedIn"
+                          />
+                          <Input 
+                            value={editFormData.socialMedia?.twitter || ''}
+                            onChange={(e) => setEditFormData(prev => ({ 
+                              ...prev, 
+                              socialMedia: { ...prev.socialMedia, twitter: e.target.value }
+                            }))}
+                            placeholder="Twitter"
+                          />
+                          <Input 
+                            value={editFormData.socialMedia?.website || ''}
+                            onChange={(e) => setEditFormData(prev => ({ 
+                              ...prev, 
+                              socialMedia: { ...prev.socialMedia, website: e.target.value }
+                            }))}
+                            placeholder="Site web"
+                            className="md:col-span-2"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {profile.socialMedia?.linkedin && (
+                          <a href={profile.socialMedia.linkedin} className="text-aurentia-pink hover:underline block text-sm">
+                            LinkedIn
+                          </a>
+                        )}
+                        {profile.socialMedia?.twitter && (
+                          <a href={profile.socialMedia.twitter} className="text-aurentia-pink hover:underline block text-sm">
+                            Twitter
+                          </a>
+                        )}
+                        {profile.socialMedia?.website && (
+                          <a href={profile.socialMedia.website} className="text-aurentia-pink hover:underline block text-sm">
+                            Site web
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
