@@ -36,9 +36,9 @@ export function FormSettings({ block, onUpdate, onClose }: FormSettingsProps) {
   const requiresOptions = ['radio', 'checkbox', 'select'].includes(localBlock.questionType || ''); // Changed types and added null check
 
   return (
-    <div className="fixed inset-y-0 right-0 w-80 bg-white shadow-xl border-l border-gray-200 z-50 overflow-y-auto animate-in slide-in-from-right duration-300">
+    <div className="fixed inset-y-0 right-0 w-80 bg-transparent shadow-xl border-l border-gray-200 z-50 overflow-y-auto animate-in slide-in-from-right duration-300">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 p-4">
+      <div className="sticky top-0 bg-transparent border-b border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Paramètres de la question</h2>
           <button
@@ -133,7 +133,7 @@ export function FormSettings({ block, onUpdate, onClose }: FormSettingsProps) {
       </div>
 
       {/* Footer */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+      <div className="sticky bottom-0 bg-transparent border-t border-gray-200 p-4">
         <div className="flex gap-2">
           <button
             onClick={onClose}

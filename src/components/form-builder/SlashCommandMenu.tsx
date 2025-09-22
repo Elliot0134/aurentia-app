@@ -27,7 +27,7 @@ const menuItems: MenuItem[] = [
   { type: 'rating', label: 'Évaluation', description: 'Système de notation (étoiles, etc.)', icon: Star, category: 'question' },
   { type: 'file', label: 'Fichier', description: 'Téléchargement de fichier', icon: Upload, category: 'question' },
   // Special Blocks
-  { type: 'separator', label: 'Séparateur', description: 'Ligne de séparation visuelle', icon: SeparatorHorizontal, category: 'special' },
+  { type: 'separator', label: 'Page Break', description: 'Ajouter un saut de page', icon: SeparatorHorizontal, category: 'special' },
   { type: 'title', label: 'Titre de section', description: 'Ajouter un titre de section', icon: Heading1, category: 'special' },
 ];
 
