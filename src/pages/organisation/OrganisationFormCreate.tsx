@@ -3,11 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { FormConfig, FormBlock } from '@/types/form';
 import { useToast } from '@/hooks/use-toast';
-import { DocumentEditor } from '@/components/form-builder/DocumentEditor';
+import { FlowTallyEditor } from '@/components/form-builder/FlowTallyEditor';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function OrganisationFormCreate() {
@@ -152,7 +151,7 @@ export default function OrganisationFormCreate() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3">
@@ -216,22 +215,19 @@ export default function OrganisationFormCreate() {
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Form Description */}
-        <div className="mb-8">
-          <Textarea
-            value={form.description || ''}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Description du formulaire (optionnel)"
-            className="min-h-[60px] text-muted-foreground border-none p-0 focus-visible:ring-0 bg-transparent resize-none"
-          />
-        </div>
 
-        {/* Document Editor */}
-        <DocumentEditor
+        {/* Flow Tally Editor - Reproduction Exacte */}
+        <FlowTallyEditor
           blocks={form.blocks || []}
           onBlocksChange={handleBlocksChange}
+          title={form.title}
+          description={form.description}
+          onTitleChange={(title) => setForm({ ...form, title })}
+          onDescriptionChange={(description) => setForm({ ...form, description })}
           className="min-h-[600px]"
         />
+        {/* Ligne vide disponible sous le formulaire */}
+        <div className="py-8"></div> 
       </div>
     </div>
   );

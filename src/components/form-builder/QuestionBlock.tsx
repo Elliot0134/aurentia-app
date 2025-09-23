@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FormBlock, QuestionType } from '@/types/form'; // Import FormBlock and QuestionType
+import { FormBlock, QuestionType } from '@/types/form';
 import {
   GripVertical, MoreHorizontal, Copy, Trash2, Settings,
-  ToggleLeft, ToggleRight, Type, FileText, Mail, Phone, Hash, Calendar,
+  Type, FileText, Mail, Phone, Hash, Calendar,
   Circle, CheckSquare, ChevronDown, Star, Upload
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -19,21 +19,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface QuestionBlockProps {
-  block: FormBlock; // Changed from question to block
+  block: FormBlock;
   isEditing: boolean;
   onEdit: () => void;
   onStopEdit: () => void;
-  onUpdate: (updates: Partial<FormBlock>) => void; // Changed from Question to FormBlock
+  onUpdate: (updates: Partial<FormBlock>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  inlineMode?: boolean;
 }
 
 export function QuestionBlock({
-  block, // Changed from question to block
+  block,
   isEditing,
   onEdit,
   onStopEdit,
@@ -44,8 +45,10 @@ export function QuestionBlock({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  inlineMode = false,
 }: QuestionBlockProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +59,7 @@ export function QuestionBlock({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: block.id }); // Changed from question.id to block.id
+  } = useSortable({ id: block.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -78,7 +81,6 @@ export function QuestionBlock({
   }, [showMenu]);
 
   useEffect(() => {
-    // Auto-focus on title when block is newly created and has no content
     if (isEditing && !block.content) {
       setTimeout(() => {
         if (titleRef.current) {
@@ -96,7 +98,6 @@ export function QuestionBlock({
       setTimeout(() => {
         if (titleRef.current) {
           titleRef.current.focus();
-          // Place cursor at end
           const range = document.createRange();
           const selection = window.getSelection();
           range.selectNodeContents(titleRef.current);
@@ -124,7 +125,6 @@ export function QuestionBlock({
       titleRef.current?.blur();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      // Reset to original value
       if (titleRef.current) {
         titleRef.current.textContent = block.content;
       }
@@ -189,7 +189,7 @@ export function QuestionBlock({
             disabled
           />
         );
-      case 'radio': // Changed from multiple_choice
+      case 'radio':
         return (
           <div className="space-y-2">
             {(block.options || ['Option 1', 'Option 2']).map((option, index) => (
@@ -211,7 +211,7 @@ export function QuestionBlock({
             ))}
           </div>
         );
-      case 'select': // Changed from dropdown
+      case 'select':
         return (
           <select className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50" disabled>
             <option>Choisir une option</option>
@@ -230,7 +230,7 @@ export function QuestionBlock({
             ))}
           </div>
         );
-      case 'file': // Added file type
+      case 'file':
         return (
           <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-500">
             <Upload className="h-6 w-6 mr-2" />
@@ -259,131 +259,161 @@ export function QuestionBlock({
     }
   };
 
+  // Mode inline simplifié pour l'éditeur Tally
+  if (inlineMode) {
+    return (
+      <div
+        className="question-block-inline my-4 p-0"
+        data-question-id={block.id}
+      >
+        <div className="mb-3">
+          <div
+            ref={titleRef}
+            contentEditable={true}
+            suppressContentEditableWarning
+            className="text-lg font-medium text-foreground outline-none border-l-4 border-transparent focus:border-blue-500 pl-2 -ml-2 transition-colors"
+            onBlur={handleTitleBlur}
+            onKeyDown={handleTitleKeyDown}
+            data-placeholder="Tapez votre question ici..."
+          >
+            {block.content || 'Question sans titre'}
+          </div>
+        </div>
+        
+        <div className="mb-4">
+          {renderQuestionInput()}
+        </div>
+        
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      data-question-id={block.id} // Changed from question.id to block.id
-      className={`group relative bg-white rounded-lg border-2 transition-all duration-150 ${
-        isEditing // Changed from isActive to isEditing
-          ? 'border-blue-500 shadow-sm bg-blue-50'
-          : 'border-gray-200 hover:border-gray-300'
-      } ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
-      onClick={onEdit} // Changed from onActivate to onEdit
+      className={`group relative transition-all duration-150 ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Drag Handle */}
+      {/* Conteneur principal de la question */}
       <div
-        {...attributes}
-        {...listeners}
-        className="absolute left-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+        data-question-id={block.id}
+        className={`ml-2 rounded-lg border transition-all duration-150 ${
+          isEditing
+            ? 'border-blue-500 shadow-sm bg-blue-50'
+            : 'bg-white border-gray-200 hover:border-gray-300'
+        }`}
+        onClick={onEdit}
       >
-        <GripVertical className="h-4 w-4 text-gray-400" />
-      </div>
-
-      {/* Question Content */}
-      <div className="p-6 pl-12">
-        {/* Question Title */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div
-              ref={titleRef}
-              contentEditable={isEditing} // Changed from isEditingTitle to isEditing
-              suppressContentEditableWarning
-              className={`text-lg font-medium outline-none transition-all duration-150 ${
-                isEditing
-                  ? 'border-b-2 border-blue-500 pb-1 bg-transparent'
-                  : 'hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1 cursor-text'
-              }`}
-              onClick={handleTitleClick}
-              onBlur={handleTitleBlur}
-              onKeyDown={handleTitleKeyDown}
-              data-placeholder="Tapez votre question ici..."
+        <div className="flex items-start px-6 pt-6">
+          {/* Icônes de déplacement et de suppression */}
+          <div
+            className={`flex items-center gap-1 transition-opacity duration-150 mr-4 ${
+              isHovered || isDragging ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <button
+              {...attributes}
+              {...listeners}
+              className="cursor-grab p-1 text-gray-400 hover:text-gray-600"
             >
-              {block.content || (isEditing ? '' : 'Question sans titre')} {/* Changed from question.title to block.content */}
-            </div>
-            {block.required && ( // Changed from question.required to block.required
-              <span className="text-red-500 ml-1">*</span>
-            )}
-            {block.description && ( // Changed from question.description to block.description
-              <p className="text-sm text-gray-600 mt-1">{block.description}</p>
-            )}
-          </div>
-
-          {/* Menu Button */}
-          <div className="relative">
+              <GripVertical className="h-5 w-5" />
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowMenu(!showMenu);
+                onDelete();
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded transition-all duration-150"
+              className="p-1 text-gray-400 hover:text-red-500"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
             </button>
-
-            {/* Context Menu */}
-            {showMenu && (
-              <div
-                ref={menuRef}
-                className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[150px] animate-in fade-in slide-in-from-top-2 duration-200"
+          </div>
+          
+          <div className="flex-1">
+            {/* Titre de la question */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <div
+                  ref={titleRef}
+                contentEditable={isEditing}
+                suppressContentEditableWarning
+                className={`text-lg font-medium outline-none transition-all duration-150 ${
+                  isEditing
+                    ? 'border-b-2 border-blue-500 pb-1 bg-transparent'
+                    : 'hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1 cursor-text'
+                }`}
+                onClick={handleTitleClick}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                data-placeholder="Tapez votre question ici..."
               >
-                <button
-                  onClick={() => {
-                    onDuplicate();
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                >
-                  <Copy className="h-4 w-4" />
-                  Dupliquer
-                </button>
-                <button
-                  onClick={() => {
-                    onUpdate({ required: !block.required }); // Changed from question.required to block.required
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                >
-                  {block.required ? ( // Changed from question.required to block.required
-                    <ToggleRight className="h-4 w-4" />
-                  ) : (
-                    <ToggleLeft className="h-4 w-4" />
-                  )}
-                  {block.required ? 'Optionnel' : 'Obligatoire'}
-                </button>
-                <button
-                  onClick={() => {
-                    // onOpenSettings(); // Removed as FormSettings is not used here
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Paramètres
-                </button>
-                <div className="border-t border-gray-100 my-1" />
-                <button
-                  onClick={() => {
-                    onDelete();
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Supprimer
-                </button>
+                {block.content || (isEditing ? '' : 'Question sans titre')}
               </div>
-            )}
+              {block.description && (
+                <p className="text-sm text-gray-600 mt-1">{block.description}</p>
+              )}
+              {isEditing && (block.questionType === 'text' || block.questionType === 'textarea' || block.questionType === 'email' || block.questionType === 'phone' || block.questionType === 'number') && (
+                <div className="mt-4">
+                  <Label htmlFor={`placeholder-${block.id}`} className="text-xs text-gray-500">Texte du placeholder</Label>
+                  <Input
+                    id={`placeholder-${block.id}`}
+                    value={block.placeholder || ''}
+                    onChange={(e) => onUpdate({ placeholder: e.target.value })}
+                    placeholder="Ex: Entrez votre réponse ici"
+                    className="mt-1"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Input de la question */}
+            <div className="pb-6">
+              {renderQuestionInput()}
+            </div>
+
+            {/* Bouton d'astérisque et menu contextuel */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded transition-all duration-150"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+
+              {showMenu && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[150px] animate-in fade-in slide-in-from-top-2 duration-200"
+                >
+                  <button
+                    onClick={() => {
+                      onDuplicate();
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Dupliquer
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Paramètres
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Question Input */}
-        <div className="mb-4">
-          {renderQuestionInput()}
-        </div>
-
-        {/* Help Text */}
-        {/* Removed block.helpText as it's not part of FormBlock */}
       </div>
     </div>
   );
