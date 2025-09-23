@@ -212,24 +212,52 @@ export const getOrganisationStats = async (organizationId: string): Promise<Orga
 export const getOrganisationMembers = async (organizationId: string): Promise<OrganisationMember[]> => {
   const { data, error } = await (supabase as any)
     .from('profiles')
-    .select('id, email, user_role, created_at')
-    .eq('organization_id', organizationId);
+    .select(`
+      id,
+      email,
+      first_name,
+      last_name,
+      phone,
+      user_role,
+      organization_id,
+      created_at,
+      invitation_code_used
+    `)
+    .eq('organization_id', organizationId)
+    .in('user_role', ['member', 'staff', 'organisation']); // Inclure tous les rôles d'organisation
 
   if (error) {
     console.error('Error fetching organization members:', error);
     return [];
   }
 
+  // Récupérer le nombre de projets pour chaque membre
+  const memberIds = (data || []).map((member: any) => member.id);
+  let projectsCount: { [key: string]: number } = {};
+
+  if (memberIds.length > 0) {
+    const { data: projectsData } = await supabase
+      .from('project_summary')
+      .select('user_id')
+      .in('user_id', memberIds);
+
+    projectsCount = (projectsData || []).reduce((acc: { [key: string]: number }, project: any) => {
+      acc[project.user_id] = (acc[project.user_id] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
   return (data || []).map((member: any) => ({
     id: member.id,
     email: member.email,
-    first_name: '',
-    last_name: '',
-    phone: '',
+    first_name: member.first_name || member.email.split('@')[0],
+    last_name: member.last_name || '',
+    phone: member.phone || '',
     user_role: member.user_role,
     organization_id: organizationId,
-    projects_count: 0,
-    created_at: member.created_at
+    projects_count: projectsCount[member.id] || 0,
+    created_at: member.created_at,
+    invitation_code_used: member.invitation_code_used
   }));
 };
 
@@ -634,32 +662,97 @@ export const deleteFormTemplate = async (id: string): Promise<void> => {
   }
 };
 
-// Services pour les mentors - utilise les admins d'organisation
+// Services pour les mentors - utilise les admins d'organisation et la table mentors
 export const getOrganisationMentors = async (organizationId: string) => {
-  const { data, error } = await (supabase as any)
-    .from('profiles')
-    .select('id, email, user_role, created_at')
-    .eq('organization_id', organizationId)
-    .eq('user_role', 'admin');
+  try {
+    // D'abord, récupérer les mentors depuis la table mentors
+    const { data: mentorsData, error: mentorsError } = await (supabase as any)
+      .from('mentors')
+      .select(`
+        id,
+        user_id,
+        organization_id,
+        expertise,
+        bio,
+        linkedin_url,
+        status,
+        total_entrepreneurs,
+        success_rate,
+        rating,
+        created_at,
+        user:profiles!mentors_user_id_fkey(
+          id,
+          email,
+          first_name,
+          last_name,
+          phone,
+          user_role,
+          created_at
+        )
+      `)
+      .eq('organization_id', organizationId);
 
-  if (error) {
+    let mentors = [];
+    if (!mentorsError && mentorsData) {
+      mentors = mentorsData.map((mentor: any) => ({
+        id: mentor.id,
+        user_id: mentor.user_id,
+        email: mentor.user?.email || '',
+        first_name: mentor.user?.first_name || mentor.user?.email?.split('@')[0] || '',
+        last_name: mentor.user?.last_name || '',
+        phone: mentor.user?.phone || '',
+        user_role: mentor.user?.user_role || 'staff',
+        organization_id: mentor.organization_id,
+        expertise: mentor.expertise || [],
+        bio: mentor.bio || '',
+        linkedin_url: mentor.linkedin_url || '',
+        status: mentor.status || 'active',
+        total_entrepreneurs: mentor.total_entrepreneurs || 0,
+        success_rate: mentor.success_rate || 0,
+        rating: mentor.rating || 0,
+        created_at: mentor.created_at,
+        joined_at: mentor.created_at
+      }));
+    }
+
+    // Ensuite, récupérer les propriétaires/admins d'organisation qui ne sont pas déjà dans la table mentors
+    const { data: ownersData, error: ownersError } = await (supabase as any)
+      .from('profiles')
+      .select('id, email, first_name, last_name, phone, user_role, organization_id, created_at')
+      .eq('organization_id', organizationId)
+      .in('user_role', ['organisation', 'staff']);
+
+    if (!ownersError && ownersData) {
+      const existingMentorUserIds = mentors.map((m: any) => m.user_id);
+
+      const owners = ownersData
+        .filter((owner: any) => !existingMentorUserIds.includes(owner.id))
+        .map((owner: any) => ({
+          id: owner.id, // Utiliser l'ID du profil comme ID du mentor
+          user_id: owner.id,
+          email: owner.email,
+          first_name: owner.first_name || owner.email.split('@')[0],
+          last_name: owner.last_name || '',
+          phone: owner.phone || '',
+          user_role: owner.user_role,
+          organization_id: owner.organization_id,
+          expertise: ['Gestion d\'organisation', 'Leadership'],
+          bio: owner.user_role === 'organisation' ? 'Propriétaire de l\'organisation' : 'Administrateur de l\'organisation',
+          linkedin_url: '',
+          status: 'active',
+          total_entrepreneurs: 0, // TODO: compter depuis mentor_assignments
+          success_rate: 0,
+          rating: 0,
+          created_at: owner.created_at,
+          joined_at: owner.created_at
+        }));
+
+      mentors = [...mentors, ...owners];
+    }
+
+    return mentors;
+  } catch (error) {
     console.error('Error fetching organization mentors:', error);
     return [];
   }
-
-  return (data || []).map((mentor: any) => ({
-    id: mentor.id,
-    email: mentor.email,
-    first_name: '',
-    last_name: '',
-    user_role: mentor.user_role,
-    created_at: mentor.created_at,
-    expertise: [],
-    bio: '',
-    linkedin_url: '',
-    status: 'active',
-    total_entrepreneurs: 0,
-    success_rate: 0,
-    rating: 0
-  }));
 };

@@ -11,6 +11,12 @@ import { useCreditsSimple } from "@/hooks/useCreditsSimple";
 import { useOrganisationNavigation } from "@/hooks/useOrganisationNavigation";
 import { useUserOrganization } from "@/hooks/useUserOrganization";
 import clsx from 'clsx';
+import { useInvitationCode } from "@/services/invitationService";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 
 interface SidebarConfig {
   menuItems: Array<{
@@ -48,6 +54,12 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const { hasOrganization, loading: organizationLoading } = useUserOrganization();
   const isUserProfileLoading = !userProfile;
 
+  // Modal state for joining organization
+  const [joinOrgModalOpen, setJoinOrgModalOpen] = useState(false);
+  const [invitationCode, setInvitationCode] = useState('');
+  const [joinOrgLoading, setJoinOrgLoading] = useState(false);
+  const [joinOrgError, setJoinOrgError] = useState('');
+
   // Check if mobile on mount and when window resizes
   useEffect(() => {
     const checkIfMobile = () => {
@@ -65,6 +77,71 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   // Use currentProjectId from context, fallback to projectId from URL, or first available project
   const activeProjectId = currentProjectId || projectId || (userProjects.length > 0 ? userProjects[0].project_id : null);
   
+  // Handle joining organization with invitation code
+  const handleJoinOrganization = async () => {
+    if (!invitationCode.trim()) {
+      setJoinOrgError('Veuillez entrer un code d\'invitation');
+      return;
+    }
+
+    if (!user?.id) {
+      setJoinOrgError('Utilisateur non connecté');
+      return;
+    }
+
+    setJoinOrgLoading(true);
+    setJoinOrgError('');
+
+    try {
+      // Extraire le code de l'URL si nécessaire
+      const extractCodeFromUrl = (input: string): string => {
+        // Si c'est déjà un code simple (pas d'URL), retourner tel quel
+        if (!input.includes('?') && !input.includes('/join/')) {
+          return input;
+        }
+        
+        try {
+          // Essayer d'extraire depuis les paramètres de requête
+          const url = new URL(input);
+          const codeFromQuery = url.searchParams.get('code');
+          if (codeFromQuery) {
+            return codeFromQuery;
+          }
+          
+          // Essayer d'extraire depuis le chemin /join/{code}
+          const pathMatch = url.pathname.match(/\/join\/([^\/]+)/);
+          if (pathMatch) {
+            return pathMatch[1];
+          }
+        } catch (error) {
+          // Si ce n'est pas une URL valide, retourner l'input tel quel
+          return input;
+        }
+        
+        return input;
+      };
+      
+      const codeToUse = extractCodeFromUrl(invitationCode.trim());
+      await useInvitationCode(codeToUse, user.id);
+      
+      toast({
+        title: "Succès",
+        description: "Vous avez rejoint l'organisation avec succès !",
+      });
+      
+      // Close modal and refresh the page
+      setJoinOrgModalOpen(false);
+      setInvitationCode('');
+      window.location.reload();
+      
+    } catch (error: any) {
+      console.error('Erreur lors de la jonction de l\'organisation:', error);
+      setJoinOrgError(error.message || 'Code d\'invitation invalide');
+    } finally {
+      setJoinOrgLoading(false);
+    }
+  };
+
   const getSidebarConfig = (): SidebarConfig => {
     if (!userProfile) return getIndividualConfig();
 
@@ -160,13 +237,13 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     if (organizationLoading) {
       // Show loading state
       orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
-    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
+    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff' || userProfile.user_role === 'member'))) {
       // User has an organization OR has organization role - show organization name or "Organisation" button
       const orgName = userProfile?.organization?.name;
       orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
     } else {
-      // User doesn't have an organization - show "Créer une organisation" button
-      orgItem = { name: "Créer une organisation", path: "/setup-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
+      // User doesn't have an organization - show "Rejoindre une organisation" button
+      orgItem = { name: "Rejoindre une organisation", path: "/join-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
     }
 
     return {
@@ -271,7 +348,11 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
             ) : item.isCustomAction && item.isCreateOrg ? (
               <button
                 key={`${item.path}-${item.name}-${index}`}
-                onClick={() => navigate('/setup-organization')}
+                onClick={() => {
+                  setJoinOrgModalOpen(true);
+                  setInvitationCode('');
+                  setJoinOrgError('');
+                }}
                 disabled={organizationLoading}
                 className={cn(
                   "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
@@ -378,13 +459,98 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
 
   return (
     <>
-      {isMobile ? <RoleBasedMobileNavbar userProfile={userProfile} /> : <DesktopSidebar />}
+      {isMobile ? <RoleBasedMobileNavbar 
+        userProfile={userProfile} 
+        joinOrgModalOpen={joinOrgModalOpen}
+        setJoinOrgModalOpen={setJoinOrgModalOpen}
+        invitationCode={invitationCode}
+        setInvitationCode={setInvitationCode}
+        joinOrgLoading={joinOrgLoading}
+        joinOrgError={joinOrgError}
+        setJoinOrgError={setJoinOrgError}
+        handleJoinOrganization={handleJoinOrganization}
+      /> : <DesktopSidebar />}
+      
+      {/* Join Organization Modal */}
+      <Dialog open={joinOrgModalOpen} onOpenChange={setJoinOrgModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Rejoindre une organisation</DialogTitle>
+            <DialogDescription>
+              Entrez le code d'invitation ou le lien d'invitation que vous avez reçu pour rejoindre une organisation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="invitation-code" className="text-right">
+                Code d'invitation
+              </Label>
+              <Input
+                id="invitation-code"
+                value={invitationCode}
+                onChange={(e) => {
+                  setInvitationCode(e.target.value);
+                  if (joinOrgError) setJoinOrgError(''); // Clear error when user types
+                }}
+                className="col-span-3"
+                placeholder="INV-ABC123 ou https://..."
+              />
+            </div>
+            {joinOrgError && (
+              <div className="text-red-600 text-sm text-center">
+                {joinOrgError}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setJoinOrgModalOpen(false);
+                setInvitationCode('');
+                setJoinOrgError('');
+              }}
+            >
+              Annuler
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleJoinOrganization}
+              disabled={joinOrgLoading}
+              className="bg-aurentia-pink hover:bg-aurentia-pink/90"
+            >
+              {joinOrgLoading ? 'Rejoindre...' : 'Rejoindre'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 });
 
 // Role-based Mobile Navbar
-const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | null }) => {
+const RoleBasedMobileNavbar = ({ 
+  userProfile,
+  joinOrgModalOpen,
+  setJoinOrgModalOpen,
+  invitationCode,
+  setInvitationCode,
+  joinOrgLoading,
+  joinOrgError,
+  setJoinOrgError,
+  handleJoinOrganization
+}: { 
+  userProfile: UserProfile | null;
+  joinOrgModalOpen: boolean;
+  setJoinOrgModalOpen: (open: boolean) => void;
+  invitationCode: string;
+  setInvitationCode: (code: string) => void;
+  joinOrgLoading: boolean;
+  joinOrgError: string;
+  setJoinOrgError: (error: string) => void;
+  handleJoinOrganization: () => Promise<void>;
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { projectId } = useParams();
@@ -480,13 +646,13 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
     if (organizationLoading) {
       // Show loading state
       orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
-    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
+    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff' || userProfile.user_role === 'member'))) {
       // User has an organization OR has organization role - show organization name or "Organisation" button
       const orgName = userProfile?.organization?.name;
       orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
     } else {
-      // User doesn't have an organization - show "Créer une organisation" button
-      orgItem = { name: "Créer une organisation", path: "/setup-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
+      // User doesn't have an organization - show "Rejoindre une organisation" button
+      orgItem = { name: "Rejoindre une organisation", path: "/join-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
     }
 
     return [
@@ -563,7 +729,11 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
                 ) : item.isCustomAction && item.isCreateOrg ? (
                   <button
                     key={item.name}
-                    onClick={() => navigate('/setup-organization')}
+                    onClick={() => {
+                      setJoinOrgModalOpen(true);
+                      setInvitationCode('');
+                      setJoinOrgError('');
+                    }}
                     disabled={organizationLoading}
                     className={cn(
                       'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',

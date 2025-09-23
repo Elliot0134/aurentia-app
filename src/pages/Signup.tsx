@@ -46,7 +46,22 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      const validation = await validateInvitationCode(invitationCode);
+      // Extract code from URL if it's a full URL
+      let codeToValidate = invitationCode.trim();
+      
+      // Check if it's a URL and extract the code parameter
+      if (codeToValidate.includes('?code=')) {
+        const url = new URL(codeToValidate);
+        codeToValidate = url.searchParams.get('code') || codeToValidate;
+      } else if (codeToValidate.includes('/join/')) {
+        // Handle URLs like /join/INV-123
+        const parts = codeToValidate.split('/join/');
+        if (parts.length > 1) {
+          codeToValidate = parts[1].split('?')[0]; // Remove query params if any
+        }
+      }
+
+      const validation = await validateInvitationCode(codeToValidate);
       setCodeValidation(validation);
       
       if (validation.valid) {
@@ -139,7 +154,36 @@ const Signup = () => {
           console.log("handleSubmit: Gestion du code d'invitation...");
           // Cas avec code d'invitation
           try {
-            await useInvitationCode(invitationCode, user.id);
+            // Extraire le code de l'URL si nécessaire
+            const extractCodeFromUrl = (input: string): string => {
+              // Si c'est déjà un code simple (pas d'URL), retourner tel quel
+              if (!input.includes('?') && !input.includes('/join/')) {
+                return input;
+              }
+              
+              try {
+                // Essayer d'extraire depuis les paramètres de requête
+                const url = new URL(input);
+                const codeFromQuery = url.searchParams.get('code');
+                if (codeFromQuery) {
+                  return codeFromQuery;
+                }
+                
+                // Essayer d'extraire depuis le chemin /join/{code}
+                const pathMatch = url.pathname.match(/\/join\/([^\/]+)/);
+                if (pathMatch) {
+                  return pathMatch[1];
+                }
+              } catch (error) {
+                // Si ce n'est pas une URL valide, retourner l'input tel quel
+                return input;
+              }
+              
+              return input;
+            };
+            
+            const codeToUse = extractCodeFromUrl(invitationCode);
+            await useInvitationCode(codeToUse, user.id);
             userRole = codeValidation.role;
             
             toast({
@@ -478,7 +522,7 @@ const Signup = () => {
                   onChange={(e) => setInvitationCode(e.target.value)}
                   onBlur={handleCodeValidation}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aurentia-pink/30 focus:border-aurentia-pink transition"
-                  placeholder="Votre code d'invitation"
+                  placeholder="INV-ABC123 ou https://..."
                   disabled={loading}
                 />
                 <button

@@ -20,7 +20,17 @@ export const useUserOrganization = () => {
       }
 
       try {
-        // Check if user already has an organization
+        // Check if user has an organization_id (is a member) OR owns an organization
+        const hasOrgId = !!userProfile.organization_id;
+        const hasOrgRole = userProfile.user_role === 'organisation' || userProfile.user_role === 'staff' || userProfile.user_role === 'member';
+
+        if (hasOrgId || hasOrgRole) {
+          setHasOrganization(true);
+          setLoading(false);
+          return;
+        }
+
+        // Fallback: Check if user owns an organization (legacy check)
         const { data: existingOrg, error: orgError } = await (supabase as any)
           .from('organizations')
           .select('id, onboarding_completed')

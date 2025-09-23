@@ -55,12 +55,13 @@ export interface Mentor {
   email: string;
   expertise: string[];
   bio?: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   total_entrepreneurs: number;
   success_rate: number;
   rating: number;
   invitation_code?: string;
   joined_at: string;
+  user_role?: string; // Rôle de l'utilisateur (organisation, staff, etc.)
 }
 
 export interface Project {

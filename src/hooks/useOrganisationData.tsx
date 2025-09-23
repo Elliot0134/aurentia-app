@@ -150,7 +150,7 @@ export const useAdherents = () => {
         
         // Adapter les données du service aux types de l'interface
         const adaptedAdherents: Adherent[] = members
-          .filter(member => member.user_role === 'member') // Filtrer seulement les adhérents
+          .filter(member => member.user_role === 'member') // Garder seulement les adhérents (membres)
           .map((member) => ({
             id: member.id,
             user_id: member.id,
@@ -233,17 +233,18 @@ export const useMentors = () => {
           id: mentor.id,
           user_id: mentor.user_id,
           organisation_id: mentor.organization_id,
-          first_name: mentor.user?.first_name || mentor.user?.email?.split('@')[0] || '',
-          last_name: mentor.user?.last_name || '',
-          email: mentor.user?.email || '',
+          first_name: mentor.first_name || mentor.email?.split('@')[0] || '',
+          last_name: mentor.last_name || '',
+          email: mentor.email || '',
           expertise: mentor.expertise || ['Business Development'],
           bio: mentor.bio || 'Mentor de l\'organisation',
           status: mentor.status as 'active' | 'inactive' | 'pending',
-          total_entrepreneurs: mentor.assignments?.[0]?.count || 0,
+          total_entrepreneurs: mentor.total_entrepreneurs || 0,
           success_rate: mentor.success_rate || 0,
           rating: mentor.rating || 0,
           invitation_code: null,
-          joined_at: mentor.created_at
+          joined_at: mentor.created_at || mentor.joined_at,
+          user_role: mentor.user_role || 'staff'
         }));
 
         setMentors(adaptedMentors);

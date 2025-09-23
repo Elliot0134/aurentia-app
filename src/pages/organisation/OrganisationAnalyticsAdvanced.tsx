@@ -928,7 +928,7 @@ const OrganisationAnalyticsAdvanced = () => {
                     <CardContent>
                       <div className="space-y-4">
                         {(() => {
-                          const roleStats = data.entrepreneurs.reduce((acc, entrepreneur) => {
+                          const roleStats = data.adherents.reduce((acc, entrepreneur) => {
                             const role = entrepreneur.user_role || 'member';
                             acc[role] = (acc[role] || 0) + 1;
                             return acc;
@@ -996,8 +996,8 @@ const OrganisationAnalyticsAdvanced = () => {
                       '+12 mois': 0
                     };
 
-                    data.entrepreneurs.forEach(entrepreneur => {
-                      const createdAt = new Date(entrepreneur.created_at);
+                    data.adherents.forEach(adhérent => {
+                      const createdAt = new Date(adhérent.created_at);
                       const monthsDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30);
                       
                       if (monthsDiff <= 1) segments['0-1 mois']++;
@@ -1106,8 +1106,8 @@ const OrganisationAnalyticsAdvanced = () => {
                           <div className="flex justify-between">
                             <span className="text-gray-600">Taux conversation</span>
                             <span className="font-medium">
-                              {metrics.totalEntrepreneurs > 0 ? 
-                                ((metrics.totalConversations / metrics.totalEntrepreneurs) * 100).toFixed(0) : 0}%
+                              {metrics.totalAdherents > 0 ? 
+                                ((metrics.totalConversations / metrics.totalAdherents) * 100).toFixed(0) : 0}%
                             </span>
                           </div>
                         </div>
@@ -1137,7 +1137,7 @@ const OrganisationAnalyticsAdvanced = () => {
                           <div className="flex justify-between">
                             <span className="text-gray-600">Taux de rétention estimé</span>
                             <span className="font-medium">
-                              {metrics.totalEntrepreneurs > 0 ? 
+                              {metrics.totalAdherents > 0 ? 
                                 ((metrics.activeProjects / metrics.totalProjects) * 100).toFixed(0) : 0}%
                             </span>
                           </div>
@@ -1222,14 +1222,14 @@ const OrganisationAnalyticsAdvanced = () => {
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Taux de participation moyen</span>
                           <span className="font-semibold text-indigo-600">
-                            {metrics.totalEvents > 0 ? ((metrics.totalEventParticipations / (metrics.totalEvents * metrics.totalEntrepreneurs)) * 100).toFixed(1) : 0}%
+                            {metrics.totalEvents > 0 ? ((metrics.totalEventParticipations / (metrics.totalEvents * metrics.totalAdherents)) * 100).toFixed(1) : 0}%
                           </span>
                         </div>
                         
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Événements par entrepreneur</span>
+                          <span className="text-sm text-gray-600">Événements par adhérent</span>
                           <span className="font-semibold text-orange-600">
-                            {metrics.totalEntrepreneurs > 0 ? (metrics.totalEvents / metrics.totalEntrepreneurs).toFixed(1) : 0}
+                            {metrics.totalAdherents > 0 ? (metrics.totalEvents / metrics.totalAdherents).toFixed(1) : 0}
                           </span>
                         </div>
                       </div>
@@ -1428,10 +1428,10 @@ const OrganisationAnalyticsAdvanced = () => {
                     <CardContent>
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Projets par entrepreneur</span>
+                          <span className="text-sm text-gray-600">Projets par adhérent</span>
                           <span className="font-semibold">
-                            {metrics.totalEntrepreneurs > 0 ? 
-                              (metrics.totalProjects / metrics.totalEntrepreneurs).toFixed(1) : '0'}
+                            {metrics.totalAdherents > 0 ? 
+                              (metrics.totalProjects / metrics.totalAdherents).toFixed(1) : '0'}
                           </span>
                         </div>
                         
