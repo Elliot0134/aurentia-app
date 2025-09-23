@@ -5,6 +5,7 @@ const OrganisationRedirect: React.FC = () => {
   const { navigateToOrganisation, loading } = useOrganisationNavigation();
 
   useEffect(() => {
+    // Navigate directly to the final destination
     navigateToOrganisation();
   }, [navigateToOrganisation]);
 

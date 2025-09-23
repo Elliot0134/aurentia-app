@@ -736,8 +736,8 @@ export const getOrganisationMentors = async (organizationId: string) => {
           phone: owner.phone || '',
           user_role: owner.user_role,
           organization_id: owner.organization_id,
-          expertise: ['Gestion d\'organisation', 'Leadership'],
-          bio: owner.user_role === 'organisation' ? 'Propriétaire de l\'organisation' : 'Administrateur de l\'organisation',
+          expertise: [], // Vide par défaut
+          bio: '', // Vide par défaut
           linkedin_url: '',
           status: 'active',
           total_entrepreneurs: 0, // TODO: compter depuis mentor_assignments

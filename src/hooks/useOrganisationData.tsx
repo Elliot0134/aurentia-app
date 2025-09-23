@@ -8,7 +8,8 @@ import {
   OrganisationStats,
   Event,
   Partner,
-  InvitationCode
+  InvitationCode,
+  UserOrganization
 } from '@/types/organisationTypes';
 import {
   getOrganisation,
@@ -17,6 +18,12 @@ import {
   getOrganisationProjects,
   getOrganisationInvitationCodes,
   createInvitationCode,
+  getOrganisationMentors,
+  getOrganisationEvents,
+  createEvent,
+  updateEvent as updateEventService,
+  deleteEvent as deleteEventService,
+  getOrganisationPartners,
   type OrganisationData,
   type OrganisationMember,
   type Project,
@@ -225,7 +232,6 @@ export const useMentors = () => {
         setLoading(true);
         
         // Utiliser la nouvelle table mentors avec le service
-        const { getOrganisationMentors } = await import('@/services/organisationService');
         const mentorData = await getOrganisationMentors(organisationId);
 
         // Adapter les données aux types Mentor
@@ -275,7 +281,6 @@ export const useEvents = () => {
       setLoading(true);
       
       // Utiliser la nouvelle table events avec le service
-      const { getOrganisationEvents } = await import('@/services/organisationService');
       const eventData = await getOrganisationEvents(organisationId);
       
       // Adapter les données aux types Event
@@ -313,7 +318,6 @@ export const useEvents = () => {
     if (!organisationId) return null;
 
     try {
-      const { createEvent } = await import('@/services/organisationService');
       const newEvent = await createEvent(organisationId, {
         title: eventData.title,
         description: eventData.description,
@@ -337,7 +341,6 @@ export const useEvents = () => {
 
   const updateEvent = useCallback(async (eventId: string, updates: Partial<Event>) => {
     try {
-      const { updateEvent: updateEventService } = await import('@/services/organisationService');
       await updateEventService(eventId, updates);
       await fetchEvents(); // Refresh la liste
     } catch (err) {
@@ -347,7 +350,6 @@ export const useEvents = () => {
 
   const deleteEvent = useCallback(async (eventId: string) => {
     try {
-      const { deleteEvent: deleteEventService } = await import('@/services/organisationService');
       await deleteEventService(eventId);
       await fetchEvents(); // Refresh la liste
     } catch (err) {
@@ -379,7 +381,6 @@ export const usePartners = () => {
         setLoading(true);
         
         // Utiliser la nouvelle table partners avec le service
-        const { getOrganisationPartners } = await import('@/services/organisationService');
         const partnerData = await getOrganisationPartners(organisationId);
         
         // Adapter les données aux types Partner
@@ -511,5 +512,122 @@ export const useInvitationCodes = () => {
     loading,
     generateCode,
     refetch: fetchCodes
+  };
+};
+
+// Hook pour les organisations d'un utilisateur (support multi-org pour staff)
+export const useUserOrganizations = () => {
+  const [userOrganizations, setUserOrganizations] = useState<UserOrganization[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchUserOrganizations = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setError('Utilisateur non connecté');
+        return;
+      }
+
+      const { data, error: fetchError } = await (supabase as any)
+        .from('user_organizations')
+        .select(`
+          id,
+          user_id,
+          organization_id,
+          user_role,
+          joined_at,
+          is_primary,
+          status,
+          created_at,
+          updated_at,
+          organizations (
+            id,
+            name,
+            description,
+            logo_url,
+            primary_color,
+            secondary_color
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('is_primary', { ascending: false })
+        .order('joined_at', { ascending: true });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      const adaptedOrganizations: UserOrganization[] = data.map((item: any) => ({
+        id: item.id,
+        user_id: item.user_id,
+        organization_id: item.organization_id,
+        user_role: item.user_role,
+        joined_at: item.joined_at,
+        is_primary: item.is_primary,
+        status: item.status,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        organization: item.organizations ? {
+          id: item.organizations.id,
+          name: item.organizations.name,
+          description: item.organizations.description,
+          logo: item.organizations.logo_url,
+          primary_color: item.organizations.primary_color,
+          secondary_color: item.organizations.secondary_color,
+          created_at: '',
+          updated_at: ''
+        } : undefined
+      }));
+
+      setUserOrganizations(adaptedOrganizations);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des organisations');
+      console.error('Erreur lors du chargement des organisations utilisateur:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserOrganizations();
+  }, [fetchUserOrganizations]);
+
+  const switchToOrganization = useCallback(async (organizationId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      // Mettre à jour l'organisation primaire
+      await (supabase as any)
+        .from('user_organizations')
+        .update({ is_primary: false })
+        .eq('user_id', user.id);
+
+      await (supabase as any)
+        .from('user_organizations')
+        .update({ is_primary: true })
+        .eq('user_id', user.id)
+        .eq('organization_id', organizationId);
+
+      // Recharger les organisations
+      await fetchUserOrganizations();
+      return true;
+    } catch (err) {
+      console.error('Erreur lors du changement d\'organisation:', err);
+      return false;
+    }
+  }, [fetchUserOrganizations]);
+
+  return {
+    userOrganizations,
+    loading,
+    error,
+    refetch: fetchUserOrganizations,
+    switchToOrganization
   };
 };

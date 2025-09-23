@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import RoleBasedSidebar from './RoleBasedSidebar';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -11,6 +11,10 @@ const RoleBasedLayout = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userLoading, setUserLoading] = useState(true);
+  const location = useLocation();
+
+  // Check if current route is an organisation route
+  const isOrganisationRoute = location.pathname.startsWith('/organisation/');
 
   // Récupérer l'utilisateur actuel pour la confirmation d'email
   useEffect(() => {
@@ -56,7 +60,15 @@ const RoleBasedLayout = () => {
         "md:ml-0", // Mobile: no margin
         isCollapsed ? "md:ml-20" : "md:ml-64" // Desktop: adjust for sidebar
       )}>
-        <Outlet />
+        {isOrganisationRoute ? (
+          <div className="max-w-[100vw] overflow-x-hidden">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+              <Outlet />
+            </div>
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
     </div>
   );

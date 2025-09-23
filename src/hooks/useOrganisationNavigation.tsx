@@ -43,7 +43,7 @@ export const useOrganisationNavigation = () => {
       }
 
       if (existingOrg) {
-        // User has an organization
+        // User has an organization - navigate directly to the final destination
         if (existingOrg.onboarding_completed) {
           navigate(`/organisation/${existingOrg.id}/dashboard`);
         } else {

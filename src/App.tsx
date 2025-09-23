@@ -243,79 +243,57 @@ const App = () => {
                     {/* Routes d'organisation protégées par le guard d'onboarding */}
                     <Route path="/organisation/:id/dashboard" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationDashboard />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationDashboard />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/adherents" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationAdherents />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationAdherents />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/projets" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationProjets />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationProjets />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/invitations" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationInvitations />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationInvitations />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/analytics" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationAnalytics />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationAnalytics />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/forms" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationForms />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationForms />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/settings" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationSettings />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationSettings />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/evenements" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationEvenements />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationEvenements />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/mentors" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationMentors />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationMentors />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/partenaires" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationPartenaires />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationPartenaires />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/livrables" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationLivrables />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationLivrables />
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/chatbot" element={
@@ -325,9 +303,7 @@ const App = () => {
                     } />
                     <Route path="/organisation/:id/profile" element={
                       <OnboardingGuard>
-                        <OrganisationLayoutWrapper>
-                          <OrganisationProfile />
-                        </OrganisationLayoutWrapper>
+                        <OrganisationProfile />
                       </OnboardingGuard>
                     } />
                     {/* Super admin */}

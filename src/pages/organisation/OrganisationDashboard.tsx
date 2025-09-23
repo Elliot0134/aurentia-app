@@ -175,12 +175,12 @@ const OrganisationDashboard = () => {
                   </CardTitle>
                   <Dialog open={invitationDialogOpen} onOpenChange={setInvitationDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button size="sm" style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white h-7 px-2">
+                      <Button size="sm" style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
                         <Plus className="w-3 h-3 mr-1" />
                         Créer
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Créer une invitation</DialogTitle>
                         <DialogDescription>
@@ -190,16 +190,16 @@ const OrganisationDashboard = () => {
                       <div className="space-y-4">
                         <div>
                           <label className="text-sm font-medium mb-2 block">Email</label>
-                          <Input
-                            placeholder="email@exemple.com"
+                          <Input 
+                            placeholder="email@exemple.com" 
                             value={invitationFormData.email}
                             onChange={(e) => setInvitationFormData(prev => ({ ...prev, email: e.target.value }))}
                           />
                         </div>
                         <div>
                           <label className="text-sm font-medium mb-2 block">Rôle</label>
-                          <Select
-                            value={invitationFormData.role}
+                          <Select 
+                            value={invitationFormData.role} 
                             onValueChange={(value: 'entrepreneur' | 'mentor') => setInvitationFormData(prev => ({ ...prev, role: value }))}
                           >
                             <SelectTrigger>
@@ -216,10 +216,10 @@ const OrganisationDashboard = () => {
                         <Button variant="outline" onClick={() => setInvitationDialogOpen(false)}>
                           Annuler
                         </Button>
-                        <Button
-                          onClick={handleCreateInvitation}
-                          style={{ backgroundColor: '#ff5932' }}
+                        <Button 
+                          style={{ backgroundColor: '#ff5932' }} 
                           className="hover:opacity-90 text-white"
+                          onClick={handleCreateInvitation}
                         >
                           Créer l'invitation
                         </Button>
@@ -230,68 +230,70 @@ const OrganisationDashboard = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 {codesLoading ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-aurentia-pink mx-auto mb-2"></div>
-                    <p className="text-xs text-gray-500">Chargement...</p>
-                  </div>
-                ) : invitationCodes.length === 0 ? (
                   <div className="text-center py-6">
-                    <Mail className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">Aucune invitation</p>
-                    <p className="text-xs text-gray-500">Créez votre première invitation</p>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aurentia-pink mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Chargement...</p>
                   </div>
-                ) : (
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {invitationCodes.slice(0, 5).map((code) => (
-                      <div key={code.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-mono font-medium text-gray-900 truncate">
-                              {code.code}
-                            </span>
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                              code.role === 'entrepreneur'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-green-100 text-green-700'
-                            }`}>
-                              {code.role === 'entrepreneur' ? 'Ent.' : 'Ment.'}
-                            </span>
+                ) : (() => {
+                  // Filtrer les invitations récentes (30 derniers jours)
+                  const thirtyDaysAgo = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000));
+                  const recentInvitations = invitationCodes
+                    .filter(code => new Date(code.created_at) >= thirtyDaysAgo)
+                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .slice(0, 5); // Afficher max 5 invitations récentes
+
+                  return recentInvitations.length === 0 ? (
+                    <div className="text-center py-6">
+                      <Mail className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Aucune invitation récente</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentInvitations.map((invitation) => (
+                        <div key={invitation.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-medium truncate">{invitation.code}</span>
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                                invitation.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {invitation.is_active ? 'Active' : 'Expirée'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {new Date(invitation.created_at).toLocaleDateString('fr-FR')} • {invitation.role}
+                            </p>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-600">
-                            <Clock className="w-3 h-3" />
-                            {new Date(code.created_at).toLocaleDateString('fr-FR')}
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(invitation.code);
+                              toast({
+                                title: "Copié",
+                                description: "Le code d'invitation a été copié.",
+                              });
+                            }}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            navigator.clipboard.writeText(code.code);
-                            toast({
-                              title: "Copié",
-                              description: "Le code a été copié dans le presse-papiers.",
-                            });
-                          }}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                    {invitationCodes.length > 5 && (
-                      <div className="text-center pt-2">
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="text-xs text-aurentia-pink hover:text-aurentia-pink/80"
-                          onClick={() => navigate('/organisation/invitations')}
-                        >
-                          Voir toutes les invitations ({invitationCodes.length})
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      ))}
+                      {invitationCodes.filter(code => new Date(code.created_at) >= thirtyDaysAgo).length > 5 && (
+                        <div className="text-center pt-2">
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            onClick={() => navigate('/organisation/invitations')}
+                            className="text-aurentia-pink hover:text-aurentia-pink/80"
+                          >
+                            Voir toutes les invitations
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>

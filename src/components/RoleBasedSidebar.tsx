@@ -8,8 +8,9 @@ import ProjectSelector from "./ProjectSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
 import { useCreditsSimple } from "@/hooks/useCreditsSimple";
-import { useOrganisationNavigation } from "@/hooks/useOrganisationNavigation";
-import { useUserOrganization } from "@/hooks/useUserOrganization";
+import { useOrganisationNavigation } from '@/hooks/useOrganisationNavigation';
+import { useUserOrganization } from '@/hooks/useUserOrganization';
+import { useUserOrganizations } from '@/hooks/useOrganisationData';
 import clsx from 'clsx';
 import { useInvitationCode } from "@/services/invitationService";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -52,6 +53,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const credits = useCreditsSimple();
   const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
   const { hasOrganization, loading: organizationLoading } = useUserOrganization();
+  const { userOrganizations, loading: userOrganizationsLoading, switchToOrganization } = useUserOrganizations();
   const isUserProfileLoading = !userProfile;
 
   // Modal state for joining organization
@@ -59,6 +61,10 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const [invitationCode, setInvitationCode] = useState('');
   const [joinOrgLoading, setJoinOrgLoading] = useState(false);
   const [joinOrgError, setJoinOrgError] = useState('');
+
+  // Modal state for switching organization (staff with multiple orgs)
+  const [switchOrgModalOpen, setSwitchOrgModalOpen] = useState(false);
+  const [switchOrgLoading, setSwitchOrgLoading] = useState(false);
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -139,6 +145,38 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
       setJoinOrgError(error.message || 'Code d\'invitation invalide');
     } finally {
       setJoinOrgLoading(false);
+    }
+  };
+
+  // Handle switching organization for staff users
+  const handleSwitchOrganization = async (organizationId: string) => {
+    setSwitchOrgLoading(true);
+    try {
+      const success = await switchToOrganization(organizationId);
+      if (success) {
+        toast({
+          title: "Organisation changée",
+          description: "Vous avez changé d'organisation avec succès.",
+        });
+        setSwitchOrgModalOpen(false);
+        // Refresh the page to update all contexts
+        window.location.reload();
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de changer d'organisation.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors du changement d\'organisation:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors du changement d'organisation.",
+        variant: "destructive",
+      });
+    } finally {
+      setSwitchOrgLoading(false);
     }
   };
 
@@ -268,6 +306,20 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     };
   };
 
+  // Helper function to check if user is staff with multiple organizations
+  const isStaffWithMultipleOrgs = () => {
+    return userProfile?.user_role === 'staff' && userOrganizations.length > 1;
+  };
+
+  // Helper function to get current organization name for staff
+  const getCurrentOrgName = () => {
+    if (userProfile?.user_role === 'staff' && userOrganizations.length > 0) {
+      const currentOrg = userOrganizations.find(org => org.is_primary) || userOrganizations[0];
+      return currentOrg?.organization?.name || 'Organisation';
+    }
+    return userProfile?.organization?.name || 'Organisation';
+  };
+
   // Helper function to get user display name
   const getUserDisplayName = () => {
     if (!user) return "";
@@ -332,18 +384,27 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           {config.menuItems.map((item, index) => (
             item.isDivider ? (
               <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
-            ) : item.isCustomAction && item.name === "Organisation" ? (
+            ) : item.isCustomAction && item.path === "/organisation" ? (
               <button
                 key={`${item.path}-${item.name}-${index}`}
-                onClick={navigateToOrganisation}
-                disabled={orgNavigationLoading || isUserProfileLoading}
+                onClick={isStaffWithMultipleOrgs() ? () => setSwitchOrgModalOpen(true) : navigateToOrganisation}
+                disabled={orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading}
                 className={cn(
                   "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
-                  (orgNavigationLoading || isUserProfileLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"
+                  (orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"
                 )}
               >
                 {item.icon}
-                {!isCollapsed && <span>{orgNavigationLoading || isUserProfileLoading ? "Chargement..." : item.name}</span>}
+                {!isCollapsed && (
+                  <span>
+                    {orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading 
+                      ? "Chargement..." 
+                      : isStaffWithMultipleOrgs() 
+                        ? `${getCurrentOrgName()} ▼` 
+                        : (item.name || "Organisation")
+                    }
+                  </span>
+                )}
               </button>
             ) : item.isCustomAction && item.isCreateOrg ? (
               <button
@@ -521,6 +582,69 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
               className="bg-aurentia-pink hover:bg-aurentia-pink/90"
             >
               {joinOrgLoading ? 'Rejoindre...' : 'Rejoindre'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Switch Organization Modal for Staff */}
+      <Dialog open={switchOrgModalOpen} onOpenChange={setSwitchOrgModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Changer d'organisation</DialogTitle>
+            <DialogDescription>
+              Sélectionnez l'organisation dans laquelle vous souhaitez travailler.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {userOrganizationsLoading ? (
+              <div className="text-center text-gray-500">Chargement des organisations...</div>
+            ) : userOrganizations.length === 0 ? (
+              <div className="text-center text-gray-500">Aucune organisation trouvée</div>
+            ) : (
+              <div className="space-y-2">
+                {userOrganizations.map((userOrg) => (
+                  <button
+                    key={userOrg.id}
+                    onClick={() => handleSwitchOrganization(userOrg.organization_id)}
+                    disabled={switchOrgLoading}
+                    className={cn(
+                      "w-full p-3 rounded-md border text-left transition-colors",
+                      userOrg.is_primary
+                        ? "border-aurentia-pink bg-aurentia-pink/10 text-aurentia-pink"
+                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      {userOrg.organization?.logo && (
+                        <img 
+                          src={userOrg.organization.logo} 
+                          alt={userOrg.organization.name} 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium">{userOrg.organization?.name || 'Organisation inconnue'}</p>
+                        <p className="text-sm text-gray-500 capitalize">{userOrg.user_role}</p>
+                      </div>
+                      {userOrg.is_primary && (
+                        <span className="text-xs bg-aurentia-pink text-white px-2 py-1 rounded-full">
+                          Actuelle
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setSwitchOrgModalOpen(false)}
+            >
+              Annuler
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -714,7 +838,7 @@ const RoleBasedMobileNavbar = ({
           <div className="px-3 py-3 overflow-x-auto scrollbar-hide">
             <div className="flex items-center space-x-3 min-w-max">
               {menuItems.map((item) => (
-                item.isCustomAction && item.name === "Organisation" ? (
+                item.isCustomAction && item.path === "/organisation" ? (
                   <button
                     key={item.name}
                     onClick={navigateToOrganisation}

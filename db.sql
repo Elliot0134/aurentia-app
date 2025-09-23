@@ -19,11 +19,12 @@ CREATE TABLE public.backup_profiles (
   CONSTRAINT backup_profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.backup_project_summary (
-  project_id uuid,
+  project_id uuid NOT NULL,
   user_id uuid,
   statut_project text,
   created_at timestamp with time zone,
   updated_at timestamp with time zone,
+  CONSTRAINT backup_project_summary_pkey PRIMARY KEY (project_id),
   CONSTRAINT backup_project_summary_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT backup_project_summary_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
 );

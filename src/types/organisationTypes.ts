@@ -29,6 +29,19 @@ export interface Organisation {
   updated_at: string;
 }
 
+export interface UserOrganization {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  user_role: 'organisation' | 'staff' | 'member';
+  joined_at: string;
+  is_primary: boolean;
+  status: 'active' | 'inactive' | 'pending';
+  created_at: string;
+  updated_at: string;
+  organization?: Organisation; // Populated when needed
+}
+
 export interface Adherent {
   id: string;
   user_id: string;
