@@ -56,32 +56,19 @@ export const useInvitationCode = async (code: string, userId: string): Promise<I
   }
 
   try {
-    // 1. Incrémenter usage du code
-    const { error: codeUpdateError } = await supabase
-      .from('invitation_code' as any)
-      .update({ current_uses: (validation.codeData as any).current_uses + 1 })
-      .eq('code', code);
+    // Utiliser la fonction de base de données qui gère les politiques RLS correctement
+    const { data, error } = await supabase.rpc('use_invitation_code_with_role_mapping' as any, {
+      p_code: code,
+      p_user_id: userId
+    });
 
-    if (codeUpdateError) {
-      throw new Error('Erreur lors de la mise à jour du code');
-    }
-
-    // 2. Mettre à jour le profil utilisateur
-    const { error: profileUpdateError } = await supabase
-      .from('profiles' as any)
-      .update({
-        user_role: validation.role,
-        organization_id: validation.organization?.id || null,
-        invitation_code_used: code
-      })
-      .eq('id', userId);
-
-    if (profileUpdateError) {
-      throw new Error('Erreur lors de la mise à jour du profil');
+    if (error) {
+      console.error('Erreur lors de l\'utilisation du code d\'invitation:', error);
+      throw new Error('Erreur lors de la mise à jour du code d\'invitation');
     }
 
     return {
-      userRole: validation.role!,
+      userRole: (data as any).user_role,
       organization: validation.organization
     };
   } catch (error) {
@@ -103,7 +90,7 @@ export const createInvitationCode = async (
   }
 
   // Générer un code unique
-  const code = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const code = 'INV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
   const { data, error } = await supabase
     .from('invitation_code' as any)

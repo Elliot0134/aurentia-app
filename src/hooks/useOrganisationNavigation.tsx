@@ -3,16 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from './useUserProfile';
 import { getOnboardingStatus } from '@/services/organisationService';
+import { toast } from '@/components/ui/use-toast';
 
 export const useOrganisationNavigation = () => {
   const navigate = useNavigate();
-  const { userProfile } = useUserProfile();
+  const { userProfile, loading: userProfileLoading } = useUserProfile();
   const [loading, setLoading] = useState(false);
 
   const navigateToOrganisation = async () => {
+    // Don't proceed if user profile is still loading
+    if (userProfileLoading) {
+      return;
+    }
+    
     if (!userProfile?.id) {
       console.error('User profile not found');
-      alert('Impossible de trouver le profil utilisateur.');
+      // Instead of showing an alert, redirect to login or handle gracefully
+      navigate('/login');
       return;
     }
 
@@ -27,7 +34,11 @@ export const useOrganisationNavigation = () => {
 
       if (orgError && orgError.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('Error checking existing organization:', orgError);
-        alert('Erreur lors de la récupération de votre organisation.');
+        toast({
+          title: "Erreur",
+          description: "Erreur lors de la récupération de votre organisation.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -43,7 +54,11 @@ export const useOrganisationNavigation = () => {
       }
     } catch (error) {
       console.error('Error navigating to organisation:', error);
-      alert('Erreur lors de la navigation vers votre organisation.');
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la navigation vers votre organisation.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -51,6 +66,6 @@ export const useOrganisationNavigation = () => {
 
   return {
     navigateToOrganisation,
-    loading
+    loading: loading || userProfileLoading // Include user profile loading state
   };
 };

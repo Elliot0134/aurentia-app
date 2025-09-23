@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, ChevronLeft, ChevronRight, Building, Target, Users, Award, Globe, Settings } from 'lucide-react';
-import { getOrganisation, updateOrganisation } from "@/services/organisationService";
+import { getOrganisation, updateOrganisation, createOrganisation } from "@/services/organisationService";
+import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,7 @@ const OrganisationOnboardingPage = () => {
   const { id: organisationId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { userProfile, loading: userLoading } = useUserRole();
   const [currentStep, setCurrentStep] = useState(1);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState('');
@@ -31,15 +34,25 @@ const OrganisationOnboardingPage = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [organisation, setOrganisation] = useState<any>(null);
+  const [isNewOrganisation, setIsNewOrganisation] = useState(false);
 
   // État pour les données du formulaire
   const [formData, setFormData] = useState({
-    // Étape 1: Informations de base
-    description: "",
-    foundedYear: new Date().getFullYear(),
-    website: "",
-    address: "",
-    teamSize: 0,
+  // Étape 1: Informations de base (incluant les champs du setup)
+  name: "",
+  type: "",
+  customType: "",
+  description: "",
+  foundedYear: new Date().getFullYear(),
+  website: "",
+  email: userProfile?.email || "",
+  phone: "",
+  address: "",
+  teamSize: 0 as number | "",
+  welcome_message: "",
+  primary_color: "",
+  secondary_color: "",
+  newsletter_enabled: false,
     
     // Étape 2: Mission, Vision, Valeurs
     mission: "",
@@ -53,12 +66,13 @@ const OrganisationOnboardingPage = () => {
     
     // Étape 4: Méthodologie
     methodology: "",
-    programDurationMonths: 6,
+    programDurationMonths: 6 as number | "",
     successCriteria: "",
     supportTypes: [] as string[],
     
     // Étape 5: Zone géographique et contacts
     geographicFocus: [] as string[],
+    customGeographic: "",
     socialMediaLinkedin: "",
     socialMediaTwitter: "",
     socialMediaWebsite: "",
@@ -69,6 +83,16 @@ const OrganisationOnboardingPage = () => {
   });
 
   const totalSteps = 6;
+
+  // Options prédéfinies pour les types d'organisations
+  const organisationTypes = [
+  { value: "incubator", label: "Incubateur" },
+  { value: "accelerator", label: "Accélérateur" },
+  { value: "business_school", label: "École de commerce" },
+  { value: "university", label: "Université" },
+  { value: "consulting", label: "Cabinet de conseil" },
+  { value: "other", label: "Autre" }
+  ];
 
   // Options prédéfinies
   const sectorOptions = [
@@ -101,101 +125,136 @@ const OrganisationOnboardingPage = () => {
     "Afrique", "Asie", "Océanie", "International"
   ];
 
-  // Charger les données de l'organisation
+  // Charger les données de l'organisation ou initialiser une nouvelle organisation
   useEffect(() => {
-    const loadOrganisation = async () => {
-      if (!organisationId) {
-        toast({
-          title: "Erreur",
-          description: "ID d'organisation manquant",
-          variant: "destructive",
-        });
-        navigate('/dashboard');
-        return;
-      }
+    const initializeOrganisation = async () => {
+      if (userLoading) return;
 
-      try {
-        // Utiliser le service d'organisation
-        const data = await getOrganisation(organisationId);
-        setOrganisation(data);
+      // If we have an organisationId, load existing organization
+      if (organisationId) {
+        try {
+          const data = await getOrganisation(organisationId);
+          setOrganisation(data);
+          setIsNewOrganisation(false);
 
-        // Si l'onboarding est déjà complété, rediriger vers le dashboard
-        if ((data as any).onboarding_completed) {
-          toast({
-            title: "Onboarding déjà complété",
-            description: "Redirection vers votre dashboard...",
+          // Si l'onboarding est déjà complété, rediriger vers le dashboard
+          if ((data as any).onboarding_completed) {
+            // Ne redirige que si la route actuelle est une route organisation
+            if (!window.location.pathname.startsWith('/individual')) {
+              toast({
+                title: "Onboarding déjà complété",
+                description: "Redirection vers votre dashboard...",
+              });
+              navigate(`/organisation/${organisationId}/dashboard`);
+              return;
+            }
+          }
+
+          // Pré-remplir le formulaire avec les données existantes
+          const safeParseJSON = (value: any) => {
+            if (!value) return [];
+            if (typeof value === 'string') {
+              try {
+                return JSON.parse(value);
+              } catch {
+                return [];
+              }
+            }
+            return Array.isArray(value) ? value : [];
+          };
+
+          const safeParseSocialMedia = (value: any) => {
+            if (!value) return {};
+            if (typeof value === 'string') {
+              try {
+                return JSON.parse(value);
+              } catch {
+                return {};
+              }
+            }
+            return typeof value === 'object' ? value : {};
+          };
+
+          setFormData({
+            name: (data as any).name || "",
+            type: (data as any).type || "",
+            customType: (data as any).customType || "",
+            description: (data as any).description || "",
+            foundedYear: (data as any).founded_year || new Date().getFullYear(),
+            website: (data as any).website || "",
+            email: (data as any).email || userProfile?.email || "",
+            phone: (data as any).phone || "",
+            address: (data as any).address || "",
+            teamSize: (data as any).team_size || 0,
+            welcome_message: (data as any).welcome_message || "",
+            primary_color: (data as any).primary_color || "",
+            secondary_color: (data as any).secondary_color || "",
+            newsletter_enabled: (data as any).newsletter_enabled || false,
+            mission: (data as any).mission || "",
+            vision: (data as any).vision || "",
+            values: safeParseJSON((data as any).values),
+            sectors: safeParseJSON((data as any).sectors),
+            stages: safeParseJSON((data as any).stages),
+            specializations: safeParseJSON((data as any).specializations),
+            methodology: (data as any).methodology || "",
+            programDurationMonths: (data as any).program_duration_months || 6,
+            successCriteria: (data as any).success_criteria || "",
+            supportTypes: safeParseJSON((data as any).support_types),
+            geographicFocus: safeParseJSON((data as any).geographic_focus),
+            customGeographic: (data as any).customGeographic || "",
+            socialMediaLinkedin: safeParseSocialMedia((data as any).social_media).linkedin || "",
+            socialMediaTwitter: safeParseSocialMedia((data as any).social_media).twitter || "",
+            socialMediaWebsite: safeParseSocialMedia((data as any).social_media).website || "",
+            isPublic: (data as any).is_public !== undefined ? (data as any).is_public : true,
+            allowDirectApplications: (data as any).allow_direct_applications !== undefined ? (data as any).allow_direct_applications : true
           });
-          navigate(`/organisation/${organisationId}/dashboard`);
+
+          // Commencer à l'étape où l'utilisateur s'était arrêté
+          if ((data as any).onboarding_step && (data as any).onboarding_step > 0) {
+            setCurrentStep(Math.min((data as any).onboarding_step + 1, totalSteps));
+          }
+
+        } catch (error: any) {
+          console.error('Erreur lors du chargement de l\'organisation:', error);
+          toast({
+            title: "Erreur de chargement",
+            description: error.message || "Une erreur s'est produite",
+            variant: "destructive",
+          });
+          navigate('/dashboard');
+        }
+      } else {
+        // No organisationId in params - this is a new organization setup
+        if (!userProfile) {
+          toast({
+            title: "Erreur",
+            description: "Profil utilisateur manquant",
+            variant: "destructive",
+          });
+          navigate('/login');
           return;
         }
 
-        // Pré-remplir le formulaire avec les données existantes
-        const safeParseJSON = (value: any) => {
-          if (!value) return [];
-          if (typeof value === 'string') {
-            try {
-              return JSON.parse(value);
-            } catch {
-              return [];
-            }
+        // Check if user already has an organization
+        if (userProfile.organization_id) {
+          // User already has an organization, redirect to onboarding
+          if (!window.location.pathname.startsWith('/individual')) {
+            navigate(`/organisation/${userProfile.organization_id}/onboarding`);
+            return;
           }
-          return Array.isArray(value) ? value : [];
-        };
-
-        const safeParseSocialMedia = (value: any) => {
-          if (!value) return {};
-          if (typeof value === 'string') {
-            try {
-              return JSON.parse(value);
-            } catch {
-              return {};
-            }
-          }
-          return typeof value === 'object' ? value : {};
-        };
-
-        setFormData({
-          description: (data as any).description || "",
-          foundedYear: (data as any).founded_year || new Date().getFullYear(),
-          website: (data as any).website || "",
-          address: (data as any).address || "",
-          teamSize: (data as any).team_size || 0,
-          mission: (data as any).mission || "",
-          vision: (data as any).vision || "",
-          values: safeParseJSON((data as any).values),
-          sectors: safeParseJSON((data as any).sectors),
-          stages: safeParseJSON((data as any).stages),
-          specializations: safeParseJSON((data as any).specializations),
-          methodology: (data as any).methodology || "",
-          programDurationMonths: (data as any).program_duration_months || 6,
-          successCriteria: (data as any).success_criteria || "",
-          supportTypes: safeParseJSON((data as any).support_types),
-          geographicFocus: safeParseJSON((data as any).geographic_focus),
-          socialMediaLinkedin: safeParseSocialMedia((data as any).social_media).linkedin || "",
-          socialMediaTwitter: safeParseSocialMedia((data as any).social_media).twitter || "",
-          socialMediaWebsite: safeParseSocialMedia((data as any).social_media).website || "",
-          isPublic: (data as any).is_public !== undefined ? (data as any).is_public : true,
-          allowDirectApplications: (data as any).allow_direct_applications !== undefined ? (data as any).allow_direct_applications : true
-        });
-
-        // Commencer à l'étape où l'utilisateur s'était arrêté
-        if ((data as any).onboarding_step && (data as any).onboarding_step > 0) {
-          setCurrentStep(Math.min((data as any).onboarding_step + 1, totalSteps));
         }
 
-      } catch (error: any) {
-        console.error('Erreur lors du chargement de l\'organisation:', error);
-        toast({
-          title: "Erreur de chargement",
-          description: error.message || "Une erreur s'est produite",
-          variant: "destructive",
-        });
-        navigate('/dashboard');
+        // Initialize for new organization
+        setIsNewOrganisation(true);
+        setFormData(prev => ({
+          ...prev,
+          email: userProfile.email || ""
+        }));
       }
     };
 
-    loadOrganisation();
-  }, [organisationId, navigate]);
+    initializeOrganisation();
+  }, [organisationId, navigate, userProfile, userLoading]);
 
   const handleFieldClick = (field: string, content: string, title: string) => {
     setCurrentField(field);
@@ -241,7 +300,33 @@ const OrganisationOnboardingPage = () => {
     }
   };
 
+  const validateCurrentStep = () => {
+    if (currentStep === 1) {
+      if (!formData.name.trim()) {
+        toast({
+          title: "Champ requis",
+          description: "Le nom de l'organisation est obligatoire.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (!formData.type) {
+        toast({
+          title: "Champ requis", 
+          description: "Le type d'organisation est obligatoire.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+    return true;
+  };
+
   const nextStep = () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
+
     if (currentStep < totalSteps) {
       setSlideDirection('next');
       setIsTransitioning(true);
@@ -269,38 +354,111 @@ const OrganisationOnboardingPage = () => {
     setLoading(true);
     
     try {
-      // Préparer les données pour la base de données
-      const updateData = {
-        description: formData.description,
-        founded_year: formData.foundedYear,
-        website: formData.website,
-        address: formData.address,
-        team_size: formData.teamSize,
-        mission: formData.mission,
-        vision: formData.vision,
-        values: JSON.stringify(formData.values),
-        sectors: JSON.stringify(formData.sectors),
-        stages: JSON.stringify(formData.stages),
-        specializations: JSON.stringify(formData.specializations),
-        methodology: formData.methodology,
-        program_duration_months: formData.programDurationMonths,
-        success_criteria: formData.successCriteria,
-        support_types: JSON.stringify(formData.supportTypes),
-        geographic_focus: JSON.stringify(formData.geographicFocus),
-        social_media: JSON.stringify({
-          linkedin: formData.socialMediaLinkedin,
-          twitter: formData.socialMediaTwitter,
-          website: formData.socialMediaWebsite
-        }),
-        is_public: formData.isPublic,
-        allow_direct_applications: formData.allowDirectApplications,
-        onboarding_completed: true,
-        onboarding_step: totalSteps,
-        updated_at: new Date().toISOString()
-      };
+      let finalOrganisationId = organisationId;
 
-      // Utiliser le service d'organisation
-      await updateOrganisation(organisationId!, updateData);
+      if (isNewOrganisation) {
+        // Create new organization first
+        if (!userProfile?.id) {
+          throw new Error("Profil utilisateur manquant");
+        }
+
+        const organizationData = {
+          name: formData.name,
+          type: formData.type,
+          description: formData.description,
+          website: formData.website,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          welcome_message: formData.welcome_message,
+          primary_color: formData.primary_color,
+          secondary_color: formData.secondary_color,
+          newsletter_enabled: formData.newsletter_enabled,
+          created_by: userProfile.id,
+          founded_year: formData.foundedYear,
+          team_size: formData.teamSize,
+          mission: formData.mission,
+          vision: formData.vision,
+          values: JSON.stringify(formData.values),
+          sectors: JSON.stringify(formData.sectors),
+          stages: JSON.stringify(formData.stages),
+          specializations: JSON.stringify(formData.specializations),
+          methodology: formData.methodology,
+          program_duration_months: formData.programDurationMonths,
+          success_criteria: formData.successCriteria,
+          support_types: JSON.stringify(formData.supportTypes),
+          geographic_focus: JSON.stringify(formData.geographicFocus),
+          custom_geographic: formData.customGeographic,
+          social_media: JSON.stringify({
+            linkedin: formData.socialMediaLinkedin,
+            twitter: formData.socialMediaTwitter,
+            website: formData.socialMediaWebsite
+          }),
+          is_public: formData.isPublic,
+          allow_direct_applications: formData.allowDirectApplications,
+          onboarding_completed: true,
+          onboarding_step: totalSteps,
+        };
+
+        const newOrganization = await createOrganisation(organizationData);
+        finalOrganisationId = newOrganization.id;
+
+        // Update user profile with organization info
+        const { error: updateError } = await supabase
+          .from('profiles' as any)
+          .update({
+            user_role: 'organisation',
+            organization_id: newOrganization.id
+          })
+          .eq('id', userProfile.id);
+
+        if (updateError) {
+          console.error('Erreur lors de la mise à jour du profil:', updateError);
+          throw updateError;
+        }
+
+      } else {
+        // Update existing organization
+        const updateData = {
+          name: formData.name,
+          type: formData.type,
+          description: formData.description,
+          founded_year: formData.foundedYear,
+          website: formData.website,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          team_size: formData.teamSize,
+          welcome_message: formData.welcome_message,
+          primary_color: formData.primary_color,
+          secondary_color: formData.secondary_color,
+          newsletter_enabled: formData.newsletter_enabled,
+          mission: formData.mission,
+          vision: formData.vision,
+          values: JSON.stringify(formData.values),
+          sectors: JSON.stringify(formData.sectors),
+          stages: JSON.stringify(formData.stages),
+          specializations: JSON.stringify(formData.specializations),
+          methodology: formData.methodology,
+          program_duration_months: formData.programDurationMonths,
+          success_criteria: formData.successCriteria,
+          support_types: JSON.stringify(formData.supportTypes),
+          geographic_focus: JSON.stringify(formData.geographicFocus),
+          custom_geographic: formData.customGeographic,
+          social_media: JSON.stringify({
+            linkedin: formData.socialMediaLinkedin,
+            twitter: formData.socialMediaTwitter,
+            website: formData.socialMediaWebsite
+          }),
+          is_public: formData.isPublic,
+          allow_direct_applications: formData.allowDirectApplications,
+          onboarding_completed: true,
+          onboarding_step: totalSteps,
+          updated_at: new Date().toISOString()
+        };
+
+        await updateOrganisation(finalOrganisationId!, updateData);
+      }
 
       toast({
         title: "Onboarding terminé !",
@@ -308,7 +466,7 @@ const OrganisationOnboardingPage = () => {
       });
 
       setTimeout(() => {
-        navigate(`/organisation/${organisationId}/dashboard`);
+        navigate(`/organisation/${finalOrganisationId}/dashboard`);
       }, 1500);
 
     } catch (error: any) {
@@ -335,12 +493,14 @@ const OrganisationOnboardingPage = () => {
     return icons[step - 1] || Building;
   };
 
-  if (!organisation) {
+  if (userLoading || (!isNewOrganisation && !organisation)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-pink mx-auto mb-4"></div>
-          <p className="text-gray-500">Chargement de l'organisation...</p>
+          <p className="text-gray-500">
+            {userLoading ? "Chargement..." : "Chargement de l'organisation..."}
+          </p>
         </div>
       </div>
     );
@@ -352,10 +512,13 @@ const OrganisationOnboardingPage = () => {
         {/* En-tête */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-aurentia-pink to-aurentia-orange bg-clip-text text-transparent">
-            Configuration de {organisation.name}
+            {isNewOrganisation ? "Créer votre organisation" : `Configuration de ${organisation?.name || "votre organisation"}`}
           </h1>
           <p className="text-gray-600">
-            Complétez votre profil d'organisation pour commencer à accompagner des entrepreneurs
+            {isNewOrganisation 
+              ? "Configurez votre organisation et complétez votre profil en 6 étapes" 
+              : "Complétez votre profil d'organisation pour commencer à accompagner des entrepreneurs"
+            }
           </p>
         </div>
 
@@ -414,6 +577,53 @@ const OrganisationOnboardingPage = () => {
                 </div>
                 
                 <div className="space-y-4">
+                  {/* Nom de l'organisation */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nom de l'organisation *
+                    </label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Nom de votre organisation..."
+                      className="w-full"
+                      required
+                    />
+                  </div>
+
+                  {/* Type d'organisation */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Type d'organisation *
+                    </label>
+                    <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any, customType: "" }))}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sélectionnez un type d'organisation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {organisationTypes.map(type => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.type === "other" && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Précisez le type d'organisation
+                        </label>
+                        <Input
+                          value={formData.customType || ""}
+                          onChange={e => setFormData(prev => ({ ...prev, customType: e.target.value }))}
+                          placeholder="Ex: Association, Collectif, etc."
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Description de votre organisation
@@ -446,36 +656,134 @@ const OrganisationOnboardingPage = () => {
                       </label>
                       <Input
                         type="number"
-                        value={formData.teamSize}
-                        onChange={(e) => setFormData(prev => ({ ...prev, teamSize: parseInt(e.target.value) || 0 }))}
+                        min={0}
+                        value={formData.teamSize === "" ? "" : formData.teamSize}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            setFormData(prev => ({ ...prev, teamSize: "" }));
+                          } else {
+                            const num = parseInt(val);
+                            setFormData(prev => ({ ...prev, teamSize: isNaN(num) || num < 0 ? 0 : num }));
+                          }
+                        }}
                         className="w-full"
                       />
                     </div>
                   </div>
 
+                  {/* Contact et localisation */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Site web
+                      </label>
+                      <Input
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                        placeholder="https://..."
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Téléphone
+                      </label>
+                      <Input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Numéro de téléphone..."
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email de contact
+                      </label>
+                      <Input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="contact@organisation.com"
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Adresse
+                      </label>
+                      <Input
+                        value={formData.address}
+                        onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                        placeholder="Adresse complète..."
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Message de bienvenue */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Site web
+                      Message de bienvenue (optionnel)
                     </label>
-                    <Input
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                      placeholder="https://..."
+                    <Textarea
+                      value={formData.welcome_message}
+                      onChange={(e) => setFormData(prev => ({ ...prev, welcome_message: e.target.value }))}
+                      placeholder="Message d'accueil pour les entrepreneurs..."
                       className="w-full"
+                      rows={3}
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Adresse
+                  {/* Couleurs de personnalisation */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Couleur principale (optionnel)
+                      </label>
+                      <Input
+                        type="color"
+                        value={formData.primary_color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, primary_color: e.target.value }))}
+                        className="w-full h-10"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Couleur secondaire (optionnel)
+                      </label>
+                      <Input
+                        type="color"
+                        value={formData.secondary_color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, secondary_color: e.target.value }))}
+                        className="w-full h-10"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Newsletter */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <h3 className="font-medium text-gray-800">Newsletter</h3>
+                      <p className="text-sm text-gray-600">Activer l'inscription à la newsletter pour les entrepreneurs</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.newsletter_enabled}
+                        onChange={(e) => setFormData(prev => ({ ...prev, newsletter_enabled: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-aurentia-pink/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-aurentia-pink"></div>
                     </label>
-                    <Input
-                      value={formData.address}
-                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder="Adresse complète..."
-                      className="w-full"
-                    />
                   </div>
                 </div>
               </div>
@@ -654,8 +962,17 @@ const OrganisationOnboardingPage = () => {
                     </label>
                     <Input
                       type="number"
-                      value={formData.programDurationMonths}
-                      onChange={(e) => setFormData(prev => ({ ...prev, programDurationMonths: parseInt(e.target.value) || 6 }))}
+                      min={1}
+                      value={formData.programDurationMonths === "" ? "" : formData.programDurationMonths}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          setFormData(prev => ({ ...prev, programDurationMonths: "" }));
+                        } else {
+                          const num = parseInt(val);
+                          setFormData(prev => ({ ...prev, programDurationMonths: isNaN(num) || num < 1 ? 1 : num }));
+                        }
+                      }}
                       className="w-full"
                     />
                   </div>
@@ -720,6 +1037,17 @@ const OrganisationOnboardingPage = () => {
                           {zone}
                         </Button>
                       ))}
+                    </div>
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Précisez la/les régions ou villes (optionnel)
+                      </label>
+                      <Input
+                        value={formData.customGeographic}
+                        onChange={(e) => setFormData(prev => ({ ...prev, customGeographic: e.target.value }))}
+                        placeholder="Ex: Paris, Lyon, Région PACA..."
+                        className="w-full"
+                      />
                     </div>
                   </div>
 

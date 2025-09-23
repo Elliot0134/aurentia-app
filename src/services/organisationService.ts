@@ -13,13 +13,15 @@ export interface OrganisationData {
   email?: string;
   phone?: string;
   address?: string;
+  primary_color?: string;
+  secondary_color?: string;
   settings?: any;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface OrganisationStats {
-  totalEntrepreneurs: number;
+  totalAdherents: number;
   activeProjects: number;
   completedProjects: number;
   totalMentors: number;
@@ -162,8 +164,21 @@ export const updateOrganisation = async (id: string, updates: Partial<Organisati
   return data;
 };
 
+// Service pour mettre à jour les paramètres d'une organisation
+export const updateOrganisationSettings = async (id: string, settings: any) => {
+  const { data, error } = await (supabase as any)
+    .from('organizations')
+    .update({ settings })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
 const getDefaultStats = (): OrganisationStats => ({
-  totalEntrepreneurs: 0,
+  totalAdherents: 0,
   activeProjects: 0,
   completedProjects: 0,
   totalMentors: 0,

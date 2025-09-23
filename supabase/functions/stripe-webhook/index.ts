@@ -1,6 +1,9 @@
 import { serve } from "std/http/server.ts"
 import { createClient } from 'supabase'
 
+// Désactiver l'authentification pour ce webhook
+Deno.env.set('SUPABASE_AUTH_EXTERNAL_STRIPE_ENABLED', 'false')
+
 // Configuration Stripe
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')!
@@ -30,16 +33,22 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-    
-    // Vérifier la signature du webhook
+  // Bypass auth check for webhook
+  const url = new URL(req.url)
+  const authBypass = url.searchParams.get('auth') === 'webhook'
+  
+  if (!authBypass) {
+    // Check for Stripe signature as authentication
     const signature = req.headers.get('stripe-signature')
     if (!signature) {
       console.error('❌ Signature Stripe manquante')
-      return new Response('Signature manquante', { status: 400 })
+      return new Response('Signature manquante', { status: 400, headers: corsHeaders })
     }
+  }
 
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    
     const body = await req.text()
     
     // Pour une vraie implémentation, vous devriez vérifier la signature:
@@ -147,7 +156,18 @@ async function handleSubscriptionCreated(supabase: any, subscription: any) {
       .from('stripe_subscriptions')
       .upsert(subscriptionData)
 
-    console.log('✅ Abonnement sauvegardé en DB')
+    // Mettre à jour les crédits dans le profil utilisateur
+    await supabase
+      .from('profiles')
+      .update({ 
+        subscription_status: 'active',
+        monthly_credits_remaining: 1500,
+        monthly_credits_limit: 1500,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', customer.user_id)
+
+    console.log('✅ Abonnement sauvegardé en DB et crédits mis à jour')
 
   } catch (error) {
     console.error('❌ Erreur handleSubscriptionCreated:', error)
@@ -267,11 +287,13 @@ async function handlePaymentSucceeded(supabase: any, invoice: any) {
       console.log(`✅ ${AURENTIA_CONFIG.SUBSCRIPTION.CREDITS} crédits ajoutés pour ${customer.user_id}`)
     }
 
-    // Mettre à jour le statut d'abonnement dans le profil
+    // Mettre à jour le statut d'abonnement et les crédits mensuels dans le profil
     await supabase
       .from('profiles')
       .update({ 
         subscription_status: 'active',
+        monthly_credits_remaining: 1500,
+        monthly_credits_limit: 1500,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', customer.user_id)

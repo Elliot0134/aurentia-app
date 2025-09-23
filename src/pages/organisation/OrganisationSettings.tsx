@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useOrganisationData } from '@/hooks/useOrganisationData';
 import { useToast } from "@/hooks/use-toast";
+import CustomTabs from "@/components/ui/CustomTabs";
 import {
   Settings,
   Users,
@@ -26,40 +26,47 @@ import {
 
 const OrganisationSettings = () => {
   const { id: organisationId } = useParams();
-  const { organisation, loading } = useOrganisationData();
+  const { organisation, loading, refetch } = useOrganisationData();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('notifications');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [settingsChanged, setSettingsChanged] = useState(false);
 
   // État local pour les paramètres éditables
   const [localSettings, setLocalSettings] = useState({
-    general: {
-      name: organisation?.name || '',
-      description: organisation?.description || '',
-      website: organisation?.website || '',
-      email: organisation?.email || '',
-      phone: organisation?.phone || ''
-    },
     notifications: {
-      emailNotifications: true,
-      projectUpdates: true,
-      mentorAssignments: true,
-      weeklyReports: false,
-      systemAlerts: true
-    },
-    security: {
-      twoFactorRequired: false,
-      passwordPolicy: 'medium' as const,
-      sessionTimeout: 480,
-      allowPublicProjects: false
+      emailNotifications: organisation?.settings?.notifications?.emailNotifications ?? true,
+      projectUpdates: organisation?.settings?.notifications?.projectUpdates ?? true,
+      mentorAssignments: organisation?.settings?.notifications?.mentorAssignments ?? true,
+      weeklyReports: organisation?.settings?.notifications?.weeklyReports ?? false,
+      systemAlerts: organisation?.settings?.notifications?.systemAlerts ?? true
     },
     branding: {
-      primaryColor: '#ff5932',
-      secondaryColor: '#1a1a1a',
-      whiteLabel: false
+      primaryColor: organisation?.settings?.branding?.primaryColor || organisation?.primary_color || '#ff5932',
+      secondaryColor: organisation?.settings?.branding?.secondaryColor || organisation?.secondary_color || '#1a1a1a',
+      whiteLabel: organisation?.settings?.branding?.whiteLabel ?? false
     }
   });
+
+  // Effect pour synchroniser l'état local avec les données de l'organisation
+  useEffect(() => {
+    if (organisation) {
+      setLocalSettings({
+        notifications: {
+          emailNotifications: organisation?.settings?.notifications?.emailNotifications ?? true,
+          projectUpdates: organisation?.settings?.notifications?.projectUpdates ?? true,
+          mentorAssignments: organisation?.settings?.notifications?.mentorAssignments ?? true,
+          weeklyReports: organisation?.settings?.notifications?.weeklyReports ?? false,
+          systemAlerts: organisation?.settings?.notifications?.systemAlerts ?? true
+        },
+        branding: {
+          primaryColor: organisation?.settings?.branding?.primaryColor || organisation?.primary_color || '#ff5932',
+          secondaryColor: organisation?.settings?.branding?.secondaryColor || organisation?.secondary_color || '#1a1a1a',
+          whiteLabel: organisation?.settings?.branding?.whiteLabel ?? false
+        }
+      });
+    }
+  }, [organisation]);
 
   const handleSaveSettings = async () => {
     if (!organisationId) return;
@@ -68,9 +75,20 @@ const OrganisationSettings = () => {
     setSettingsChanged(false);
 
     try {
-      // Ici on sauvegarderait les paramètres en base
-      // Pour l'instant, on simule la sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Importer la fonction de mise à jour
+      const { updateOrganisationSettings } = await import('@/services/organisationService');
+      
+      // Construire l'objet settings à sauvegarder
+      const settingsToSave = {
+        branding: localSettings.branding,
+        notifications: localSettings.notifications
+      };
+      
+      // Sauvegarder en base de données
+      await updateOrganisationSettings(organisationId, settingsToSave);
+      
+      // Rafraîchir les données de l'organisation
+      await refetch();
       
       setSaveStatus('saved');
       toast({
@@ -87,6 +105,7 @@ const OrganisationSettings = () => {
         description: "Impossible de sauvegarder les paramètres.",
         variant: "destructive",
       });
+      console.error('Erreur lors de la sauvegarde:', error);
     }
   };
 
@@ -157,165 +176,17 @@ const OrganisationSettings = () => {
       </div>
 
       {/* Onglets de paramètres */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Général
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Sécurité
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger value="branding" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            Branding
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Intégrations
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Onglet Général */}
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5" />
-                Informations de l'Organisation
-              </CardTitle>
-              <CardDescription>
-                Informations générales de votre organisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Nom de l'organisation</label>
-                  <Input
-                    value={localSettings.general.name}
-                    onChange={(e) => updateLocalSettings('general', 'name', e.target.value)}
-                    placeholder="Nom de votre organisation"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Site web</label>
-                  <Input
-                    value={localSettings.general.website}
-                    onChange={(e) => updateLocalSettings('general', 'website', e.target.value)}
-                    placeholder="https://votre-site.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Description</label>
-                <Textarea
-                  value={localSettings.general.description}
-                  onChange={(e) => updateLocalSettings('general', 'description', e.target.value)}
-                  placeholder="Description de votre organisation..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Email de contact</label>
-                  <Input
-                    type="email"
-                    value={localSettings.general.email}
-                    onChange={(e) => updateLocalSettings('general', 'email', e.target.value)}
-                    placeholder="contact@organisation.com"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Téléphone</label>
-                  <Input
-                    value={localSettings.general.phone}
-                    onChange={(e) => updateLocalSettings('general', 'phone', e.target.value)}
-                    placeholder="+33 1 23 45 67 89"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Onglet Sécurité */}
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Paramètres de Sécurité
-              </CardTitle>
-              <CardDescription>
-                Configurez les règles de sécurité pour votre organisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Authentification à deux facteurs obligatoire</h4>
-                  <p className="text-sm text-gray-600">Exiger la 2FA pour tous les membres</p>
-                </div>
-                <Switch 
-                  checked={localSettings.security.twoFactorRequired}
-                  onCheckedChange={(checked) => updateLocalSettings('security', 'twoFactorRequired', checked)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Politique de mot de passe</label>
-                <Select 
-                  value={localSettings.security.passwordPolicy} 
-                  onValueChange={(value) => updateLocalSettings('security', 'passwordPolicy', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Faible (8 caractères minimum)</SelectItem>
-                    <SelectItem value="medium">Moyenne (8 char. + majuscule/chiffre)</SelectItem>
-                    <SelectItem value="high">Élevée (12 char. + caractères spéciaux)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Timeout de session (minutes)</label>
-                <Input
-                  type="number"
-                  value={localSettings.security.sessionTimeout}
-                  onChange={(e) => updateLocalSettings('security', 'sessionTimeout', parseInt(e.target.value))}
-                  min="30"
-                  max="1440"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Projets publics autorisés</h4>
-                  <p className="text-sm text-gray-600">Permettre aux entrepreneurs de rendre leurs projets publics</p>
-                </div>
-                <Switch 
-                  checked={localSettings.security.allowPublicProjects}
-                  onCheckedChange={(checked) => updateLocalSettings('security', 'allowPublicProjects', checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
+      <CustomTabs
+        tabs={[
+          { key: "notifications", label: "Notifications", icon: Bell },
+          { key: "branding", label: "Branding", icon: Palette },
+          { key: "integrations", label: "Intégrations", icon: Globe }
+        ]}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      >
         {/* Onglet Notifications */}
-        <TabsContent value="notifications" className="space-y-6">
+        {activeTab === "notifications" && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -332,7 +203,7 @@ const OrganisationSettings = () => {
                   <h4 className="font-medium">Notifications par email</h4>
                   <p className="text-sm text-gray-600">Recevoir les notifications importantes par email</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={localSettings.notifications.emailNotifications}
                   onCheckedChange={(checked) => updateLocalSettings('notifications', 'emailNotifications', checked)}
                 />
@@ -343,7 +214,7 @@ const OrganisationSettings = () => {
                   <h4 className="font-medium">Mises à jour de projets</h4>
                   <p className="text-sm text-gray-600">Notifications lors des mises à jour de projets</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={localSettings.notifications.projectUpdates}
                   onCheckedChange={(checked) => updateLocalSettings('notifications', 'projectUpdates', checked)}
                 />
@@ -354,7 +225,7 @@ const OrganisationSettings = () => {
                   <h4 className="font-medium">Assignations de mentors</h4>
                   <p className="text-sm text-gray-600">Notifications lors des assignations mentor-entrepreneur</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={localSettings.notifications.mentorAssignments}
                   onCheckedChange={(checked) => updateLocalSettings('notifications', 'mentorAssignments', checked)}
                 />
@@ -365,7 +236,7 @@ const OrganisationSettings = () => {
                   <h4 className="font-medium">Rapports hebdomadaires</h4>
                   <p className="text-sm text-gray-600">Recevoir un résumé hebdomadaire des activités</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={localSettings.notifications.weeklyReports}
                   onCheckedChange={(checked) => updateLocalSettings('notifications', 'weeklyReports', checked)}
                 />
@@ -376,17 +247,17 @@ const OrganisationSettings = () => {
                   <h4 className="font-medium">Alertes système</h4>
                   <p className="text-sm text-gray-600">Notifications pour les problèmes système</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={localSettings.notifications.systemAlerts}
                   onCheckedChange={(checked) => updateLocalSettings('notifications', 'systemAlerts', checked)}
                 />
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Onglet Branding */}
-        <TabsContent value="branding" className="space-y-6">
+        {activeTab === "branding" && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -415,7 +286,7 @@ const OrganisationSettings = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium mb-2 block">Couleur secondaire</label>
                   <div className="flex gap-3">
@@ -439,17 +310,17 @@ const OrganisationSettings = () => {
                   <h4 className="font-medium">Mode white-label</h4>
                   <p className="text-sm text-gray-600">Masquer la marque Aurentia pour vos utilisateurs</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={localSettings.branding.whiteLabel}
                   onCheckedChange={(checked) => updateLocalSettings('branding', 'whiteLabel', checked)}
                 />
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Onglet Intégrations */}
-        <TabsContent value="integrations" className="space-y-6">
+        {activeTab === "integrations" && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -476,8 +347,8 @@ const OrganisationSettings = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        )}
+      </CustomTabs>
     </div>
   );
 };

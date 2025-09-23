@@ -10,7 +10,6 @@ import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
 import UpdatePassword from "./pages/UpdatePassword";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
-import SetupOrganization from "./pages/SetupOrganization";
 import OrganisationRedirect from "./pages/OrganisationRedirect";
 import Automatisations from "./pages/Automatisations";
 import Knowledge from "./pages/Knowledge";
@@ -32,7 +31,7 @@ import ProtectedLayout from "./components/ProtectedLayout";
 import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
 import IncubatorSpace from "./pages/member/IncubatorSpace";
-// Organisation pages
+import OrganisationLayoutWrapper from "./components/organisation/OrganisationLayoutWrapper";
 import {
   OrganisationDashboard,
   OrganisationAnalytics,
@@ -41,17 +40,17 @@ import {
   OrganisationMentors,
   OrganisationProjets,
   OrganisationLivrables,
-  OrganisationEntrepreneurs,
+  OrganisationAdherents,
   OrganisationInvitations,
   OrganisationForms,
   OrganisationSettings,
   OrganisationPartenaires,
-  OrganisationProfile
+  OrganisationProfile,
+  OrganisationFormCreate, // Ajouter l'importation du composant de création de formulaire
+  OrganisationOnboarding
 } from "./pages/organisation";
 import OrganisationOnboardingPage from "./pages/organisation/OrganisationOnboarding";
 import OnboardingGuard from "./components/organisation/OnboardingGuard";
-import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
-import RoleSelection from "./pages/RoleSelection";
 import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback component
 import { ProjectProvider } from "./contexts/ProjectContext";
 
@@ -185,7 +184,7 @@ const App = () => {
                 {/* <Route path="/role-selection" element={<RoleSelection />} /> */} {/* Supprimé car le rôle est attribué par défaut */}
                 <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="/auth/callback" element={<AuthCallback />} /> {/* Nouvelle route pour le callback SSO */}
-                <Route path="/setup-organization" element={<SetupOrganization />} /> {/* Route pour setup organisation */}
+                <Route path="/setup-organization" element={<OrganisationOnboarding />} /> {/* Route pour setup organisation */}
                 
                 {/* Protected routes with role-based redirection and layout */}
                 <Route element={<ProtectedRoute />}>
@@ -244,57 +243,79 @@ const App = () => {
                     {/* Routes d'organisation protégées par le guard d'onboarding */}
                     <Route path="/organisation/:id/dashboard" element={
                       <OnboardingGuard>
-                        <OrganisationDashboard />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationDashboard />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
-                    <Route path="/organisation/:id/entrepreneurs" element={
+                    <Route path="/organisation/:id/adherents" element={
                       <OnboardingGuard>
-                        <OrganisationEntrepreneurs />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationAdherents />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/projets" element={
                       <OnboardingGuard>
-                        <OrganisationProjets />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationProjets />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/invitations" element={
                       <OnboardingGuard>
-                        <OrganisationInvitations />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationInvitations />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/analytics" element={
                       <OnboardingGuard>
-                        <OrganisationAnalytics />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationAnalytics />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/forms" element={
                       <OnboardingGuard>
-                        <OrganisationForms />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationForms />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/settings" element={
                       <OnboardingGuard>
-                        <OrganisationSettings />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationSettings />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/evenements" element={
                       <OnboardingGuard>
-                        <OrganisationEvenements />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationEvenements />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/mentors" element={
                       <OnboardingGuard>
-                        <OrganisationMentors />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationMentors />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/partenaires" element={
                       <OnboardingGuard>
-                        <OrganisationPartenaires />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationPartenaires />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/livrables" element={
                       <OnboardingGuard>
-                        <OrganisationLivrables />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationLivrables />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
                     <Route path="/organisation/:id/chatbot" element={
@@ -304,12 +325,12 @@ const App = () => {
                     } />
                     <Route path="/organisation/:id/profile" element={
                       <OnboardingGuard>
-                        <OrganisationProfile />
+                        <OrganisationLayoutWrapper>
+                          <OrganisationProfile />
+                        </OrganisationLayoutWrapper>
                       </OnboardingGuard>
                     } />
-                    
                     {/* Super admin */}
-                    <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
                     <Route path="/super-admin/organizations" element={<div>Organisations - À créer</div>} />
                     <Route path="/super-admin/users" element={<div>Utilisateurs - À créer</div>} />
                     <Route path="/super-admin/analytics" element={<div>Analytics Global - À créer</div>} />
@@ -325,8 +346,7 @@ const App = () => {
                 <Route path="/project-business" element={<Navigate to="/individual/project-business" replace />} />
                 <Route path="/outils" element={<Navigate to="/individual/outils" replace />} />
                 <Route path="/ressources" element={<Navigate to="/individual/ressources" replace />} />
-                <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
-                
+                <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />                
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

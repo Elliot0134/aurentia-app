@@ -8,11 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, momentLocalizer } from 'react-big-calendar';
-import moment from 'moment';
-import 'moment/locale/fr';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import frLocale from '@fullcalendar/core/locales/fr';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import './fullcalendar-custom.css';
 import { useEvents, Event, EventFormData } from "@/hooks/useEvents";
+import { useAdherents } from "@/hooks/useOrganisationData";
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -27,19 +32,17 @@ import {
   AlertCircle
 } from "lucide-react";
 
-// Configuration de moment en français
-moment.locale('fr');
-const localizer = momentLocalizer(moment);
-
 const OrganisationEvenements = () => {
   const { id: organisationId } = useParams();
   const { events, loading, error, addEvent, editEvent, removeEvent } = useEvents(organisationId);
+  const { adherents, loading: adherentsLoading } = useAdherents();
   
-  const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>('month');
-  const [date, setDate] = useState(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedRange, setSelectedRange] = useState<{ start: Date; end: Date } | null>(null);
+  const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   
   // Formulaire pour ajouter un événement
   const [formData, setFormData] = useState<EventFormData>({
@@ -59,7 +62,15 @@ const OrganisationEvenements = () => {
     if (!formData.title.trim() || !formData.start_date || !formData.end_date || !organisationId) return;
     
     const success = await addEvent({
-      ...formData,
+      title: formData.title,
+      description: formData.description,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      type: formData.type,
+      location: formData.location,
+      organizer_id: '',
+      is_recurring: false,
+      max_participants: formData.max_participants,
       organization_id: organisationId
     });
     
@@ -80,6 +91,73 @@ const OrganisationEvenements = () => {
     }
   };
 
+  const handleCreateEventFromRange = async () => {
+    if (!selectedRange || !formData.title.trim() || !organisationId) return;
+    
+    const success = await addEvent({
+      title: formData.title,
+      description: formData.description,
+      start_date: format(selectedRange.start, "yyyy-MM-dd'T'HH:mm"),
+      end_date: format(selectedRange.end, "yyyy-MM-dd'T'HH:mm"),
+      type: formData.type,
+      location: formData.location,
+      organizer_id: '',
+      is_recurring: false,
+      max_participants: formData.max_participants,
+      organization_id: organisationId
+    });
+    
+    if (success) {
+      setCreateEventModalOpen(false);
+      setSelectedRange(null);
+      setSelectedMembers([]);
+      setFormData({
+        title: '',
+        description: '',
+        start_date: '',
+        end_date: '',
+        type: 'other',
+        location: '',
+        organizer_id: '',
+        is_recurring: false,
+        max_participants: undefined,
+        organization_id: organisationId
+      });
+    }
+  };
+
+  const handleEventResize = async (resizeInfo: any) => {
+    const eventId = resizeInfo.event.id;
+    const newStart = resizeInfo.event.start;
+    const newEnd = resizeInfo.event.end;
+
+    const success = await editEvent(eventId, {
+      start_date: format(newStart, "yyyy-MM-dd'T'HH:mm"),
+      end_date: format(newEnd, "yyyy-MM-dd'T'HH:mm")
+    });
+
+    if (!success) {
+      // Annuler le changement si la mise à jour échoue
+      resizeInfo.revert();
+    }
+  };
+
+  const handleEventDrop = async (dropInfo: any) => {
+    const eventId = dropInfo.event.id;
+    const newStart = dropInfo.event.start;
+    const newEnd = dropInfo.event.end;
+
+    const success = await editEvent(eventId, {
+      start_date: format(newStart, "yyyy-MM-dd'T'HH:mm"),
+      end_date: format(newEnd, "yyyy-MM-dd'T'HH:mm")
+    });
+
+    if (!success) {
+      // Annuler le changement si la mise à jour échoue
+      dropInfo.revert();
+    }
+  };
+
   const handleSelectEvent = (event: any) => {
     const fullEvent = events.find(e => e.id === event.id);
     if (fullEvent) {
@@ -96,22 +174,24 @@ const OrganisationEvenements = () => {
     }
   };
 
-  // Convertir les événements Supabase pour react-big-calendar
+  // Convertir les événements Supabase pour FullCalendar
   const calendarEvents = events.map(event => ({
     id: event.id,
     title: event.title,
     start: new Date(event.start_date),
     end: new Date(event.end_date),
-    resource: event
+    extendedProps: {
+      ...event
+    }
   }));
 
   const getEventTypeColor = (type: Event['type']) => {
     const colors = {
-      workshop: '#8884d8',
-      meeting: '#82ca9d',
-      webinar: '#ffc658',
-      networking: '#ff7c7c',
-      other: '#8dd1e1'
+      workshop: '#ff5932', // Couleur principale Aurentia
+      meeting: '#6366f1', // Indigo
+      webinar: '#8b5cf6', // Violet
+      networking: '#06b6d4', // Cyan
+      other: '#64748b' // Slate
     };
     return colors[type];
   };
@@ -127,18 +207,33 @@ const OrganisationEvenements = () => {
     return labels[type];
   };
 
-  const eventStyleGetter = (event: any) => {
-    const eventData = event.resource as Event;
-    return {
-      style: {
-        backgroundColor: getEventTypeColor(eventData.type),
-        borderRadius: '5px',
-        opacity: 0.8,
-        color: 'white',
-        border: '0px',
-        display: 'block'
-      }
-    };
+  // Configuration des événements pour FullCalendar
+  const eventContent = (eventInfo: any) => {
+    const eventType = eventInfo.event.extendedProps.type;
+    const backgroundColor = getEventTypeColor(eventType);
+
+    return (
+      <div
+        className="fc-event-content"
+        style={{
+          backgroundColor,
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          fontWeight: '500',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}
+      >
+        <div className="fc-event-title" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {eventInfo.event.title}
+        </div>
+      </div>
+    );
   };
 
   const stats = {
@@ -277,6 +372,136 @@ const OrganisationEvenements = () => {
           </div>
         </div>
 
+        {/* Modal de création d'événement avec drag-and-drop */}
+        <Dialog open={createEventModalOpen} onOpenChange={setCreateEventModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Créer un événement</DialogTitle>
+              <DialogDescription>
+                Créez un événement pour la période sélectionnée: {selectedRange && format(selectedRange.start, 'dd/MM/yyyy HH:mm', { locale: fr })} - {selectedRange && format(selectedRange.end, 'dd/MM/yyyy HH:mm', { locale: fr })}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="drag-title">Titre de l'événement *</Label>
+                <Input
+                  id="drag-title"
+                  placeholder="Ex: Workshop Business Model"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="drag-type">Type d'événement</Label>
+                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as Event['type'] }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="workshop">Atelier</SelectItem>
+                    <SelectItem value="meeting">Réunion</SelectItem>
+                    <SelectItem value="webinar">Webinaire</SelectItem>
+                    <SelectItem value="networking">Networking</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="drag-description">Description</Label>
+                <Textarea
+                  id="drag-description"
+                  placeholder="Description de l'événement"
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="drag-location">Lieu</Label>
+                <Input
+                  id="drag-location"
+                  placeholder="Ex: Salle de conférence A"
+                  value={formData.location}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="drag-max_participants">Participants max</Label>
+                <Input
+                  id="drag-max_participants"
+                  type="number"
+                  placeholder="Ex: 50"
+                  value={formData.max_participants || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, max_participants: e.target.value ? parseInt(e.target.value) : undefined }))}
+                />
+              </div>
+
+              {/* Sélection des membres */}
+              <div className="md:col-span-2">
+                <Label>Sélectionner les participants</Label>
+                <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                  {adherentsLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : adherents.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">Aucun membre trouvé</p>
+                  ) : (
+                    adherents.map((adherent) => (
+                      <div key={adherent.id} className="flex items-center space-x-2 py-1">
+                        <input
+                          type="checkbox"
+                          id={`member-${adherent.id}`}
+                          checked={selectedMembers.includes(adherent.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedMembers(prev => [...prev, adherent.id]);
+                            } else {
+                              setSelectedMembers(prev => prev.filter(id => id !== adherent.id));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`member-${adherent.id}`} className="text-sm cursor-pointer">
+                          {adherent.first_name} {adherent.last_name}
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {selectedMembers.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    {selectedMembers.length} membre{selectedMembers.length > 1 ? 's' : ''} sélectionné{selectedMembers.length > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setCreateEventModalOpen(false);
+                setSelectedRange(null);
+                setSelectedMembers([]);
+              }}>
+                Annuler
+              </Button>
+              <Button 
+                style={{ backgroundColor: '#ff5932' }} 
+                className="hover:opacity-90 text-white"
+                onClick={handleCreateEventFromRange}
+                disabled={!formData.title.trim()}
+              >
+                Créer l'événement
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Message d'erreur */}
         {error && (
           <Alert className="mb-6">
@@ -337,66 +562,61 @@ const OrganisationEvenements = () => {
 
         {!loading && (
           <>
-            {/* Contrôles du calendrier */}
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="view">Vue:</Label>
-                    <Select value={view} onValueChange={(value) => setView(value as any)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="month">Mois</SelectItem>
-                        <SelectItem value="week">Semaine</SelectItem>
-                        <SelectItem value="day">Jour</SelectItem>
-                        <SelectItem value="agenda">Agenda</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setDate(new Date())}
-                    >
-                      Aujourd'hui
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Calendrier */}
             <Card>
               <CardContent className="p-6">
                 <div style={{ height: '600px' }}>
-                  <Calendar
-                    localizer={localizer}
+                  <FullCalendar
+                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                    initialView="dayGridMonth"
+                    headerToolbar={{
+                      left: 'prev,next today',
+                      center: 'title',
+                      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    }}
+                    locale={frLocale}
                     events={calendarEvents}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: '100%' }}
-                    view={view}
-                    date={date}
-                    onView={setView}
-                    onNavigate={setDate}
-                    onSelectEvent={handleSelectEvent}
-                    eventPropGetter={eventStyleGetter}
-                    messages={{
-                      next: "Suivant",
-                      previous: "Précédent",
+                    eventContent={eventContent}
+                    eventClick={(info) => {
+                      const event = events.find(e => e.id === info.event.id);
+                      if (event) {
+                        setSelectedEvent(event);
+                        setEditDialogOpen(true);
+                      }
+                    }}
+                    selectable={true}
+                    selectMirror={true}
+                    select={(selectInfo) => {
+                      setSelectedRange({
+                        start: selectInfo.start,
+                        end: selectInfo.end
+                      });
+                      setCreateEventModalOpen(true);
+                    }}
+                    editable={true}
+                    eventStartEditable={true}
+                    eventDurationEditable={true}
+                    eventResize={handleEventResize}
+                    eventDrop={handleEventDrop}
+                    height="100%"
+                    dayMaxEvents={3}
+                    moreLinkClick="popover"
+                    buttonText={{
                       today: "Aujourd'hui",
-                      month: "Mois",
-                      week: "Semaine",
-                      day: "Jour",
-                      agenda: "Agenda",
-                      date: "Date",
-                      time: "Heure",
-                      event: "Événement",
-                      noEventsInRange: "Aucun événement dans cette période",
-                      showMore: (total) => `+ ${total} événement(s) supplémentaire(s)`
+                      month: 'Mois',
+                      week: 'Semaine',
+                      day: 'Jour'
+                    }}
+                    slotLabelFormat={{
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      omitZeroMinute: false,
+                      meridiem: false
+                    }}
+                    eventTimeFormat={{
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      meridiem: false
                     }}
                   />
                 </div>
@@ -425,7 +645,7 @@ const OrganisationEvenements = () => {
                       <div className="mt-1 flex items-center gap-2">
                         <Clock className="w-4 h-4 text-gray-400" />
                         <span>
-                          {moment(selectedEvent.start_date).format('DD/MM/YYYY HH:mm')} - {moment(selectedEvent.end_date).format('HH:mm')}
+                          {format(new Date(selectedEvent.start_date), 'dd/MM/yyyy HH:mm', { locale: fr })} - {format(new Date(selectedEvent.end_date), 'HH:mm', { locale: fr })}
                         </span>
                       </div>
                     </div>

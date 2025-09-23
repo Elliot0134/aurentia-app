@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -21,28 +21,28 @@ import {
   Edit,
   MoreVertical
 } from "lucide-react";
-import { useEntrepreneurs } from '@/hooks/useOrganisationData';
-import type { Entrepreneur } from '@/types/organisationTypes';
+import { useAdherents } from '@/hooks/useOrganisationData';
+import type { Adherent } from '@/types/organisationTypes';
 
-const OrganisationEntrepreneurs = () => {
+const OrganisationAdherents = () => {
   const { id: organisationId } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Utiliser les données Supabase
-  const { entrepreneurs, loading } = useEntrepreneurs();
+  const { adherents, loading } = useAdherents();
 
-  const filteredEntrepreneurs = entrepreneurs.filter(entrepreneur => {
-    const fullName = `${entrepreneur.first_name} ${entrepreneur.last_name}`.trim();
+  const filteredAdherents = adherents.filter(adherent => {
+    const fullName = `${adherent.first_name} ${adherent.last_name}`.trim();
     const matchesSearch = fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         entrepreneur.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || entrepreneur.status === selectedStatus;
+                         adherent.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || adherent.status === selectedStatus;
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: Entrepreneur['status']) => {
+  const getStatusColor = (status: Adherent['status']) => {
     const colors = {
       active: 'bg-green-100 text-green-800',
       inactive: 'bg-gray-100 text-gray-800',
@@ -51,7 +51,7 @@ const OrganisationEntrepreneurs = () => {
     return colors[status];
   };
 
-  const getStatusLabel = (status: Entrepreneur['status']) => {
+  const getStatusLabel = (status: Adherent['status']) => {
     const labels = {
       active: 'Actif',
       inactive: 'Inactif',
@@ -61,12 +61,12 @@ const OrganisationEntrepreneurs = () => {
   };
 
   const stats = {
-    total: entrepreneurs.length,
-    active: entrepreneurs.filter(e => e.status === 'active').length,
-    pending: entrepreneurs.filter(e => e.status === 'pending').length,
-    avgProgress: entrepreneurs.length > 0 ? Math.round(
-      entrepreneurs.reduce((sum, e) => sum + (e.completed_deliverables / e.total_deliverables), 0) / 
-      entrepreneurs.length * 100
+    total: adherents.length,
+    active: adherents.filter(e => e.status === 'active').length,
+    pending: adherents.filter(e => e.status === 'pending').length,
+    avgProgress: adherents.length > 0 ? Math.round(
+      adherents.reduce((sum, e) => sum + (e.completed_deliverables / e.total_deliverables), 0) / 
+      adherents.length * 100
     ) : 0
   };
 
@@ -76,7 +76,7 @@ const OrganisationEntrepreneurs = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-500">Chargement des entrepreneurs...</p>
+            <p className="text-gray-500">Chargement des adhérents...</p>
           </div>
         </div>
       </div>
@@ -90,9 +90,9 @@ const OrganisationEntrepreneurs = () => {
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Entrepreneurs</h1>
+              <h1 className="text-3xl font-bold mb-2">Adhérents</h1>
               <p className="text-gray-600 text-base">
-                Gérez les entrepreneurs de votre organisation.
+                Gérez les adhérents de votre organisation.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -112,7 +112,7 @@ const OrganisationEntrepreneurs = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Entrepreneurs</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Adhérents</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -182,30 +182,30 @@ const OrganisationEntrepreneurs = () => {
           </CardContent>
         </Card>
 
-        {/* Liste des entrepreneurs */}
+        {/* Liste des adhérents */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEntrepreneurs.map((entrepreneur) => {
-            const fullName = `${entrepreneur.first_name} ${entrepreneur.last_name}`.trim();
-            const initials = `${entrepreneur.first_name?.[0] || ''}${entrepreneur.last_name?.[0] || ''}`.toUpperCase();
-            const progressPercentage = entrepreneur.total_deliverables > 0 
-              ? Math.round((entrepreneur.completed_deliverables / entrepreneur.total_deliverables) * 100) 
+          {filteredAdherents.map((adherent) => {
+            const fullName = `${adherent.first_name} ${adherent.last_name}`.trim();
+            const initials = `${adherent.first_name?.[0] || ''}${adherent.last_name?.[0] || ''}`.toUpperCase();
+            const progressPercentage = adherent.total_deliverables > 0 
+              ? Math.round((adherent.completed_deliverables / adherent.total_deliverables) * 100) 
               : 0;
             
             return (
-              <Card key={entrepreneur.id} className="hover:shadow-lg transition-shadow">
+              <Card key={adherent.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-aurentia-pink rounded-full flex items-center justify-center text-white font-semibold">
-                        {initials || entrepreneur.email.slice(0, 2).toUpperCase()}
+                        {initials || adherent.email.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold">{fullName || entrepreneur.email}</h3>
-                        <p className="text-sm text-gray-600">{entrepreneur.email}</p>
+                        <h3 className="font-semibold">{fullName || adherent.email}</h3>
+                        <p className="text-sm text-gray-600">{adherent.email}</p>
                       </div>
                     </div>
-                    <Badge className={getStatusColor(entrepreneur.status)}>
-                      {getStatusLabel(entrepreneur.status)}
+                    <Badge className={getStatusColor(adherent.status)}>
+                      {getStatusLabel(adherent.status)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -215,11 +215,11 @@ const OrganisationEntrepreneurs = () => {
                     {/* Date d'adhésion */}
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="w-4 h-4" />
-                      <span>Rejoint le {new Date(entrepreneur.joined_at).toLocaleDateString('fr-FR')}</span>
+                      <span>Rejoint le {new Date(adherent.joined_at).toLocaleDateString('fr-FR')}</span>
                     </div>
 
                     {/* Mentor - utiliser mentor_id pour l'instant */}
-                    {entrepreneur.mentor_id && (
+                    {adherent.mentor_id && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Users className="w-4 h-4" />
                         <span>Mentor assigné</span>
@@ -230,12 +230,12 @@ const OrganisationEntrepreneurs = () => {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Projets</span>
-                        <div className="font-semibold">{entrepreneur.project_count}</div>
+                        <div className="font-semibold">{adherent.project_count}</div>
                       </div>
                       <div>
                         <span className="text-gray-600">Livrables</span>
                         <div className="font-semibold">
-                          {entrepreneur.completed_deliverables}/{entrepreneur.total_deliverables}
+                          {adherent.completed_deliverables}/{adherent.total_deliverables}
                         </div>
                       </div>
                     </div>
@@ -256,9 +256,9 @@ const OrganisationEntrepreneurs = () => {
 
                     {/* Dernière activité */}
                     <div className="text-xs text-gray-500">
-                      {entrepreneur.last_activity 
-                        ? `Dernière activité: ${new Date(entrepreneur.last_activity).toLocaleDateString('fr-FR')}`
-                        : `Rejoint le ${new Date(entrepreneur.joined_at).toLocaleDateString('fr-FR')}`
+                      {adherent.last_activity 
+                        ? `Dernière activité: ${new Date(adherent.last_activity).toLocaleDateString('fr-FR')}`
+                        : `Rejoint le ${new Date(adherent.joined_at).toLocaleDateString('fr-FR')}`
                       }
                     </div>
 
@@ -268,9 +268,14 @@ const OrganisationEntrepreneurs = () => {
                         <Eye className="w-4 h-4 mr-2" />
                         Voir
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Edit className="w-4 h-4 mr-2" />
-                        Modifier
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => navigate(`/organisation/mentors/assign?adherent=${adherent.id}`)}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        {adherent.mentor_id ? 'Changer' : 'Assigner'} mentor
                       </Button>
                     </div>
                   </div>
@@ -280,14 +285,14 @@ const OrganisationEntrepreneurs = () => {
           })}
         </div>
 
-        {/* Message si aucun entrepreneur */}
-        {filteredEntrepreneurs.length === 0 && (
+        {/* Message si aucun adhérent */}
+        {filteredAdherents.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun entrepreneur trouvé</h3>
+              <h3 className="text-lg font-semibold mb-2">Aucun adhérent trouvé</h3>
               <p className="text-gray-600 mb-4">
-                Aucun entrepreneur ne correspond à vos critères de recherche.
+                Aucun adhérent ne correspond à vos critères de recherche.
               </p>
               <Button 
                 variant="outline" 
@@ -306,4 +311,4 @@ const OrganisationEntrepreneurs = () => {
   );
 };
 
-export default OrganisationEntrepreneurs;
+export default OrganisationAdherents;

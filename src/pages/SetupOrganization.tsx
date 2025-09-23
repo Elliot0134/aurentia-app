@@ -8,14 +8,19 @@ const SetupOrganization = () => {
   const { userProfile, loading } = useUserRole();
 
   useEffect(() => {
+    // Wait for loading to complete before checking conditions
+    if (loading) return;
+    
     // Si l'utilisateur a déjà une organisation, rediriger
-    if (!loading && userProfile?.organization_id) {
+    if (userProfile?.organization_id) {
       navigate(`/organisation/${userProfile.organization_id}/dashboard`);
+      return;
     }
     
-    // Si l'utilisateur n'est pas du bon rôle, rediriger
-    if (!loading && userProfile?.user_role !== 'organisation') {
-      navigate('/individual/dashboard');
+    // Si pas de profil utilisateur, rediriger vers login
+    if (!userProfile) {
+      navigate('/login');
+      return;
     }
   }, [userProfile, loading, navigate]);
 
@@ -39,7 +44,7 @@ const SetupOrganization = () => {
     );
   }
 
-  if (!userProfile) {
+  if (!userProfile?.id) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -9,11 +9,27 @@ export interface Organisation {
   email?: string;
   phone?: string;
   address?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  settings?: {
+    branding?: {
+      primaryColor?: string;
+      secondaryColor?: string;
+      whiteLabel?: boolean;
+    };
+    notifications?: {
+      emailNotifications?: boolean;
+      projectUpdates?: boolean;
+      mentorAssignments?: boolean;
+      weeklyReports?: boolean;
+      systemAlerts?: boolean;
+    };
+  };
   created_at: string;
   updated_at: string;
 }
 
-export interface Entrepreneur {
+export interface Adherent {
   id: string;
   user_id: string;
   organisation_id: string;
@@ -157,7 +173,7 @@ export interface FormSubmission {
 }
 
 export interface OrganisationStats {
-  totalEntrepreneurs: number;
+  totalAdherents: number;
   activeProjects: number;
   completedProjects: number;
   totalMentors: number;

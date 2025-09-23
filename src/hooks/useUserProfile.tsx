@@ -35,6 +35,7 @@ export const useUserProfile = () => {
         }
 
         setUserProfile({
+          id: user.id, // Add the user ID from auth
           ...profileData,
           organization: organizationData
         } as UserProfile);

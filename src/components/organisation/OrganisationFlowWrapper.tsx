@@ -28,6 +28,13 @@ const OrganisationFlowWrapper = ({
   // Vérifier si l'utilisateur a déjà une organisation
   useEffect(() => {
     const checkExistingOrganisation = async () => {
+      // Validate userId before making the query
+      if (!userId) {
+        console.error('UserId is required for OrganisationFlowWrapper');
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data: profile, error: profileError } = await (supabase as any)
           .from('profiles')

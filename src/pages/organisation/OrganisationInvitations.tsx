@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CustomTabs from "@/components/ui/CustomTabs";
 import { useToast } from "@/hooks/use-toast";
 import { InvitationCode } from '@/types/organisationTypes';
 import {
@@ -28,7 +28,6 @@ import {
 interface CreateInvitationForm {
   role: 'entrepreneur' | 'mentor';
   email?: string;
-  maxUses?: number;
 }
 
 interface Invitation {
@@ -52,16 +51,17 @@ const OrganisationInvitations = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('pending');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [invitationType, setInvitationType] = useState<'email' | 'link'>('email');
+  const [createdCode, setCreatedCode] = useState<string>('');
+  const [createdEmail, setCreatedEmail] = useState<string>('');
+  const [isCreating, setIsCreating] = useState(false);
 
   // Dynamic form defaults based on invitation type
-  const getFormDefaults = (type: 'email' | 'link'): CreateInvitationForm => ({
+  const getFormDefaults = (): CreateInvitationForm => ({
     role: 'entrepreneur',
-    email: type === 'email' ? '' : undefined,
-    maxUses: type === 'link' ? 5 : 1
+    email: ''
   });
 
-  const [formData, setFormData] = useState<CreateInvitationForm>(getFormDefaults('email'));
+  const [formData, setFormData] = useState<CreateInvitationForm>(getFormDefaults());
 
   // Adapter les codes d'invitation aux types UI
   const invitations: Invitation[] = codes.map(code => ({
@@ -81,38 +81,32 @@ const OrganisationInvitations = () => {
     return 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
   };
 
-  // Handle invitation type change with form reset
-  const handleInvitationTypeChange = (type: 'email' | 'link') => {
-    setInvitationType(type);
-    setFormData(getFormDefaults(type));
-  };
-
   // Reset form when dialog opens
   const handleDialogOpen = (open: boolean) => {
     setDialogOpen(open);
     if (open) {
-      setFormData(getFormDefaults(invitationType));
+      setFormData(getFormDefaults());
+      setCreatedCode('');
+      setCreatedEmail('');
     }
   };
 
   const handleCreateInvitation = async (formData: CreateInvitationForm) => {
+    setIsCreating(true);
     try {
       const newCode = await generateCode({
         code: generateInvitationCode(),
         role: formData.role,
         created_by: '', // Will be set by the hook with actual user ID
         expires_at: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString(),
-        max_uses: invitationType === 'link' ? (formData.maxUses || 5) : 1,
+        max_uses: 1,
         is_active: true
       });
 
       if (newCode) {
-        setDialogOpen(false);
-        
-        toast({
-          title: "Code d'invitation créé",
-          description: "Le code d'invitation a été généré avec succès.",
-        });
+        setCreatedCode(newCode.code);
+        setCreatedEmail(formData.email || '');
+        // Don't close the dialog, just show the code
       }
     } catch (error) {
       toast({
@@ -120,6 +114,8 @@ const OrganisationInvitations = () => {
         description: "Une erreur s'est produite lors de la création du code d'invitation.",
         variant: "destructive",
       });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -206,27 +202,39 @@ const OrganisationInvitations = () => {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Créer une invitation</DialogTitle>
+                  <DialogTitle>
+                    {createdCode ? 'Code d\'invitation créé' : 'Créer une invitation'}
+                  </DialogTitle>
                   <DialogDescription>
-                    Invitez de nouveaux membres à rejoindre votre organisation.
+                    {createdCode 
+                      ? (createdEmail ? `Le code d'invitation a été généré avec succès. Il sera envoyé à ${createdEmail} une fois la fonctionnalité d'email implémentée.` : 'Le code d\'invitation a été généré avec succès.')
+                      : 'Invitez de nouveaux membres à rejoindre votre organisation.'
+                    }
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Type d'invitation</label>
-                    <Select value={invitationType} onValueChange={handleInvitationTypeChange}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="email">Invitation par email</SelectItem>
-                        <SelectItem value="link">Lien d'invitation</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {createdCode ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Code d'invitation</label>
+                      <div className="flex gap-2">
+                        <Input 
+                          value={createdCode}
+                          readOnly
+                          className="font-mono text-center"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(createdCode)}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-
-                  {invitationType === 'email' && (
+                ) : (
+                  <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium mb-2 block">Email</label>
                       <Input 
@@ -235,49 +243,53 @@ const OrganisationInvitations = () => {
                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       />
                     </div>
-                  )}
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Rôle</label>
-                    <Select 
-                      value={formData.role} 
-                      onValueChange={(value: 'entrepreneur' | 'mentor') => setFormData(prev => ({ ...prev, role: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="entrepreneur">Entrepreneur</SelectItem>
-                        <SelectItem value="mentor">Mentor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {invitationType === 'link' && (
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Nombre max d'utilisations</label>
-                      <Input 
-                        type="number" 
-                        value={formData.maxUses || 5} 
-                        onChange={(e) => setFormData(prev => ({ ...prev, maxUses: parseInt(e.target.value) }))}
-                        min="1" 
-                        max="100" 
-                      />
+                      <label className="text-sm font-medium mb-2 block">Rôle</label>
+                      <Select 
+                        value={formData.role} 
+                        onValueChange={(value: 'entrepreneur' | 'mentor') => setFormData(prev => ({ ...prev, role: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="entrepreneur">Entrepreneur</SelectItem>
+                          <SelectItem value="mentor">Mentor</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                    Annuler
-                  </Button>
-                  <Button 
-                    style={{ backgroundColor: '#ff5932' }} 
-                    className="hover:opacity-90 text-white"
-                    onClick={() => handleCreateInvitation(formData)}
-                  >
-                    Créer l'invitation
-                  </Button>
+                  {createdCode ? (
+                    <Button 
+                      style={{ backgroundColor: '#ff5932' }} 
+                      className="hover:opacity-90 text-white"
+                      onClick={() => {
+                        setDialogOpen(false);
+                        setCreatedCode('');
+                        setCreatedEmail('');
+                      }}
+                    >
+                      Fermer
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                        Annuler
+                      </Button>
+                      <Button 
+                        style={{ backgroundColor: '#ff5932' }} 
+                        className="hover:opacity-90 text-white"
+                        onClick={() => handleCreateInvitation(formData)}
+                        disabled={isCreating}
+                      >
+                        {isCreating ? 'Création...' : 'Créer l\'invitation'}
+                      </Button>
+                    </>
+                  )}
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -330,108 +342,105 @@ const OrganisationInvitations = () => {
         {/* Onglets et liste des invitations */}
         <Card>
           <CardContent className="pt-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-4 w-full">
-                <TabsTrigger value="pending">En attente ({stats.pending})</TabsTrigger>
-                <TabsTrigger value="accepted">Acceptées ({stats.accepted})</TabsTrigger>
-                <TabsTrigger value="expired">Expirées ({stats.expired})</TabsTrigger>
-                <TabsTrigger value="all">Toutes ({stats.total})</TabsTrigger>
-              </TabsList>
-
-              <div className="mt-6">
-                {filteredInvitations.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Aucune invitation</h3>
-                    <p className="text-gray-600">
-                      Aucune invitation ne correspond à ce statut.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredInvitations.map((invitation) => (
-                      <Card key={invitation.id} className="border-l-4 border-l-aurentia-pink">
-                        <CardContent className="pt-6">
-                          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                            <div className="space-y-2 flex-1">
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                  {invitation.type === 'email' ? (
-                                    <Mail className="w-4 h-4 text-aurentia-pink" />
-                                  ) : (
-                                    <Link className="w-4 h-4 text-aurentia-pink" />
-                                  )}
-                                  <span className="font-medium font-mono">{invitation.code}</span>
-                                </div>
-                                <Badge className={getStatusColor(invitation.status)}>
-                                  {getStatusLabel(invitation.status)}
-                                </Badge>
-                                <Badge variant="outline">
-                                  {getRoleLabel(invitation.role)}
-                                </Badge>
+            <CustomTabs
+              tabs={[
+                { key: "all", label: `Toutes (${stats.total})`, icon: Mail },
+                { key: "pending", label: `En attente (${stats.pending})`, icon: Clock },
+                { key: "accepted", label: `Acceptées (${stats.accepted})`, icon: CheckCircle },
+                { key: "expired", label: `Expirées (${stats.expired})`, icon: XCircle }
+              ]}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            >
+              {filteredInvitations.length === 0 ? (
+                <div className="text-center py-12">
+                  <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Aucune invitation</h3>
+                  <p className="text-gray-600">
+                    Aucune invitation ne correspond à ce statut.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredInvitations.map((invitation) => (
+                    <Card key={invitation.id} className="border-l-4 border-l-aurentia-pink">
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                {invitation.type === 'email' ? (
+                                  <Mail className="w-4 h-4 text-aurentia-pink" />
+                                ) : (
+                                  <Link className="w-4 h-4 text-aurentia-pink" />
+                                )}
+                                <span className="font-medium font-mono">{invitation.code}</span>
                               </div>
-
-                              {invitation.email && (
-                                <p className="text-sm text-gray-600">
-                                  Destinataire: {invitation.email}
-                                </p>
-                              )}
-
-                              <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                                <span>Créée le {invitation.createdAt.toLocaleDateString('fr-FR')}</span>
-                                <span>Expire le {invitation.expiresAt.toLocaleDateString('fr-FR')}</span>
-                                {invitation.type === 'link' && (
-                                  <span>Utilisations: {invitation.currentUses}/{invitation.maxUses}</span>
-                                )}
-                                {invitation.usedAt && (
-                                  <span>Utilisée le {invitation.usedAt.toLocaleDateString('fr-FR')}</span>
-                                )}
-                                {invitation.usedBy && (
-                                  <span>par {invitation.usedBy}</span>
-                                )}
-                              </div>
+                              <Badge className={getStatusColor(invitation.status)}>
+                                {getStatusLabel(invitation.status)}
+                              </Badge>
+                              <Badge variant="outline">
+                                {getRoleLabel(invitation.role)}
+                              </Badge>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              {invitation.status === 'pending' && (
-                                <>
+                            {invitation.email && (
+                              <p className="text-sm text-gray-600">
+                                Destinataire: {invitation.email}
+                              </p>
+                            )}
+
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                              <span>Créée le {invitation.createdAt.toLocaleDateString('fr-FR')}</span>
+                              <span>Expire le {invitation.expiresAt.toLocaleDateString('fr-FR')}</span>
+                              {invitation.usedAt && (
+                                <span>Utilisée le {invitation.usedAt.toLocaleDateString('fr-FR')}</span>
+                              )}
+                              {invitation.usedBy && (
+                                <span>par {invitation.usedBy}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {invitation.status === 'pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(invitation.code)}
+                                >
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Copier le code
+                                </Button>
+
+                                {invitation.type === 'email' && (
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => copyToClipboard(invitation.code)}
                                   >
-                                    <Copy className="w-4 h-4 mr-2" />
-                                    Copier le code
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Renvoyer
                                   </Button>
-                                  
-                                  {invitation.type === 'email' && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                    >
-                                      <Send className="w-4 h-4 mr-2" />
-                                      Renvoyer
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                              
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
+                                )}
+                              </>
+                            )}
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </Tabs>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CustomTabs>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { UserProfile } from '@/types/userTypes';
-import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot } from 'lucide-react';
+import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot, Plus } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AurentiaLogo from './AurentiaLogo';
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
 import { useCreditsSimple } from "@/hooks/useCreditsSimple";
 import { useOrganisationNavigation } from "@/hooks/useOrganisationNavigation";
+import { useUserOrganization } from "@/hooks/useUserOrganization";
 import clsx from 'clsx';
 
 interface SidebarConfig {
@@ -18,6 +19,7 @@ interface SidebarConfig {
     icon?: React.ReactNode;
     isDivider?: boolean;
     isCustomAction?: boolean; // New property for custom actions
+    isCreateOrg?: boolean; // New property to identify "Create Organization" button
   }>;
   branding: {
     name: string;
@@ -43,6 +45,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const [user, setUser] = useState<any>(null);
   const credits = useCreditsSimple();
   const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
+  const { hasOrganization, loading: organizationLoading } = useUserOrganization();
   const isUserProfileLoading = !userProfile;
 
   // Check if mobile on mount and when window resizes
@@ -65,6 +68,11 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const getSidebarConfig = (): SidebarConfig => {
     if (!userProfile) return getIndividualConfig();
 
+    // Si l'utilisateur est sur une route /individual/*, afficher la sidebar individual même s'il a un rôle organisation
+    if (location.pathname.startsWith('/individual/')) {
+      return getIndividualConfig();
+    }
+
     switch (userProfile.user_role) {
       case 'super_admin':
         return {
@@ -83,11 +91,15 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         
       case 'organisation':
       case 'staff':
-        const orgId = userProfile?.organization_id || '00000000-0000-0000-0000-000000000001';
+        const orgId = userProfile?.organization_id;
+        if (!orgId) {
+          // If no organization ID, redirect to individual space
+          return getIndividualConfig();
+        }
         return {
           menuItems: [
             { name: "Vue d'ensemble", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
-            { name: "Entrepreneurs", path: `/organisation/${orgId}/entrepreneurs`, icon: <Users size={20} /> },
+            { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
             { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
             { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
             { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
@@ -100,7 +112,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
             { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> },
             { name: "Profil", path: `/organisation/${orgId}/profile`, icon: <UserCheck size={20} /> },
             { isDivider: true },
-            { name: "Retour à l'espace Entrepreneur", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true },
+            { name: "Retour à l'espace Adhérent", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true },
           ],
           branding: {
             name: userProfile.organization?.name || "Mon Incubateur",
@@ -142,26 +154,42 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     }
   };
 
-  const getIndividualConfig = (): SidebarConfig => ({
-    menuItems: [
-      { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
-      { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
-      { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
-      { isDivider: true },
-      { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
-      { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
-      { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
-      { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
-      { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
-      { name: "Template", path: "/individual/template", icon: <FileText size={20} /> },
-      { isDivider: true },
-      { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true },
-      { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
-    ],
-    branding: { name: "Aurentia", primaryColor: "#F04F6A" },
-    showProjectSelector: true,
-    showCredits: true
-  });
+  const getIndividualConfig = (): SidebarConfig => {
+    // Determine what organization-related item to show
+    let orgItem;
+    if (organizationLoading) {
+      // Show loading state
+      orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
+      // User has an organization OR has organization role - show organization name or "Organisation" button
+      const orgName = userProfile?.organization?.name;
+      orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+    } else {
+      // User doesn't have an organization - show "Créer une organisation" button
+      orgItem = { name: "Créer une organisation", path: "/setup-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
+    }
+
+    return {
+      menuItems: [
+        { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
+        { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+        { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
+        { isDivider: true },
+        { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
+        { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
+        { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
+        { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
+        { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
+        { name: "Template", path: "/individual/template", icon: <FileText size={20} /> },
+        { isDivider: true },
+        orgItem,
+        { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
+      ],
+      branding: { name: "Aurentia", primaryColor: "#F04F6A" },
+      showProjectSelector: true,
+      showCredits: true
+    };
+  };
 
   // Helper function to get user display name
   const getUserDisplayName = () => {
@@ -240,17 +268,30 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 {item.icon}
                 {!isCollapsed && <span>{orgNavigationLoading || isUserProfileLoading ? "Chargement..." : item.name}</span>}
               </button>
+            ) : item.isCustomAction && item.isCreateOrg ? (
+              <button
+                key={`${item.path}-${item.name}-${index}`}
+                onClick={() => navigate('/setup-organization')}
+                disabled={organizationLoading}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+                  organizationLoading ? "opacity-50 cursor-not-allowed" : "text-aurentia-pink hover:bg-aurentia-pink/10 font-medium"
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{organizationLoading ? "Chargement..." : item.name}</span>}
+              </button>
               ) : item.isCustomAction && item.name === "Retour à l'espace Entrepreneur" ? (
                 <button
-                  key={`${item.path}-${item.name}-${index}`}
-                  onClick={() => navigate('/individual/dashboard')}
-                  className={cn(
-                    "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
-                  )}
-                >
-                  {item.icon}
-                  {!isCollapsed && <span>{item.name}</span>}
-                </button>
+                    key={`${item.path}-${item.name}-${index}`}
+                    onClick={() => navigate('/individual/dashboard')}
+                    className={cn(
+                      "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
+                    )}
+                  >
+                    {item.icon}
+                    {!isCollapsed && <span>{item.name}</span>}
+                  </button>
             ) : (
               <Link
                 key={`${item.path}-${item.name}-${index}`}
@@ -284,7 +325,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           {user ? (
             <>
               <Link
-                to={`/${userProfile?.user_role || 'individual'}/profile`}
+                to="/individual/profile"
                 className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100")}
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-medium">
@@ -351,6 +392,7 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
   const [user, setUser] = useState<any>(null);
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
   const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
+  const { hasOrganization, loading: organizationLoading } = useUserOrganization();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -380,6 +422,11 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
   const getMobileMenuItems = () => {
     if (!userProfile) return getIndividualMobileItems();
 
+    // Si l'utilisateur est sur une route /individual/*, afficher les items individual même s'il a un rôle organisation
+    if (location.pathname.startsWith('/individual/')) {
+      return getIndividualMobileItems();
+    }
+
     switch (userProfile.user_role) {
       case 'super_admin':
         return [
@@ -393,10 +440,14 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
         
       case 'organisation':
       case 'staff':
-        const orgId = userProfile?.organization_id || '00000000-0000-0000-0000-000000000001';
+        const orgId = userProfile?.organization_id;
+        if (!orgId) {
+          // If no organization ID, fallback to individual items
+          return getIndividualMobileItems();
+        }
         return [
           { name: "Vue d'ensemble", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
-          { name: "Entrepreneurs", path: `/organisation/${orgId}/entrepreneurs`, icon: <Users size={20} /> },
+          { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
           { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
           { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
           { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
@@ -423,23 +474,39 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
     }
   };
 
-  const getIndividualMobileItems = () => [
-    { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
-    { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
-    { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
-    { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
-    { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
-    { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
-    { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
-    { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
-    { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true },
-    { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
-  ];
+  const getIndividualMobileItems = () => {
+    // Determine what organization-related item to show (same logic as desktop)
+    let orgItem;
+    if (organizationLoading) {
+      // Show loading state
+      orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
+      // User has an organization OR has organization role - show organization name or "Organisation" button
+      const orgName = userProfile?.organization?.name;
+      orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+    } else {
+      // User doesn't have an organization - show "Créer une organisation" button
+      orgItem = { name: "Créer une organisation", path: "/setup-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
+    }
+
+    return [
+      { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
+      { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+      { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
+      { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
+      { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
+      { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
+      { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
+      { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
+      orgItem,
+      { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
+    ];
+  };
 
   const menuItems = getMobileMenuItems();
-    // Ajout du bouton retour pour organisation/staff
-    if (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff')) {
-      menuItems.push({ name: "Retour à l'espace Entrepreneur", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true });
+    // Ajout du bouton retour pour organisation/staff seulement quand on est dans l'espace organisation
+    if (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff') && location.pathname.startsWith('/organisation/')) {
+      menuItems.push({ name: "Retour à l'espace Adhérent", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true });
     }
 
   return (
@@ -493,7 +560,19 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
                   >
                     {item.icon}
                   </button>
-                  ) : item.isCustomAction && item.name === "Retour à l'espace Entrepreneur" ? (
+                ) : item.isCustomAction && item.isCreateOrg ? (
+                  <button
+                    key={item.name}
+                    onClick={() => navigate('/setup-organization')}
+                    disabled={organizationLoading}
+                    className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
+                      organizationLoading ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-aurentia-pink/10 text-aurentia-pink hover:bg-aurentia-pink/20 hover:scale-105'
+                    )}
+                  >
+                    {item.icon}
+                  </button>
+                  ) : item.isCustomAction && item.name === "Retour à l'espace Adhérent" ? (
                     <button
                       key={item.name}
                       onClick={() => navigate('/individual/dashboard')}
@@ -527,7 +606,7 @@ const RoleBasedMobileNavbar = ({ userProfile }: { userProfile: UserProfile | nul
               ))}
               {user ? (
                 <Link
-                  to={`/${userProfile?.user_role || 'individual'}/profile`}
+                  to="/individual/profile"
                   className={cn(
                     'w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0',
                     location.pathname.includes("/profile")

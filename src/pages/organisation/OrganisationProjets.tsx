@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import {
   FileText,
-  Plus,
   Search,
-  Filter,
   BarChart3,
   Users,
   TrendingUp,
@@ -19,7 +17,6 @@ import { useProjects } from '@/hooks/useOrganisationData';
 
 const OrganisationProjets = () => {
   const { id: organisationId } = useParams();
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -105,10 +102,6 @@ const OrganisationProjets = () => {
             Suivez et gérez tous les projets de votre organisation
           </p>
         </div>
-        <Button onClick={() => navigate(`/organisation/${organisationId}/projects/new`)} className="mt-4 sm:mt-0">
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau Projet
-        </Button>
       </div>
 
       {/* Statistiques */}
@@ -195,21 +188,19 @@ const OrganisationProjets = () => {
       {/* Liste des projets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {sortedProjects.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun projet trouvé</h3>
-            <p className="text-gray-500 mb-4">Commencez par créer votre premier projet.</p>
-            <Button onClick={() => navigate(`/organisation/${organisationId}/projects/new`)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Créer un projet
-            </Button>
+          <div className="col-span-full">
+            <Card className="text-center py-12">
+              <CardContent>
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Aucun projet trouvé</h3>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           sortedProjects.map((project) => (
             <Card 
               key={project.project_id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/organisation/${organisationId}/projects/${project.project_id}`)}
+              className="hover:shadow-md transition-shadow"
             >
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">

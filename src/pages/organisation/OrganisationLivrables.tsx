@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import CustomTabs from "@/components/ui/CustomTabs";
 import {
   Search,
   FileText,
@@ -18,10 +18,12 @@ import {
   CheckCircle,
   Target,
   Award,
-  Plus
+  Plus,
+  Grid3X3,
+  List
 } from "lucide-react";
 import { useDeliverables, type Deliverable as DeliverableType, type DeliverableFormData } from "@/hooks/useDeliverables";
-import { useProjects, useEntrepreneurs } from "@/hooks/useOrganisationData";
+import { useProjects, useAdherents } from "@/hooks/useOrganisationData";
 import { useToast } from "@/hooks/use-toast";
 
 const OrganisationLivrables = () => {
@@ -30,13 +32,14 @@ const OrganisationLivrables = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedProject, setSelectedProject] = useState('all');
+  const [activeTab, setActiveTab] = useState('Vue grille');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<DeliverableFormData>>({});
 
   // Utiliser les hooks Supabase
   const { deliverables, loading, error, stats: deliverableStats, refetch, addDeliverable } = useDeliverables(organisationId);
   const { projects, loading: projectsLoading } = useProjects();
-  const { entrepreneurs, loading: entrepreneursLoading } = useEntrepreneurs();
+  const { adherents, loading: adherentsLoading } = useAdherents();
   const { toast } = useToast();
 
   const getTypeLabel = (type: DeliverableType['type']) => {
@@ -84,10 +87,12 @@ const OrganisationLivrables = () => {
   };
 
   // Créer un map des projets pour faciliter l'accès
-  const projectsMap = projects.reduce((acc, project) => {
+  const projectsMap = useMemo(() => projects.reduce((acc, project) => {
     acc[project.project_id] = project;
     return acc;
-  }, {} as Record<string, typeof projects[0]>);  const filteredDeliverables = deliverables.filter(deliverable => {
+  }, {} as Record<string, typeof projects[0]>), [projects]);
+
+  const filteredDeliverables = useMemo(() => deliverables.filter(deliverable => {
     const project = deliverable.project_id ? projectsMap[deliverable.project_id] : null;
     
     const matchesSearch = deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -98,17 +103,17 @@ const OrganisationLivrables = () => {
     const matchesProject = selectedProject === 'all' || deliverable.project_id === selectedProject;
     
     return matchesSearch && matchesStatus && matchesType && matchesProject;
-  });
+  }), [deliverables, searchTerm, selectedStatus, selectedType, selectedProject, projectsMap]);
 
   // Utiliser les stats du hook au lieu de les recalculer
-  const stats = {
+  const stats = useMemo(() => ({
     total: deliverableStats.total,
     completed: deliverableStats.completed,
     inProgress: deliverableStats.inProgress,
     pending: deliverableStats.byStatus.pending || 0
-  };
+  }), [deliverableStats]);
 
-  const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+  const completionRate = useMemo(() => stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0, [stats]);
 
   const handleCreateDeliverable = async () => {
     if (!organisationId || !formData.title || !formData.type) {
@@ -258,12 +263,12 @@ const OrganisationLivrables = () => {
                       <Label htmlFor="entrepreneur">Entrepreneur (optionnel)</Label>
                       <Select value={formData.entrepreneur_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, entrepreneur_id: value }))}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un entrepreneur" />
+                          <SelectValue placeholder="Sélectionner un adhérent" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Aucun entrepreneur</SelectItem>
-                          {entrepreneurs.map(entrepreneur => (
-                            <SelectItem key={entrepreneur.id} value={entrepreneur.id}>{entrepreneur.email}</SelectItem>
+                          <SelectItem value="">Aucun adhérent</SelectItem>
+                          {adherents.map(adherent => (
+                            <SelectItem key={adherent.id} value={adherent.id}>{adherent.email}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -349,21 +354,21 @@ const OrganisationLivrables = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="grid" className="w-full">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <TabsList>
-              <TabsTrigger value="grid">Vue grille</TabsTrigger>
-              <TabsTrigger value="list">Vue liste</TabsTrigger>
-            </TabsList>
-          </div>
-
+        <CustomTabs
+          tabs={[
+            { key: "Vue grille", label: "Vue grille", icon: Grid3X3 },
+            { key: "Vue liste", label: "Vue liste", icon: List }
+          ]}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        >
           {/* Filtres */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Rechercher un livrable, entrepreneur ou projet..."
+                  placeholder="Rechercher un livrable, adhérent ou projet..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -409,11 +414,11 @@ const OrganisationLivrables = () => {
             </Select>
           </div>
 
-          <TabsContent value="grid">
+          {activeTab === "Vue grille" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredDeliverables.map((deliverable) => {
                 const project = deliverable.project_id ? projectsMap[deliverable.project_id] : null;
-                
+
                 return (
                   <Card key={deliverable.id} className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardHeader className="pb-3">
@@ -434,32 +439,32 @@ const OrganisationLivrables = () => {
                         </Badge>
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent className="space-y-4">
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {deliverable.description || 'Aucune description'}
                       </p>
-                      
+
                       {deliverable.quality_score && (
                         <div className="flex items-center gap-1">
                           <Award className="h-4 w-4 text-yellow-500" />
                           <span className="text-sm font-medium">{deliverable.quality_score}/100</span>
                         </div>
                       )}
-                      
+
                       {deliverable.due_date && (
                         <div className="text-xs text-gray-500">
                           Échéance: {new Date(deliverable.due_date).toLocaleDateString('fr-FR')}
                         </div>
                       )}
-                      
+
                       <div className="flex items-center justify-between text-xs text-gray-400">
                         <span>Créé: {new Date(deliverable.created_at).toLocaleDateString('fr-FR')}</span>
                         {deliverable.completed_at && (
                           <span>Terminé: {new Date(deliverable.completed_at).toLocaleDateString('fr-FR')}</span>
                         )}
                       </div>
-                      
+
                       <div className="flex gap-2 pt-2">
                         <Button variant="outline" size="sm" className="flex-1">
                           <Eye className="h-4 w-4 mr-1" />
@@ -475,13 +480,13 @@ const OrganisationLivrables = () => {
                 );
               })}
             </div>
-          </TabsContent>
+          )}
 
-          <TabsContent value="list">
+          {activeTab === "Vue liste" && (
             <div className="space-y-4">
               {filteredDeliverables.map((deliverable) => {
                 const project = deliverable.project_id ? projectsMap[deliverable.project_id] : null;
-                
+
                 return (
                   <Card key={deliverable.id} className="hover:shadow-sm transition-shadow">
                     <CardContent className="p-6">
@@ -523,29 +528,41 @@ const OrganisationLivrables = () => {
                 );
               })}
             </div>
-          </TabsContent>
-        </Tabs>
-
-        {filteredDeliverables.length === 0 && (
+          )}
+        </CustomTabs>        {filteredDeliverables.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Aucun livrable trouvé</h3>
               <p className="text-gray-600 mb-4">
-                Aucun livrable ne correspond à vos critères de recherche.
+                {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || selectedProject !== 'all'
+                  ? 'Aucun livrable ne correspond à vos critères de recherche.'
+                  : 'Commencez par créer votre premier livrable.'
+                }
               </p>
-              <Button 
-                style={{ backgroundColor: '#ff5932' }} 
-                className="hover:opacity-90 text-white"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedStatus('all');
-                  setSelectedType('all');
-                  setSelectedProject('all');
-                }}
-              >
-                Réinitialiser les filtres
-              </Button>
+              {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || selectedProject !== 'all' ? (
+                <Button 
+                  style={{ backgroundColor: '#ff5932' }} 
+                  className="hover:opacity-90 text-white"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedStatus('all');
+                    setSelectedType('all');
+                    setSelectedProject('all');
+                  }}
+                >
+                  Réinitialiser les filtres
+                </Button>
+              ) : (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nouveau livrable
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              )}
             </CardContent>
           </Card>
         )}

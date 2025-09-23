@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Organisation,
-  Entrepreneur,
+  Adherent,
   Mentor,
   OrganisationStats,
   Event,
@@ -48,6 +48,22 @@ export const useOrganisationData = () => {
           email: data.email || '',
           phone: data.phone || '',  
           address: data.address || '',
+          primary_color: data.primary_color,
+          secondary_color: data.secondary_color,
+          settings: data.settings || {
+            branding: {
+              primaryColor: data.primary_color || '#ff5932',
+              secondaryColor: data.secondary_color || '#1a1a1a',
+              whiteLabel: false
+            },
+            notifications: {
+              emailNotifications: true,
+              projectUpdates: true,
+              mentorAssignments: true,
+              weeklyReports: false,
+              systemAlerts: true
+            }
+          },
           created_at: data.created_at,
           updated_at: data.updated_at || data.created_at
         };
@@ -92,7 +108,7 @@ export const useOrganisationStats = () => {
         
         // Les données du service correspondent maintenant aux types de l'interface
         const adaptedStats: OrganisationStats = {
-          totalEntrepreneurs: serviceStats.totalEntrepreneurs,
+          totalAdherents: serviceStats.totalEntrepreneurs,
           activeProjects: serviceStats.activeProjects,
           completedProjects: serviceStats.completedProjects,
           totalMentors: serviceStats.totalMentors,
@@ -118,14 +134,14 @@ export const useOrganisationStats = () => {
   return { stats, loading };
 };
 
-// Hook pour les entrepreneurs
-export const useEntrepreneurs = () => {
+// Hook pour les adhérents
+export const useAdherents = () => {
   const { id: organisationId } = useParams();
-  const [entrepreneurs, setEntrepreneurs] = useState<Entrepreneur[]>([]);
+  const [adherents, setAdherents] = useState<Adherent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEntrepreneurs = async () => {
+    const fetchAdherents = async () => {
       if (!organisationId) return;
 
       try {
@@ -133,8 +149,8 @@ export const useEntrepreneurs = () => {
         const members = await getOrganisationMembers(organisationId);
         
         // Adapter les données du service aux types de l'interface
-        const adaptedEntrepreneurs: Entrepreneur[] = members
-          .filter(member => member.user_role === 'member') // Filtrer seulement les entrepreneurs
+        const adaptedAdherents: Adherent[] = members
+          .filter(member => member.user_role === 'member') // Filtrer seulement les adhérents
           .map((member) => ({
             id: member.id,
             user_id: member.id,
@@ -152,18 +168,18 @@ export const useEntrepreneurs = () => {
             last_activity: member.created_at
           }));
 
-        setEntrepreneurs(adaptedEntrepreneurs);
+        setAdherents(adaptedAdherents);
       } catch (err) {
-        console.error('Erreur lors du chargement des entrepreneurs:', err);
+        console.error('Erreur lors du chargement des adhérents:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEntrepreneurs();
+    fetchAdherents();
   }, [organisationId]);
 
-  return { entrepreneurs, loading };
+  return { adherents, loading };
 };
 
 // Hook pour les projets
@@ -415,7 +431,7 @@ export const useInvitationCodes = () => {
         id: code.id,
         code: code.code,
         organisation_id: code.organization_id,
-        role: code.type === 'incubator_member' ? 'entrepreneur' : 'mentor',
+        role: code.type === 'organisation_member' ? 'entrepreneur' : 'mentor',
         created_by: code.created_by,
         created_at: code.created_at,
         expires_at: code.expires_at || null,
@@ -447,12 +463,12 @@ export const useInvitationCodes = () => {
         return null;
       }
 
-      // Adapter le type de rôle pour le service
-      const serviceType = codeData.role === 'entrepreneur' ? 'incubator_member' : 'incubator_main_admin';
+      // Adapter le type de rôle pour le service - utiliser le nouveau mapping
+      const serviceType = codeData.role === 'entrepreneur' ? 'organisation_member' : 'organisation_staff';
 
       const newCodeData = {
         code: codeData.code,
-        type: serviceType as 'super_admin' | 'incubator_main_admin' | 'incubator_member',
+        type: serviceType as 'super_admin' | 'organisation_staff' | 'organisation_member',
         organization_id: organisationId,
         created_by: user.id,
         expires_at: codeData.expires_at || undefined,
@@ -467,7 +483,7 @@ export const useInvitationCodes = () => {
           id: serviceResult.id,
           code: serviceResult.code,
           organisation_id: serviceResult.organization_id,
-          role: (serviceResult as any).type === 'incubator_member' ? 'entrepreneur' : 'mentor',
+          role: serviceResult.type === 'organisation_member' ? 'entrepreneur' : 'mentor',
           created_by: serviceResult.created_by,
           created_at: serviceResult.created_at,
           expires_at: serviceResult.expires_at || null,

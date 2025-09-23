@@ -315,7 +315,6 @@ const Signup = () => {
   // Handler pour le succès de la création d'organisation
   const handleOrganisationSetupSuccess = () => {
     setShowOrganisationSetup(false);
-    // La redirection est gérée par le composant OrganisationSetupForm
   };
 
   // Handler pour revenir en arrière depuis le formulaire d'organisation

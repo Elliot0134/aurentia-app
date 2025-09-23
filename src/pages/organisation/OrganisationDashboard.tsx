@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOrganisationData, useOrganisationStats } from '@/hooks/useOrganisationData';
+import { useOrganisationData, useOrganisationStats, useInvitationCodes } from '@/hooks/useOrganisationData';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { CalendarWithEvents } from "@/components/ui/calendar-with-events";
+import { EventCreationModal } from "@/components/ui/event-creation-modal";
+import { useEvents, EventFormData } from "@/hooks/useEvents";
 import {
   Users,
   FileText,
@@ -16,53 +19,84 @@ import {
   Activity,
   BarChart3,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Mail,
+  Copy,
+  Plus,
+  Clock
 } from "lucide-react";
-
-interface FeatureRequest {
-  type: string;
-  title: string;
-  description: string;
-}
 
 const OrganisationDashboard = () => {
   const navigate = useNavigate();
   const { organisation, loading: orgLoading } = useOrganisationData();
   const { stats, loading: statsLoading } = useOrganisationStats();
+  const { codes: invitationCodes, loading: codesLoading, generateCode } = useInvitationCodes();
+  const { events, addEvent } = useEvents(organisation?.id || '');
   const { toast } = useToast();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<FeatureRequest>({
-    type: '',
-    title: '',
-    description: ''
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [invitationDialogOpen, setInvitationDialogOpen] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<{ start: Date; end: Date } | null>(null);
+  const [invitationFormData, setInvitationFormData] = useState({
+    role: 'entrepreneur' as 'entrepreneur' | 'mentor',
+    email: ''
   });
 
-  const handleSubmitRequest = async () => {
-    if (!formData.type || !formData.title || !formData.description) {
+  const handleCreateEvent = async (eventData: EventFormData) => {
+    const success = await addEvent(eventData);
+    if (success) {
+      toast({
+        title: "Événement créé",
+        description: "L'événement a été créé avec succès.",
+      });
+    } else {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires.",
+        description: "Une erreur s'est produite lors de la création de l'événement.",
+        variant: "destructive",
+      });
+    }
+    return success;
+  };
+
+  const handleAddEvent = () => {
+    setSelectedRange(null);
+    setEventModalOpen(true);
+  };
+
+  const handleCreateInvitation = async () => {
+    if (!invitationFormData.email) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez saisir une adresse email.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // TODO: Implémenter l'envoi de la demande
-      console.log('Demande soumise:', formData);
-      
-      toast({
-        title: "Demande envoyée",
-        description: "Votre demande de fonctionnalité a été envoyée avec succès.",
+      const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const newCode = await generateCode({
+        code,
+        role: invitationFormData.role,
+        created_by: '', // Will be set by the hook
+        expires_at: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString(),
+        max_uses: 1,
+        is_active: true
       });
-      
-      setDialogOpen(false);
-      setFormData({ type: '', title: '', description: '' });
+
+      if (newCode) {
+        toast({
+          title: "Invitation créée",
+          description: `Code d'invitation ${code} créé pour ${invitationFormData.email}`,
+        });
+        setInvitationDialogOpen(false);
+        setInvitationFormData({ role: 'entrepreneur', email: '' });
+      }
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Une erreur s'est produite lors de l'envoi de votre demande.",
+        description: "Une erreur s'est produite lors de la création de l'invitation.",
         variant: "destructive",
       });
     }
@@ -88,247 +122,179 @@ const OrganisationDashboard = () => {
                 Gérez votre organisation {organisation?.name}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="secondary" className="bg-white border border-gray-200 hover:bg-gray-50">
-                En savoir +
-              </Button>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
-                    Ajouter +
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Nouvelle demande de fonctionnalité</DialogTitle>
-                    <DialogDescription>
-                      En fait, on part de votre demande. Nous nous efforçons d'ajouter les nouvelles fonctionnalités dans les plus brefs délais suite aux demandes de nos utilisateurs.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Type de fonctionnalité</label>
-                      <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionnez le type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="outil">Nouvel outil</SelectItem>
-                          <SelectItem value="ressource">Nouvelle ressource</SelectItem>
-                          <SelectItem value="automation">Nouvelle automatisation</SelectItem>
-                          <SelectItem value="partenaire">Nouveau partenaire</SelectItem>
-                          <SelectItem value="autre">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Titre de la demande</label>
-                      <Input
-                        value={formData.title}
-                        onChange={(e) => setFormData({...formData, title: e.target.value})}
-                        placeholder="Ex: Outil de génération de contenu social media"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Description détaillée</label>
-                      <Textarea
-                        value={formData.description}
-                        onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        placeholder="Décrivez en détail votre demande..."
-                        rows={4}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                      Annuler
-                    </Button>
-                    <Button onClick={handleSubmitRequest} style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
-                      Soumettre la demande
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
           </div>
         </div>
 
-        {/* Statistiques principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Entrepreneurs</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalEntrepreneurs || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                +{stats?.thisMonthSignups || 0} ce mois
-              </p>
-            </CardContent>
-          </Card>
+        {/* Calendrier des événements */}
+        <div className="mb-8">
+          <div className="flex gap-6">
+            {/* Calendar Card - 75% */}
+            <Card className="flex-[3]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-aurentia-pink" />
+                  Calendrier des Événements
+                </CardTitle>
+                <CardDescription>
+                  Consultez les événements planifiés pour votre organisation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-6">
+                  {/* Calendar on the left */}
+                  <div className="flex-1">
+                    <CalendarWithEvents 
+                      onAddEvent={handleAddEvent} 
+                      events={events.map(event => ({
+                        title: event.title,
+                        from: event.start_date,
+                        to: event.end_date
+                      }))} 
+                    />
+                  </div>
+                  {/* Event details placeholder on the right */}
+                  <div className="flex-1 flex items-center justify-center p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                    <div className="text-center">
+                      <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 font-medium">
+                        Cliquez sur un événement pour afficher les détails
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Projets Actifs</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.activeProjects || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats?.completedProjects || 0} complétés
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Codes d'Invitation</CardTitle>
-              <Code className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalDeliverables || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Livrables total
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taux de Succès</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.successRate || 0}%</div> {/* Taux de succès pour l'instant pas lié au back */}
-              <p className="text-xs text-muted-foreground">
-                Projets terminés avec succès
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Actions rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate(`/organisation/${organisation?.id}/entrepreneurs`)}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-aurentia-pink" />
-                Gérer les Entrepreneurs
-              </CardTitle>
-              <CardDescription>
-                Voir et gérer les profils des entrepreneurs de votre organisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <button className="w-full bg-aurentia-pink text-white py-2 px-4 rounded-md hover:bg-aurentia-pink/90 transition">
-                Accéder
-              </button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate(`/organisation/${organisation?.id}/invitations`)}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Code className="h-5 w-5 text-aurentia-orange" />
-                Codes d'Invitation
-              </CardTitle>
-              <CardDescription>
-                Créer et gérer les codes d'invitation pour nouveaux membres
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <button className="w-full bg-aurentia-orange text-white py-2 px-4 rounded-md hover:bg-aurentia-orange/90 transition">
-                Gérer les codes
-              </button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate(`/organisation/${organisation?.id}/analytics`)}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-green-600" />
-                Analytics
-              </CardTitle>
-              <CardDescription>
-                Visualiser les performances et l'engagement des entrepreneurs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <button className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-600/90 transition">
-                Voir les analytics
-              </button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate(`/organisation/${organisation?.id}/projets`)}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-blue-600" />
-                Projets
-              </CardTitle>
-              <CardDescription>
-                Visualiser et gérer les projets de l'organisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-600/90 transition">
-                Gérer les projets
-              </button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate(`/organisation/${organisation?.id}/evenements`)}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-purple-600" />
-                Événements
-              </CardTitle>
-              <CardDescription>
-                Planifier et gérer les événements de l'organisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-600/90 transition">
-                Voir le calendrier
-              </button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate(`/organisation/${organisation?.id}/chatbot`)}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-indigo-600" />
-                Chatbot
-              </CardTitle>
-              <CardDescription>
-                Interface de chat pour l'organisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <button className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-600/90 transition">
-                Ouvrir le chat
-              </button>
-            </CardContent>
-          </Card>
+            {/* Invitations Card - 25% */}
+            <Card className="flex-1">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-aurentia-pink" />
+                    Invitations récentes
+                  </CardTitle>
+                  <Dialog open={invitationDialogOpen} onOpenChange={setInvitationDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white h-7 px-2">
+                        <Plus className="w-3 h-3 mr-1" />
+                        Créer
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Créer une invitation</DialogTitle>
+                        <DialogDescription>
+                          Invitez de nouveaux membres à rejoindre votre organisation.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Email</label>
+                          <Input
+                            placeholder="email@exemple.com"
+                            value={invitationFormData.email}
+                            onChange={(e) => setInvitationFormData(prev => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Rôle</label>
+                          <Select
+                            value={invitationFormData.role}
+                            onValueChange={(value: 'entrepreneur' | 'mentor') => setInvitationFormData(prev => ({ ...prev, role: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="entrepreneur">Entrepreneur</SelectItem>
+                              <SelectItem value="mentor">Mentor</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setInvitationDialogOpen(false)}>
+                          Annuler
+                        </Button>
+                        <Button
+                          onClick={handleCreateInvitation}
+                          style={{ backgroundColor: '#ff5932' }}
+                          className="hover:opacity-90 text-white"
+                        >
+                          Créer l'invitation
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {codesLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-aurentia-pink mx-auto mb-2"></div>
+                    <p className="text-xs text-gray-500">Chargement...</p>
+                  </div>
+                ) : invitationCodes.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Mail className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">Aucune invitation</p>
+                    <p className="text-xs text-gray-500">Créez votre première invitation</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {invitationCodes.slice(0, 5).map((code) => (
+                      <div key={code.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-mono font-medium text-gray-900 truncate">
+                              {code.code}
+                            </span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                              code.role === 'entrepreneur'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-green-100 text-green-700'
+                            }`}>
+                              {code.role === 'entrepreneur' ? 'Ent.' : 'Ment.'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <Clock className="w-3 h-3" />
+                            {new Date(code.created_at).toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(code.code);
+                            toast({
+                              title: "Copié",
+                              description: "Le code a été copié dans le presse-papiers.",
+                            });
+                          }}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    {invitationCodes.length > 5 && (
+                      <div className="text-center pt-2">
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-xs text-aurentia-pink hover:text-aurentia-pink/80"
+                          onClick={() => navigate('/organisation/invitations')}
+                        >
+                          Voir toutes les invitations ({invitationCodes.length})
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Activité récente */}
@@ -360,6 +326,14 @@ const OrganisationDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <EventCreationModal
+        open={eventModalOpen}
+        onOpenChange={setEventModalOpen}
+        organisationId={organisation?.id || ''}
+        selectedRange={selectedRange}
+        onCreateEvent={handleCreateEvent}
+      />
     </div>
   );
 };

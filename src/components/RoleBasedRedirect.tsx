@@ -15,11 +15,12 @@ const RoleBasedRedirect = () => {
 
   const currentPath = location.pathname;
 
-  // Ne pas faire de redirection pour les routes publiques ou organisation
+  // Ne pas faire de redirection pour les routes publiques, organisation, ou individual (pour permettre le retour)
   if (currentPath.startsWith('/login') || 
       currentPath.startsWith('/signup') ||
       currentPath.startsWith('/update-password') ||
-      currentPath.startsWith('/organisation')) {
+      currentPath.startsWith('/organisation') ||
+      currentPath.startsWith('/individual')) {
     return null;
   }
 
@@ -30,9 +31,14 @@ const RoleBasedRedirect = () => {
     switch (userRole) {
       case 'organisation':
       case 'staff':
-        // Pour les admins d'organisation, rediriger vers l'organisation
-        const orgId = userProfile?.organization_id || '00000000-0000-0000-0000-000000000001';
-        targetPath = `/organisation/${orgId}/dashboard`;
+        // For organization admins, redirect to their organization if they have one
+        const orgId = userProfile?.organization_id;
+        if (orgId) {
+          targetPath = `/organisation/${orgId}/dashboard`;
+        } else {
+          // If no organization, redirect to individual space
+          targetPath = '/individual/dashboard';
+        }
         break;
       case 'super_admin':
         targetPath = '/super-admin/dashboard';

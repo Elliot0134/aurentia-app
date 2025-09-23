@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CustomTabs from "@/components/ui/CustomTabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { usePartners, Partner, PartnerFormData } from "@/hooks/usePartners";
 import {
@@ -28,7 +28,14 @@ import {
   Calendar,
   HandHeart,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  DollarSign,
+  Rocket,
+  GraduationCap,
+  Building2,
+  Landmark,
+  School,
+  MoreHorizontal
 } from "lucide-react";
 
 const OrganisationPartenaires = () => {
@@ -344,18 +351,20 @@ const OrganisationPartenaires = () => {
         {!loading && (
           <>
             {/* Onglets par type */}
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-8 w-full mb-6">
-                <TabsTrigger value="all">Tous ({stats.total})</TabsTrigger>
-                <TabsTrigger value="investor">Investisseurs ({typeStats.investor})</TabsTrigger>
-                <TabsTrigger value="accelerator">Accélérateurs ({typeStats.accelerator})</TabsTrigger>
-                <TabsTrigger value="incubator">Incubateurs ({typeStats.incubator})</TabsTrigger>
-                <TabsTrigger value="corporate">Entreprises ({typeStats.corporate})</TabsTrigger>
-                <TabsTrigger value="government">Public ({typeStats.government})</TabsTrigger>
-                <TabsTrigger value="university">Universités ({typeStats.university})</TabsTrigger>
-                <TabsTrigger value="other">Autres ({typeStats.other})</TabsTrigger>
-              </TabsList>
-
+            <CustomTabs
+              tabs={[
+                { key: "all", label: `Tous (${stats.total})`, icon: Users },
+                { key: "investor", label: `Investisseurs (${typeStats.investor})`, icon: DollarSign },
+                { key: "accelerator", label: `Accélérateurs (${typeStats.accelerator})`, icon: Rocket },
+                { key: "incubator", label: `Incubateurs (${typeStats.incubator})`, icon: Building },
+                { key: "corporate", label: `Entreprises (${typeStats.corporate})`, icon: Building2 },
+                { key: "government", label: `Public (${typeStats.government})`, icon: Landmark },
+                { key: "university", label: `Universités (${typeStats.university})`, icon: GraduationCap },
+                { key: "other", label: `Autres (${typeStats.other})`, icon: MoreHorizontal }
+              ]}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            >
               {/* Filtres */}
               <Card className="mb-6">
                 <CardContent className="pt-6">
@@ -371,7 +380,7 @@ const OrganisationPartenaires = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Statut" />
@@ -414,7 +423,7 @@ const OrganisationPartenaires = () => {
                           </div>
                         </div>
                       </CardHeader>
-                      
+
                       <CardContent>
                         <div className="space-y-4">
                           <p className="text-sm text-gray-600 line-clamp-2">
@@ -438,9 +447,9 @@ const OrganisationPartenaires = () => {
                             {partner.website && (
                               <div className="flex items-center gap-2 text-sm text-gray-600">
                                 <Globe className="w-4 h-4" />
-                                <a 
-                                  href={partner.website} 
-                                  target="_blank" 
+                                <a
+                                  href={partner.website}
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="hover:text-aurentia-pink hover:underline"
                                 >
@@ -491,8 +500,8 @@ const OrganisationPartenaires = () => {
                               <Edit className="w-4 h-4 mr-2" />
                               Modifier
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => removePartner(partner.id)}
                             >
@@ -513,14 +522,14 @@ const OrganisationPartenaires = () => {
                     <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Aucun partenaire trouvé</h3>
                     <p className="text-gray-600 mb-4">
-                      {partners.length === 0 
+                      {partners.length === 0
                         ? "Commencez par ajouter votre premier partenaire."
                         : "Aucun partenaire ne correspond à vos critères de recherche."
                       }
                     </p>
                     {partners.length > 0 && (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => {
                           setSearchTerm('');
                           setSelectedStatus('all');
@@ -533,7 +542,7 @@ const OrganisationPartenaires = () => {
                   </CardContent>
                 </Card>
               )}
-            </Tabs>
+            </CustomTabs>
           </>
         )}
       </div>
