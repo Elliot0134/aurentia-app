@@ -28,17 +28,21 @@ import { supabase } from "@/integrations/supabase/client"; // Import Supabase cl
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
 import ComingSoonDialog from "@/components/ui/ComingSoonDialog"; // Import ComingSoonDialog
-import { useStripePayment } from "@/hooks/useStripePayment";
+// import { useStripePayment } from "@/hooks/useStripePayment"; // Plus nécessaire avec les crédits
 import { useProject } from "@/contexts/ProjectContext";
 import { useDeliverableProgress } from "@/hooks/useDeliverableProgress"; // Import the new hook
 import ProjectScoreCards from "@/components/project/ProjectScoreCards"; // Import ProjectScoreCards
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
+import { useCreditsDialog } from '@/contexts/CreditsDialogContext'; // Import useCreditsDialog
+import { useCreditsSimple } from '@/hooks/useCreditsSimple'; // Import useCreditsSimple
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { userRole } = useUserRole(); // Get user role
+  const { openCreditsDialog } = useCreditsDialog(); // Utiliser le contexte des crédits
+  const { purchasedRemaining, monthlyRemaining, refresh: fetchCredits } = useCreditsSimple(); // Utiliser le hook des crédits
   const [selectedPersonaExpress, setSelectedPersonaExpress] = useState<'Particulier' | 'Entreprise' | 'Organismes'>('Particulier');
   const [loading, setLoading] = useState(true); // Set loading to true initially
   const [project, setProject] = useState<{ nom_projet?: string; description_projet?: string } | null>(null); // State for project data
@@ -53,7 +57,6 @@ const ProjectBusiness = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
   const [isGenerateDeliverablesConfirmOpen, setIsGenerateDeliverablesConfirmOpen] = useState(false); // New state for confirmation popup
-  const [showCoffeeBreakPopup, setShowCoffeeBreakPopup] = useState(false); // New state to control "Pause café" popup
   
   // États pour le popup d'invitation
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -62,12 +65,11 @@ const ProjectBusiness = () => {
   const [inviteProjects, setInviteProjects] = useState<string[]>([]);
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false); // State for ComingSoonDialog
   
-  // Stripe payment hook
-  const { isLoading: isPaymentLoading, paymentStatus, isWaitingSubscription, isWaitingDeliverables, initiateSubscription, cancelSubscription, generatePremiumDeliverables } = useStripePayment();
+  // États pour la génération des livrables premium
   const { userProjects } = useProject();
   
-  // Deliverable progress hook - actif seulement pendant l'attente des livrables
-  const { deliverables, isLoading: isDeliverablesLoading, error: deliverablesError } = useDeliverableProgress(projectId, isWaitingDeliverables || paymentStatus === 'processing' || showCoffeeBreakPopup);
+  // Deliverable progress hook - actif pendant la génération premium
+  const { deliverables, isLoading: isDeliverablesLoading, error: deliverablesError } = useDeliverableProgress(projectId, projectStatus === 'premium_en_cours');
 
   // Définir les livrables de niveau 2 avec leurs clés pour les icônes
   const level2Deliverables = [
@@ -78,20 +80,7 @@ const ProjectBusiness = () => {
     { key: 'ressources', id: 'statut_ressources', name: 'Analyse des Ressources', status: null, icon: '/icones-livrables/ressources-icon.png', color: '#f39c12' },
   ];
 
-  const handlePayment = async (planId: string) => {
-    console.log("handlePayment called. planId:", planId);
-    if (!projectId) {
-      toast({
-        title: "Erreur",
-        description: "ID du projet manquant",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await initiateSubscription(projectId);
-    console.log("initiateSubscription finished. isPaymentLoading:", isPaymentLoading, "paymentStatus:", paymentStatus, "isWaitingSubscription:", isWaitingSubscription);
-  };
+  // handlePayment supprimée - plus nécessaire avec le système de crédits
 
   const openPopup = (title: React.ReactNode, content: React.ReactNode, buttonColor?: string) => {
     setPopupContent({ title, content, buttonColor });
@@ -114,24 +103,103 @@ const ProjectBusiness = () => {
       return;
     }
 
-    try {
-      // Call the generatePremiumDeliverables function from the useStripePayment hook
-      // This function already handles calling the webhook and starting the deliverables polling
-      // which will eventually lead to redirection.
-      await generatePremiumDeliverables(projectId);
+    const DELIVERABLE_COST = 600; // Coût des livrables premium en crédits
 
-      // The showCoffeeBreakPopup state is now controlled by the useStripePayment hook's internal logic
-      // related to isWaitingDeliverables. So, we don't need to set it explicitly here.
-      // The Dialog open condition already includes isWaitingDeliverables.
-      // However, to ensure the popup shows immediately, we can still set showCoffeeBreakPopup to true.
-      // This will make the Dialog open, and then useStripePayment will take over the polling.
-      setShowCoffeeBreakPopup(true);
-
-    } catch (error) {
-      console.error("Error calling generatePremiumDeliverables:", error);
+    // 1. Récupérer l'utilisateur actuel
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       toast({
         title: "Erreur",
-        description: "Erreur lors de la génération des livrables.",
+        description: "Utilisateur non authentifié.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 2. Vérifier si assez de crédits disponibles
+    const totalAvailableCredits = purchasedRemaining + monthlyRemaining;
+    if (totalAvailableCredits < DELIVERABLE_COST) {
+      toast({
+        title: "Crédits insuffisants",
+        description: `Vous avez ${totalAvailableCredits} crédits, ${DELIVERABLE_COST} requis. Veuillez en acheter davantage.`,
+        variant: "destructive",
+      });
+      closePopup();
+      openCreditsDialog();
+      return;
+    }
+
+    // Fermer le popup de confirmation avant de lancer la génération
+    closePopup();
+
+    try {
+      // 3. Débiter les crédits avec priorité (achetés en premier)
+      let newPurchasedCredits = purchasedRemaining;
+      let newMonthlyCredits = monthlyRemaining;
+
+      if (purchasedRemaining >= DELIVERABLE_COST) {
+        // Débiter uniquement des crédits achetés
+        newPurchasedCredits -= DELIVERABLE_COST;
+      } else {
+        // Débiter tous les crédits achetés + le reste des mensuels
+        newMonthlyCredits = totalAvailableCredits - DELIVERABLE_COST;
+        newPurchasedCredits = 0;
+      }
+
+      // 4. Mettre à jour les crédits dans Supabase
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          purchased_credits_remaining: newPurchasedCredits,
+          monthly_credits_remaining: newMonthlyCredits
+        } as any) // Workaround for stale Supabase types
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // 5. Mettre le statut du projet en "payment_receive" pour déclencher la génération
+      const { error: statusError } = await supabase
+        .from('project_summary')
+        .update({ statut_project: 'payment_receive' })
+        .eq('project_id', projectId);
+
+      if (statusError) throw statusError;
+
+      // 6. Appeler le webhook de génération des livrables premium
+      const webhookResponse = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/generation-livrables-premium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          user_id: user.id,
+          type: 'premium_credits'
+        }),
+      });
+
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook failed: ${webhookResponse.status}`);
+      }
+
+      // 7. Démarrer la génération et afficher le popup "Pause café"
+      fetchCredits();
+
+      toast({
+        title: "Génération en cours",
+        description: `${DELIVERABLE_COST} crédits débités. Génération des livrables premium...`,
+      });
+
+      // Recharger la page pour mettre à jour le statut du projet et afficher le popup si nécessaire
+      window.location.reload();
+
+    } catch (error) {
+      console.error("Error generating premium deliverables:", error);
+      
+      // Réinitialiser les états en cas d'erreur
+      // Pas de changement d'état local nécessaire, le polling s'arrêtera
+      
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la génération des livrables premium.",
         variant: "destructive",
       });
     }
@@ -155,63 +223,23 @@ const ProjectBusiness = () => {
     const niveau2Deliverables = commonDeliverables;
 
     openPopup(
+      "Générer les livrabels premium pour :",
       <>
-        Accédez à vos{" "}
-        <span className="bg-clip-text text-transparent bg-gradient-primary">
-          documents clés
-        </span>{" "}
-        et{" "}
-        <span className="bg-clip-text text-transparent bg-gradient-primary">
-          Aurentia AI
-        </span>
-      </>,
-      <div className="flex flex-col md:flex-row gap-8 justify-center items-stretch mt-8">
-        <PlanCard
-          title="Pack Entrepreneur"
-          price={
-            <>
-              12,90€<span className="text-sm">/mois</span>
-            </>
-          }
-          oldPrice=""
-          deliverables={[
-            "Plan d'action personnalisé",
-            "Livrables premium",
-            "3 000 crédits",
-            "Exportation PDF",
-            "Accès à toutes les fonctionnalités",
-            "Collaboration utilisateurs",
-            "Support prioritaire",
-          ]}
-          buttonText="Let's go !"
-          creditsSection={
-            <div className="bg-gray-100 p-3 rounded-lg text-gray-800 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <span className="font-bold">3 000 crédits Aurentia IA</span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-gray-500 cursor-pointer" />
-                        </PopoverTrigger>
-                        <PopoverContent className="sm:fixed sm:inset-0 sm:flex sm:items-center sm:justify-center sm:transform-none md:static md:translate-x-0 md:translate-y-0">
-                          <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
-                        </PopoverContent>
-                      </Popover>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>1 crédit = un message avec notre Agent IA connecté à votre projet</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
-          }
-          className="flex-1"
-          onButtonClick={() => handlePayment('plan1')}
-        />
-      </div>
+        <div className="bg-gray-100 p-2 rounded-md flex items-center justify-center text-center mb-4 font-bold w-fit mx-auto">
+          <img src="/credit-3D.png" alt="Crédits" className="h-8 w-8 inline-block mr-2" /> <span className="text-2xl">600</span>
+        </div>
+        <DialogDescription className="text-center">
+          <span className="font-bold text-[#2D2D2D]">JeFaisQuoi</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
+        </DialogDescription>
+        <DialogFooter className="flex justify-center gap-4 mt-8">
+          <Button variant="outline" onClick={closePopup} className="flex-1">
+            Non
+          </Button>
+          <Button onClick={handleGenerateDeliverables} className="flex-1 bg-gradient-primary hover:opacity-90">
+            Let's go!
+          </Button>
+        </DialogFooter>
+      </>
     );
   };
 
@@ -318,51 +346,54 @@ const ProjectBusiness = () => {
     fetchUserSubscriptionStatus();
   }, []);
 
-  // Refetch project status when waiting for payment
+  // useEffects Stripe supprimés - plus nécessaires avec le système de crédits
+
+  // Polling for project status to control "Pause café" popup
   useEffect(() => {
-    if (!projectId || !isWaitingSubscription) return;
+    const relevantStatuses = ['payment_receive', 'premium_en_cours'];
+    if (!projectId || !relevantStatuses.includes(projectStatus || '')) {
+      return; // Ne pas démarrer le polling si le statut n'est pas pertinent
+    }
 
-    console.log("Polling useEffect started. isWaitingSubscription:", isWaitingSubscription);
-    const interval = setInterval(async () => {
-      console.log("Polling for project status...");
-      const { data, error } = await supabase
-        .from('project_summary')
-        .select('statut_project')
-        .eq('project_id', projectId)
-        .single();
+    console.log(`Polling started for project status: ${projectStatus}`);
 
-      if (!error && data) {
-        setProjectStatus(data.statut_project || null);
-        console.log("Polling: projectStatus updated to", data?.statut_project);
-      } else if (error) {
-        console.error("Polling error:", error);
+    const intervalId = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('project_summary')
+          .select('statut_project')
+          .eq('project_id', projectId)
+          .single();
+
+        if (error) {
+          console.error('Error polling project status:', error);
+          return; // Continue polling
+        }
+
+        // Mettre à jour le statut local s'il a changé
+        if (data && data.statut_project !== projectStatus) {
+          console.log(`Project status changed from ${projectStatus} to ${data.statut_project}`);
+          setProjectStatus(data.statut_project);
+        }
+        
+        // Si le statut est "premium_terminé", le polling s'arrêtera au prochain rendu car la condition initiale du useEffect ne sera plus remplie.
+        if (data.statut_project === 'premium_terminé') {
+            toast({
+                title: "Livrables prêts !",
+                description: "Tous vos livrables premium ont été générés avec succès.",
+            });
+        }
+
+      } catch (err) {
+        console.error('Polling failed:', err);
       }
-    }, 4000);
+    }, 2000); // Poll every 2 seconds
 
     return () => {
-      clearInterval(interval);
-      console.log("Polling useEffect cleaned up.");
+      console.log('Polling stopped.');
+      clearInterval(intervalId);
     };
-  }, [projectId, isWaitingSubscription]);
-
-  // Refetch project status when waiting for payment
-  useEffect(() => {
-    if (!projectId || !isWaitingSubscription) return;
-
-    const interval = setInterval(async () => {
-      const { data, error } = await supabase
-        .from('project_summary')
-        .select('statut_project')
-        .eq('project_id', projectId)
-        .single();
-
-      if (!error && data) {
-        setProjectStatus(data.statut_project || null);
-      }
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [projectId, isWaitingSubscription]);
+  }, [projectId, projectStatus]);
 
   // Listen for project status updates (e.g., when payment is cancelled)
   useEffect(() => {
@@ -381,46 +412,7 @@ const ProjectBusiness = () => {
     };
   }, [projectId]);
 
-  // Listen for deliverables completion to refresh content
-  useEffect(() => {
-    const handleDeliverablesCompleted = (event: CustomEvent) => {
-      const { projectId: completedProjectId } = event.detail;
-      if (completedProjectId === projectId) {
-        console.log('📦 Received deliverablesCompleted event, refreshing deliverables...');
-        
-        // Force a re-render by updating a state that will cause components to refresh
-        // This will trigger useEffect hooks in deliverable components to refetch their data
-        setProjectStatus(prev => prev); // This will trigger a re-render
-        
-        // Also trigger a window event for individual deliverable components to listen to
-        window.dispatchEvent(new CustomEvent('refreshDeliverables', {
-          detail: { projectId: completedProjectId }
-        }));
-      }
-    };
-
-    window.addEventListener('deliverablesCompleted', handleDeliverablesCompleted as EventListener);
-    
-    return () => {
-      window.removeEventListener('deliverablesCompleted', handleDeliverablesCompleted as EventListener);
-    };
-  }, [projectId]);
-
-  // Effect to close the coffee break popup when deliverables are completed
-  useEffect(() => {
-    const handleDeliverablesCompletedForCoffeeBreak = (event: CustomEvent) => {
-      const { projectId: completedProjectId } = event.detail;
-      if (completedProjectId === projectId) {
-        setShowCoffeeBreakPopup(false);
-      }
-    };
-
-    window.addEventListener('deliverablesCompleted', handleDeliverablesCompletedForCoffeeBreak as EventListener);
-    
-    return () => {
-      window.removeEventListener('deliverablesCompleted', handleDeliverablesCompletedForCoffeeBreak as EventListener);
-    };
-  }, [projectId]);
+  // Les listeners pour 'deliverablesCompleted' ont été supprimés car la logique est maintenant gérée par le polling sur `statut_project`.
 
   if (loading) {
     return <div>Chargement...</div>; // Or a loading spinner component
@@ -611,35 +603,30 @@ const ProjectBusiness = () => {
           </div>
         </div>
 
-        {/* Payment Loading Dialog */}
-        <Dialog open={isPaymentLoading || isWaitingSubscription || isWaitingDeliverables || showCoffeeBreakPopup} onOpenChange={() => {}}>
+        {/* Payment Loading Dialog - Maintenant pour les livrables premium avec crédits */}
+        <Dialog open={projectStatus === 'premium_en_cours'} onOpenChange={() => {}}>
           <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
             <DialogHeader>
               <DialogTitle className="text-2xl">
-                {isWaitingSubscription ? '⏳ En attente du paiement...' : '☕️ Une pause café ?'}
+                {'☕️ Une pause café ?'}
               </DialogTitle>
               <div className="text-sm text-muted-foreground">
-                {isWaitingSubscription
-                  ? <>Votre navigateur va s'ouvrir dans un nouvel onglet pour finaliser le paiement. <br /><br /> Une fois le paiement effectué, nous générerons automatiquement vos livrables premium.</>
-                  : <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
-                }
+                <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
               </div>
             </DialogHeader>
             
-            {/* Deliverable Progress Section - Only show when not waiting for payment */}
-            {!isWaitingSubscription && (
-              <div className="mt-6 space-y-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
-                {deliverables
-                  .filter(deliverable => deliverable.key !== 'juridique') // Exclure le livrable juridique
-                  .map((deliverable) => (
-                    <DeliverableProgressContainer
-                      key={deliverable.key}
-                      deliverable={deliverable}
-                    />
-                  ))}
-              </div>
-            )}
+            {/* Deliverable Progress Section - Toujours affichée maintenant */}
+            <div className="mt-6 space-y-3">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
+              {deliverables
+                .filter(deliverable => deliverable.key !== 'juridique') // Exclure le livrable juridique
+                .map((deliverable) => (
+                  <DeliverableProgressContainer
+                    key={deliverable.key}
+                    deliverable={deliverable}
+                  />
+                ))}
+            </div>
             
             <div className="flex justify-center items-center py-4">
               <div className="loader">
@@ -649,17 +636,7 @@ const ProjectBusiness = () => {
                 <div className="square"></div>
               </div>
             </div>
-            {isWaitingSubscription && (
-              <DialogFooter className="flex justify-center">
-                <Button
-                  variant="outline"
-                  onClick={cancelSubscription}
-                  className="text-gray-600 hover:text-gray-800"
-                >
-                  Annuler le paiement
-                </Button>
-              </DialogFooter>
-            )}
+            {/* Bouton d'annulation supprimé - plus nécessaire avec le système de crédits */}
           </DialogContent>
         </Dialog>
 
@@ -685,18 +662,11 @@ const ProjectBusiness = () => {
 
         {/* Popup Dialog */}
         <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
-          <DialogContent className="w-[90vw] md:w-[70vw] max-w-none overflow-y-auto max-h-[90vh] md:h-[90vh] rounded-lg md:flex md:flex-col md:justify-center md:items-center"> {/* Set width to 90% on mobile, 70% on desktop, remove max-width, add scrollability, and rounded corners */}
+          <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full">
             <DialogHeader>
-              <DialogTitle className="text-center text-2xl font-bold text-[#2D2D2D]">{popupContent?.title}</DialogTitle>
-              <div className="mt-4">
-                <p className="text-center text-base mb-4">
-                  <span className="font-bold text-[#2D2D2D]">{project.nom_projet || "Votre projet"}</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
-                </p>
-              </div>
-              <div>
-                {popupContent?.content}
-              </div>
+              <DialogTitle className="text-2xl text-center">{popupContent?.title}</DialogTitle>
             </DialogHeader>
+            {popupContent?.content}
           </DialogContent>
         </Dialog>
 

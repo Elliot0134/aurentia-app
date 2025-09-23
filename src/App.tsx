@@ -53,6 +53,8 @@ import OrganisationOnboardingPage from "./pages/organisation/OrganisationOnboard
 import OnboardingGuard from "./components/organisation/OnboardingGuard";
 import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback component
 import { ProjectProvider } from "./contexts/ProjectContext";
+import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
+import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -175,6 +177,8 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <ProjectProvider>
+              <CreditsDialogProvider>
+                <BuyCreditsDialog />
                 <Routes>
                 {/* Public routes without sidebar */}
                 <Route path="/login" element={<Login />} />
@@ -326,6 +330,7 @@ const App = () => {
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </CreditsDialogProvider>
             </ProjectProvider>
           </BrowserRouter>
         </TooltipProvider>

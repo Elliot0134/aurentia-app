@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ShoppingCart, Zap } from 'lucide-react';
-import BuyCreditsDialog from './BuyCreditsDialog';
+import { useCreditsDialog } from '@/contexts/CreditsDialogContext'; // Importer le contexte
 
 const CreditsDisplay = () => {
+  const { openCreditsDialog } = useCreditsDialog();
   const { 
     monthlyRemaining, 
     monthlyLimit, 
@@ -75,11 +76,12 @@ const CreditsDisplay = () => {
             <p className="text-sm text-slate-500 mb-4">
                 Crédits supplémentaires qui n'expirent pas.
             </p>
-            <BuyCreditsDialog>
-              <Button className="w-full bg-aurentia-orange-aurentia hover:bg-aurentia-orange-dark">
-                  <ShoppingCart className="mr-2 h-4 w-4" /> Acheter des crédits
-              </Button>
-            </BuyCreditsDialog>
+            <Button 
+              onClick={openCreditsDialog} 
+              className="w-full bg-aurentia-orange-aurentia hover:bg-aurentia-orange-dark"
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" /> Acheter des crédits
+            </Button>
             </CardContent>
         </Card>
         </div>

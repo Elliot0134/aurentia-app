@@ -826,7 +826,7 @@ const RoleBasedMobileNavbar = ({
           {user && userCredits && (userProfile?.user_role === 'individual' || userProfile?.user_role === 'member') && (
             <div className="bg-white px-4 py-2 border-b border-gray-200">
               <div className="flex items-center justify-center gap-2 text-sm">
-                <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
+                <img src="/credit-3D.png" alt="Crédits" className="h-4 w-4" />
                 <span className="font-medium text-gray-700">
                   {creditsLoading ? '...' : `${((userCredits.monthly_credits_remaining || 0) + (userCredits.purchased_credits_remaining || 0))} / ${userCredits.monthly_credits_limit}`}
                 </span>
@@ -979,7 +979,7 @@ const CreditInfo = ({
       )}>
         {isCollapsed ? (
           <div className="flex flex-col items-center gap-0.5 py-2">
-            <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
+            <img src="/credit-3D.png" alt="Crédits" className="h-4 w-4" />
             <span className="font-medium text-gray-700 text-sm">
               {totalCredits}
             </span>
@@ -990,7 +990,7 @@ const CreditInfo = ({
           </div>
         ) : (
           <div className="flex items-center gap-1">
-            <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
+            <img src="/credit-3D.png" alt="Crédits" className="h-4 w-4" />
             <span className="text-sm font-medium text-gray-700">
               {totalCredits} / {displayMonthlyLimit}
             </span>
