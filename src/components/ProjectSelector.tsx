@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom"; // Import useLocation
 import { ArrowRight, Plus, FolderSearch } from "lucide-react"; // Import FolderSearch, remove Settings
 import { useProject } from "@/contexts/ProjectContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,6 +14,7 @@ interface ProjectSelectorProps {
 const ProjectSelector = memo(({ isCollapsed, userRole }: ProjectSelectorProps) => {
   const navigate = useNavigate();
   const { projectId } = useParams(); // Get project ID from URL
+  const location = useLocation(); // Get current location
   const [isOpen, setIsOpen] = useState(false);
   
   // Use the Project Context
@@ -64,18 +65,28 @@ const ProjectSelector = memo(({ isCollapsed, userRole }: ProjectSelectorProps) =
 
   const goToProject = (project: { project_id: string; nom_projet: string; created_at: string }) => {
     if (project) {
-      const basePath = userRole === 'individual' ? '/individual' : '';
+      // Determine base path based on user role OR current URL path
+      let basePath = '';
+      if (userRole === 'individual' || location.pathname.startsWith('/individual')) {
+        basePath = '/individual';
+      }
+      
+      console.log("ProjectSelector: userRole", userRole);
+      console.log("ProjectSelector: location.pathname", location.pathname);
+      console.log("ProjectSelector: calculated basePath", basePath);
+      console.log("ProjectSelector: navigating to", `${basePath}/project-business/${project.project_id}`);
       navigate(`${basePath}/project-business/${project.project_id}`);
     }
   };
 
   const handleCreateNewProject = () => {
     setIsOpen(false);
-    if (userRole === 'individual') {
-      navigate("/individual/warning");
-    } else {
-      navigate("/warning"); // Default for other roles or if not specified
+    // Determine base path based on user role OR current URL path
+    let basePath = '';
+    if (userRole === 'individual' || location.pathname.startsWith('/individual')) {
+      basePath = '/individual';
     }
+    navigate(`${basePath}/warning`);
   };
 
   const toggleDropdown = () => {

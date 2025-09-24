@@ -6,14 +6,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"; // Supprimer DialogTrigger
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import logoAurentia from "/logo-aurentia-sidebar.svg";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCreditsDialog } from "@/contexts/CreditsDialogContext"; // Importer le contexte
 
 const creditOptions = [
   {
@@ -36,11 +36,8 @@ const creditOptions = [
   },
 ];
 
-interface BuyCreditsDialogProps {
-  children: React.ReactNode;
-}
-
-const BuyCreditsDialog = ({ children }: BuyCreditsDialogProps) => {
+// Supprimer l'interface BuyCreditsDialogProps et le paramètre children
+const BuyCreditsDialog = () => {
   const {
     activeTab,
     isTransitioning,
@@ -51,10 +48,15 @@ const BuyCreditsDialog = ({ children }: BuyCreditsDialogProps) => {
     resetTab
   } = useCreditsDialogTabs({ defaultTab: "credits" });
   const isMobile = useIsMobile();
+  const { isCreditsDialogOpen, closeCreditsDialog } = useCreditsDialog(); // Utiliser le contexte
 
   return (
-    <Dialog onOpenChange={(isOpen) => !isOpen && resetTab()}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={isCreditsDialogOpen} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        resetTab();
+        closeCreditsDialog(); // Fermer via le contexte
+      }
+    }}>
       <DialogContent
         ref={modalRef}
         className="bg-gray-50 w-[90vw] md:w-[70vw] max-w-none overflow-y-auto rounded-lg"
@@ -64,10 +66,9 @@ const BuyCreditsDialog = ({ children }: BuyCreditsDialogProps) => {
           transition: 'height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         }}
       >
-        <DialogHeader className="flex flex-row items-center justify-start p-4 border-b">
-          <img src={logoAurentia} alt="Aurentia Logo" className="h-6 w-auto mr-3" />
-          <DialogTitle className="text-lg font-medium text-slate-800">
-            Acheter des crédits
+        <DialogHeader className="flex flex-col items-center justify-center p-4 border-b">
+          <DialogTitle className="text-3xl font-bold text-slate-800 text-center">
+            Débloquez votre liberté.
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col flex-grow overflow-hidden pt-4">
@@ -78,8 +79,8 @@ const BuyCreditsDialog = ({ children }: BuyCreditsDialogProps) => {
               onValueChange={(value) => handleTabChange(value as TabType)}
               className="mb-6"
             >
-              <ToggleGroupItem value="subscription">Abonnements</ToggleGroupItem>
-              <ToggleGroupItem value="credits">Crédits</ToggleGroupItem>
+              <ToggleGroupItem value="subscription" className="data-[state=off]:bg-white data-[state=off]:shadow-sm data-[state=off]:text-gray-900">Abonnements</ToggleGroupItem>
+              <ToggleGroupItem value="credits" className="data-[state=off]:bg-white data-[state=off]:shadow-sm data-[state=off]:text-gray-900">Crédits</ToggleGroupItem>
             </ToggleGroup>
           </div>
           <div
@@ -142,19 +143,46 @@ const BuyCreditsDialog = ({ children }: BuyCreditsDialogProps) => {
                 </div>
               )
             ) : (
-              <div className="flex justify-center items-center">
-                <Card className="rounded-xl shadow-lg w-full max-w-sm">
-                  <CardHeader className="text-center">
-                    <CardTitle className="text-2xl text-slate-800 font-bold">
-                      Abonnement
+              <div className="flex justify-center items-center p-6">
+                <Card className="rounded-xl shadow-lg w-full max-w-sm border-2 border-aurentia-orange-aurentia">
+                  <div className="bg-aurentia-orange-aurentia text-white text-center py-2 rounded-t-xl flex items-center justify-center text-sm font-semibold">
+                    <span className="mr-2">🔥</span> Populaire
+                  </div>
+                  <CardHeader className="text-left px-6 pt-6 pb-4">
+                    <CardTitle className="text-4xl font-bold text-slate-800 mb-2">
+                      Entrepreneur
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-center text-slate-600">
-                      Passez à un abonnement pour des avantages exclusifs.
-                    </p>
-                    <Button className="w-full mt-6 bg-aurentia-orange-aurentia hover:bg-aurentia-orange-dark text-white font-bold">
-                      Découvrir les abonnements
+                  <CardContent className="px-6 pb-6">
+                    <div className="text-5xl font-bold text-slate-800 mb-4">
+                      $12,90<span className="text-base font-normal text-slate-600">/mois</span>
+                    </div>
+                    <div className="bg-gray-100 rounded-lg px-4 py-2 flex items-center justify-center mb-6">
+                      <img src="/credit-3D.png" alt="crédits" className="w-6 h-6 mr-2" />
+                      <p className="text-xl font-bold text-slate-800">1 500 <span className="text-base font-normal">/mois</span></p>
+                    </div>
+                    <ul className="space-y-3 text-slate-700 text-base">
+                      <li className="flex items-center">
+                        <span className="text-aurentia-orange-aurentia mr-2">✔</span> 3 projets d'entreprise
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-aurentia-orange-aurentia mr-2">✔</span> Livrables premium
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-aurentia-orange-aurentia mr-2">✔</span> Exportation PDF
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-aurentia-orange-aurentia mr-2">✔</span> Accès à toutes les fonctionnalités
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-aurentia-orange-aurentia mr-2">✔</span> Collaboration utilisateurs
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-aurentia-orange-aurentia mr-2">✔</span> Support prioritaire
+                      </li>
+                    </ul>
+                    <Button className="w-full mt-8 bg-aurentia-orange-aurentia hover:bg-aurentia-orange-dark text-white font-bold py-3 rounded-lg shadow-sm">
+                      Tester gratuitement
                     </Button>
                   </CardContent>
                 </Card>

@@ -9,6 +9,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { Zap } from "lucide-react";
 import { useCredits } from "@/hooks/useCreditsSimple";
 import AurentiaLogo from "./AurentiaLogo"; // Import the AurentiaLogo component
+import { useUserRole } from "@/hooks/useUserRole"; // Import useUserRole
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -20,6 +21,7 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const location = useLocation();
   const { projectId } = useParams(); // Get project ID from URL
   const { currentProjectId, userProjects } = useProject(); // Get project data from context
+  const { userRole } = useUserRole(); // Get user role
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -145,7 +147,7 @@ const Sidebar = memo(({ isCollapsed, setIsCollapsed }: SidebarProps) => {
         <div className="border-b border-gray-200 mx-4 mb-4"></div> {/* Separator line */}
 
         <div className={cn("mb-6 px-3")}> {/* Removed isCollapsed && "hidden" */}
-          <ProjectSelector isCollapsed={isCollapsed} />
+          <ProjectSelector isCollapsed={isCollapsed} userRole={userRole} />
         </div>
 
         <nav className="space-y-1 flex-1 px-3">
