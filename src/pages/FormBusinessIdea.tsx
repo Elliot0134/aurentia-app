@@ -13,9 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFreeDeliverableProgress } from "@/hooks/useFreeDeliverableProgress";
 import FreeDeliverableProgressContainer from "@/components/deliverables/FreeDeliverableProgressContainer";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // Mapping des noms de livrables aux chemins d'icônes
 const deliverableIcons: { [key: string]: string } = {
@@ -39,6 +41,7 @@ const deliverableIcons: { [key: string]: string } = {
 const Form = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { userProfile, loading: userLoading } = useUserRole();
   const [currentStep, setCurrentStep] = useState(1);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState('');
@@ -46,6 +49,10 @@ const Form = () => {
   const [popupTitle, setPopupTitle] = useState('');
   const [slideDirection, setSlideDirection] = useState('next');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // States pour la sélection d'organisation
+  const [availableOrganizations, setAvailableOrganizations] = useState<Array<{id: string, name: string}>>([]);
+  const [selectedOrganization, setSelectedOrganization] = useState<string>('');
   const [previousStep, setPreviousStep] = useState(currentStep);
 
   const handleFieldClick = (field, content, title) => {
@@ -164,6 +171,44 @@ const Form = () => {
   // Hook pour le suivi des livrables gratuits - actif à l'étape 9 avec projectID
   const { deliverables } = useFreeDeliverableProgress(projectID, projectID && currentStep === 9);
 
+  // Charger les organisations disponibles
+  useEffect(() => {
+    const fetchAvailableOrganizations = async () => {
+      if (userLoading) return;
+      
+      try {
+        // Si l'utilisateur est un membre, utiliser son organisation
+        if (userProfile?.user_role === 'member' && userProfile?.organization_id) {
+          const { data: org, error } = await (supabase as any)
+            .from('organizations')
+            .select('id, name')
+            .eq('id', userProfile.organization_id)
+            .single();
+            
+          if (!error && org) {
+            setAvailableOrganizations([org]);
+            setSelectedOrganization(org.id);
+          }
+        } else {
+          // Pour les autres utilisateurs, charger toutes les organisations publiques
+          const { data: orgs, error } = await (supabase as any)
+            .from('organizations')
+            .select('id, name')
+            .eq('is_public', true)
+            .order('name');
+            
+          if (!error && orgs) {
+            setAvailableOrganizations(orgs);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des organisations:', error);
+      }
+    };
+
+    fetchAvailableOrganizations();
+  }, [userProfile, userLoading]);
+
   // Note: Textarea components from shadcn handle auto-resize automatically
 
   const handleNext = async () => {
@@ -189,6 +234,7 @@ const Form = () => {
           additionalInfo: additionalInfo,
           whyEntrepreneur: whyEntrepreneur,
           teamSize: teamSize,
+          organizationId: selectedOrganization === 'none' ? null : selectedOrganization || null, // Ajouter l'ID de l'organisation
         };
         console.log('Form Data (Step 1):', formData);
 
@@ -402,6 +448,31 @@ const Form = () => {
                   onChange={(e) => setProjectIdeaSentence(e.target.value)}
                 />
               </div>
+
+              {/* Select d'organisation - affiché uniquement s'il y a des organisations disponibles */}
+              {availableOrganizations.length > 0 && (
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                  <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
+                    🏢 Relier ce projet à une organisation (optionnel)
+                  </label>
+                  <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
+                    <SelectTrigger className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors">
+                      <SelectValue placeholder="Sélectionner une organisation..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucune organisation</SelectItem>
+                      {availableOrganizations.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-gray-600 mt-2">
+                    En reliant votre projet à une organisation, vous pourrez bénéficier de son accompagnement et vos livrables y seront visibles.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -619,6 +690,15 @@ const Form = () => {
                       <p className="font-semibold text-gray-700 text-sm">Description en une phrase</p>
                       <p className="text-gray-600 text-sm">{projectIdeaSentence || "Non renseigné"}</p>
                     </div>
+                    
+                    {selectedOrganization && selectedOrganization !== 'none' && (
+                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                        <p className="font-semibold text-gray-700 text-sm">Organisation liée</p>
+                        <p className="text-gray-600 text-sm">
+                          {availableOrganizations.find(org => org.id === selectedOrganization)?.name || "Organisation sélectionnée"}
+                        </p>
+                      </div>
+                    )}
                     
                     <div className="bg-gray-50 rounded-lg p-3">
                       <p className="font-semibold text-gray-700 text-sm">Produits/Services</p>

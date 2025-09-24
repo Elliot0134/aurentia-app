@@ -155,6 +155,8 @@ export const useAdherents = () => {
         setLoading(true);
         const members = await getOrganisationMembers(organisationId);
         
+        console.log('🔄 Raw members from service:', members.length, members);
+        
         // Adapter les données du service aux types de l'interface
         const adaptedAdherents: Adherent[] = members
           .filter(member => member.user_role === 'member') // Garder seulement les adhérents (membres)
@@ -175,6 +177,7 @@ export const useAdherents = () => {
             last_activity: member.created_at
           }));
 
+        console.log('🎯 Final adapted adherents:', adaptedAdherents.length, adaptedAdherents);
         setAdherents(adaptedAdherents);
       } catch (err) {
         console.error('Erreur lors du chargement des adhérents:', err);

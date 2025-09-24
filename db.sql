@@ -236,8 +236,10 @@ CREATE TABLE public.form_business_idea (
   other_infos text,
   motivations_entrepreneur text,
   equipe_fondatrice text,
+  organization_id uuid,
   CONSTRAINT form_business_idea_pkey PRIMARY KEY (project_id),
-  CONSTRAINT form_business_idea_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT form_business_idea_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT form_business_idea_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.form_submissions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

@@ -115,7 +115,14 @@ const OrganisationProjets = () => {
         const project = row.original;
         return (
           <div>
-            <div className="font-medium">{project.nom_projet}</div>
+            <div className="flex items-center gap-2">
+              <div className="font-medium">{project.nom_projet}</div>
+              {project.linked_to_organization && (
+                <Badge className="bg-blue-100 text-blue-800 text-xs">
+                  Lié à l'organisation
+                </Badge>
+              )}
+            </div>
             <div className="text-sm text-gray-500 line-clamp-1">
               {project.description_synthetique || 'Aucune description'}
             </div>

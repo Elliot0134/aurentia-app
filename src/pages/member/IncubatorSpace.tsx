@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useEvents } from '@/hooks/useEvents';
+import { useUserProjects } from '@/hooks/useUserProjects';
 import { getOrganisation } from '@/services/organisationService';
 import { Organisation } from '@/types/organisationTypes';
-import { Building, Users, BookOpen, Calendar, MessageCircle, Globe, Mail, Phone, MapPin, Award, Clock, ArrowRight, TrendingUp, Lightbulb, ExternalLink } from 'lucide-react';
+import { Building, Users, BookOpen, Calendar, MessageCircle, Globe, Mail, Phone, MapPin, Award, Clock, ArrowRight, TrendingUp, Lightbulb, ExternalLink, FolderOpen } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,10 +19,11 @@ const IncubatorSpace = () => {
   const { organization } = userProfile || {};
   const organizationId = userProfile?.organization_id;
   
-  // Récupérer les données de l'organisation et événements
+  // Récupérer les données de l'organisation, événements et projets
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [orgLoading, setOrgLoading] = useState(true);
   const { events, loading: eventsLoading } = useEvents(organizationId || '');
+  const { projects: userProjects, loading: projectsLoading } = useUserProjects(userProfile?.id);
   
   // États locaux
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
@@ -245,6 +247,79 @@ const IncubatorSpace = () => {
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600">Aucun événement programmé pour le moment</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Mes projets liés à l'organisation */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FolderOpen className="h-5 w-5 text-aurentia-pink" />
+                Mes projets
+              </CardTitle>
+              <CardDescription>
+                Vos projets et leur lien avec l'organisation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {projectsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aurentia-pink"></div>
+                </div>
+              ) : userProjects.length > 0 ? (
+                <div className="space-y-4">
+                  {userProjects.map((project) => (
+                    <div key={project.project_id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="w-12 h-12 bg-gradient-to-br from-aurentia-pink to-aurentia-orange rounded-lg flex items-center justify-center">
+                        <Lightbulb className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{project.nom_projet}</h4>
+                          {project.organization_id === organizationId ? (
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">
+                              Lié à {organisation?.name}
+                            </Badge>
+                          ) : project.organization_name ? (
+                            <Badge variant="outline" className="text-xs">
+                              Lié à {project.organization_name}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Projet individuel
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {project.description_synthetique || 'Aucune description disponible'}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Créé le {format(new Date(project.created_at), 'd MMMM yyyy', { locale: fr })}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/member/project/${project.project_id}`)}
+                        className="shrink-0"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-4">Vous n'avez pas encore de projet</p>
+                  <Button 
+                    onClick={() => navigate('/member/form-business-idea')}
+                    className="bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white"
+                  >
+                    Créer mon premier projet
+                  </Button>
                 </div>
               )}
             </CardContent>
