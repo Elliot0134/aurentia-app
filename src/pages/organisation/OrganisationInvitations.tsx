@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import CustomTabs from "@/components/ui/CustomTabs";
 import { useToast } from "@/hooks/use-toast";
 import { InvitationCode } from '@/types/organisationTypes';
+import { getInvitationStatusColor, getInvitationStatusLabel, getInvitationRoleLabel, INVITATION_ROLE_OPTIONS } from "@/lib/invitationConstants";
 import {
   Mail,
   Link,
@@ -141,32 +142,15 @@ const OrganisationInvitations = () => {
   };
 
   const getStatusColor = (status: Invitation['status']) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      accepted: 'bg-green-100 text-green-800',
-      expired: 'bg-red-100 text-red-800',
-      revoked: 'bg-gray-100 text-gray-800'
-    };
-    return colors[status];
+    return getInvitationStatusColor(status);
   };
 
   const getStatusLabel = (status: Invitation['status']) => {
-    const labels = {
-      pending: 'En attente',
-      accepted: 'Acceptée',
-      expired: 'Expirée',
-      revoked: 'Révoquée'
-    };
-    return labels[status];
+    return getInvitationStatusLabel(status);
   };
 
   const getRoleLabel = (role: Invitation['role']) => {
-    const labels = {
-      entrepreneur: 'Entrepreneur',
-      mentor: 'Mentor',
-      observer: 'Observateur'
-    };
-    return labels[role];
+    return getInvitationRoleLabel(role);
   };
 
   const filteredInvitations = invitations.filter(invitation => {
@@ -182,17 +166,16 @@ const OrganisationInvitations = () => {
   };
 
   return (
-    <div className="mx-auto py-8 min-h-screen animate-fade-in">
-      <div className="w-[80vw] md:w-11/12 mx-auto px-4">
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Invitations</h1>
-              <p className="text-gray-600 text-base">
-                Gérez les invitations pour rejoindre votre organisation.
-              </p>
-            </div>
+    <>
+      {/* En-tête */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Invitations</h1>
+            <p className="text-gray-600 text-base">
+              Gérez les invitations pour rejoindre votre organisation.
+            </p>
+          </div>
             <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
               <DialogTrigger asChild>
                 <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
@@ -254,8 +237,11 @@ const OrganisationInvitations = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="entrepreneur">Entrepreneur</SelectItem>
-                          <SelectItem value="mentor">Mentor</SelectItem>
+                          {INVITATION_ROLE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -443,9 +429,8 @@ const OrganisationInvitations = () => {
             </CustomTabs>
           </CardContent>
         </Card>
-      </div>
-    </div>
-  );
-};
+      </>
+    );
+  };
 
 export default OrganisationInvitations;

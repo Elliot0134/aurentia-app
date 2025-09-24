@@ -44,7 +44,8 @@ const OrganisationSettings = () => {
     branding: {
       primaryColor: organisation?.settings?.branding?.primaryColor || organisation?.primary_color || '#ff5932',
       secondaryColor: organisation?.settings?.branding?.secondaryColor || organisation?.secondary_color || '#1a1a1a',
-      whiteLabel: organisation?.settings?.branding?.whiteLabel ?? false
+      whiteLabel: organisation?.settings?.branding?.whiteLabel ?? false,
+      publicProfile: false
     }
   });
 
@@ -62,7 +63,8 @@ const OrganisationSettings = () => {
         branding: {
           primaryColor: organisation?.settings?.branding?.primaryColor || organisation?.primary_color || '#ff5932',
           secondaryColor: organisation?.settings?.branding?.secondaryColor || organisation?.secondary_color || '#1a1a1a',
-          whiteLabel: organisation?.settings?.branding?.whiteLabel ?? false
+          whiteLabel: organisation?.settings?.branding?.whiteLabel ?? false,
+          publicProfile: (organisation as any)?.is_public ?? true
         }
       });
     }
@@ -78,14 +80,28 @@ const OrganisationSettings = () => {
       // Importer la fonction de mise à jour
       const { updateOrganisationSettings } = await import('@/services/organisationService');
       
-      // Construire l'objet settings à sauvegarder
+      // Préparer les données de mise à jour
+      const updateData: any = {};
+      
+      // Si publicProfile est défini, mettre à jour la colonne is_public
+      if (localSettings.branding.publicProfile !== undefined) {
+        updateData.is_public = localSettings.branding.publicProfile;
+      }
+      
+      // Construire l'objet settings à sauvegarder (sans publicProfile)
       const settingsToSave = {
-        branding: localSettings.branding,
+        branding: {
+          primaryColor: localSettings.branding.primaryColor,
+          secondaryColor: localSettings.branding.secondaryColor,
+          whiteLabel: localSettings.branding.whiteLabel
+        },
         notifications: localSettings.notifications
       };
       
+      updateData.settings = settingsToSave;
+      
       // Sauvegarder en base de données
-      await updateOrganisationSettings(organisationId, settingsToSave);
+      await updateOrganisationSettings(organisationId, updateData);
       
       // Rafraîchir les données de l'organisation
       await refetch();
@@ -132,7 +148,7 @@ const OrganisationSettings = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <>
       {/* En-tête */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
@@ -315,6 +331,17 @@ const OrganisationSettings = () => {
                   onCheckedChange={(checked) => updateLocalSettings('branding', 'whiteLabel', checked)}
                 />
               </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Profil public</h4>
+                  <p className="text-sm text-gray-600">Rendre le profil de l'organisation visible publiquement</p>
+                </div>
+                <Switch
+                  checked={localSettings.branding.publicProfile}
+                  onCheckedChange={(checked) => updateLocalSettings('branding', 'publicProfile', checked)}
+                />
+              </div>
             </CardContent>
           </Card>
         )}
@@ -349,7 +376,7 @@ const OrganisationSettings = () => {
           </Card>
         )}
       </CustomTabs>
-    </div>
+    </>
   );
 };
 

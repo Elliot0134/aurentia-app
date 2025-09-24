@@ -334,11 +334,10 @@ BEGIN
     SET current_uses = current_uses + 1
     WHERE id = code_record.id;
     
-    -- Désactiver le code si max_uses est atteint
+    -- Désactiver le code après utilisation (chaque code n'est utilisable qu'une seule fois)
     UPDATE invitation_code 
     SET is_active = false
-    WHERE id = code_record.id 
-    AND current_uses + 1 >= max_uses;
+    WHERE id = code_record.id;
     
     -- Si c'est un mentor (staff), créer l'entrée dans la table mentors
     IF target_role = 'staff' THEN

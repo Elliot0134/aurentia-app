@@ -62,7 +62,7 @@ const RoleBasedLayout = () => {
       )}>
         {isOrganisationRoute ? (
           <div className="max-w-[100vw] overflow-x-hidden">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-screen-2xl">
               <Outlet />
             </div>
           </div>

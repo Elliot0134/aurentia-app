@@ -18,6 +18,12 @@ import { fr } from 'date-fns/locale';
 import './fullcalendar-custom.css';
 import { useEvents, Event, EventFormData } from "@/hooks/useEvents";
 import { useAdherents } from "@/hooks/useOrganisationData";
+import { useEventTypeColors } from "@/hooks/useEventTypeColors";
+import { useToast } from "@/hooks/use-toast";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { getEventTypeColor, getEventTypeLabel, EVENT_TYPE_OPTIONS } from "@/lib/eventConstants";
+import { EnhancedEventCalendar } from "@/components/ui/enhanced-event-calendar";
+import { EventDetailsModal } from "@/components/ui/event-details-modal";
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -36,6 +42,9 @@ const OrganisationEvenements = () => {
   const { id: organisationId } = useParams();
   const { events, loading, error, addEvent, editEvent, removeEvent } = useEvents(organisationId);
   const { adherents, loading: adherentsLoading } = useAdherents();
+  const { eventTypeColors, loading: colorsLoading } = useEventTypeColors(organisationId);
+  const { toast } = useToast();
+  const { userProfile } = useUserProfile();
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -68,13 +77,17 @@ const OrganisationEvenements = () => {
       end_date: formData.end_date,
       type: formData.type,
       location: formData.location,
-      organizer_id: '',
+      organizer_id: userProfile?.id || null,
       is_recurring: false,
       max_participants: formData.max_participants,
       organization_id: organisationId
     });
     
     if (success) {
+      toast({
+        title: "Événement créé",
+        description: "L'événement a été créé avec succès.",
+      });
       setDialogOpen(false);
       setFormData({
         title: '',
@@ -87,6 +100,12 @@ const OrganisationEvenements = () => {
         is_recurring: false,
         max_participants: undefined,
         organization_id: organisationId
+      });
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la création de l'événement.",
+        variant: "destructive",
       });
     }
   };
@@ -101,13 +120,17 @@ const OrganisationEvenements = () => {
       end_date: format(selectedRange.end, "yyyy-MM-dd'T'HH:mm"),
       type: formData.type,
       location: formData.location,
-      organizer_id: '',
+      organizer_id: userProfile?.id || null,
       is_recurring: false,
       max_participants: formData.max_participants,
       organization_id: organisationId
     });
     
     if (success) {
+      toast({
+        title: "Événement créé",
+        description: "L'événement a été créé avec succès.",
+      });
       setCreateEventModalOpen(false);
       setSelectedRange(null);
       setSelectedMembers([]);
@@ -123,6 +146,12 @@ const OrganisationEvenements = () => {
         max_participants: undefined,
         organization_id: organisationId
       });
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la création de l'événement.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -137,6 +166,11 @@ const OrganisationEvenements = () => {
     });
 
     if (!success) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier la durée de l'événement.",
+        variant: "destructive",
+      });
       // Annuler le changement si la mise à jour échoue
       resizeInfo.revert();
     }
@@ -153,6 +187,11 @@ const OrganisationEvenements = () => {
     });
 
     if (!success) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de déplacer l'événement.",
+        variant: "destructive",
+      });
       // Annuler le changement si la mise à jour échoue
       dropInfo.revert();
     }
@@ -169,72 +208,22 @@ const OrganisationEvenements = () => {
   const handleDeleteEvent = async (eventId: string) => {
     const success = await removeEvent(eventId);
     if (success) {
+      toast({
+        title: "Événement supprimé",
+        description: "L'événement a été supprimé avec succès.",
+      });
       setEditDialogOpen(false);
       setSelectedEvent(null);
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'événement.",
+        variant: "destructive",
+      });
     }
   };
 
-  // Convertir les événements Supabase pour FullCalendar
-  const calendarEvents = events.map(event => ({
-    id: event.id,
-    title: event.title,
-    start: new Date(event.start_date),
-    end: new Date(event.end_date),
-    extendedProps: {
-      ...event
-    }
-  }));
 
-  const getEventTypeColor = (type: Event['type']) => {
-    const colors = {
-      workshop: '#ff5932', // Couleur principale Aurentia
-      meeting: '#6366f1', // Indigo
-      webinar: '#8b5cf6', // Violet
-      networking: '#06b6d4', // Cyan
-      other: '#64748b' // Slate
-    };
-    return colors[type];
-  };
-
-  const getEventTypeLabel = (type: Event['type']) => {
-    const labels = {
-      workshop: 'Atelier',
-      meeting: 'Réunion',
-      webinar: 'Webinaire',
-      networking: 'Networking',
-      other: 'Autre'
-    };
-    return labels[type];
-  };
-
-  // Configuration des événements pour FullCalendar
-  const eventContent = (eventInfo: any) => {
-    const eventType = eventInfo.event.extendedProps.type;
-    const backgroundColor = getEventTypeColor(eventType);
-
-    return (
-      <div
-        className="fc-event-content"
-        style={{
-          backgroundColor,
-          color: 'white',
-          padding: '4px 8px',
-          borderRadius: '6px',
-          fontSize: '12px',
-          fontWeight: '500',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}
-      >
-        <div className="fc-event-title" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {eventInfo.event.title}
-        </div>
-      </div>
-    );
-  };
 
   const stats = {
     total: events.length,
@@ -248,17 +237,16 @@ const OrganisationEvenements = () => {
   };
 
   return (
-    <div className="mx-auto py-8 min-h-screen animate-fade-in">
-      <div className="w-[80vw] md:w-11/12 mx-auto px-4">
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Événements</h1>
-              <p className="text-gray-600 text-base">
-                Planifiez et gérez vos événements d'organisation.
-              </p>
-            </div>
+    <>
+      {/* En-tête */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Événements</h1>
+            <p className="text-gray-600 text-base">
+              Planifiez et gérez vos événements d'organisation.
+            </p>
+          </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
@@ -292,11 +280,11 @@ const OrganisationEvenements = () => {
                         <SelectValue placeholder="Sélectionner un type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="workshop">Atelier</SelectItem>
-                        <SelectItem value="meeting">Réunion</SelectItem>
-                        <SelectItem value="webinar">Webinaire</SelectItem>
-                        <SelectItem value="networking">Networking</SelectItem>
-                        <SelectItem value="other">Autre</SelectItem>
+                        {EVENT_TYPE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -347,9 +335,16 @@ const OrganisationEvenements = () => {
                     <Input
                       id="max_participants"
                       type="number"
+                      min="0"
                       placeholder="Ex: 50"
                       value={formData.max_participants || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, max_participants: e.target.value ? parseInt(e.target.value) : undefined }))}
+                      onChange={(e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : undefined;
+                        // Empêcher les valeurs négatives
+                        if (value === undefined || value >= 0) {
+                          setFormData(prev => ({ ...prev, max_participants: value }));
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -400,11 +395,11 @@ const OrganisationEvenements = () => {
                     <SelectValue placeholder="Sélectionner un type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="workshop">Atelier</SelectItem>
-                    <SelectItem value="meeting">Réunion</SelectItem>
-                    <SelectItem value="webinar">Webinaire</SelectItem>
-                    <SelectItem value="networking">Networking</SelectItem>
-                    <SelectItem value="other">Autre</SelectItem>
+                    {EVENT_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -435,9 +430,16 @@ const OrganisationEvenements = () => {
                 <Input
                   id="drag-max_participants"
                   type="number"
+                  min="0"
                   placeholder="Ex: 50"
                   value={formData.max_participants || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, max_participants: e.target.value ? parseInt(e.target.value) : undefined }))}
+                  onChange={(e) => {
+                    const value = e.target.value ? parseInt(e.target.value) : undefined;
+                    // Empêcher les valeurs négatives
+                    if (value === undefined || value >= 0) {
+                      setFormData(prev => ({ ...prev, max_participants: value }));
+                    }
+                  }}
                 />
               </div>
 
@@ -560,143 +562,56 @@ const OrganisationEvenements = () => {
           </div>
         )}
 
-        {!loading && (
+        {!loading && !colorsLoading && (
           <>
-            {/* Calendrier */}
-            <Card>
-              <CardContent className="p-6">
-                <div style={{ height: '600px' }}>
-                  <FullCalendar
-                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                    initialView="dayGridMonth"
-                    headerToolbar={{
-                      left: 'prev,next today',
-                      center: 'title',
-                      right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                    }}
-                    locale={frLocale}
-                    events={calendarEvents}
-                    eventContent={eventContent}
-                    eventClick={(info) => {
-                      const event = events.find(e => e.id === info.event.id);
-                      if (event) {
-                        setSelectedEvent(event);
-                        setEditDialogOpen(true);
-                      }
-                    }}
-                    selectable={true}
-                    selectMirror={true}
-                    select={(selectInfo) => {
-                      setSelectedRange({
-                        start: selectInfo.start,
-                        end: selectInfo.end
-                      });
-                      setCreateEventModalOpen(true);
-                    }}
-                    editable={true}
-                    eventStartEditable={true}
-                    eventDurationEditable={true}
-                    eventResize={handleEventResize}
-                    eventDrop={handleEventDrop}
-                    height="100%"
-                    dayMaxEvents={3}
-                    moreLinkClick="popover"
-                    buttonText={{
-                      today: "Aujourd'hui",
-                      month: 'Mois',
-                      week: 'Semaine',
-                      day: 'Jour'
-                    }}
-                    slotLabelFormat={{
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      omitZeroMinute: false,
-                      meridiem: false
-                    }}
-                    eventTimeFormat={{
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      meridiem: false
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            {/* Calendrier amélioré */}
+            <EnhancedEventCalendar
+              events={events}
+              eventTypeColors={eventTypeColors}
+              onEventClick={(event) => {
+                setSelectedEvent(event);
+                setEditDialogOpen(true);
+              }}
+              onSelect={(selectInfo) => {
+                setSelectedRange({
+                  start: selectInfo.start,
+                  end: selectInfo.end
+                });
+                setCreateEventModalOpen(true);
+              }}
+              onEventResize={handleEventResize}
+              onEventDrop={handleEventDrop}
+              loading={loading}
+            />
 
             {/* Dialog de détails de l'événement */}
-            {selectedEvent && (
-              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Tag className="w-5 h-5 text-aurentia-pink" />
-                      {selectedEvent.title}
-                    </DialogTitle>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Type</Label>
-                      <p className="mt-1">{getEventTypeLabel(selectedEvent.type)}</p>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Date et heure</Label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span>
-                          {format(new Date(selectedEvent.start_date), 'dd/MM/yyyy HH:mm', { locale: fr })} - {format(new Date(selectedEvent.end_date), 'HH:mm', { locale: fr })}
-                        </span>
-                      </div>
-                    </div>
-
-                    {selectedEvent.location && (
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Lieu</Label>
-                        <div className="mt-1 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          <span>{selectedEvent.location}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Participants</Label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <Users className="w-4 w-4 text-gray-400" />
-                        <span>
-                          {selectedEvent.participants.length} / {selectedEvent.max_participants || '∞'} participants
-                        </span>
-                      </div>
-                    </div>
-
-                    {selectedEvent.description && (
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Description</Label>
-                        <p className="mt-1 text-sm text-gray-600">{selectedEvent.description}</p>
-                      </div>
-                    )}
-
-                    <div className="text-xs text-gray-500">
-                      Créé le: {new Date(selectedEvent.created_at).toLocaleDateString('fr-FR')}
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                      Fermer
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => handleDeleteEvent(selectedEvent.id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
+            <EventDetailsModal
+              event={selectedEvent}
+              open={editDialogOpen}
+              onOpenChange={setEditDialogOpen}
+              editEvent={editEvent}
+              onEventUpdate={(updatedEvent) => {
+                // Mettre à jour l'événement dans la liste
+                const updatedEvents = events.map(event => 
+                  event.id === updatedEvent.id ? updatedEvent : event
+                );
+                // Ici on pourrait mettre à jour le state des événements si nécessaire
+                // Pour l'instant, on peut juste fermer la modale
+              }}
+              onEventDelete={async (eventId) => {
+                const success = await removeEvent(eventId);
+                if (success) {
+                  toast({
+                    title: "Événement supprimé",
+                    description: "L'événement a été supprimé avec succès.",
+                  });
+                  setEditDialogOpen(false);
+                  setSelectedEvent(null);
+                } else {
+                  throw new Error("Impossible de supprimer l'événement.");
+                }
+              }}
+            />
 
             {/* Message si aucun événement */}
             {events.length === 0 && !loading && (
@@ -720,9 +635,8 @@ const OrganisationEvenements = () => {
             )}
           </>
         )}
-      </div>
-    </div>
-  );
-};
+      </>
+    );
+  };
 
 export default OrganisationEvenements;

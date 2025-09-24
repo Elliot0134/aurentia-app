@@ -189,21 +189,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     }
 
     switch (userProfile.user_role) {
-      case 'super_admin':
-        return {
-          menuItems: [
-            { name: "Vue d'ensemble", path: "/super-admin/dashboard", icon: <LayoutDashboard size={20} /> },
-            { name: "Organisations", path: "/super-admin/organizations", icon: <Building size={20} /> },
-            { name: "Utilisateurs", path: "/super-admin/users", icon: <Users size={20} /> },
-            { name: "Analytics Global", path: "/super-admin/analytics", icon: <BarChart3 size={20} /> },
-            { name: "Codes d'invitation", path: "/super-admin/invitations", icon: <Code size={20} /> },
-            { name: "Paramètres", path: "/super-admin/settings", icon: <Settings size={20} /> }
-          ],
-          branding: { name: "Aurentia Admin", primaryColor: "#F04F6A" },
-          showProjectSelector: false,
-          showCredits: false
-        };
-        
+
       case 'organisation':
       case 'staff':
         const orgId = userProfile?.organization_id;
@@ -213,7 +199,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         }
         return {
           menuItems: [
-            { name: "Vue d'ensemble", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+            { name: "Tableau de bord", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
             { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
             { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
             { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
@@ -250,12 +236,12 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
             { name: "Automatisations", path: "/member/automatisations", icon: <Zap size={20} /> },
             { name: "Partenaires", path: "/member/partenaires", icon: <Handshake size={20} /> },
             { name: "Ressources", path: "/member/ressources", icon: <Library size={20} /> },
-            { name: "Mon incubateur", path: "/member/incubator", icon: <Building size={20} /> },
+            { name: "Mon Organisation", path: "/member/incubator", icon: <Building size={20} /> },
             { isDivider: true },
             { name: "Collaborateurs", path: "/member/collaborateurs", icon: <Users size={20} /> }
           ],
           branding: {
-            name: userProfile.organization?.name || "Mon Incubateur",
+            name: userProfile.organization?.name || "Mon Organisation",
             logo: userProfile.organization?.logo_url,
             primaryColor: userProfile.organization?.primary_color || "#F04F6A"
           },
@@ -718,16 +704,6 @@ const RoleBasedMobileNavbar = ({
     }
 
     switch (userProfile.user_role) {
-      case 'super_admin':
-        return [
-          { name: "Vue d'ensemble", path: "/super-admin/dashboard", icon: <LayoutDashboard size={20} /> },
-          { name: "Organisations", path: "/super-admin/organizations", icon: <Building size={20} /> },
-          { name: "Utilisateurs", path: "/super-admin/users", icon: <Users size={20} /> },
-          { name: "Analytics Global", path: "/super-admin/analytics", icon: <BarChart3 size={20} /> },
-          { name: "Codes d'invitation", path: "/super-admin/invitations", icon: <Code size={20} /> },
-          { name: "Paramètres", path: "/super-admin/settings", icon: <Settings size={20} /> }
-        ];
-        
       case 'organisation':
       case 'staff':
         const orgId = userProfile?.organization_id;
@@ -736,7 +712,7 @@ const RoleBasedMobileNavbar = ({
           return getIndividualMobileItems();
         }
         return [
-          { name: "Vue d'ensemble", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+          { name: "Tableau de bord", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
           { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
           { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
           { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
@@ -754,7 +730,7 @@ const RoleBasedMobileNavbar = ({
           { name: "Automatisations", path: "/member/automatisations", icon: <Zap size={20} /> },
           { name: "Partenaires", path: "/member/partenaires", icon: <Handshake size={20} /> },
           { name: "Ressources", path: "/member/ressources", icon: <Library size={20} /> },
-          { name: "Mon incubateur", path: "/member/incubator", icon: <Building size={20} /> },
+          { name: "Mon Organisation", path: "/member/incubator", icon: <Building size={20} /> },
           { name: "Collaborateurs", path: "/member/collaborateurs", icon: <Users size={20} /> }
         ];
         

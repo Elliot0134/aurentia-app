@@ -651,17 +651,16 @@ const OrganisationProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-4 md:py-8 px-4 sm:px-6 lg:px-8">
-        {/* En-tête */}
-        <div className="mb-6 md:mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">Profil de l'Organisation</h1>
-              <p className="text-gray-600 text-sm md:text-base">
-                Gérez les informations publiques de votre organisation.
-              </p>
-            </div>
+    <>
+      {/* En-tête */}
+      <div className="mb-6 md:mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Profil de l'Organisation</h1>
+            <p className="text-gray-600 text-sm md:text-base">
+              Gérez les informations publiques de votre organisation.
+            </p>
+          </div>
             <div className="flex items-center gap-3">
               {isEditing ? (
                 <>
@@ -1236,9 +1235,8 @@ const OrganisationProfile = () => {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
+      </>
+    );
+  };
 
 export default OrganisationProfile;

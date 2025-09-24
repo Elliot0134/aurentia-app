@@ -1,0 +1,100 @@
+/* Styles pour le calendrier d'événements amélioré */
+
+.custom-event {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+
+.fc-event-dragging {
+  opacity: 0.7 !important;
+  transform: scale(1.02) !important;
+  transition: all 0.2s ease !important;
+}
+
+.fc-event-resizing {
+  opacity: 0.8 !important;
+}
+
+.fc-daygrid-event {
+  border-radius: 4px !important;
+  margin: 1px 0 !important;
+}
+
+.fc-timegrid-event {
+  border-radius: 6px !important;
+}
+
+.fc-event:hover {
+  filter: brightness(1.1) !important;
+  transform: scale(1.02) !important;
+  transition: all 0.2s ease !important;
+}
+
+.fc-button-primary {
+  background-color: #ff5932 !important;
+  border-color: #ff5932 !important;
+}
+
+.fc-button-primary:hover {
+  background-color: #e14a2b !important;
+  border-color: #e14a2b !important;
+}
+
+.fc-button-primary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(255, 89, 50, 0.25) !important;
+}
+
+.fc-today-button:disabled {
+  opacity: 0.6 !important;
+}
+
+.fc-highlight {
+  background-color: rgba(255, 89, 50, 0.1) !important;
+}
+
+.fc-select-mirror {
+  background-color: rgba(255, 89, 50, 0.3) !important;
+  border: 2px solid #ff5932 !important;
+}
+
+/* Améliorer la lisibilité des événements sur mobile */
+@media (max-width: 768px) {
+  .fc-daygrid-event {
+    font-size: 11px !important;
+    padding: 1px 3px !important;
+  }
+  
+  .fc-timegrid-event {
+    font-size: 12px !important;
+    padding: 2px 4px !important;
+  }
+}
+
+/* Styles pour les événements par type */
+.event-workshop {
+  background-color: #ff5932 !important;
+}
+
+.event-meeting {
+  background-color: #6366f1 !important;
+}
+
+.event-webinar {
+  background-color: #8b5cf6 !important;
+}
+
+.event-networking {
+  background-color: #06b6d4 !important;
+}
+
+.event-presentation {
+  background-color: #f59e0b !important;
+}
+
+.event-training {
+  background-color: #10b981 !important;
+}
+
+.event-other {
+  background-color: #64748b !important;
+}

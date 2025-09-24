@@ -179,17 +179,16 @@ const OrganisationPartenaires = () => {
   };
 
   return (
-    <div className="mx-auto py-8 min-h-screen animate-fade-in">
-      <div className="w-[80vw] md:w-11/12 mx-auto px-4">
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Partenaires</h1>
-              <p className="text-gray-600 text-base">
-                Gérez vos partenaires et collaborateurs externes.
-              </p>
-            </div>
+    <>
+      {/* En-tête */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Partenaires</h1>
+            <p className="text-gray-600 text-base">
+              Gérez vos partenaires et collaborateurs externes.
+            </p>
+          </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
@@ -545,9 +544,8 @@ const OrganisationPartenaires = () => {
             </CustomTabs>
           </>
         )}
-      </div>
-    </div>
-  );
-};
+      </>
+    );
+  };
 
 export default OrganisationPartenaires;

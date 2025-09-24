@@ -11,37 +11,39 @@ import {
   BarChart3,
   Users,
   TrendingUp,
-  Clock
+  Clock,
+  MoreHorizontal,
+  Trash2,
+  Edit,
+  Eye,
+  ArrowUpDown
 } from "lucide-react";
 import { useProjects } from '@/hooks/useOrganisationData';
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { Project } from '@/services/organisationService';
 
 const OrganisationProjets = () => {
   const { id: organisationId } = useParams();
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
 
   const { projects, loading } = useProjects();
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.nom_projet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description_synthetique?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'all' || project.statut === selectedStatus;
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return a.nom_projet.localeCompare(b.nom_projet);
-      case 'progress':
-        return (parseInt(b.avancement_global || '0') - parseInt(a.avancement_global || '0'));
-      case 'recent':
-      default:
-        return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
-    }
-  });
+  const sortedProjects = [...filteredProjects];
 
   const getStatusColor = (statut: string) => {
     const statusColors = {
@@ -75,9 +77,194 @@ const OrganisationProjets = () => {
     total: projects.length
   };
 
+  // Colonnes pour le DataTable
+  const columns: ColumnDef<Project>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "nom_projet",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Nom du projet
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const project = row.original;
+        return (
+          <div>
+            <div className="font-medium">{project.nom_projet}</div>
+            <div className="text-sm text-gray-500 line-clamp-1">
+              {project.description_synthetique || 'Aucune description'}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "statut",
+      header: "Statut",
+      cell: ({ row }) => {
+        const statut = row.getValue("statut") as string;
+        return (
+          <Badge className={getStatusColor(statut)}>
+            {getStatusLabel(statut)}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "avancement_global",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Progression
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const avancement = row.getValue("avancement_global") as string;
+        const progress = avancement ? parseInt(avancement) : 0;
+        
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-aurentia-pink to-aurentia-orange rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-sm font-medium">{progress}%</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "user_id",
+      header: "Entrepreneur",
+      cell: ({ row }) => {
+        const userId = row.getValue("user_id") as string;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 bg-gradient-to-br from-aurentia-pink to-aurentia-orange rounded-full flex items-center justify-center text-white text-xs font-medium">
+              {userId ? userId.slice(0, 2).toUpperCase() : 'NA'}
+            </div>
+            <div>
+              <div className="text-sm font-medium">Entrepreneur</div>
+              <div className="text-xs text-gray-500">{userId || 'Non assigné'}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Date de création
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const date = row.getValue("created_at") as string;
+        return <div className="text-sm">{new Date(date || '').toLocaleDateString('fr-FR')}</div>;
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const project = row.original;
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Ouvrir le menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem>
+                <Eye className="mr-2 h-4 w-4" />
+                Voir le projet
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Edit className="mr-2 h-4 w-4" />
+                Modifier
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const [selectedProjects, setSelectedProjects] = useState<Project[]>([]);
+
+  const handleRowSelectionChange = (selectedRows: Project[]) => {
+    setSelectedProjects(selectedRows);
+  };
+
+  const bulkActions = (
+    <div className="flex gap-2">
+      <Button variant="outline" size="sm">
+        <Eye className="mr-2 h-4 w-4" />
+        Voir ({selectedProjects.length})
+      </Button>
+      <Button variant="outline" size="sm">
+        <Edit className="mr-2 h-4 w-4" />
+        Modifier ({selectedProjects.length})
+      </Button>
+      <Button variant="destructive" size="sm">
+        <Trash2 className="mr-2 h-4 w-4" />
+        Supprimer ({selectedProjects.length})
+      </Button>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="p-6 max-w-7xl mx-auto">
+      <>
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -86,12 +273,12 @@ const OrganisationProjets = () => {
             ))}
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <>
       {/* En-tête */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
@@ -104,156 +291,34 @@ const OrganisationProjets = () => {
         </div>
       </div>
 
-      {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Projets</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projets Actifs</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.active}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projets Terminés</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completed}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de Réussite</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filtres et recherche */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Rechercher un projet..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="active">Actif</SelectItem>
-            <SelectItem value="completed">Terminé</SelectItem>
-            <SelectItem value="draft">Brouillon</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Trier par" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Plus récent</SelectItem>
-            <SelectItem value="name">Nom A-Z</SelectItem>
-            <SelectItem value="progress">Progression</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* Liste des projets */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {sortedProjects.length === 0 ? (
-          <div className="col-span-full">
-            <Card className="text-center py-12">
-              <CardContent>
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Aucun projet trouvé</h3>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          sortedProjects.map((project) => (
-            <Card 
-              key={project.project_id}
-              className="hover:shadow-md transition-shadow"
-            >
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{project.nom_projet}</CardTitle>
-                    <CardDescription className="mt-2">
-                      {project.description_synthetique || 'Aucune description disponible'}
-                    </CardDescription>
-                  </div>
-                  <Badge className={getStatusColor(project.statut)}>
-                    {getStatusLabel(project.statut)}
-                  </Badge>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  {/* Avatar entrepreneur */}
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 bg-gradient-to-br from-aurentia-pink to-aurentia-orange rounded-full flex items-center justify-center text-white text-sm font-medium">
-                      {project.user_id ? project.user_id.slice(0, 2).toUpperCase() : 'NA'}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Entrepreneur</p>
-                      <p className="text-xs text-gray-500">{project.user_id || 'Non assigné'}</p>
-                    </div>
-                  </div>
-
-                  {/* Progression */}
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{project.avancement_global || 0}%</p>
-                    <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-aurentia-pink to-aurentia-orange rounded-full transition-all duration-300"
-                        style={{ width: `${project.avancement_global || 0}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Date de création */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-500">
-                      Créé le {new Date(project.created_at || '').toLocaleDateString('fr-FR')}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-    </div>
+      <Card>
+        <CardContent className="p-6">
+          <DataTable
+            columns={columns}
+            data={projects}
+            searchKey="nom_projet"
+            searchPlaceholder="Rechercher un projet..."
+            onRowSelectionChange={handleRowSelectionChange}
+            bulkActions={bulkActions}
+            externalFilter={(project) => selectedStatus === 'all' || project.statut === selectedStatus}
+            additionalControls={
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="active">Actif</SelectItem>
+                  <SelectItem value="completed">Terminé</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                </SelectContent>
+              </Select>
+            }
+          />
+        </CardContent>
+      </Card>
+    </>
   );
 };
 

@@ -31,7 +31,7 @@ const OrganisationLivrables = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [selectedProject, setSelectedProject] = useState('all');
+  const [selectedProject, setSelectedProject] = useState('');
   const [activeTab, setActiveTab] = useState('Vue grille');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<DeliverableFormData>>({});
@@ -100,7 +100,7 @@ const OrganisationLivrables = () => {
                          (deliverable.description && deliverable.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = selectedStatus === 'all' || deliverable.status === selectedStatus;
     const matchesType = selectedType === 'all' || deliverable.type === selectedType;
-    const matchesProject = selectedProject === 'all' || deliverable.project_id === selectedProject;
+    const matchesProject = !selectedProject || deliverable.project_id === selectedProject;
     
     return matchesSearch && matchesStatus && matchesType && matchesProject;
   }), [deliverables, searchTerm, selectedStatus, selectedType, selectedProject, projectsMap]);
@@ -202,9 +202,6 @@ const OrganisationLivrables = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="secondary" className="bg-white border border-gray-200 hover:bg-gray-50">
-                Exporter
-              </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
@@ -406,7 +403,6 @@ const OrganisationLivrables = () => {
                 <SelectValue placeholder="Projet" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les projets</SelectItem>
                 {projects.map(project => (
                   <SelectItem key={project.project_id} value={project.project_id}>{project.nom_projet}</SelectItem>
                 ))}
@@ -529,18 +525,19 @@ const OrganisationLivrables = () => {
               })}
             </div>
           )}
-        </CustomTabs>        {filteredDeliverables.length === 0 && (
+        </CustomTabs>        
+        {filteredDeliverables.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Aucun livrable trouvé</h3>
               <p className="text-gray-600 mb-4">
-                {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || selectedProject !== 'all'
+                {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || !!selectedProject
                   ? 'Aucun livrable ne correspond à vos critères de recherche.'
                   : 'Commencez par créer votre premier livrable.'
                 }
               </p>
-              {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || selectedProject !== 'all' ? (
+              {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || !!selectedProject ? (
                 <Button 
                   style={{ backgroundColor: '#ff5932' }} 
                   className="hover:opacity-90 text-white"
@@ -548,7 +545,7 @@ const OrganisationLivrables = () => {
                     setSearchTerm('');
                     setSelectedStatus('all');
                     setSelectedType('all');
-                    setSelectedProject('all');
+                    setSelectedProject('');
                   }}
                 >
                   Réinitialiser les filtres

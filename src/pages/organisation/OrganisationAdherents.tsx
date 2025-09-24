@@ -19,14 +19,29 @@ import {
   Star,
   Eye,
   Edit,
-  MoreVertical
+  MoreVertical,
+  MoreHorizontal,
+  Trash2,
+  UserCheck,
+  ArrowUpDown
 } from "lucide-react";
 import { useAdherents } from '@/hooks/useOrganisationData';
 import type { Adherent } from '@/types/organisationTypes';
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const OrganisationAdherents = () => {
   const { id: organisationId } = useParams();
-  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -34,12 +49,8 @@ const OrganisationAdherents = () => {
   const { adherents, loading } = useAdherents();
 
   const filteredAdherents = adherents.filter(adherent => {
-    const fullName = `${adherent.first_name} ${adherent.last_name}`.trim();
-    const matchesSearch = fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         adherent.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'all' || adherent.status === selectedStatus;
-    
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const getStatusColor = (status: Adherent['status']) => {
@@ -70,6 +81,210 @@ const OrganisationAdherents = () => {
     ) : 0
   };
 
+  // Colonnes pour le DataTable
+  const columns: ColumnDef<Adherent>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "first_name",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Nom complet
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const adherent = row.original;
+        const fullName = `${adherent.first_name} ${adherent.last_name}`.trim();
+        const initials = `${adherent.first_name?.[0] || ''}${adherent.last_name?.[0] || ''}`.toUpperCase();
+        
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-aurentia-pink rounded-full flex items-center justify-center text-white font-semibold text-xs">
+              {initials || adherent.email.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <div className="font-medium">{fullName || adherent.email}</div>
+              <div className="text-sm text-gray-500">{adherent.email}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Statut",
+      cell: ({ row }) => {
+        const status = row.getValue("status") as Adherent['status'];
+        return (
+          <Badge className={getStatusColor(status)}>
+            {getStatusLabel(status)}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "project_count",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Projets
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const count = row.getValue("project_count") as number;
+        return <div className="text-center font-medium">{count}</div>;
+      },
+    },
+    {
+      accessorKey: "completed_deliverables",
+      header: "Progression",
+      cell: ({ row }) => {
+        const adherent = row.original;
+        const progressPercentage = adherent.total_deliverables > 0 
+          ? Math.round((adherent.completed_deliverables / adherent.total_deliverables) * 100) 
+          : 0;
+        
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-aurentia-pink h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-sm font-medium">{progressPercentage}%</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "joined_at",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Date d'adhésion
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const date = row.getValue("joined_at") as string;
+        return <div className="text-sm">{new Date(date).toLocaleDateString('fr-FR')}</div>;
+      },
+    },
+    {
+      accessorKey: "last_activity",
+      header: "Dernière activité",
+      cell: ({ row }) => {
+        const lastActivity = row.getValue("last_activity") as string | undefined;
+        if (!lastActivity) {
+          return <span className="text-gray-400">-</span>;
+        }
+        return <div className="text-sm">{new Date(lastActivity).toLocaleDateString('fr-FR')}</div>;
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const adherent = row.original;
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Ouvrir le menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem>
+                <Eye className="mr-2 h-4 w-4" />
+                Voir le profil
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Edit className="mr-2 h-4 w-4" />
+                Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Mail className="mr-2 h-4 w-4" />
+                Contacter
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigate(`/organisation/mentors/assign?adherent=${adherent.id}`)}
+              >
+                <UserCheck className="mr-2 h-4 w-4" />
+                {adherent.mentor_id ? 'Changer' : 'Assigner'} mentor
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const [selectedAdherents, setSelectedAdherents] = useState<Adherent[]>([]);
+
+  const handleRowSelectionChange = (selectedRows: Adherent[]) => {
+    setSelectedAdherents(selectedRows);
+  };
+
+  const bulkActions = (
+    <div className="flex gap-2">
+      <Button variant="outline" size="sm">
+        <Mail className="mr-2 h-4 w-4" />
+        Contacter ({selectedAdherents.length})
+      </Button>
+      <Button variant="outline" size="sm">
+        <UserCheck className="mr-2 h-4 w-4" />
+        Assigner mentor ({selectedAdherents.length})
+      </Button>
+      <Button variant="destructive" size="sm">
+        <Trash2 className="mr-2 h-4 w-4" />
+        Supprimer ({selectedAdherents.length})
+      </Button>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="space-y-6 p-8">
@@ -84,231 +299,54 @@ const OrganisationAdherents = () => {
   }
 
   return (
-    <div className="mx-auto py-8 min-h-screen animate-fade-in">
-      <div className="w-[80vw] md:w-11/12 mx-auto px-4">
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Adhérents</h1>
-              <p className="text-gray-600 text-base">
-                Gérez les adhérents de votre organisation.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline">
-                <Mail className="w-4 h-4 mr-2" />
-                Inviter
-              </Button>
-              <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Ajouter
-              </Button>
-            </div>
+    <>
+      {/* En-tête */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Adhérents</h1>
+            <p className="text-gray-600 text-base">
+              Gérez les adhérents de votre organisation.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter
+            </Button>
           </div>
         </div>
-
-        {/* Statistiques */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Adhérents</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Actifs</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.active}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">En Attente</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pending}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Progression Moy.</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.avgProgress}%</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filtres */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Rechercher par nom ou email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="inactive">Inactif</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+      </div>
 
         {/* Liste des adhérents */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAdherents.map((adherent) => {
-            const fullName = `${adherent.first_name} ${adherent.last_name}`.trim();
-            const initials = `${adherent.first_name?.[0] || ''}${adherent.last_name?.[0] || ''}`.toUpperCase();
-            const progressPercentage = adherent.total_deliverables > 0 
-              ? Math.round((adherent.completed_deliverables / adherent.total_deliverables) * 100) 
-              : 0;
-            
-            return (
-              <Card key={adherent.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-aurentia-pink rounded-full flex items-center justify-center text-white font-semibold">
-                        {initials || adherent.email.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{fullName || adherent.email}</h3>
-                        <p className="text-sm text-gray-600">{adherent.email}</p>
-                      </div>
-                    </div>
-                    <Badge className={getStatusColor(adherent.status)}>
-                      {getStatusLabel(adherent.status)}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Date d'adhésion */}
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>Rejoint le {new Date(adherent.joined_at).toLocaleDateString('fr-FR')}</span>
-                    </div>
-
-                    {/* Mentor - utiliser mentor_id pour l'instant */}
-                    {adherent.mentor_id && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Users className="w-4 h-4" />
-                        <span>Mentor assigné</span>
-                      </div>
-                    )}
-
-                    {/* Projets et livrables */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Projets</span>
-                        <div className="font-semibold">{adherent.project_count}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Livrables</span>
-                        <div className="font-semibold">
-                          {adherent.completed_deliverables}/{adherent.total_deliverables}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Progression */}
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Progression</span>
-                        <span>{progressPercentage}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-aurentia-pink h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${progressPercentage}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Dernière activité */}
-                    <div className="text-xs text-gray-500">
-                      {adherent.last_activity 
-                        ? `Dernière activité: ${new Date(adherent.last_activity).toLocaleDateString('fr-FR')}`
-                        : `Rejoint le ${new Date(adherent.joined_at).toLocaleDateString('fr-FR')}`
-                      }
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Eye className="w-4 h-4 mr-2" />
-                        Voir
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => navigate(`/organisation/mentors/assign?adherent=${adherent.id}`)}
-                      >
-                        <Users className="w-4 h-4 mr-2" />
-                        {adherent.mentor_id ? 'Changer' : 'Assigner'} mentor
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Message si aucun adhérent */}
-        {filteredAdherents.length === 0 && (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun adhérent trouvé</h3>
-              <p className="text-gray-600 mb-4">
-                Aucun adhérent ne correspond à vos critères de recherche.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedStatus('all');
-                }}
-              >
-                Réinitialiser les filtres
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-};
+        <Card>
+          <CardContent className="p-6">
+            <DataTable
+              columns={columns}
+              data={adherents}
+              searchKey="first_name"
+              searchPlaceholder="Rechercher par nom ou email..."
+              onRowSelectionChange={handleRowSelectionChange}
+              bulkActions={bulkActions}
+              externalFilter={(adherent) => selectedStatus === 'all' || adherent.status === selectedStatus}
+              additionalControls={
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous</SelectItem>
+                    <SelectItem value="active">Actif</SelectItem>
+                    <SelectItem value="pending">En attente</SelectItem>
+                    <SelectItem value="inactive">Inactif</SelectItem>
+                  </SelectContent>
+                </Select>
+              }
+            />
+          </CardContent>
+        </Card>
+      </>
+    );
+  };
 
 export default OrganisationAdherents;

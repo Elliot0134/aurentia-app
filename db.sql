@@ -512,7 +512,7 @@ CREATE TABLE public.mini_swot (
 CREATE TABLE public.organizations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   name text NOT NULL,
-  type text CHECK (type = ANY (ARRAY['incubator'::text, 'accelerator'::text, 'venture_capital'::text, 'corporate'::text, 'university'::text, 'government'::text, 'business_school'::text, 'consulting'::text, 'other'::text])),
+  type text CHECK (type = ANY (ARRAY['incubator'::text, 'accelerator'::text, 'venture_capital'::text, 'corporate'::text, 'university'::text, 'government'::text, 'business_school'::text, 'chamber_commerce'::text, 'consulting'::text, 'coworking'::text, 'other'::text])),
   domain text UNIQUE,
   logo_url text,
   primary_color text DEFAULT '#F04F6A'::text CHECK (primary_color IS NULL OR primary_color ~ '^#[0-9A-Fa-f]{6}$'::text),
@@ -539,7 +539,7 @@ CREATE TABLE public.organizations (
   team_size integer,
   specializations jsonb DEFAULT '[]'::jsonb,
   methodology text,
-  program_duration_months integer,
+  program_duration_months numeric,
   success_criteria text,
   support_types jsonb DEFAULT '[]'::jsonb,
   social_media jsonb DEFAULT '{}'::jsonb,
@@ -550,6 +550,7 @@ CREATE TABLE public.organizations (
   owner_id uuid,
   custom_geographic text,
   custom_type text,
+  event_type_colors jsonb DEFAULT '{"other": "#64748b", "meeting": "#6366f1", "webinar": "#8b5cf6", "training": "#10b981", "workshop": "#ff5932", "networking": "#06b6d4", "presentation": "#f59e0b"}'::jsonb CHECK (validate_event_type_colors(event_type_colors)),
   CONSTRAINT organizations_pkey PRIMARY KEY (id),
   CONSTRAINT organizations_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
 );
@@ -896,6 +897,20 @@ CREATE TABLE public.success_story (
   CONSTRAINT success_story_pkey PRIMARY KEY (project_id),
   CONSTRAINT success_story_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT success_story_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.user_organizations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  organization_id uuid NOT NULL,
+  user_role text NOT NULL CHECK (user_role = ANY (ARRAY['organisation'::text, 'staff'::text, 'member'::text])),
+  joined_at timestamp with time zone DEFAULT now(),
+  is_primary boolean DEFAULT false,
+  status text DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'pending'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_organizations_pkey PRIMARY KEY (id),
+  CONSTRAINT user_organizations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT user_organizations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.vision_mission_valeurs (
   user_id uuid NOT NULL,

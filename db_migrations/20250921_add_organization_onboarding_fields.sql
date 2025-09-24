@@ -2,6 +2,10 @@
 -- Date: 2025-09-21
 -- Description: Ajoute les champs nécessaires pour l'onboarding complet des structures d'accompagnement
 
+-- Ajouter le champ created_by manquant
+ALTER TABLE public.organizations 
+ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users(id);
+
 -- Ajouter les champs d'onboarding manquants à la table organizations
 ALTER TABLE public.organizations 
 ADD COLUMN IF NOT EXISTS description text,
@@ -23,6 +27,10 @@ ADD COLUMN IF NOT EXISTS is_public boolean DEFAULT true,
 ADD COLUMN IF NOT EXISTS allow_direct_applications boolean DEFAULT true,
 ADD COLUMN IF NOT EXISTS onboarding_completed boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS onboarding_step integer DEFAULT 0;
+
+-- Changer le type de program_duration_months en numeric pour permettre les décimales
+ALTER TABLE public.organizations 
+ALTER COLUMN program_duration_months TYPE numeric;
 
 -- Mettre à jour les types existants pour inclure plus d'options
 ALTER TABLE public.organizations 
@@ -80,6 +88,10 @@ WHERE is_public = true AND onboarding_completed = true;
 -- Politique RLS pour la vue publique
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 
+-- Supprimer les politiques existantes si elles existent
+DROP POLICY IF EXISTS "Public organizations are viewable by everyone" ON public.organizations;
+DROP POLICY IF EXISTS "Organization creators and staff can view and edit their organization" ON public.organizations;
+
 -- Permettre la lecture publique des organisations publiques
 CREATE POLICY "Public organizations are viewable by everyone" ON public.organizations
   FOR SELECT USING (is_public = true AND onboarding_completed = true);
@@ -87,12 +99,12 @@ CREATE POLICY "Public organizations are viewable by everyone" ON public.organiza
 -- Permettre aux créateurs et staff de leur organisation de voir et modifier leurs données
 CREATE POLICY "Organization creators and staff can view and edit their organization" ON public.organizations
   FOR ALL USING (
-    auth.uid() = created_by OR 
     auth.uid() IN (
       SELECT id FROM public.profiles 
       WHERE organization_id = organizations.id 
-      AND user_role IN ('organisation', 'staff')
-    )
+      AND user_role IN ('organisation', 'staff', 'admin')
+    ) OR
+    auth.uid() = created_by
   );
 
 -- Commentaires pour documenter les nouveaux champs

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface OrganisationData {
   id: string;
   name: string;
+  type?: string;
   description?: string;
   welcome_message?: string;
   logo_url?: string;
@@ -18,6 +19,26 @@ export interface OrganisationData {
   settings?: any;
   created_at?: string;
   updated_at?: string;
+  
+  // Champs d'onboarding ajoutés
+  founded_year?: number;
+  mission?: string;
+  vision?: string;
+  values?: any;
+  sectors?: any;
+  stages?: any;
+  geographic_focus?: any;
+  team_size?: number;
+  specializations?: any;
+  methodology?: string;
+  program_duration_months?: number;
+  success_criteria?: string;
+  support_types?: any;
+  social_media?: any;
+  is_public?: boolean;
+  allow_direct_applications?: boolean;
+  onboarding_completed?: boolean;
+  onboarding_step?: number;
 }
 
 export interface OrganisationStats {
@@ -101,12 +122,12 @@ export interface Event {
   type: 'workshop' | 'meeting' | 'webinar' | 'networking' | 'presentation' | 'training' | 'other';
   location?: string;
   organizer_id?: string;
-  is_recurring?: boolean;
+  is_recurring: boolean;
   max_participants?: number;
-  participants?: string[];
+  participants: string[];
   status: 'planned' | 'ongoing' | 'completed' | 'cancelled';
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Partner {
@@ -165,10 +186,10 @@ export const updateOrganisation = async (id: string, updates: Partial<Organisati
 };
 
 // Service pour mettre à jour les paramètres d'une organisation
-export const updateOrganisationSettings = async (id: string, settings: any) => {
+export const updateOrganisationSettings = async (id: string, updateData: any) => {
   const { data, error } = await (supabase as any)
     .from('organizations')
-    .update({ settings })
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();
@@ -417,10 +438,47 @@ export const getAllOrganisations = async () => {
   return data || [];
 };
 
-// Services temporaires pour fonctionnalités non encore disponibles
-export const getOrganisationEvents = async (organizationId: string) => {
-  console.warn('Events table not yet available');
-  return [];
+// Events services - implémentation complète
+export const getOrganisationEvents = async (organizationId: string): Promise<Event[]> => {
+  try {
+    const { data, error } = await (supabase as any)
+      .from('events')
+      .select(`
+        *,
+        organizer:profiles!events_organizer_id_fkey(
+          email, first_name, last_name
+        )
+      `)
+      .eq('organization_id', organizationId)
+      .order('start_date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching events:', error);
+      return [];
+    }
+    
+    // Normaliser les données pour s'assurer que tous les champs requis sont présents
+    return (data || []).map((event: any) => ({
+      id: event.id,
+      organization_id: event.organization_id,
+      title: event.title,
+      description: event.description,
+      start_date: event.start_date,
+      end_date: event.end_date,
+      type: event.type,
+      location: event.location,
+      organizer_id: event.organizer_id,
+      is_recurring: event.is_recurring || false,
+      max_participants: event.max_participants,
+      participants: event.participants || [],
+      status: event.status || 'planned',
+      created_at: event.created_at,
+      updated_at: event.updated_at
+    }));
+  } catch (error) {
+    console.error('Error fetching organisation events:', error);
+    return [];
+  }
 };
 
 export const getOrganisationPartners = async (organizationId: string) => {
@@ -499,51 +557,141 @@ export const deleteDeliverable = async (id: string): Promise<void> => {
   }
 };
 
-// Events services
-export const createEvent = async (organizationId: string, eventData: Partial<Event>): Promise<Event> => {
+// Events services - implémentation complète
+export const createEvent = async (eventData: Partial<Event>): Promise<Event> => {
   try {
+    // Validation des données
+    if (!eventData.title || !eventData.start_date || !eventData.end_date || !eventData.organization_id) {
+      throw new Error('Missing required fields: title, start_date, end_date, or organization_id');
+    }
+
+    // Validation des participants max (ne peut pas être négatif)
+    if (eventData.max_participants !== undefined && eventData.max_participants < 0) {
+      throw new Error('max_participants cannot be negative');
+    }
+
+    // Préparer les données pour l'insertion
+    const insertData = {
+      title: eventData.title,
+      description: eventData.description || null,
+      start_date: eventData.start_date,
+      end_date: eventData.end_date,
+      type: eventData.type || 'other',
+      location: eventData.location || null,
+      organizer_id: eventData.organizer_id || null,
+      is_recurring: eventData.is_recurring || false,
+      max_participants: eventData.max_participants || null,
+      organization_id: eventData.organization_id,
+      participants: eventData.participants || [],
+      status: eventData.status || 'planned'
+    };
+
     const { data, error } = await (supabase as any)
       .from('events')
-      .insert({ ...eventData, organization_id: organizationId })
-      .select()
+      .insert(insertData)
+      .select(`
+        *,
+        organizer:profiles!events_organizer_id_fkey(
+          email, first_name, last_name
+        )
+      `)
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Error creating event:', error);
+      throw error;
+    }
+    
+    // Normaliser les données pour s'assurer que tous les champs requis sont présents
+    return {
+      id: data.id,
+      organization_id: data.organization_id,
+      title: data.title,
+      description: data.description,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      type: data.type,
+      location: data.location,
+      organizer_id: data.organizer_id,
+      is_recurring: data.is_recurring || false,
+      max_participants: data.max_participants,
+      participants: data.participants || [],
+      status: data.status || 'planned',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
   } catch (error) {
-    console.warn('Events creation not yet available');
-    throw new Error('Events functionality not yet available');
+    console.error('Error in createEvent:', error);
+    throw error;
   }
 };
 
 export const updateEvent = async (id: string, updates: Partial<Event>): Promise<Event> => {
   try {
+    // Validation des participants max (ne peut pas être négatif)
+    if (updates.max_participants !== undefined && updates.max_participants < 0) {
+      throw new Error('max_participants cannot be negative');
+    }
+
     const { data, error } = await (supabase as any)
       .from('events')
-      .update(updates)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        organizer:profiles!events_organizer_id_fkey(
+          email, first_name, last_name
+        )
+      `)
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Error updating event:', error);
+      throw error;
+    }
+    
+    // Normaliser les données pour s'assurer que tous les champs requis sont présents
+    return {
+      id: data.id,
+      organization_id: data.organization_id,
+      title: data.title,
+      description: data.description,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      type: data.type,
+      location: data.location,
+      organizer_id: data.organizer_id,
+      is_recurring: data.is_recurring || false,
+      max_participants: data.max_participants,
+      participants: data.participants || [],
+      status: data.status || 'planned',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
   } catch (error) {
-    console.warn('Events update not yet available');
-    throw new Error('Events functionality not yet available');
+    console.error('Error in updateEvent:', error);
+    throw error;
   }
 };
 
-export const deleteEvent = async (id: string): Promise<void> => {
+export const deleteEvent = async (id: string): Promise<boolean> => {
   try {
     const { error } = await (supabase as any)
       .from('events')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting event:', error);
+      throw error;
+    }
+    return true;
   } catch (error) {
-    console.warn('Events deletion not yet available');
-    throw new Error('Events functionality not yet available');
+    console.error('Error in deleteEvent:', error);
+    throw error;
   }
 };
 

@@ -7,6 +7,8 @@ export interface AdvancedAnalyticsData {
   projects: any[];
   adherents: any[];
   mentors: any[];
+  mentorAssignments: any[];
+  organization: any | null;
   
   // Données dérivées des livrables
   businessModels: any[];
@@ -18,11 +20,13 @@ export interface AdvancedAnalyticsData {
   juridiques: any[];
   personas: any[];
   scores: any[];
+  deliverables: any[];
   
   // Données d'engagement
   conversations: any[];
   messages: any[];
   events: any[];
+  partners: any[];
   
   // Données de paiement
   paymentIntents: any[];
@@ -30,6 +34,8 @@ export interface AdvancedAnalyticsData {
   
   // Données d'invitation
   invitationCodes: any[];
+  formTemplates: any[];
+  formSubmissions: any[];
 }
 
 export interface AdvancedMetrics {
@@ -40,6 +46,8 @@ export interface AdvancedMetrics {
   draftProjects: number;
   totalAdherents: number;
   totalMentors: number;
+  activeMentorAssignments: number;
+  totalMentorAssignments: number;
   
   // Métriques de livrables
   totalBusinessModels: number;
@@ -51,6 +59,9 @@ export interface AdvancedMetrics {
   totalJuridiques: number;
   totalPersonas: number;
   totalScores: number;
+  totalDeliverables: number;
+  completedDeliverables: number;
+  approvedDeliverables: number;
   
   // Métriques d'engagement
   totalConversations: number;
@@ -61,6 +72,9 @@ export interface AdvancedMetrics {
   avgParticipantsPerEvent: number;
   upcomingEvents: number;
   pastEvents: number;
+  totalPartners: number;
+  activePartners: number;
+  partnerTypes: Record<string, number>;
   
   // Métriques de croissance
   monthlyGrowth: {
@@ -68,6 +82,8 @@ export interface AdvancedMetrics {
     entrepreneurs: number;
     businessModels: number;
     conversations: number;
+    deliverables: number;
+    partners: number;
   };
   
   // Taux et pourcentages
@@ -79,6 +95,7 @@ export interface AdvancedMetrics {
   };
   averageScore: number;
   projectSuccessRate: number;
+  avgProjectProgress: number;
   
   // Données pour les graphiques
   monthlyActivity: Array<{
@@ -87,6 +104,8 @@ export interface AdvancedMetrics {
     entrepreneurs: number;
     conversations: number;
     events: number;
+    deliverables: number;
+    partners: number;
   }>;
   personaTypes: Record<string, number>;
   
@@ -100,6 +119,13 @@ export interface AdvancedMetrics {
   totalInvitationCodes: number;
   activeInvitationCodes: number;
   usedInvitationCodes: number;
+  formTemplates: number;
+  formSubmissions: number;
+  reviewedSubmissions: number;
+  approvedSubmissions: number;
+  rejectedSubmissions: number;
+  onboardingCompleted: boolean;
+  onboardingStep: number;
 }
 
 export type TimeRangeKey =
@@ -121,6 +147,8 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
     projects: [],
     adherents: [],
     mentors: [],
+    mentorAssignments: [],
+    organization: null,
     businessModels: [],
     pitches: [],
     visionMissions: [],
@@ -130,12 +158,16 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
     juridiques: [],
     personas: [],
     scores: [],
+    deliverables: [],
     conversations: [],
     messages: [],
     events: [],
+    partners: [],
     paymentIntents: [],
     subscriptions: [],
-    invitationCodes: []
+    invitationCodes: [],
+    formTemplates: [],
+    formSubmissions: []
   });
 
   const loadAdvancedData = async () => {
@@ -156,6 +188,8 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
           projects: [],
           adherents: [],
           mentors: [],
+          mentorAssignments: [],
+          organization: null,
           businessModels: [],
           pitches: [],
           visionMissions: [],
@@ -170,7 +204,11 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
           paymentIntents: [],
           subscriptions: [],
           invitationCodes: [],
-          events: []
+          events: [],
+          deliverables: [],
+          partners: [],
+          formTemplates: [],
+          formSubmissions: []
         });
         setLoading(false);
         return;
@@ -198,7 +236,14 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
         invitationCodesData,
         projectsData,
         entrepreneursData,
-        eventsData
+        eventsData,
+        deliverablesData,
+        partnersData,
+        mentorsData,
+        mentorAssignmentsData,
+        formTemplatesData,
+        formSubmissionsData,
+        organizationData
       ] = await Promise.all([
         supabase.from('business_model').select('*').in('user_id', memberIds),
         supabase.from('pitch').select('*').in('user_id', memberIds),
@@ -218,13 +263,22 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
         (supabase as any).from('invitation_code').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
         supabase.from('project_summary').select('*').in('user_id', memberIds),
         (supabase as any).from('profiles').select('*').eq('organization_id', organisationId),
-        (supabase as any).from('events').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] })
+        (supabase as any).from('events').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
+        (supabase as any).from('deliverables').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
+        (supabase as any).from('partners').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
+        (supabase as any).from('mentors').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
+        (supabase as any).from('mentor_assignments').select('*').then((res: any) => res || { data: [] }),
+        (supabase as any).from('form_templates').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
+        (supabase as any).from('form_submissions').select('*').then((res: any) => res || { data: [] }),
+        (supabase as any).from('organizations').select('*').eq('id', organisationId).single().then((res: any) => res || { data: null })
       ]);
 
       const newData: AdvancedAnalyticsData = {
         projects: projectsData.data || [],
         adherents: entrepreneursData.data || [],
-        mentors: [], // TODO: Récupérer depuis la table mentors quand disponible
+        mentors: mentorsData.data || [],
+        mentorAssignments: mentorAssignmentsData.data || [],
+        organization: organizationData.data || null,
         businessModels: businessModelsData.data || [],
         pitches: pitchesData.data || [],
         visionMissions: visionMissionsData.data || [],
@@ -243,7 +297,11 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
         events: eventsData.data || [],
         paymentIntents: paymentIntentsData.data || [],
         subscriptions: subscriptionsData.data || [],
-        invitationCodes: invitationCodesData.data || []
+        invitationCodes: invitationCodesData.data || [],
+        deliverables: deliverablesData.data || [],
+        partners: partnersData.data || [],
+        formTemplates: formTemplatesData.data || [],
+        formSubmissions: formSubmissionsData.data || []
       };
 
       setData(newData);
@@ -345,11 +403,15 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
     };
 
     // Métriques de croissance
+    const recentDeliverables = filterByDate(data.deliverables);
+    const recentPartners = filterByDate(data.partners);
     const monthlyGrowth = {
       projects: recentProjects.length,
       entrepreneurs: recentAdherents.length,
       businessModels: recentBusinessModels.length,
-      conversations: recentConversations.length
+      conversations: recentConversations.length,
+      deliverables: recentDeliverables.length,
+      partners: recentPartners.length
     };
 
     // Scores moyens
@@ -441,8 +503,34 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
       const entrepreneurs = data.adherents.filter((e) => inBucket(new Date(e.created_at), b)).length;
       const conversations = data.conversations.filter((c) => inBucket(new Date(c.created_at), b)).length;
       const events = data.events.filter((e) => inBucket(new Date(e.created_at), b)).length;
-      return { month: b.label, projects, entrepreneurs, conversations, events };
+      const deliverables = data.deliverables.filter((d) => inBucket(new Date(d.created_at), b)).length;
+      const partners = data.partners.filter((p) => inBucket(new Date(p.created_at), b)).length;
+      return { month: b.label, projects, entrepreneurs, conversations, events, deliverables, partners };
     });
+
+    const totalDeliverables = data.deliverables.length;
+    const completedDeliverables = data.deliverables.filter(d => ['completed', 'approved'].includes(d.status)).length;
+    const approvedDeliverables = data.deliverables.filter(d => d.status === 'approved').length;
+
+    const mentorAssignmentsActive = data.mentorAssignments.filter(a => a.status === 'active').length;
+    const partnerTypes = data.partners.reduce((acc, p) => { acc[p.type] = (acc[p.type] || 0) + 1; return acc; }, {} as Record<string, number>);
+
+    const formTemplatesCount = data.formTemplates.length;
+    const formSubmissionsCount = data.formSubmissions.length;
+    const reviewedSubmissions = data.formSubmissions.filter(s => ['reviewed', 'approved', 'rejected'].includes(s.status)).length;
+    const approvedSubmissions = data.formSubmissions.filter(s => s.status === 'approved').length;
+    const rejectedSubmissions = data.formSubmissions.filter(s => s.status === 'rejected').length;
+
+    // Progression moyenne des projets (si colonnes présentes)
+    let avgProjectProgress = 0;
+    try {
+      const progressValues = data.projects
+        .map(p => p.avancement_global || p.progress || 0)
+        .filter((v: any) => typeof v === 'number');
+      if (progressValues.length > 0) {
+        avgProjectProgress = progressValues.reduce((a: number, b: number) => a + b, 0) / progressValues.length;
+      }
+    } catch {}
 
     return {
       // Métriques de base
@@ -452,6 +540,8 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
       draftProjects,
       totalAdherents: data.adherents.length,
       totalMentors: data.mentors.length,
+      activeMentorAssignments: mentorAssignmentsActive,
+      totalMentorAssignments: data.mentorAssignments.length,
       
       // Métriques de livrables
       totalBusinessModels,
@@ -463,6 +553,9 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
       totalJuridiques: data.juridiques.length,
       totalPersonas: data.personas.length,
       totalScores: data.scores.length,
+      totalDeliverables,
+      completedDeliverables,
+      approvedDeliverables,
       
       // Métriques d'engagement
       totalConversations,
@@ -473,6 +566,9 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
       avgParticipantsPerEvent,
       upcomingEvents,
       pastEvents,
+      totalPartners: data.partners.length,
+      activePartners: data.partners.filter(p => p.status === 'active').length,
+      partnerTypes,
       
       // Métriques de croissance
       monthlyGrowth,
@@ -481,6 +577,7 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
       completionRates,
       averageScore,
       projectSuccessRate: totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0,
+      avgProjectProgress,
       
       // Données pour les graphiques
       monthlyActivity,
@@ -495,7 +592,14 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
       // Métriques d'invitation
       totalInvitationCodes: data.invitationCodes.length,
       activeInvitationCodes: data.invitationCodes.filter(c => c.is_active).length,
-      usedInvitationCodes: data.invitationCodes.filter(c => c.current_uses > 0).length
+      usedInvitationCodes: data.invitationCodes.filter(c => c.current_uses > 0).length,
+      formTemplates: formTemplatesCount,
+      formSubmissions: formSubmissionsCount,
+      reviewedSubmissions,
+      approvedSubmissions,
+      rejectedSubmissions,
+      onboardingCompleted: !!data.organization?.onboarding_completed,
+      onboardingStep: data.organization?.onboarding_step ?? 0
     };
   }, [data, timeRange]);
 

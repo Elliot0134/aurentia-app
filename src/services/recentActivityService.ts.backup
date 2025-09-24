@@ -1,0 +1,419 @@
+import { supabase } from '@/integrations/supabase/client';
+
+export interface RecentActivity {
+  id: string;
+  type: 'user_joined' | 'project_created' | 'project_completed' | 'deliverable_completed' | 'event_created' | 'mentor_assigned' | 'invitation_created' | 'form_created' | 'form_submitted';
+  title: string;
+  description: string;
+  icon: string;
+  user_name?: string;
+  user_email?: string;
+  entity_id?: string;
+  entity_name?: string;
+  created_at: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Récupère les activités récentes d'une organisation
+ * @param organizationId ID de l'organisation
+ * @param limit Nombre d'activités à récupérer (défaut: 15)
+ * @param offset Décalage pour la pagination (défaut: 0)
+ * @returns Liste des activités récentes
+ */
+export const getRecentActivities = async (
+  organizationId: string, 
+  limit: number = 15, 
+  offset: number = 0
+): Promise<RecentActivity[]> => {
+  const activities: RecentActivity[] = [];
+
+    // 0. Nouvelles organisations créées (si c'est une organisation récente)
+    const { data: newOrganizations } = await client
+      .from('organizations')
+      .select(`
+        id,
+        name,
+        created_at,
+        profiles!organizations_created_by_fkey (
+          email,
+          first_name,
+          last_name
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (newOrganizations) {
+      newOrganizations.forEach((org: any) => {
+        const creatorName = org.profiles?.first_name && org.profiles?.last_name
+          ? `${org.profiles.first_name} ${org.profiles.last_name} (${org.profiles?.email})`
+          : org.profiles?.email || 'Créateur inconnu';
+
+        activities.push({
+          id: `org_${org.id}`,
+          type: 'user_joined', // On utilise le même type que les nouveaux membres
+          title: 'Nouvelle organisation créée',
+          description: `${creatorName} a créé l'organisation "${org.name}"`,
+          icon: '🏢',
+          user_name: creatorName,
+          user_email: org.profiles?.email,
+          entity_id: org.id,
+          entity_name: org.name,
+          created_at: org.created_at,
+          metadata: { organization_name: org.name }
+        });
+      });
+    }
+
+    // 1. Nouveaux adhérents (utilisateurs qui ont rejoint l'organisation)
+    const { data: newMembers } = await client
+      .from('user_organizations')
+      .select(`
+        id,
+        joined_at,
+        user_role,
+        profiles!user_organizations_user_id_fkey (
+          email,
+          first_name,
+          last_name
+        )
+      `)
+      .eq('organization_id', organizationId)
+      .eq('status', 'active')
+      .order('joined_at', { ascending: false })
+      .limit(5);
+
+    if (newMembers) {
+      newMembers.forEach((member: any) => {
+        const userName = member.profiles?.first_name && member.profiles?.last_name
+          ? `${member.profiles.first_name} ${member.profiles.last_name}`
+          : member.profiles?.email || 'Utilisateur inconnu';
+
+        activities.push({
+          id: `member_${member.id}`,
+          type: 'user_joined',
+          title: 'Nouveau membre rejoint',
+          description: `${userName} a rejoint l'organisation en tant que ${member.user_role === 'organisation_member' ? 'entrepreneur' : 'membre de l\'équipe'}`,
+          icon: '👥',
+          user_name: userName,
+          user_email: member.profiles?.email,
+          created_at: member.joined_at,
+          metadata: { role: member.user_role }
+        });
+      });
+    }
+
+    // 2. Nouveaux projets créés par les membres de l'organisation
+    // On récupère d'abord les user_id des membres de l'organisation
+    const { data: orgMembers } = await client
+      .from('user_organizations')
+      .select('user_id')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active');
+
+    const memberUserIds = orgMembers?.map(member => member.user_id) || [];
+
+    if (memberUserIds.length > 0) {
+      const { data: newProjects } = await client
+        .from('project_summary')
+        .select(`
+          project_id,
+          nom_projet,
+          created_at,
+          user_id,
+          profiles!user_id (
+            email,
+            first_name,
+            last_name
+          )
+        `)
+        .in('user_id', memberUserIds)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (newProjects) {
+        newProjects.forEach((project: any) => {
+          const userName = project.profiles?.first_name && project.profiles?.last_name
+            ? `${project.profiles.first_name} ${project.profiles.last_name}`
+            : project.profiles?.email || 'Entrepreneur';
+
+          activities.push({
+            id: `project_${project.project_id}`,
+            type: 'project_created',
+            title: 'Nouveau projet créé',
+            description: `${userName} a créé le projet "${project.nom_projet}"`,
+            icon: '🚀',
+            user_name: userName,
+            user_email: project.profiles?.email,
+            entity_id: project.project_id,
+            entity_name: project.nom_projet,
+            created_at: project.created_at
+          });
+        });
+      }
+    }
+
+    // 3. Projets avec avancement récent (simulé via updated_at)
+    if (memberUserIds.length > 0) {
+      const { data: updatedProjects } = await client
+        .from('project_summary')
+        .select(`
+          project_id,
+          nom_projet,
+          updated_at,
+          user_id,
+          profiles!user_id (
+            email,
+            first_name,
+            last_name
+          )
+        `)
+        .in('user_id', memberUserIds)
+        .neq('updated_at', null)
+        .order('updated_at', { ascending: false })
+        .limit(3);
+
+      if (updatedProjects) {
+        updatedProjects.forEach((project: any) => {
+          const userName = project.profiles?.first_name && project.profiles?.last_name
+            ? `${project.profiles.first_name} ${project.profiles.last_name}`
+            : project.profiles?.email || 'Entrepreneur';
+
+          activities.push({
+            id: `project_updated_${project.project_id}`,
+            type: 'project_completed',
+            title: 'Projet mis à jour',
+            description: `${userName} a mis à jour le projet "${project.nom_projet}"`,
+            icon: '📈',
+            user_name: userName,
+            user_email: project.profiles?.email,
+            entity_id: project.project_id,
+            entity_name: project.nom_projet,
+            created_at: project.updated_at
+          });
+        });
+      }
+    }
+
+    // 4. Livrables terminés récemment
+    const { data: completedDeliverables } = await client
+      .from('deliverables')
+      .select(`
+        id,
+        title,
+        completed_at,
+        entrepreneur_id,
+        project_summary!deliverables_project_id_fkey (
+          nom_projet,
+          profiles!project_summary_user_id_fkey (
+            email,
+            first_name,
+            last_name
+          )
+        )
+      `)
+      .eq('organization_id', organizationId)
+      .eq('status', 'completed')
+      .not('completed_at', 'is', null)
+      .order('completed_at', { ascending: false })
+      .limit(5);
+
+    if (completedDeliverables) {
+      completedDeliverables.forEach((deliverable: any) => {
+        const userName = deliverable.project_summary?.profiles?.first_name && deliverable.project_summary?.profiles?.last_name
+          ? `${deliverable.project_summary.profiles.first_name} ${deliverable.project_summary.profiles.last_name}`
+          : deliverable.project_summary?.profiles?.email || 'Entrepreneur';
+
+        activities.push({
+          id: `deliverable_${deliverable.id}`,
+          type: 'deliverable_completed',
+          title: 'Livrable terminé',
+          description: `${userName} a terminé le livrable "${deliverable.title}"`,
+          icon: '📋',
+          user_name: userName,
+          user_email: deliverable.project_summary?.profiles?.email,
+          entity_id: deliverable.id,
+          entity_name: deliverable.title,
+          created_at: deliverable.completed_at,
+          metadata: { project_name: deliverable.project_summary?.nom_projet }
+        });
+      });
+    }
+
+    // 5. Nouveaux événements créés
+    const { data: newEvents } = await client
+      .from('events')
+      .select(`
+        id,
+        title,
+        created_at,
+        start_date,
+        type
+      `)
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (newEvents) {
+      newEvents.forEach((event: any) => {
+        activities.push({
+          id: `event_${event.id}`,
+          type: 'event_created',
+          title: 'Nouvel événement planifié',
+          description: `L'événement "${event.title}" a été programmé pour le ${new Date(event.start_date).toLocaleDateString('fr-FR')}`,
+          icon: '📅',
+          entity_id: event.id,
+          entity_name: event.title,
+          created_at: event.created_at,
+          metadata: { 
+            start_date: event.start_date,
+            event_type: event.type 
+          }
+        });
+      });
+    }
+
+    // 6. Nouveaux codes d'invitation créés
+    const { data: newInvitations, error: invitationsError } = await client
+      .from('invitation_code')
+      .select(`
+        id,
+        code,
+        created_at,
+        type,
+        created_by,
+        organization_id
+      `)
+      .not('organization_id', 'is', null)  // D'abord récupérer toutes les invitations avec organization_id
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(10);  // Augmenter la limite pour voir plus
+
+    console.log('DEBUG Invitations:', { organizationId, newInvitations: newInvitations?.length, invitationsError });
+
+    // Filtrer côté client pour l'organisation spécifique
+    const orgInvitations = newInvitations?.filter(inv => inv.organization_id === organizationId) || [];
+
+    console.log('DEBUG Filtered Invitations:', { orgInvitations: orgInvitations.length });
+
+    if (orgInvitations.length > 0) {
+      orgInvitations.slice(0, 3).forEach((invitation: any) => {
+        // Pour l'instant, on utilise juste l'ID du créateur comme nom
+        const creatorName = `Utilisateur ${invitation.created_by?.substring(0, 8) || 'inconnu'}`;
+
+        activities.push({
+          id: `invitation_${invitation.id}`,
+          type: 'invitation_created',
+          title: 'Code d\'invitation créé',
+          description: `Un code d'invitation a été créé pour ${invitation.type === 'organisation_member' ? 'un entrepreneur' : 'un membre de l\'équipe'}`,
+          icon: '📨',
+          user_name: creatorName,
+          user_email: `user_${invitation.created_by?.substring(0, 8) || 'unknown'}@example.com`,
+          entity_id: invitation.id,
+          entity_name: invitation.code,
+          created_at: invitation.created_at,
+          metadata: { invitation_type: invitation.type }
+        });
+      });
+    }
+
+    // 7. Nouveaux formulaires créés
+    const { data: newForms } = await client
+      .from('form_templates')
+      .select(`
+        id,
+        title,
+        created_at,
+        is_active
+      `)
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (newForms) {
+      newForms.forEach((form: any) => {
+        activities.push({
+          id: `form_${form.id}`,
+          type: 'form_created',
+          title: 'Nouveau formulaire créé',
+          description: `Le formulaire "${form.title}" a été créé${form.is_active ? ' et activé' : ''}`,
+          icon: '📝',
+          entity_id: form.id,
+          entity_name: form.title,
+          created_at: form.created_at,
+          metadata: { is_active: form.is_active }
+        });
+      });
+    }
+
+    // Trier toutes les activités par date (plus récent d'abord)
+    activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Appliquer la pagination
+    return activities.slice(offset, offset + limit);
+
+  } catch (error) {
+    console.error('Erreur lors de la récupération des activités récentes:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupère le nombre total d'activités pour une organisation
+ * @param organizationId ID de l'organisation
+ * @returns Nombre total d'activités
+ */
+export const getTotalActivitiesCount = async (organizationId: string): Promise<number> => {
+  try {
+    // Pour une approche simple, on fait une requête pour compter toutes les activités
+    // Dans une vraie application, on pourrait optimiser cela en stockant les activités dans une table dédiée
+    
+    const client = supabase as any;
+    
+    // D'abord, récupérons les user_id des membres de l'organisation pour compter leurs projets
+    const { data: orgMembers } = await client
+      .from('user_organizations')
+      .select('user_id')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active');
+
+    const memberUserIds = orgMembers?.map(member => member.user_id) || [];
+    
+    // Préparons les promesses de comptage
+    const countPromises = [
+      client.from('user_organizations').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId),
+      client.from('deliverables').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('status', 'completed'),
+      client.from('events').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId),
+      client.from('invitation_code').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId),
+      client.from('form_templates').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId)
+    ];
+
+    // Ajoutons le comptage des projets si on a des membres
+    if (memberUserIds.length > 0) {
+      countPromises.push(
+        client.from('project_summary').select('*', { count: 'exact', head: true }).in('user_id', memberUserIds)
+      );
+    }
+
+    const results = await Promise.all(countPromises);
+    
+    const [
+      { count: membersCount },
+      { count: deliverablesCount },
+      { count: eventsCount },
+      { count: invitationsCount },
+      { count: formsCount },
+      projectsResult
+    ] = results;
+
+    const projectsCount = memberUserIds.length > 0 ? (projectsResult?.count || 0) : 0;
+
+    return (membersCount || 0) + (projectsCount * 2) + (deliverablesCount || 0) + (eventsCount || 0) + (invitationsCount || 0) + (formsCount || 0);
+    // Note: projectsCount * 2 car on affiche 2 types d'activités par projet (création + mise à jour)
+    
+  } catch (error) {
+    console.error('Erreur lors du comptage des activités:', error);
+    return 0;
+  }
+};

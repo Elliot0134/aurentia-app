@@ -184,16 +184,55 @@ const OrganisationAnalyticsAdvanced = () => {
 
   // Fonction d'export
   const handleExport = () => {
+    // Construire un objet exhaustif
     const exportData = {
       metadata: {
         organisationId,
         generatedAt: new Date().toISOString(),
         timeRange,
-        totalRecords: Object.values(data).flat().length
+        totalRecords: Object.values(data).reduce((acc: number, val: any) => acc + (Array.isArray(val) ? val.length : (val ? 1 : 0)), 0),
+        sections: Object.keys(data),
+        onboarding: {
+          completed: metrics.onboardingCompleted,
+          step: metrics.onboardingStep
+        }
       },
       metrics,
-      rawData: data,
-      chartData
+      // Regrouper les données par domaine pour lisibilité
+      domainData: {
+        organization: data.organization,
+        members: data.adherents,
+        mentors: data.mentors,
+        mentorAssignments: data.mentorAssignments,
+        projects: data.projects,
+        deliverables: data.deliverables,
+        legacyDeliverables: {
+          businessModels: data.businessModels,
+          pitches: data.pitches,
+            visionMissions: data.visionMissions,
+          marketAnalyses: data.marketAnalyses,
+          concurrences: data.concurrences,
+          ressources: data.ressources,
+          juridiques: data.juridiques
+        },
+        personas: data.personas,
+        scores: data.scores,
+        conversations: data.conversations,
+        messages: data.messages,
+        events: data.events,
+        partners: data.partners,
+        payments: {
+          paymentIntents: data.paymentIntents,
+          subscriptions: data.subscriptions
+        },
+        invitations: data.invitationCodes,
+        forms: {
+          templates: data.formTemplates,
+          submissions: data.formSubmissions
+        }
+      },
+      chartData,
+      exportVersion: '2.0'
     };
 
     if (exportFormat === 'json') {
@@ -205,8 +244,8 @@ const OrganisationAnalyticsAdvanced = () => {
       a.click();
       URL.revokeObjectURL(url);
     } else if (exportFormat === 'csv') {
-      // Convertir toutes les métriques et données en CSV complet
-      const csvData = [
+      // CSV : multiples sections (métriques clés + nouvelles métriques). Pour les données tabulaires massives JSON reste préférable.
+      const csvData: (string | number | boolean)[][] = [
         // Métriques principales
         ['=== MÉTRIQUES PRINCIPALES ===', ''],
         ['Métrique', 'Valeur'],
@@ -216,9 +255,14 @@ const OrganisationAnalyticsAdvanced = () => {
         ['Projets Brouillons', metrics.draftProjects],
         ['Total Adhérents', metrics.totalAdherents],
         ['Total Mentors', metrics.totalMentors],
+        ['Assignments Mentors Actifs', metrics.activeMentorAssignments],
+        ['Assignments Mentors (Total)', metrics.totalMentorAssignments],
         ['Score Moyen', metrics.averageScore.toFixed(2)],
+        ['Progression Moyenne Projets', metrics.avgProjectProgress?.toFixed(2)],
         ['Taux de Succès (%)', metrics.projectSuccessRate.toFixed(2)],
         ['Messages par Conversation', metrics.avgMessagesPerConversation.toFixed(2)],
+        ['Onboarding Complété', metrics.onboardingCompleted],
+        ['Étape Onboarding', metrics.onboardingStep],
         ['', ''],
 
         // Métriques de livrables
@@ -232,6 +276,9 @@ const OrganisationAnalyticsAdvanced = () => {
         ['Juridiques', metrics.totalJuridiques],
         ['Personas', metrics.totalPersonas],
         ['Projets Évalués', metrics.totalScores],
+        ['Deliverables (nouvelle table)', metrics.totalDeliverables],
+        ['Deliverables Complétés', metrics.completedDeliverables],
+        ['Deliverables Approuvés', metrics.approvedDeliverables],
         ['', ''],
 
         // Métriques d'engagement
@@ -243,6 +290,13 @@ const OrganisationAnalyticsAdvanced = () => {
         ['Participants Moyens/Événement', metrics.avgParticipantsPerEvent.toFixed(1)],
         ['Événements à Venir', metrics.upcomingEvents],
         ['Événements Passés', metrics.pastEvents],
+        ['', ''],
+
+        // Partenaires
+        ['=== PARTENAIRES ===', ''],
+        ['Partenaires (Total)', metrics.totalPartners],
+        ['Partenaires Actifs', metrics.activePartners],
+        ...Object.entries(metrics.partnerTypes || {}).map(([type, count]) => [`Partenaires (${type})`, count]),
         ['', ''],
 
         // Métriques financières
@@ -260,12 +314,23 @@ const OrganisationAnalyticsAdvanced = () => {
         ['Codes Utilisés', metrics.usedInvitationCodes],
         ['', ''],
 
+        // Formulaires
+        ['=== FORMULAIRES ===', ''],
+        ['Templates de Formulaires', metrics.formTemplates],
+        ['Soumissions Totales', metrics.formSubmissions],
+        ['Soumissions Revue', metrics.reviewedSubmissions],
+        ['Soumissions Approuvées', metrics.approvedSubmissions],
+        ['Soumissions Rejetées', metrics.rejectedSubmissions],
+        ['', ''],
+
         // Croissance mensuelle
         ['=== CROISSANCE ===', ''],
         ['Nouveaux Projets', metrics.monthlyGrowth.projects],
         ['Nouveaux Entrepreneurs', metrics.monthlyGrowth.entrepreneurs],
         ['Nouveaux Business Models', metrics.monthlyGrowth.businessModels],
         ['Nouvelles Conversations', metrics.monthlyGrowth.conversations],
+        ['Nouveaux Deliverables', metrics.monthlyGrowth.deliverables],
+        ['Nouveaux Partenaires', metrics.monthlyGrowth.partners],
         ['', ''],
 
         // Taux de complétion
@@ -936,7 +1001,9 @@ const OrganisationAnalyticsAdvanced = () => {
 
                           const total = Object.values(roleStats).reduce((sum: number, count: number) => sum + count, 0);
                           
-                          return Object.entries(roleStats).map(([role, count]: [string, number]) => (
+                          const roleEntries = Object.entries(roleStats) as Array<[string, number]>;
+                          const totalNumber = Number(total);
+                          return roleEntries.map(([role, count]) => (
                             <div key={role} className="flex justify-between items-center">
                               <span className="text-sm text-gray-600 capitalize">
                                 {role === 'member' ? 'Membre' : 
@@ -944,7 +1011,7 @@ const OrganisationAnalyticsAdvanced = () => {
                                  role === 'organisation' ? 'Organisation' : role}
                               </span>
                               <span className="font-semibold text-indigo-600">
-                                {count} ({total > 0 ? ((count / total) * 100).toFixed(0) : 0}%)
+                                {count} ({totalNumber > 0 ? ((count / totalNumber) * 100).toFixed(0) : 0}%)
                               </span>
                             </div>
                           ));

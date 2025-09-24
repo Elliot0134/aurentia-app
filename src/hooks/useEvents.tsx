@@ -1,28 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  getOrganisationEvents, 
-  createEvent, 
-  updateEvent, 
-  deleteEvent 
+import {
+  getOrganisationEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  Event
 } from '../services/organisationService';
-
-// Types pour les événements
-export interface Event {
-  id: string;
-  organization_id: string;
-  title: string;
-  description?: string;
-  start_date: string;
-  end_date: string;
-  type: 'workshop' | 'meeting' | 'webinar' | 'networking' | 'other';
-  location?: string;
-  organizer_id?: string;
-  is_recurring: boolean;
-  max_participants?: number;
-  participants: string[];
-  created_at: string;
-  updated_at: string;
-}
+import { useEventActivityTracker } from './useEventActivityTracker';
 
 export interface EventFormData {
   title: string;
@@ -35,16 +19,18 @@ export interface EventFormData {
   is_recurring: boolean;
   max_participants?: number;
   organization_id: string;
+  participants?: string[];
 }
 
 export const useEvents = (organisationId: string | undefined) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { trackEventUpdate, trackParticipantAdded, trackParticipantRemoved, trackEventMoved } = useEventActivityTracker();
 
   const fetchEvents = async () => {
     if (!organisationId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -62,9 +48,9 @@ export const useEvents = (organisationId: string | undefined) => {
     try {
       const newEvent = await createEvent({
         ...eventData,
-        participants: []
+        participants: eventData.participants || []
       });
-      
+
       if (newEvent) {
         setEvents(prev => [newEvent, ...prev]);
         return true;
@@ -77,26 +63,62 @@ export const useEvents = (organisationId: string | undefined) => {
     }
   };
 
-  const editEvent = async (eventId: string, updates: Partial<Event>): Promise<boolean> => {
+  const editEvent = async (eventId: string, updates: Partial<Event>): Promise<Event | null> => {
     try {
+      // Récupérer l'événement actuel pour comparer les changements
+      const currentEvent = events.find(e => e.id === eventId);
+      if (!currentEvent) {
+        throw new Error('Événement non trouvé');
+      }
+
       const updatedEvent = await updateEvent(eventId, updates);
-      
+
       if (updatedEvent) {
         setEvents(prev => prev.map(e => e.id === eventId ? updatedEvent : e));
-        return true;
+        
+        // Tracker les changements pour l'activité récente
+        await trackEventUpdate(updatedEvent, updates, currentEvent);
+        
+        // Tracker spécifiquement les changements de participants
+        if (updates.participants && currentEvent.participants) {
+          const newParticipants = updates.participants.filter(p => !currentEvent.participants.includes(p));
+          const removedParticipants = currentEvent.participants.filter(p => !updates.participants!.includes(p));
+          
+          if (newParticipants.length > 0) {
+            // TODO: Récupérer les noms des participants depuis leur ID
+            await trackParticipantAdded(updatedEvent, [`${newParticipants.length} participant(s)`]);
+          }
+          
+          if (removedParticipants.length > 0) {
+            // TODO: Récupérer les noms des participants depuis leur ID
+            await trackParticipantRemoved(updatedEvent, [`${removedParticipants.length} participant(s)`]);
+          }
+        }
+        
+        // Tracker les déplacements d'événement
+        if (updates.start_date && updates.start_date !== currentEvent.start_date) {
+          await trackEventMoved(
+            updatedEvent, 
+            updates.start_date, 
+            updates.end_date || currentEvent.end_date,
+            currentEvent.start_date
+          );
+        }
+
+        return updatedEvent;
       }
-      return false;
+      return null;
     } catch (err) {
       setError('Erreur lors de la modification de l\'événement');
       console.error('Erreur modification événement:', err);
-      return false;
+      return null;
     }
   };
 
   const removeEvent = async (eventId: string): Promise<boolean> => {
     try {
       const success = await deleteEvent(eventId);
-      
+
       if (success) {
         setEvents(prev => prev.filter(e => e.id !== eventId));
         return true;
