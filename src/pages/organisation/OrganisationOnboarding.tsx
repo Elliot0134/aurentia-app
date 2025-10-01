@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { AddressAutocompleteInput } from "@/components/ui/address-autocomplete-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -371,12 +372,12 @@ const OrganisationOnboardingPage = () => {
           phone: formData.phone,
           address: formData.address,
           welcome_message: formData.welcome_message,
-          primary_color: formData.primary_color,
-          secondary_color: formData.secondary_color,
+          primary_color: formData.primary_color || null,
+          secondary_color: formData.secondary_color || null,
           newsletter_enabled: formData.newsletter_enabled,
           created_by: userProfile.id,
           founded_year: formData.foundedYear,
-          team_size: formData.teamSize,
+          team_size: typeof formData.teamSize === 'number' ? formData.teamSize : 0,
           mission: formData.mission,
           vision: formData.vision,
           values: JSON.stringify(formData.values),
@@ -384,7 +385,7 @@ const OrganisationOnboardingPage = () => {
           stages: JSON.stringify(formData.stages),
           specializations: JSON.stringify(formData.specializations),
           methodology: formData.methodology,
-          program_duration_months: formData.programDurationMonths,
+          program_duration_months: typeof formData.programDurationMonths === 'number' ? formData.programDurationMonths : 6,
           success_criteria: formData.successCriteria,
           support_types: JSON.stringify(formData.supportTypes),
           geographic_focus: JSON.stringify(formData.geographicFocus),
@@ -430,8 +431,8 @@ const OrganisationOnboardingPage = () => {
           address: formData.address,
           team_size: formData.teamSize,
           welcome_message: formData.welcome_message,
-          primary_color: formData.primary_color,
-          secondary_color: formData.secondary_color,
+          primary_color: formData.primary_color || null,
+          secondary_color: formData.secondary_color || null,
           newsletter_enabled: formData.newsletter_enabled,
           mission: formData.mission,
           vision: formData.vision,
@@ -701,31 +702,17 @@ const OrganisationOnboardingPage = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email de contact
-                      </label>
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder="contact@organisation.com"
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Adresse
-                      </label>
-                      <Input
-                        value={formData.address}
-                        onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                        placeholder="Adresse complète..."
-                        className="w-full"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email de contact
+                    </label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="contact@organisation.com"
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Message de bienvenue */}
@@ -802,24 +789,26 @@ const OrganisationOnboardingPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Mission
                     </label>
-                    <div
-                      onClick={() => handleFieldClick('mission', formData.mission, 'Mission de votre organisation')}
-                      className="w-full p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-aurentia-pink transition min-h-[100px] bg-gray-50"
-                    >
-                      {formData.mission || "Cliquez pour définir votre mission..."}
-                    </div>
+                    <Textarea
+                      value={formData.mission}
+                      onChange={(e) => setFormData(prev => ({ ...prev, mission: e.target.value }))}
+                      placeholder="Définissez la mission de votre organisation..."
+                      className="w-full min-h-[100px] resize-y"
+                      rows={4}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Vision
                     </label>
-                    <div
-                      onClick={() => handleFieldClick('vision', formData.vision, 'Vision de votre organisation')}
-                      className="w-full p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-aurentia-pink transition min-h-[100px] bg-gray-50"
-                    >
-                      {formData.vision || "Cliquez pour définir votre vision..."}
-                    </div>
+                    <Textarea
+                      value={formData.vision}
+                      onChange={(e) => setFormData(prev => ({ ...prev, vision: e.target.value }))}
+                      placeholder="Définissez la vision de votre organisation..."
+                      className="w-full min-h-[100px] resize-y"
+                      rows={4}
+                    />
                   </div>
 
                   <div>
@@ -883,7 +872,7 @@ const OrganisationOnboardingPage = () => {
                           variant={formData.sectors.includes(sector) ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleArrayToggle('sectors', sector)}
-                          className={formData.sectors.includes(sector) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          className={formData.sectors.includes(sector) ? "bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90" : ""}
                         >
                           {sector}
                         </Button>
@@ -903,7 +892,7 @@ const OrganisationOnboardingPage = () => {
                           variant={formData.stages.includes(stage) ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleArrayToggle('stages', stage)}
-                          className={formData.stages.includes(stage) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          className={formData.stages.includes(stage) ? "bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90" : ""}
                         >
                           {stage}
                         </Button>
@@ -923,7 +912,7 @@ const OrganisationOnboardingPage = () => {
                           variant={formData.specializations.includes(spec) ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleArrayToggle('specializations', spec)}
-                          className={formData.specializations.includes(spec) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          className={formData.specializations.includes(spec) ? "bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90" : ""}
                         >
                           {spec}
                         </Button>
@@ -1001,7 +990,7 @@ const OrganisationOnboardingPage = () => {
                           variant={formData.supportTypes.includes(type) ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleArrayToggle('supportTypes', type)}
-                          className={formData.supportTypes.includes(type) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          className={formData.supportTypes.includes(type) ? "bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90" : ""}
                         >
                           {type}
                         </Button>
@@ -1032,7 +1021,7 @@ const OrganisationOnboardingPage = () => {
                           variant={formData.geographicFocus.includes(zone) ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleArrayToggle('geographicFocus', zone)}
-                          className={formData.geographicFocus.includes(zone) ? "bg-aurentia-pink hover:bg-aurentia-pink/90" : ""}
+                          className={formData.geographicFocus.includes(zone) ? "bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90" : ""}
                         >
                           {zone}
                         </Button>
@@ -1040,12 +1029,26 @@ const OrganisationOnboardingPage = () => {
                     </div>
                     <div className="mt-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Précisez la/les régions ou villes (optionnel)
+                        Précisez la ville
                       </label>
-                      <Input
+                      <AddressAutocompleteInput
+                        addressType="regions"
                         value={formData.customGeographic}
-                        onChange={(e) => setFormData(prev => ({ ...prev, customGeographic: e.target.value }))}
-                        placeholder="Ex: Paris, Lyon, Région PACA..."
+                        onChange={(value) => setFormData(prev => ({ ...prev, customGeographic: value }))}
+                        placeholder="Commencer à taper une adresse, région ou ville..."
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Adresse exacte de l'organisation
+                      </label>
+                      <AddressAutocompleteInput
+                        addressType="full"
+                        value={formData.address}
+                        onChange={(value) => setFormData(prev => ({ ...prev, address: value }))}
+                        placeholder="Commencer à taper une adresse complète..."
                         className="w-full"
                       />
                     </div>
@@ -1166,11 +1169,11 @@ const OrganisationOnboardingPage = () => {
                 <CheckCircle className="w-4 h-4" />
               </Button>
             ) : (
-              <Button
-                onClick={nextStep}
-                disabled={loading}
-                className="bg-aurentia-pink hover:bg-aurentia-pink/90 text-white flex items-center gap-2"
-              >
+            <Button
+              onClick={nextStep}
+              disabled={loading}
+              className="bg-aurentia-orange-aurentia hover:bg-aurentia-orange-aurentia/90 text-white flex items-center gap-2"
+            >
                 Suivant
                 <ChevronRight className="w-4 h-4" />
               </Button>
