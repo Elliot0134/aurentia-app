@@ -11,9 +11,15 @@ import {
   SuggestedPrompts, 
   ChatDialogs 
 } from '@/components/chat';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Plus } from 'lucide-react';
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { Button } from "@/components/ui/button"; // Import Button
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 
 const ChatbotPage = () => {
@@ -27,6 +33,7 @@ const ChatbotPage = () => {
   const [isReformulating, setIsReformulating] = useState(false); // New state for reformulation loading
   const [isHistoryOpenMobile, setIsHistoryOpenMobile] = useState(false); // New state for mobile history visibility
   const [isDropdownExiting, setIsDropdownExiting] = useState(false); // New state for exit animation
+  const [isMobileChatOptionsOpen, setIsMobileChatOptionsOpen] = useState(false); // New state for mobile chat options popup
 
   // State for communication style and search mode
   const [communicationStyle, setCommunicationStyle] = useState('normal');
@@ -55,6 +62,7 @@ const ChatbotPage = () => {
   } = useChatConversation(projectId);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isMobile = useIsMobile();
 
   // Get project name
   const currentProject = userProjects.find(p => p.project_id === currentProjectId);
@@ -309,7 +317,7 @@ const ChatbotPage = () => {
 
           {/* Mobile History Dropdown */}
           {(isHistoryOpenMobile || isDropdownExiting) && conversationHistory.length > 0 && (
-            <div className={`sm:hidden bg-white border-b border-gray-200 py-2 px-4 mx-4 rounded-xl backdrop-blur-md mt-0.5 absolute top-[60px] left-0 right-0 z-20 ${isDropdownExiting ? 'animate-fade-out' : 'animate-fade-in'}`}> {/* Added absolute, top-[60px], left-0, right-0, z-20 */}
+            <div className={`sm:hidden bg-white border-b border-gray-200 py-2 px-4 mx-4 rounded-xl backdrop-blur-md mt-0.5 absolute top-[60px] left-0 right-0 z-20 shadow-xl ${isDropdownExiting ? 'animate-fade-out' : 'animate-fade-in'}`}> {/* Added absolute, top-[60px], left-0, right-0, z-20 */}
               {isHistoryLoading ? (
                 <div className="flex items-center gap-2 py-2">
                   <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
@@ -359,6 +367,12 @@ const ChatbotPage = () => {
               {/* Input area fixe pour conversation existante */}
               <div className="fixed md:absolute bottom-[100px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
                 <div className="w-full mx-auto">
+                  {isMobile ? (
+                    // Mobile layout: ChatInput with integrated + button
+                    <div className="relative">
+                      <div className="flex items-center gap-[7px]">
+                        {/* ChatInput container with integrated + button */}
+                        <div className="flex-1">
                   <ChatInput
                     inputMessage={inputMessage}
                     placeholder="Répondre à Aurentia..."
@@ -379,16 +393,46 @@ const ChatbotPage = () => {
                     onReformQuestion={handleReformQuestion}
                     projectId={currentProjectId || ''} // Pass currentProjectId
                     projectStatus={projectStatus} // Pass projectStatus
+                    isMobileChatOptionsOpen={isMobileChatOptionsOpen}
+                    setIsMobileChatOptionsOpen={setIsMobileChatOptionsOpen}
                   />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                  <ChatInput
+                    inputMessage={inputMessage}
+                    placeholder="Répondre à Aurentia..."
+                    isLoading={isLoading || isReformulating} // Disable input during reformulation
+                    isSubmitting={isSubmitting}
+                    communicationStyle={communicationStyle}
+                    selectedDeliverables={selectedDeliverables}
+                    selectedSearchModes={selectedSearchModes}
+                    deliverableOptions={deliverableOptions}
+                    searchModeOptions={searchModeOptions}
+                    deliverableNames={deliverableNames}
+                    onInputChange={handleInputChange}
+                    onKeyPress={handleKeyPress}
+                    onSendMessage={handleSendMessage}
+                    onCommunicationStyleChange={setCommunicationStyle}
+                    onSelectedDeliverablesChange={setSelectedDeliverables}
+                    onSelectedSearchModesChange={setSelectedSearchModes}
+                    onReformQuestion={handleReformQuestion}
+                    projectId={currentProjectId || ''} // Pass currentProjectId
+                    projectStatus={projectStatus} // Pass projectStatus
+                    isMobileChatOptionsOpen={isMobileChatOptionsOpen}
+                    setIsMobileChatOptionsOpen={setIsMobileChatOptionsOpen}
+                  />
+                  )}
                 </div>
               </div>
             </div>
           ) : (
             // Interface de démarrage de conversation
             <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-1 sm:py-8 pb-[160px] md:pb-[200px]">
-              {/* AI Icon and Welcome Message */}
-              <div className="flex flex-col items-center mb-8">
+              <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-1 sm:py-8 pb-[160px] md:pb-[200px]">
+                {/* AI Icon and Welcome Message */}
+                <div className="flex flex-col items-center mb-8">
                   <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4">
                     <Sparkles className="w-12 h-12 text-white" />
                   </div>
@@ -404,31 +448,65 @@ const ChatbotPage = () => {
                   />
                 </div>
               </div>
-              
+
               {/* Input area fixe */}
-              <div className="fixed md:absolute bottom-[100px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
+              <div className="fixed md:absolute bottom-[100px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10">
                 <div className="w-full mx-auto">
-                  <ChatInput
-                    inputMessage={inputMessage}
-                    placeholder="Répondre à Aurentia..."
-                    isLoading={isLoading || isReformulating} // Disable input during reformulation
-                    isSubmitting={isSubmitting}
-                    communicationStyle={communicationStyle}
-                    selectedDeliverables={selectedDeliverables}
-                    selectedSearchModes={selectedSearchModes}
-                    deliverableOptions={deliverableOptions}
-                    searchModeOptions={searchModeOptions}
-                    deliverableNames={deliverableNames}
-                    onInputChange={handleInputChange}
-                    onKeyPress={handleKeyPress}
-                    onSendMessage={handleSendMessage}
-                    onCommunicationStyleChange={setCommunicationStyle}
-                    onSelectedDeliverablesChange={setSelectedDeliverables}
-                    onSelectedSearchModesChange={setSelectedSearchModes}
-                    onReformQuestion={handleReformQuestion}
-                    projectId={currentProjectId || ''} // Pass currentProjectId
-                    projectStatus={projectStatus} // Pass projectStatus
-                  />
+                  {isMobile ? (
+                    // Mobile layout: ChatInput with integrated + button
+                    <div className="relative">
+                      <div className="flex items-center gap-[7px]">
+                        {/* ChatInput container with integrated + button */}
+                        <div className="flex-1">
+                          <ChatInput
+                            inputMessage={inputMessage}
+                            placeholder="Répondre à Aurentia..."
+                            isLoading={isLoading || isReformulating} // Disable input during reformulation
+                            isSubmitting={isSubmitting}
+                            communicationStyle={communicationStyle}
+                            selectedDeliverables={selectedDeliverables}
+                            selectedSearchModes={selectedSearchModes}
+                            deliverableOptions={deliverableOptions}
+                            searchModeOptions={searchModeOptions}
+                            deliverableNames={deliverableNames}
+                            onInputChange={handleInputChange}
+                            onKeyPress={handleKeyPress}
+                            onSendMessage={handleSendMessage}
+                            onCommunicationStyleChange={setCommunicationStyle}
+                            onSelectedDeliverablesChange={setSelectedDeliverables}
+                            onSelectedSearchModesChange={setSelectedSearchModes}
+                            onReformQuestion={handleReformQuestion}
+                            projectId={currentProjectId || ''} // Pass currentProjectId
+                            projectStatus={projectStatus} // Pass projectStatus
+                            isMobileChatOptionsOpen={isMobileChatOptionsOpen}
+                            setIsMobileChatOptionsOpen={setIsMobileChatOptionsOpen}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <ChatInput
+                      inputMessage={inputMessage}
+                      placeholder="Répondre à Aurentia..."
+                      isLoading={isLoading || isReformulating} // Disable input during reformulation
+                      isSubmitting={isSubmitting}
+                      communicationStyle={communicationStyle}
+                      selectedDeliverables={selectedDeliverables}
+                      selectedSearchModes={selectedSearchModes}
+                      deliverableOptions={deliverableOptions}
+                      searchModeOptions={searchModeOptions}
+                      deliverableNames={deliverableNames}
+                      onInputChange={handleInputChange}
+                      onKeyPress={handleKeyPress}
+                      onSendMessage={handleSendMessage}
+                      onCommunicationStyleChange={setCommunicationStyle}
+                      onSelectedDeliverablesChange={setSelectedDeliverables}
+                      onSelectedSearchModesChange={setSelectedSearchModes}
+                      onReformQuestion={handleReformQuestion}
+                      projectId={currentProjectId || ''} // Pass currentProjectId
+                      projectStatus={projectStatus} // Pass projectStatus
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -448,6 +526,8 @@ const ChatbotPage = () => {
           onConfirmDelete={handleConfirmDelete}
           onCancelDelete={handleCancelDelete}
         />
+
+
       </div>
     </ProjectRequiredGuard>
   );

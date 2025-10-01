@@ -60,11 +60,11 @@ export const MessageList: React.FC<MessageListProps> = ({
             key={message.id}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`flex ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2 sm:space-x-3`}>
+            <div className={`${message.sender === 'user' ? 'flex flex-row-reverse items-start space-x-2 sm:space-x-3' : 'flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-3'}`}>
               <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
                 message.sender === 'user'
                   ? 'bg-gray-700 ml-2 sm:ml-3'
-                  : 'bg-gradient-primary mr-2 sm:mr-3'
+                  : 'bg-gradient-primary mb-0.5 sm:mb-0 sm:mr-3'
               }`}>
                 {message.sender === 'user' ? (
                   <span className="text-white text-xs sm:text-sm font-medium">U</span>
@@ -121,11 +121,11 @@ export const MessageList: React.FC<MessageListProps> = ({
 
         {isLoading && !streamingMessageId && (
           <div className="flex justify-start">
-            <div className="flex items-start space-x-2 sm:space-x-3 max-w-[95%] sm:max-w-[80%]">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+            <div className="flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-3 max-w-[95%] sm:max-w-[80%]">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-primary flex items-center justify-center mb-0.5 sm:mb-0 sm:mr-3">
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm">
+              <div className="bg-white border border-gray-200 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm w-full overflow-hidden max-w-[90vw] sm:max-w-full">
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>

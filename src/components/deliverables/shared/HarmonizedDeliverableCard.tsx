@@ -12,7 +12,7 @@ interface HarmonizedDeliverableCardProps {
 const HarmonizedDeliverableCard: React.FC<HarmonizedDeliverableCardProps> = ({
   title,
   description,
-  avis = 'Commentaire',
+  avis,
   iconSrc,
   onClick,
   className = ''
@@ -29,14 +29,16 @@ const HarmonizedDeliverableCard: React.FC<HarmonizedDeliverableCardProps> = ({
         <div className="flex-grow">
           {/* Content will be dynamically generated */}
         </div>
-        <div className="flex-shrink-0 mt-auto">
-          <button 
-            className="text-xs px-2 py-1 rounded-full cursor-default pointer-events-none"
-            style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}
-          >
-            {avis}
-          </button>
-        </div>
+        {avis && (
+          <div className="flex-shrink-0 mt-auto">
+            <button
+              className="text-xs px-2 py-1 rounded-full cursor-default pointer-events-none"
+              style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}
+            >
+              {avis}
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex-shrink-0">
         <img src={iconSrc} alt="Deliverable Icon" className="w-8 h-8 object-cover self-start" />

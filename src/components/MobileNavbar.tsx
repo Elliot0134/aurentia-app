@@ -93,12 +93,13 @@ const MobileNavbar = () => {
   return (
     <>
       {/* Menu toggle button - only show when navbar is closed */}
+      {/* Menu toggle button - only show when navbar is closed */}
       {!isNavbarOpen && (
         <button
           onClick={() => setIsNavbarOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-primary text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 md:hidden"
+          className="fixed bottom-6 right-6 z-50 w-10 h-10 bg-gradient-primary text-white rounded-md shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 md:hidden"
         >
-          <Menu size={24} />
+          <Menu size={18} />
         </button>
       )}
 
@@ -119,7 +120,7 @@ const MobileNavbar = () => {
               <div className="flex items-center justify-center gap-2 text-sm">
                 <Zap size={16} className="text-yellow-500" />
                 <span className="font-medium text-gray-700">
-                  {creditsLoading ? '...' : `${userCredits.monthly_remaining} / ${userCredits.monthly_limit}`}
+                  {creditsLoading ? '...' : `${userCredits.monthly_credits_remaining} / ${userCredits.monthly_credits_limit}`}
                 </span>
                 <span className="text-xs text-gray-500">crédits</span>
               </div>

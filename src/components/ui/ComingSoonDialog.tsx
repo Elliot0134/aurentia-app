@@ -19,16 +19,15 @@ interface ComingSoonDialogProps {
 const ComingSoonDialog: React.FC<ComingSoonDialogProps> = ({ isOpen, onClose, description }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] rounded-lg max-h-[80vh] overflow-y-auto"> {/* Added max-h and overflow-y-auto */}
-        <DialogHeader>
-          <DialogTitle className="bg-gradient-primary text-transparent bg-clip-text text-3xl">Fonctionnalité à venir</DialogTitle> {/* Added styling from Ressources.tsx */}
-          <Separator className="my-4" /> {/* Added Separator */}
-          <DialogDescription className="text-black"> {/* Added styling from Ressources.tsx */}
+      <DialogContent className="max-w-sm w-full mx-auto rounded-lg"> {/* Petit et centré */}
+        <DialogHeader className="text-center">
+          <DialogTitle className="bg-gradient-primary text-transparent bg-clip-text text-xl">Fonctionnalité à venir</DialogTitle> {/* Plus petit */}
+          <DialogDescription className="text-black text-sm mt-2"> {/* Plus petit */}
             {description}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <Button onClick={onClose} className="w-full">Fermer</Button> {/* Added styling from Ressources.tsx */}
+        <DialogFooter className="mt-4">
+          <Button onClick={onClose} className="w-full">Fermer</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

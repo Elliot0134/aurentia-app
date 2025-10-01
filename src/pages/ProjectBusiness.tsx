@@ -24,6 +24,8 @@ import CadreJuridiqueLivrable from "@/components/deliverables/CadreJuridiqueLivr
 import TemplateLivrable from "@/components/deliverables/TemplateLivrable"; // Import TemplateLivrable
 import BlurredDeliverableWrapper from "@/components/deliverables/BlurredDeliverableWrapper"; // Import the new wrapper
 import DeliverableProgressContainer from "@/components/deliverables/DeliverableProgressContainer"; // Import the new progress container
+import * as DialogPrimitive from "@radix-ui/react-dialog"; // Import DialogPrimitive
+import { X } from "lucide-react"; // Import X icon
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
@@ -667,6 +669,28 @@ const ProjectBusiness = () => {
               <DialogTitle className="text-2xl text-center">{popupContent?.title}</DialogTitle>
             </DialogHeader>
             {popupContent?.content}
+            <div className="absolute right-4 top-4 flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => {
+                  // TODO: Implement actual modify functionality here
+                  toast({
+                    title: "Modification",
+                    description: "La fonctionnalité de modification sera bientôt disponible.",
+                    duration: 3000,
+                  });
+                }}
+              >
+                <Edit className="h-4 w-4" />
+                <span className="sr-only">Modifier</span>
+              </Button>
+              <DialogPrimitive.Close className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Fermer</span>
+              </DialogPrimitive.Close>
+            </div>
           </DialogContent>
         </Dialog>
 

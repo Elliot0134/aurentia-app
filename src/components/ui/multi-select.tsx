@@ -96,7 +96,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         )}
 
         {isOpen && (
-          <div className="absolute top-full z-[1001] mt-1 left-0 w-max min-w-[calc(100%+2px)] rounded-md border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
+          <div className="absolute bottom-full z-[1001] mb-1 left-0 w-max min-w-[calc(100%+2px)] rounded-md border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
             <div>
               {/* Available options */}
               {options.length === 0 ? (
@@ -127,26 +127,6 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   );
                 })
               )}
-              <div className="p-1">
-                <input
-                  type="text"
-                  placeholder="Ajouter un rôle..."
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value.trim() !== '') {
-                      const newRoleLabel = e.currentTarget.value.trim();
-                      const newRoleValue = newRoleLabel.toLowerCase().replace(/\s/g, '_');
-                      const newOption = { value: newRoleValue, label: newRoleLabel };
-                      
-                      if (!options.some(opt => opt.value === newOption.value)) {
-                        onAddOption?.(newOption); // Call the new prop to add the option
-                      }
-                      handleSelect(newOption.value); // Select the new/existing option
-                      e.currentTarget.value = ''; // Clear input
-                    }
-                  }}
-                />
-              </div>
             </div>
           </div>
         )}
