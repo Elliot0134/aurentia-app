@@ -1,11 +1,13 @@
 import React from 'react';
 import CloseIcon from './CloseIcon';
+import { Edit } from 'lucide-react';
 
 interface DeliverableModalHeaderProps {
   title: string;
   iconSrc?: string;
   iconComponent?: React.ReactNode;
   onClose: () => void;
+  onEdit?: () => void;
   className?: string;
 }
 
@@ -14,6 +16,7 @@ const DeliverableModalHeader: React.FC<DeliverableModalHeaderProps> = ({
   iconSrc,
   iconComponent,
   onClose,
+  onEdit,
   className = ""
 }) => {
   return (
@@ -25,15 +28,25 @@ const DeliverableModalHeader: React.FC<DeliverableModalHeaderProps> = ({
           </div>
         )}
         {iconSrc && (
-          <img 
-            src={iconSrc} 
-            alt="Template Icon" 
-            className="w-8 h-8 object-cover mb-2 sm:mb-0 sm:mr-3" 
+          <img
+            src={iconSrc}
+            alt="Template Icon"
+            className="w-8 h-8 object-cover mb-2 sm:mb-0 sm:mr-3"
           />
         )}
         <h2 className="text-xl font-bold">{title}</h2>
       </div>
-      <CloseIcon onClick={onClose} />
+      <div className="flex items-center gap-2">
+        {onEdit && (
+          <button
+            className="text-gray-600 hover:text-gray-900 transition-colors p-1"
+            onClick={onEdit}
+          >
+            <Edit className="h-6 w-6" />
+          </button>
+        )}
+        <CloseIcon onClick={onClose} />
+      </div>
     </div>
   );
 };
