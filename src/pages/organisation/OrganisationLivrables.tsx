@@ -31,7 +31,6 @@ const OrganisationLivrables = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [selectedProject, setSelectedProject] = useState('');
   const [activeTab, setActiveTab] = useState('Vue grille');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<DeliverableFormData>>({});
@@ -100,10 +99,9 @@ const OrganisationLivrables = () => {
                          (deliverable.description && deliverable.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = selectedStatus === 'all' || deliverable.status === selectedStatus;
     const matchesType = selectedType === 'all' || deliverable.type === selectedType;
-    const matchesProject = !selectedProject || deliverable.project_id === selectedProject;
     
-    return matchesSearch && matchesStatus && matchesType && matchesProject;
-  }), [deliverables, searchTerm, selectedStatus, selectedType, selectedProject, projectsMap]);
+    return matchesSearch && matchesStatus && matchesType;
+  }), [deliverables, searchTerm, selectedStatus, selectedType, projectsMap]);
 
   // Utiliser les stats du hook au lieu de les recalculer
   const stats = useMemo(() => ({
@@ -131,7 +129,6 @@ const OrganisationLivrables = () => {
       description: formData.description,
       type: formData.type!,
       status: 'pending',
-      project_id: formData.project_id,
       entrepreneur_id: formData.entrepreneur_id,
       due_date: formData.due_date,
       quality_score: formData.quality_score
@@ -239,20 +236,6 @@ const OrganisationLivrables = () => {
                           <SelectItem value="legal">Juridique</SelectItem>
                           <SelectItem value="financial">Financier</SelectItem>
                           <SelectItem value="other">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="project">Projet (optionnel)</Label>
-                      <Select value={formData.project_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, project_id: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un projet" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Aucun projet</SelectItem>
-                          {projects.map(project => (
-                            <SelectItem key={project.project_id} value={project.project_id}>{project.nom_projet}</SelectItem>
-                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -398,16 +381,6 @@ const OrganisationLivrables = () => {
                 <SelectItem value="other">Autre</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Projet" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map(project => (
-                  <SelectItem key={project.project_id} value={project.project_id}>{project.nom_projet}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {activeTab === "Vue grille" && (
@@ -532,12 +505,12 @@ const OrganisationLivrables = () => {
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Aucun livrable trouvé</h3>
               <p className="text-gray-600 mb-4">
-                {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || !!selectedProject
+                {searchTerm || selectedStatus !== 'all' || selectedType !== 'all'
                   ? 'Aucun livrable ne correspond à vos critères de recherche.'
                   : 'Commencez par créer votre premier livrable.'
                 }
               </p>
-              {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' || !!selectedProject ? (
+              {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' ? (
                 <Button 
                   style={{ backgroundColor: '#ff5932' }} 
                   className="hover:opacity-90 text-white"
@@ -545,7 +518,6 @@ const OrganisationLivrables = () => {
                     setSearchTerm('');
                     setSelectedStatus('all');
                     setSelectedType('all');
-                    setSelectedProject('');
                   }}
                 >
                   Réinitialiser les filtres

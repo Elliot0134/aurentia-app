@@ -553,6 +553,9 @@ CREATE TABLE public.organizations (
   custom_geographic text,
   custom_type text,
   event_type_colors jsonb DEFAULT '{"other": "#64748b", "meeting": "#6366f1", "webinar": "#8b5cf6", "training": "#10b981", "workshop": "#ff5932", "networking": "#06b6d4", "presentation": "#f59e0b"}'::jsonb CHECK (validate_event_type_colors(event_type_colors)),
+  logo_path text,
+  banner_url text,
+  banner_path text,
   CONSTRAINT organizations_pkey PRIMARY KEY (id),
   CONSTRAINT organizations_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
 );

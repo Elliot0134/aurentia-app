@@ -30,7 +30,7 @@ import PlanActionPage from "./pages/PlanActionPage"; // Import the new PlanActio
 import ProtectedLayout from "./components/ProtectedLayout";
 import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
-import IncubatorSpace from "./pages/member/IncubatorSpace";
+import MyOrganization from "./pages/MyOrganization";
 import OrganisationLayoutWrapper from "./components/organisation/OrganisationLayoutWrapper";
 import OrganisationRouteGuard from "./components/organisation/OrganisationRouteGuard";
 import {
@@ -218,28 +218,7 @@ const App = () => {
                     <Route path="/individual/automatisations" element={<Automatisations />} />
                     <Route path="/individual/knowledge" element={<Knowledge />} />
                     <Route path="/individual/partenaires" element={<Partenaires />} />
-                    
-                    {/* Member (même interface + espace incubateur) */}
-                    <Route path="/member/dashboard" element={<Dashboard />} />
-                    <Route path="/member/profile" element={<Profile />} />
-                    <Route path="/member/project-business/:projectId" element={<ProjectBusiness />} />
-                    <Route path="/member/project-business" element={<ProjectBusiness />} />
-                    <Route path="/member/chatbot/:projectId" element={<ChatbotPage />} />
-                    <Route path="/member/outils" element={<Outils />} />
-                    <Route path="/member/ressources" element={<Ressources />} />
-                    <Route path="/member/collaborateurs" element={<Collaborateurs />} />
-                    <Route path="/member/template" element={<TemplatePage />} />
-                    <Route path="/member/template/tool-template" element={<ToolTemplatePage />} />
-                    <Route path="/member/plan-action" element={<PlanActionPage />} />
-                    <Route path="/member/roadmap/:id" element={<Roadmap />} />
-                    <Route path="/member/project/:projectId" element={<Project />} />
-                    <Route path="/member/form-business-idea" element={<FormBusinessIdea />} />
-                    <Route path="/member/warning" element={<WarningPage />} />
-                    <Route path="/member/automatisations" element={<Automatisations />} />
-                    <Route path="/member/knowledge" element={<Knowledge />} />
-                    <Route path="/member/partenaires" element={<Partenaires />} />
-                    {/* Route spécifique member */}
-                    <Route path="/member/incubator" element={<IncubatorSpace />} />
+                    <Route path="/individual/my-organization" element={<MyOrganization />} />
                     
                     {/* Organisation (anciennement Admin incubateur) */}
                     {/* Route d'onboarding sans guard */}
@@ -357,7 +336,10 @@ const App = () => {
                 <Route path="/project-business" element={<Navigate to="/individual/project-business" replace />} />
                 <Route path="/outils" element={<Navigate to="/individual/outils" replace />} />
                 <Route path="/ressources" element={<Navigate to="/individual/ressources" replace />} />
-                <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />                
+                <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
+                {/* Redirect old member routes to individual */}
+                <Route path="/member/*" element={<Navigate to="/individual/dashboard" replace />} />
+                <Route path="/member/incubator" element={<Navigate to="/individual/my-organization" replace />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

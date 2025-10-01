@@ -227,18 +227,18 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
       case 'member':
         return {
           menuItems: [
-            { name: "Tableau de bord", path: "/member/dashboard", icon: <LayoutDashboard size={20} /> },
-            { name: "Livrables", path: activeProjectId ? `/member/project-business/${activeProjectId}` : "/member/project-business", icon: <FileText size={20} /> },
-            { name: "Assistant IA", path: activeProjectId ? `/member/chatbot/${activeProjectId}` : "/member/chatbot", icon: <MessageSquare size={20} /> },
+            { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
+            { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+            { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
             { isDivider: true },
-            { name: "Plan d'action", path: "/member/plan-action", icon: <LandPlot size={20} /> },
-            { name: "Outils", path: "/member/outils", icon: <Settings size={20} /> },
-            { name: "Automatisations", path: "/member/automatisations", icon: <Zap size={20} /> },
-            { name: "Partenaires", path: "/member/partenaires", icon: <Handshake size={20} /> },
-            { name: "Ressources", path: "/member/ressources", icon: <Library size={20} /> },
-            { name: "Mon Organisation", path: "/member/incubator", icon: <Building size={20} /> },
+            { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
+            { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
+            { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
+            { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
+            { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
+            { name: "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> },
             { isDivider: true },
-            { name: "Collaborateurs", path: "/member/collaborateurs", icon: <Users size={20} /> }
+            { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
           ],
           branding: {
             name: userProfile.organization?.name || "Mon Organisation",
@@ -261,7 +261,11 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     if (organizationLoading) {
       // Show loading state
       orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
-    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff' || userProfile.user_role === 'member'))) {
+    } else if (userProfile && userProfile.user_role === 'member') {
+      // Members go directly to my-organization page (no redirect through /organisation)
+      const orgName = userProfile?.organization?.name;
+      orgItem = { name: orgName || "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> };
+    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
       // User has an organization OR has organization role - show organization name or "Organisation" button
       const orgName = userProfile?.organization?.name;
       orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
@@ -722,16 +726,16 @@ const RoleBasedMobileNavbar = ({
         
       case 'member':
         return [
-          { name: "Tableau de bord", path: "/member/dashboard", icon: <LayoutDashboard size={20} /> },
-          { name: "Livrables", path: activeProjectId ? `/member/project-business/${activeProjectId}` : "/member/project-business", icon: <FileText size={20} /> },
-          { name: "Assistant IA", path: activeProjectId ? `/member/chatbot/${activeProjectId}` : "/member/chatbot", icon: <MessageSquare size={20} /> },
-          { name: "Plan d'action", path: "/member/plan-action", icon: <LandPlot size={20} /> },
-          { name: "Outils", path: "/member/outils", icon: <Settings size={20} /> },
-          { name: "Automatisations", path: "/member/automatisations", icon: <Zap size={20} /> },
-          { name: "Partenaires", path: "/member/partenaires", icon: <Handshake size={20} /> },
-          { name: "Ressources", path: "/member/ressources", icon: <Library size={20} /> },
-          { name: "Mon Organisation", path: "/member/incubator", icon: <Building size={20} /> },
-          { name: "Collaborateurs", path: "/member/collaborateurs", icon: <Users size={20} /> }
+          { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
+          { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+          { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
+          { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
+          { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
+          { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
+          { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
+          { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
+          { name: "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> },
+          { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
         ];
         
       case 'individual':
@@ -746,7 +750,11 @@ const RoleBasedMobileNavbar = ({
     if (organizationLoading) {
       // Show loading state
       orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
-    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff' || userProfile.user_role === 'member'))) {
+    } else if (userProfile && userProfile.user_role === 'member') {
+      // Members go directly to my-organization page (no redirect through /organisation)
+      const orgName = userProfile?.organization?.name;
+      orgItem = { name: orgName || "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> };
+    } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
       // User has an organization OR has organization role - show organization name or "Organisation" button
       const orgName = userProfile?.organization?.name;
       orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };

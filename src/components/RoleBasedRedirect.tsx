@@ -44,7 +44,7 @@ const RoleBasedRedirect = () => {
         targetPath = '/super-admin/dashboard';
         break;
       case 'member':
-        targetPath = '/member/dashboard';
+        targetPath = '/individual/dashboard';
         break;
       case 'individual':
       default:

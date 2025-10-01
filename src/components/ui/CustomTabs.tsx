@@ -23,7 +23,7 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
   return (
     <>
       <div className="md:border-b md:border-gray-200">
-        <nav className="grid grid-cols-2 gap-2 md:flex md:flex-row md:-mb-px md:space-x-8" aria-label="Tabs">
+        <nav className="grid grid-cols-2 gap-2 md:flex md:flex-row md:-mb-px md:space-x-8 overflow-x-auto" aria-label="Tabs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (

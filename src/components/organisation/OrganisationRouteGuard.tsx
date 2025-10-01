@@ -28,7 +28,7 @@ const OrganisationRouteGuard = ({ children }: OrganisationRouteGuardProps) => {
   if (!canAccessOrganisationRoutes) {
     // Rediriger les membres vers leur espace membre
     if (userRole === 'member') {
-      return <Navigate to="/member/incubator" replace />;
+      return <Navigate to="/individual/my-organization" replace />;
     }
     
     // Rediriger les utilisateurs individuels vers leur dashboard

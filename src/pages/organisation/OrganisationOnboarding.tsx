@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/components/ui/use-toast";
+import ImageUploader from '@/components/ImageUploader';
+import STORAGE_BUCKETS from '@/config/storage';
 
 const OrganisationOnboardingPage = () => {
   const { id: organisationId } = useParams<{ id: string }>();
@@ -52,6 +54,11 @@ const OrganisationOnboardingPage = () => {
   welcome_message: "",
   primary_color: "",
   secondary_color: "",
+  // image fields
+  logo_url: "",
+  logo_path: "",
+  banner_url: "",
+  banner_path: "",
   newsletter_enabled: false,
     
     // Étape 2: Mission, Vision, Valeurs
@@ -83,6 +90,9 @@ const OrganisationOnboardingPage = () => {
   });
 
   const totalSteps = 6;
+
+  // Image uploader import
+  // ...existing code...
 
   // Options prédéfinies pour les types d'organisations
   const organisationTypes = [
@@ -189,6 +199,10 @@ const OrganisationOnboardingPage = () => {
             welcome_message: (data as any).welcome_message || "",
             primary_color: (data as any).primary_color || "",
             secondary_color: (data as any).secondary_color || "",
+            logo_url: (data as any).logo_url || "",
+            logo_path: (data as any).logo_path || "",
+            banner_url: (data as any).banner_url || "",
+            banner_path: (data as any).banner_path || "",
             newsletter_enabled: (data as any).newsletter_enabled || false,
             mission: (data as any).mission || "",
             vision: (data as any).vision || "",
@@ -373,10 +387,14 @@ const OrganisationOnboardingPage = () => {
           welcome_message: formData.welcome_message,
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
+          logo_url: formData.logo_url,
+          logo_path: formData.logo_path,
+          banner_url: formData.banner_url,
+          banner_path: formData.banner_path,
           newsletter_enabled: formData.newsletter_enabled,
           created_by: userProfile.id,
-          founded_year: formData.foundedYear,
-          team_size: formData.teamSize,
+          founded_year: Number(formData.foundedYear) || new Date().getFullYear(),
+          team_size: Number(formData.teamSize) || 0,
           mission: formData.mission,
           vision: formData.vision,
           values: JSON.stringify(formData.values),
@@ -384,7 +402,7 @@ const OrganisationOnboardingPage = () => {
           stages: JSON.stringify(formData.stages),
           specializations: JSON.stringify(formData.specializations),
           methodology: formData.methodology,
-          program_duration_months: formData.programDurationMonths,
+          program_duration_months: Number(formData.programDurationMonths) || 6,
           success_criteria: formData.successCriteria,
           support_types: JSON.stringify(formData.supportTypes),
           geographic_focus: JSON.stringify(formData.geographicFocus),
@@ -428,10 +446,14 @@ const OrganisationOnboardingPage = () => {
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
-          team_size: formData.teamSize,
+          team_size: Number(formData.teamSize) || 0,
           welcome_message: formData.welcome_message,
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
+          logo_url: formData.logo_url,
+          logo_path: formData.logo_path,
+          banner_url: formData.banner_url,
+          banner_path: formData.banner_path,
           newsletter_enabled: formData.newsletter_enabled,
           mission: formData.mission,
           vision: formData.vision,
@@ -440,7 +462,7 @@ const OrganisationOnboardingPage = () => {
           stages: JSON.stringify(formData.stages),
           specializations: JSON.stringify(formData.specializations),
           methodology: formData.methodology,
-          program_duration_months: formData.programDurationMonths,
+          program_duration_months: Number(formData.programDurationMonths) || 6,
           success_criteria: formData.successCriteria,
           support_types: JSON.stringify(formData.supportTypes),
           geographic_focus: JSON.stringify(formData.geographicFocus),
@@ -784,6 +806,35 @@ const OrganisationOnboardingPage = () => {
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-aurentia-pink/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-aurentia-pink"></div>
                     </label>
+                  </div>
+                  
+                  {/* Logo & Banner uploaders */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <ImageUploader
+                        bucket="organisation-logo"
+                        value={formData.logo_url || undefined}
+                        existingPath={formData.logo_path || undefined}
+                        folder={`organisations/${organisationId || 'temp'}`}
+                        label="Logo de l'organisation"
+                        maxSizeMB={STORAGE_BUCKETS['organisation-logo'].maxSizeMB}
+                        onUpload={(publicUrl, path) => setFormData(prev => ({ ...prev, logo_url: publicUrl, logo_path: path }))}
+                        onDelete={() => setFormData(prev => ({ ...prev, logo_url: '', logo_path: '' }))}
+                      />
+                    </div>
+
+                    <div>
+                      <ImageUploader
+                        bucket="organisation-banner"
+                        value={formData.banner_url || undefined}
+                        existingPath={formData.banner_path || undefined}
+                        folder={`organisations/${organisationId || 'temp'}`}
+                        label="Bannière"
+                        maxSizeMB={STORAGE_BUCKETS['organisation-banner'].maxSizeMB}
+                        onUpload={(publicUrl, path) => setFormData(prev => ({ ...prev, banner_url: publicUrl, banner_path: path }))}
+                        onDelete={() => setFormData(prev => ({ ...prev, banner_url: '', banner_path: '' }))}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
