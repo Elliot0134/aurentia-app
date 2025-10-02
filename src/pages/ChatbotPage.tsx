@@ -333,7 +333,7 @@ const ChatbotPage = () => {
                         setIsHistoryOpenMobile(false); // Close history after animation
                         setIsDropdownExiting(false);
                       }, 300); // Match animation duration
-                    }} className="py-2 px-3 rounded-md hover:bg-gray-100 cursor-pointer">
+                    }} className="py-2 px-3 rounded-md hover:bg-[#F3F4F6] cursor-pointer">
                       <div className="flex items-center justify-between w-full">
                         <span className="">{conv.title}</span> {/* Removed truncate */}
                         <span className="text-xs text-gray-500 ml-2 flex-shrink-0">

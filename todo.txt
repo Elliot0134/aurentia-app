@@ -1,0 +1,4 @@
+- [x] Identify the accordion components for "Classification du projet" and "Livrable" in ActionPlanClassification.tsx and ActionPlanLivrables.tsx
+- [ ] Modify ActionPlanClassification.tsx to wrap the Accordion in a white container with border-0 and shadow-md instead of the default styling
+- [ ] Modify ActionPlanLivrables.tsx to wrap the Accordion in a white container with border-0 and shadow-md instead of the default styling
+- [ ] Test the changes to ensure the styling looks correct

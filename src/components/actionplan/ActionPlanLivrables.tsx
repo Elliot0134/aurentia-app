@@ -13,22 +13,24 @@ interface ActionPlanLivrablesProps {
 const ActionPlanLivrables: React.FC<ActionPlanLivrablesProps> = ({ livrables }) => {
   if (!livrables || livrables.length === 0) {
     return (
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="livrables">
-          <AccordionTrigger className="text-lg font-semibold">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Livrables ({0})
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="text-center py-8 text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>Aucun livrable défini pour ce projet</p>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      <div className="bg-white border-0 shadow-md p-4 rounded-lg">
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="livrables" className="border-b-0">
+            <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Livrables ({0})
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="text-center py-8 text-gray-500">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                <p>Aucun livrable défini pour ce projet</p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
     );
   }
 
@@ -61,9 +63,10 @@ const ActionPlanLivrables: React.FC<ActionPlanLivrablesProps> = ({ livrables }) 
   };
 
   return (
-    <Accordion type="single" collapsible className="w-full">
-      <AccordionItem value="livrables">
-        <AccordionTrigger className="text-lg font-semibold">
+    <div className="bg-white border-0 shadow-md p-4 rounded-lg">
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="livrables" className="border-b-0">
+        <AccordionTrigger className="text-lg font-semibold hover:no-underline">
           <div className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Livrables ({livrables.length})
@@ -165,39 +168,10 @@ const ActionPlanLivrables: React.FC<ActionPlanLivrablesProps> = ({ livrables }) 
               </Card>
             ))}
           </div>
-
-          {/* Statistiques en bas */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {livrables.length}
-                </div>
-                <div className="text-xs text-gray-500">Total livrables</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {livrables.filter(l => l.statut === 'À faire').length}
-                </div>
-                <div className="text-xs text-gray-500">À faire</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">
-                  {livrables.filter(l => l.statut === 'En cours').length}
-                </div>
-                <div className="text-xs text-gray-500">En cours</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {livrables.filter(l => l.statut === 'Terminé').length}
-                </div>
-                <div className="text-xs text-gray-500">Terminé</div>
-              </div>
-            </div>
-          </div>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
+  </div>
   );
 };
 

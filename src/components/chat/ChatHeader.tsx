@@ -28,7 +28,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onToggleHistoryMobile, // Destructure new prop
 }) => {
   return (
-    <div className="border-b border-gray-200 bg-white bg-opacity-90 backdrop-blur-md sticky top-0 z-10 rounded-xl mx-4"> {/* Added mx-4 */}
+    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_8px_-2px_rgba(0,0,0,0.15)] sticky top-0 z-10 mx-4"> {/* Added mx-4 */}
       <div className="mx-auto px-3 sm:px-4 py-3 sm:py-4">
         {/* Layout en une seule ligne avec tout aligné */}
         <div className="flex items-center gap-3 w-full">
@@ -54,7 +54,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 value={currentConversation?.id || ""} 
                 onValueChange={onLoadConversation}
               >
-                <SelectTrigger className="w-full max-w-xs sm:max-w-sm h-9">
+                <SelectTrigger className="w-full max-w-xs sm:max-w-sm h-9 border-0 focus:ring-0 focus:ring-offset-0 focus:outline-none">
                   <SelectValue>
                     <span className="truncate">
                       {currentConversation ? currentConversation.title : 'Sélectionner une conversation'}
@@ -63,7 +63,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {conversationHistory.map((conv) => (
-                    <SelectItem key={conv.id} value={conv.id}>
+                    <SelectItem key={conv.id} value={conv.id} className="hover:bg-[#F3F4F6]">
                       <div className="flex items-center justify-between w-full">
                         <span className="truncate max-w-[200px]">{conv.title}</span>
                         <span className="text-xs text-gray-500 ml-2 hidden sm:inline flex-shrink-0">
