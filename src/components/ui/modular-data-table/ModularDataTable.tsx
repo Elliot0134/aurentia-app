@@ -546,11 +546,44 @@ export function ModularDataTable<TData extends BaseRowData>({
   // Prevent scroll during drag
   useEffect(() => {
     if (isDragging) {
-      document.body.style.overflow = "hidden";
-      document.body.style.touchAction = "none";
+      const html = document.documentElement;
+      const body = document.body;
+      
+      // Store original values
+      const originalHtmlOverflow = html.style.overflow;
+      const originalBodyOverflow = body.style.overflow;
+      const originalHtmlTouchAction = html.style.touchAction;
+      const originalBodyTouchAction = body.style.touchAction;
+      
+      // Disable scroll
+      html.style.overflow = "hidden";
+      body.style.overflow = "hidden";
+      html.style.touchAction = "none";
+      body.style.touchAction = "none";
+      
+      // Prevent scroll events
+      const preventScroll = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      };
+      
+      // Add listeners to prevent all scroll attempts
+      window.addEventListener('scroll', preventScroll, { passive: false });
+      window.addEventListener('wheel', preventScroll, { passive: false });
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+      
       return () => {
-        document.body.style.overflow = "unset";
-        document.body.style.touchAction = "auto";
+        // Restore original values
+        html.style.overflow = originalHtmlOverflow;
+        body.style.overflow = originalBodyOverflow;
+        html.style.touchAction = originalHtmlTouchAction;
+        body.style.touchAction = originalBodyTouchAction;
+        
+        // Remove listeners
+        window.removeEventListener('scroll', preventScroll);
+        window.removeEventListener('wheel', preventScroll);
+        window.removeEventListener('touchmove', preventScroll);
       };
     }
   }, [isDragging]);
@@ -764,8 +797,7 @@ export function ModularDataTable<TData extends BaseRowData>({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              align="start"
-              alignOffset={-20}
+              align="end"
               className="w-56 custom-select-content-bg"
             >
               {table
@@ -891,7 +923,6 @@ export function ModularDataTable<TData extends BaseRowData>({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              alignOffset={-20}
               className="w-56 custom-select-content-bg"
             >
               {table
