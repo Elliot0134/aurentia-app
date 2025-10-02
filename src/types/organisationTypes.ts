@@ -57,6 +57,7 @@ export interface Adherent {
   completed_deliverables: number;
   total_deliverables: number;
   last_activity?: string;
+  project_names?: string[];
 }
 
 export interface Mentor {
