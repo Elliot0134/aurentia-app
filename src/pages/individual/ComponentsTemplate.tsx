@@ -1,104 +1,13 @@
-import { useMemo, useState, useId, useEffect, useRef, useCallback } from "react";
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type UniqueIdentifier,
-} from "@dnd-kit/core"
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  GripVertical,
-  MoreHorizontal,
-  Search,
-  Trash2,
-  Eye, // Ajout de l'icône Eye pour le bouton "Ouvrir"
-  Filter, // Ajout de l'icône Filter pour le bouton de filtre
-  Mail, UserCheck, Phone, Briefcase, MapPin, FileText, MessageSquare, BookOpen, Check, Loader, X, Link as LinkIcon, ExternalLink // Icônes pour le modal
-} from "lucide-react";
-
-import { ProgressBar } from "@/components/ui/progress-bar";
-import { DynamicLinkDropdown } from "@/components/ui/dynamic-link-dropdown";
-import { Switch } from "@/components/ui/switch"; // Import du composant Switch
-import { cn } from "@/lib/utils"; // Import de cn
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  Row,
-  useReactTable,
-  VisibilityState,
-} from "@tanstack/react-table"
-import { toast } from "sonner"; // Ajout de toast
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog, // Ajout de Dialog
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import { useCustomModalTabs } from "@/components/deliverables/shared/useCustomModalTabs"; // Ajout de useCustomModalTabs
-
-// Définir une interface générique pour les données du tableau
-interface TemplateRowData {
-  id: UniqueIdentifier;
-  col1: string; // Pour la recherche
-  col2: string; // Pour le filtre de statut
-  labels: string; // Nouvelle colonne pour les étiquettes
-  progressValue?: number; // Pour la barre de progression (valeur entre 0 et 100)
-  relatedLinks?: { label: string; href: string; target?: string }[]; // Pour les liens dynamiques
-  isLuthaneActive?: boolean; // Nouvelle propriété pour l'interrupteur "Luthane"
-  [key: string]: any; // Permet des propriétés dynamiques pour les colonnes
-}
+import { Card, CardContent } from "@/components/ui/card";
+import { ModularDataTable } from "@/components/ui/modular-data-table";
+import { 
+  adherentsTableConfig, 
+  AdherentData,
+  mentorsTableConfig,
+  MentorData,
+  projetsTableConfig,
+  ProjetData
+} from "@/config/tables";
 
 // Composant de ligne draggable simplifié
 function DraggableRow<TData extends TemplateRowData>({

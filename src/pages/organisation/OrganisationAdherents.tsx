@@ -1,42 +1,32 @@
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAdherents } from '@/hooks/useOrganisationData';
-import { TemplateDataTable } from '@/pages/individual/ComponentsTemplate';
-import { UniqueIdentifier } from "@dnd-kit/core";
-import { Adherent } from "@/types/organisationTypes"; // Assurez-vous que ce chemin est correct
-import { toast } from "sonner"; // Ajout de toast
-
-interface AdherentRowData {
-  id: UniqueIdentifier;
-  col1: string; // Nom de l'adhérent
-  col2: string; // Statut ou autre info
-  col3: string; // Email
-  col4: string; // Téléphone
-  col5: string; // Nombre de projets ou autre statistique
-  labels: string; // Nouvelle colonne pour les étiquettes
-  [key: string]: any;
-}
+import { ModularDataTable } from "@/components/ui/modular-data-table";
+import { adherentsTableConfig, AdherentData } from "@/config/tables";
+import { Adherent } from "@/types/organisationTypes";
+import { toast } from "sonner";
 
 const OrganisationAdherents = () => {
   const { id: organisationId } = useParams();
 
-  // Utiliser les données Supabase quand disponible, sinon les données fictives
+  // Utiliser les données Supabase
   const { adherents, loading } = useAdherents();
 
-  const handleOpenAdherentProfile = (adherentData: AdherentRowData) => {
-    toast.info(`Ouverture du profil de ${adherentData.col1}`);
-    // Ici, vous pouvez implémenter la logique pour ouvrir un modal ou naviguer vers une page de profil
-    // Par exemple: navigate(`/organisation/${organisationId}/adherents/${adherentData.id}`);
-  };
-
-  const mappedAdherents: AdherentRowData[] = adherents.map((adherent: Adherent) => ({
+  // Mapper les données Supabase vers le format attendu par le tableau modulaire
+  const mappedAdherents: AdherentData[] = adherents.map((adherent: Adherent) => ({
     id: adherent.id,
-    col1: `${adherent.first_name} ${adherent.last_name}`.trim() || adherent.email || 'N/A', // Nom complet ou email
-    col2: adherent.status || 'Actif', // Statut fictif ou réel si disponible
-    col3: adherent.email || 'N/A',
-    col4: adherent.phone || 'N/A',
-    col5: adherent.project_count?.toString() || '0', // Exemple de donnée numérique
-    labels: ["Actif", "En attente", "Inactif"][adherents.indexOf(adherent) % 3], // Attribution cyclique des étiquettes
+    nom: adherent.last_name || 'N/A',
+    prenom: adherent.first_name || 'N/A',
+    email: adherent.email || 'N/A',
+    telephone: adherent.phone || 'N/A',
+    statut: (["Actif", "En attente", "Inactif"][adherents.indexOf(adherent) % 3] as "Actif" | "En attente" | "Inactif"), // Attribution cyclique
+    dateInscription: new Date().toLocaleDateString('fr-FR'), // Date fictive pour la démo
+    progressValue: Math.floor(Math.random() * 100), // Valeur aléatoire pour la démo
+    relatedLinks: [
+      { label: "Voir le profil", href: `/organisation/${organisationId}/adherents/${adherent.id}` },
+      { label: "Projets", href: `/organisation/${organisationId}/adherents/${adherent.id}/projets` },
+    ],
+    isLuthaneActive: Math.random() > 0.5, // Valeur aléatoire pour la démo
   }));
 
   if (loading) {
@@ -66,12 +56,16 @@ const OrganisationAdherents = () => {
         </div>
       </div>
 
-      {/* Tableau des adhérents */}
+      {/* Tableau des adhérents avec le composant modulaire */}
       <Card>
         <CardContent className="p-6">
-          <TemplateDataTable
+          <ModularDataTable
             data={mappedAdherents}
-            // onRowClick={handleOpenAdherentProfile} // Passer la fonction de gestion du clic sur la ligne
+            config={adherentsTableConfig}
+            onDataChange={(newData) => {
+              console.log("Nouvelles données:", newData);
+              // Ici vous pouvez sauvegarder l'ordre dans Supabase
+            }}
           />
         </CardContent>
       </Card>

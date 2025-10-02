@@ -4,7 +4,35 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Select = SelectPrimitive.Root
+// Context to share open state
+const SelectContext = React.createContext<{
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}>({
+  isOpen: false,
+  setIsOpen: () => {},
+});
+
+interface SelectProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> {}
+
+const Select = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Root>,
+  SelectProps
+>(({ onOpenChange, ...props }, ref) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    onOpenChange?.(open);
+  };
+
+  return (
+    <SelectContext.Provider value={{ isOpen, setIsOpen }}>
+      <SelectPrimitive.Root onOpenChange={handleOpenChange} {...props} />
+    </SelectContext.Provider>
+  );
+})
+Select.displayName = SelectPrimitive.Root.displayName
 
 const SelectGroup = SelectPrimitive.Group
 
@@ -18,23 +46,31 @@ interface SelectTriggerProps
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   SelectTriggerProps
->(({ className, children, hideIndicator, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-      className
-    )}
-    {...props}
-  >
-    {children}
-    {!hideIndicator && (
-      <SelectPrimitive.Icon asChild>
-        <ChevronDown className="h-4 w-4 opacity-50" />
-      </SelectPrimitive.Icon>
-    )}
-  </SelectPrimitive.Trigger>
-))
+>(({ className, children, hideIndicator, ...props }, ref) => {
+  const { isOpen } = React.useContext(SelectContext);
+
+  return (
+    <SelectPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      {!hideIndicator && (
+        <SelectPrimitive.Icon asChild>
+          {isOpen ? (
+            <ChevronUp className="h-4 w-4 opacity-50 transition-transform duration-200" />
+          ) : (
+            <ChevronDown className="h-4 w-4 opacity-50 transition-transform duration-200" />
+          )}
+        </SelectPrimitive.Icon>
+      )}
+    </SelectPrimitive.Trigger>
+  );
+})
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
 const SelectScrollUpButton = React.forwardRef<
