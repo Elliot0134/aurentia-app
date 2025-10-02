@@ -25,6 +25,7 @@ import Ressources from "./pages/Ressources"; // Import the new Ressources compon
 import Collaborateurs from "./pages/Collaborateurs"; // Import the new Collaborateurs component
 import TemplatePage from "./pages/TemplatePage"; // Import the new TemplatePage component
 import ToolTemplatePage from "./pages/ToolTemplatePage"; // Import the new ToolTemplatePage component
+import ComponentsTemplate from "./pages/individual/ComponentsTemplate";
 import ChatbotPage from "./pages/ChatbotPage";
 import PlanActionPage from "./pages/PlanActionPage"; // Import the new PlanActionPage component
 import ProtectedLayout from "./components/ProtectedLayout";
@@ -208,9 +209,10 @@ const App = () => {
                     <Route path="/individual/outils" element={<Outils />} />
                     <Route path="/individual/ressources" element={<Ressources />} />
                     <Route path="/individual/collaborateurs" element={<Collaborateurs />} />
-                    <Route path="/individual/template" element={<TemplatePage />} />
-                    <Route path="/individual/template/tool-template" element={<ToolTemplatePage />} />
-                    <Route path="/individual/plan-action" element={<PlanActionPage />} />
+<Route path="/individual/template" element={<TemplatePage />} />
+<Route path="/individual/template/tool-template" element={<ToolTemplatePage />} />
+<Route path="/individual/components-template" element={<ComponentsTemplate />} />
+<Route path="/individual/plan-action" element={<PlanActionPage />} />
                     <Route path="/individual/roadmap/:id" element={<Roadmap />} />
                     <Route path="/individual/project/:projectId" element={<Project />} />
                     <Route path="/individual/form-business-idea" element={<FormBusinessIdea />} />
