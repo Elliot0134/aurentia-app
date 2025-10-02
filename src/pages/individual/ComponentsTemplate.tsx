@@ -28,11 +28,14 @@ import {
   Search,
   Trash2,
   Eye, // Ajout de l'icône Eye pour le bouton "Ouvrir"
+  Filter, // Ajout de l'icône Filter pour le bouton de filtre
   Mail, UserCheck, Phone, Briefcase, MapPin, FileText, MessageSquare, BookOpen, Check, Loader, X, Link as LinkIcon, ExternalLink // Icônes pour le modal
 } from "lucide-react";
 
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { DynamicLinkDropdown } from "@/components/ui/dynamic-link-dropdown";
+import { Switch } from "@/components/ui/switch"; // Import du composant Switch
+import { cn } from "@/lib/utils"; // Import de cn
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -54,6 +57,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
@@ -90,6 +96,7 @@ interface TemplateRowData {
   labels: string; // Nouvelle colonne pour les étiquettes
   progressValue?: number; // Pour la barre de progression (valeur entre 0 et 100)
   relatedLinks?: { label: string; href: string; target?: string }[]; // Pour les liens dynamiques
+  isLuthaneActive?: boolean; // Nouvelle propriété pour l'interrupteur "Luthane"
   [key: string]: any; // Permet des propriétés dynamiques pour les colonnes
 }
 
@@ -159,12 +166,12 @@ function DraggableRow<TData extends TemplateRowData>({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      // onClick={(e) => {
-      //   // Déclenche handleRowClick uniquement si c'est mobile et pas en cours de glisser-déposer
-      //   if (isMobile && !isDragging) {
-      //     handleRowClick();
-      //   }
-      // }}
+      onClick={(e) => {
+        // Déclenche handleRowClick uniquement si c'est mobile et pas en cours de glisser-déposer
+        if (isMobile && !isDragging) {
+          handleRowClick();
+        }
+      }}
     >
       {row.getVisibleCells().map((cell) => {
         if (cell.column.id === "drag") {
@@ -235,7 +242,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
         </div>
       ),
       cell: ({ row }) => (
-        <div className="flex items-center justify-center -ml-2.5">
+        <div className="flex items-center justify-center -ml-2.5" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -284,6 +291,9 @@ const getTemplateColumns = <TData extends TemplateRowData>(
   columns.push({
     accessorKey: "labels",
     header: "Etiquettes",
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
     cell: ({ row }) => {
       const label = row.original.labels;
       let iconComponent;
@@ -352,23 +362,75 @@ const getTemplateColumns = <TData extends TemplateRowData>(
     cell: ({ row }) => {
       const links = row.original.relatedLinks;
       return (
-        <DynamicLinkDropdown links={links || []} label={links && links.length > 0 ? "Voir les liens" : "Sélectionner"} />
+        <div onClick={(e) => e.stopPropagation()}>
+          <DynamicLinkDropdown links={links || []} label={links && links.length > 0 ? "Voir les liens" : "Sélectionner"} />
+        </div>
       );
     },
     size: 150,
   });
+
+  // Nouvelle colonne pour l'interrupteur "Luthane"
+  columns.push({
+    accessorKey: "isLuthaneActive",
+    header: "Luthane",
+    cell: ({ row }) => {
+      const [isHovering, setIsHovering] = useState(false);
+      const isLuthaneActive = row.original.isLuthaneActive ?? false;
+      const [checked, setChecked] = useState(isLuthaneActive);
+
+      // Effect pour synchroniser l'état local avec les props initiales
+      useEffect(() => {
+        setChecked(isLuthaneActive);
+      }, [isLuthaneActive]);
+
+      return (
+        <div 
+          className="relative flex items-center justify-center h-full"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Switch
+            // Remplacé 'className' par 'thumbClassName', car className est déjà utilisé par le wrapper de Switch
+            // et nous devons cibler spécifiquement l'interrupteur interne.
+            // Cependant, le composant Switch de shadcn ne semble pas avoir une prop `thumbClassName`,
+            // nous devrons donc le styliser via Tailwind JIT ou un CSS personnalisé si nécessaire.
+            // Pour l'instant, je vais ajouter une classe au conteneur du Switch si j'ai besoin de le styliser spécifiquement.
+            checked={checked}
+            onCheckedChange={(newChecked) => {
+              setChecked(newChecked);
+              // Ici, vous pouvez ajouter une logique pour mettre à jour l'état global ou appeler une API
+              toast.success(`Luthane pour ${row.original.col1} ${newChecked ? 'activé' : 'désactivé'}`);
+            }}
+            className={cn(
+              "data-[state=checked]:bg-[#4CAF50] data-[state=unchecked]:bg-[#E0E0E0]", // Couleurs par défaut
+              (isHovering && !checked) ? "before:bg-gray-300" : "", // Grille plus claire au survol quand éteint
+            )}
+            style={{
+              backgroundColor: checked ? undefined : (isHovering ? '#D0D0D0' : '#E0E0E0'), // Gris clair quand éteint, plus clair au survol
+              // 'background-image': checked ? undefined : (isHovering ? 'linear-gradient(45deg, #E0E0E0 25%, transparent 25%, transparent 75%, #E0E0E0 75%, #E0E0E0), linear-gradient(45deg, #E0E0E0 25%, transparent 25%, transparent 75%, #E0E0E0 75%, #E0E0E0)' : undefined),
+              // 'background-size': checked ? undefined : '10px 10px',
+              // 'background-position': checked ? undefined : '0 0, 5px 5px',
+            }}
+          />
+        </div>
+      );
+    },
+    size: 80,
+  })
 
   columns.push({
     id: "actions",
     cell: () => (
       <div className="flex justify-center">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
-              className="data-[state=open]:bg-muted text-muted-foreground flex size-8 p-0"
+              className="data-[state=open]:bg-muted flex size-8 p-0 hover:bg-gray-100"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -406,6 +468,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
   })
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false); // Nouvel état pour le dialogue de suppression
 
+  const hasLuthaneColumn = useMemo(() => data.some(row => 'isLuthaneActive' in row), [data]);
   const sortableId = useId();
   // Les sensors sont recréés à chaque rendu pour s'assurer que DndContext réinitialise son état de détection.
   // Cela peut résoudre les problèmes où le drag-and-drop ne fonctionne plus après le premier déplacement.
@@ -501,7 +564,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
       <CardTitle className="mb-4 mx-4 lg:mx-6">Tableau template</CardTitle>
       {/* Version desktop : boutons côte à côte */}
       <div className="hidden md:flex items-center justify-between px-4 lg:px-6 py-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -513,31 +576,100 @@ export function TemplateDataTable<TData extends TemplateRowData>({
               className="max-w-sm pl-8"
             />
           </div>
-          <Select
-            value={table.getColumn(`col2`)?.getFilterValue() as string ?? "all"}
-            onValueChange={(value) => {
-              table.getColumn(`col2`)?.setFilterValue(value === 'all' ? '' : value);
-            }}
-          >
-            <SelectTrigger className="w-40 bg-white">
-              <SelectValue placeholder="Tous" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
-              <SelectItem value="valeur1">Valeur 1</SelectItem>
-              <SelectItem value="valeur2">Valeur 2</SelectItem>
-              <SelectItem value="valeur3">Valeur 3</SelectItem>
-            </SelectContent>
-          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0 flex items-center justify-center p-0 w-10 h-10 border border-input" aria-label="Filter">
+                <Filter className="h-4 w-4 text-black" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex justify-between">
+                    Étiquette
+                    <ChevronRight className="ml-auto h-4 w-4" />
+                  </DropdownMenuItem>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" sideOffset={5} align="center" className="w-48">
+                  {['Actif', 'En attente', 'Inactif'].map(label => (
+                    <DropdownMenuItem
+                      key={label}
+                      onSelect={(e) => e.preventDefault()}
+                      onClick={() => {
+                        const currentFilter = table.getColumn('labels')?.getFilterValue() as string[] | undefined || [];
+                        const newFilter = currentFilter.includes(label)
+                          ? currentFilter.filter(l => l !== label)
+                          : [...currentFilter, label];
+                        table.getColumn('labels')?.setFilterValue(newFilter.length > 0 ? newFilter : undefined);
+                      }}
+                    >
+                      <Checkbox
+                        checked={(table.getColumn('labels')?.getFilterValue() as string[] | undefined || []).includes(label)}
+                        className="mr-2"
+                      />
+                      {label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {hasLuthaneColumn && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex justify-between">
+                    Luthane
+                    <ChevronRight className="ml-auto h-4 w-4" />
+                  </DropdownMenuItem>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" sideOffset={5} align="center" className="w-48">
+                  {['Activé', 'Désactivé'].map(status => {
+                    const filterValue = status === 'Activé';
+                    const currentFilter = table.getColumn('isLuthaneActive')?.getFilterValue();
+                    
+                    return (
+                      <DropdownMenuItem
+                        key={status}
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => {
+                          if (currentFilter === filterValue) {
+                            table.getColumn('isLuthaneActive')?.setFilterValue(undefined);
+                          } else {
+                            table.getColumn('isLuthaneActive')?.setFilterValue(filterValue);
+                          }
+                        }}
+                      >
+                        <Checkbox
+                          checked={currentFilter === filterValue}
+                          className="mr-2"
+                        />
+                        {status}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteConfirmDialog(true)} // Ouvre le dialogue de confirmation
+              className="ml-2"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete ({table.getFilteredSelectedRowModel().rows.length})
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="bg-white hover:bg-[#E5E5E5] hover:text-black">
-                Colonnes
+              <Button variant="outline" size="icon" className="bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0">
+                <Eye className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="start" alignOffset={-20} className="w-56 custom-select-content-bg">
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -548,7 +680,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                   return (
                     <DropdownMenuItem
                       key={column.id}
-                      className="capitalize"
+                      className="capitalize custom-select-item-bg"
                       onSelect={(e) => e.preventDefault()}
                       onClick={() => column.toggleVisibility(!column.getIsVisible())}
                     >
@@ -563,59 +695,104 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          {table.getFilteredSelectedRowModel().rows.length > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteConfirmDialog(true)} // Ouvre le dialogue de confirmation
-              className="ml-2"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer ({table.getFilteredSelectedRowModel().rows.length})
-            </Button>
-          )}
         </div>
       </div>
 
       {/* Version mobile : boutons en colonne */}
       <div className="md:hidden px-4 py-4 space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher..."
-              value={(table.getColumn(`col1`)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(`col1`)?.setFilterValue(event.target.value)
-              }
-              className="pl-8"
-            />
-          </div>
-          <Select
-            value={table.getColumn(`col2`)?.getFilterValue() as string ?? "all"}
-            onValueChange={(value) => {
-              table.getColumn(`col2`)?.setFilterValue(value === 'all' ? '' : value);
-            }}
-          >
-            <SelectTrigger className="w-24 bg-white">
-              <SelectValue placeholder="Tous" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
-              <SelectItem value="valeur1">Valeur 1</SelectItem>
-              <SelectItem value="valeur2">Valeur 2</SelectItem>
-              <SelectItem value="valeur3">Valeur 3</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher..."
+            value={(table.getColumn(`col1`)?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn(`col1`)?.setFilterValue(event.target.value)
+            }
+            className="pl-8"
+          />
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="bg-white flex-1 hover:bg-[#E5E5E5] hover:text-black">
-                Colonnes
+                <Button variant="outline" className="bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0 flex items-center justify-center p-0 w-10 h-10 border border-input" aria-label="Filter">
+                    <Filter className="h-4 w-4 text-black" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex justify-between">
+                    Étiquette
+                    <ChevronRight className="ml-auto h-4 w-4" />
+                  </DropdownMenuItem>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" sideOffset={5} align="center" className="w-48">
+                  {['Actif', 'En attente', 'Inactif'].map(label => (
+                    <DropdownMenuItem
+                      key={label}
+                      onSelect={(e) => e.preventDefault()}
+                      onClick={() => {
+                        const currentFilter = table.getColumn('labels')?.getFilterValue() as string[] | undefined || [];
+                        const newFilter = currentFilter.includes(label)
+                          ? currentFilter.filter(l => l !== label)
+                          : [...currentFilter, label];
+                        table.getColumn('labels')?.setFilterValue(newFilter.length > 0 ? newFilter : undefined);
+                      }}
+                    >
+                      <Checkbox
+                        checked={(table.getColumn('labels')?.getFilterValue() as string[] | undefined || []).includes(label)}
+                        className="mr-2"
+                      />
+                      {label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {hasLuthaneColumn && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex justify-between">
+                    Luthane
+                    <ChevronRight className="ml-auto h-4 w-4" />
+                  </DropdownMenuItem>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" sideOffset={5} align="center" className="w-48">
+                  {['Activé', 'Désactivé'].map(status => {
+                    const filterValue = status === 'Activé';
+                    const currentFilter = table.getColumn('isLuthaneActive')?.getFilterValue();
+
+                    return (
+                      <DropdownMenuItem
+                        key={status}
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => {
+                          if (currentFilter === filterValue) {
+                            table.getColumn('isLuthaneActive')?.setFilterValue(undefined);
+                          } else {
+                            table.getColumn('isLuthaneActive')?.setFilterValue(filterValue);
+                          }
+                        }}
+                      >
+                        <Checkbox
+                          checked={currentFilter === filterValue}
+                          className="mr-2"
+                        />
+                        {status}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0">
+                <Eye className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="start" alignOffset={-20} className="w-56 custom-select-content-bg">
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -626,7 +803,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                   return (
                     <DropdownMenuItem
                       key={column.id}
-                      className="capitalize"
+                      className="capitalize custom-select-item-bg"
                       onSelect={(e) => e.preventDefault()}
                       onClick={() => column.toggleVisibility(!column.getIsVisible())}
                     >
@@ -712,13 +889,13 @@ export function TemplateDataTable<TData extends TemplateRowData>({
         </DndContext>
       </div>
       {/* Contrôles de pagination */}
-      <div className="flex items-center justify-between px-4 lg:px-6 py-4">
-        <div className="text-muted-foreground flex-1 text-sm">
+      <div className="flex flex-col md:flex-row items-center justify-between px-4 lg:px-6 py-4">
+        <div className="hidden md:block text-muted-foreground flex-1 text-sm">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          <div className="flex items-center space-x-2">
+        <div className="flex w-full items-center justify-between md:w-auto md:justify-end md:space-x-6 lg:space-x-8">
+          <div className="hidden md:flex items-center space-x-2">
             <p className="text-sm font-medium">Lignes par page</p>
             <Select
               value={`${table.getState().pagination.pageSize}`}
@@ -726,59 +903,61 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                 table.setPageSize(Number(value))
               }}
             >
-              <SelectTrigger className="h-8 w-[70px]">
+              <SelectTrigger className="h-8 w-[70px] bg-[#F9F9F8] focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                  <SelectItem key={pageSize} value={`${pageSize}`} className="hover:bg-[#F3F4F6] data-[highlighted]:bg-[#F3F4F6]">
                     {pageSize}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} sur{" "}
-            {table.getPageCount()}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Go to first page</span>
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Go to previous page</span>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Go to next page</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Go to last page</span>
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
+          <div className="flex w-full items-center justify-between md:w-auto md:justify-center md:gap-8">
+            <div className="text-sm font-medium">
+              Page {table.getState().pagination.pageIndex + 1} sur{" "}
+              {table.getPageCount()}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to first page</span>
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to previous page</span>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to next page</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to last page</span>
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

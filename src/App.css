@@ -48,3 +48,32 @@
 .animate-fadein {
   animation: fadein 0.25s cubic-bezier(0.4,0,0.2,1) both;
 }
+
+.custom-select-content-bg {
+  background-color: #F3F4F6 !important; /* Gris très clair */
+}
+
+/* Surcharge de la couleur de survol et de sélection pour DropdownMenuItem (sélectionneur de colonnes) */
+.custom-select-item-bg {
+  background-color: #F3F4F6 !important; /* Gris très clair */
+  color: #333 !important; /* Pour s'assurer que le texte est bien visible */
+}
+
+.custom-select-item-bg:hover,
+.items-center[data-highlighted].custom-select-item-bg { /* Pour cibler l'état survolé/mis en évidence */
+  background-color: #F3F4F6 !important; /* Gris un peu plus foncé au survol */
+  color: black !important;
+}
+
+/* Surcharge spécifique pour le SelectItem (filtre) */
+/* Cible le SelectItem du filtre pour forcer le fond gris clair */
+.select-content-custom-bg .group.items-center[data-highlighted],
+.select-content-custom-bg .group.items-center[data-state=checked] {
+  background-color: #e0e0e0 !important;
+  color: black !important;
+}
+
+.select-content-custom-bg .group.items-center {
+  background-color: #f5f5f5 !important; /* Fond de tous les items */
+  color: #333 !important;
+}
