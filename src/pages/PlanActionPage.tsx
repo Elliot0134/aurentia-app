@@ -837,7 +837,13 @@ const PlanActionPage = () => {
                   <ActionPlanHierarchy
                     hierarchicalData={mergedActionPlanData.hierarchicalData}
                     onElementClick={handleElementClick}
-                    onStatusChange={handleStatusChange}
+                    onEdit={(element) => {
+                      // Convertir l'élément modifié en appel de changement de statut
+                      const originalElement = mergedActionPlanData.hierarchicalData.find(e => e.element_id === element.element_id);
+                      if (originalElement && element.statut !== originalElement.statut) {
+                        handleStatusChange(element.element_id, element.statut);
+                      }
+                    }}
                   />
 
                   {/* Modal de détails */}
