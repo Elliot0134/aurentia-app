@@ -50,8 +50,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Nouvelle conversation</h2>
             ) : (
               // Il y a de l'historique -> Select pour navigation
-              <Select 
-                value={currentConversation?.id || ""} 
+              <Select
+                value={currentConversation?.id || ""}
                 onValueChange={onLoadConversation}
               >
                 <SelectTrigger className="w-full max-w-xs sm:max-w-sm h-9 border-0 focus:ring-0 focus:ring-offset-0 focus:outline-none">
@@ -61,12 +61,12 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     </span>
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="min-w-[400px]">
                   {conversationHistory.map((conv) => (
                     <SelectItem key={conv.id} value={conv.id} className="hover:bg-[#F3F4F6]">
-                      <div className="flex items-center justify-between w-full">
-                        <span className="truncate max-w-[200px]">{conv.title}</span>
-                        <span className="text-xs text-gray-500 ml-2 hidden sm:inline flex-shrink-0">
+                      <div className="flex items-center w-full">
+                        <span className="truncate flex-1 min-w-0">{conv.title}</span>
+                        <span className="text-xs text-gray-500 flex-shrink-0 ml-auto pl-4">
                           {new Date(conv.updatedAt).toLocaleDateString('fr-FR')}
                         </span>
                       </div>

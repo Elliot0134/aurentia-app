@@ -254,6 +254,40 @@ const PlanActionPage = () => {
   // Vérifier si on doit afficher le plan d'action complet
   const shouldShowActionPlan = statusActionPlan === 'Terminé';
 
+  // Move useEffect to the top with other hooks
+  useEffect(() => {
+    const fetchStatusActionPlan = async () => {
+      if (!activeProjectId) {
+        setError("Aucun projet sélectionné.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('project_summary')
+          .select('status_action_plan')
+          .eq('project_id', activeProjectId)
+          .single();
+
+        if (error) {
+          console.warn("Could not fetch status_action_plan, assuming it's empty or column does not exist:", error.message);
+          setStatusActionPlan(null);
+        } else {
+          const fetchedStatus = (data as any)?.status_action_plan || null;
+          setStatusActionPlan(fetchedStatus);
+        }
+      } catch (err: any) {
+        console.error("Erreur lors de la récupération du status_action_plan:", err.message);
+        setError("Erreur lors du chargement du plan d'action.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStatusActionPlan();
+  }, [activeProjectId]);
+
   const getStepContent = (step = currentStep) => {
     switch (step) {
       case 1:
@@ -512,39 +546,6 @@ const PlanActionPage = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    const fetchStatusActionPlan = async () => {
-      if (!activeProjectId) {
-        setError("Aucun projet sélectionné.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('project_summary')
-          .select('status_action_plan')
-          .eq('project_id', activeProjectId)
-          .single();
-
-        if (error) {
-          console.warn("Could not fetch status_action_plan, assuming it's empty or column does not exist:", error.message);
-          setStatusActionPlan(null);
-        } else {
-          const fetchedStatus = (data as any)?.status_action_plan || null;
-          setStatusActionPlan(fetchedStatus);
-        }
-      } catch (err: any) {
-        console.error("Erreur lors de la récupération du status_action_plan:", err.message);
-        setError("Erreur lors du chargement du plan d'action.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStatusActionPlan();
-  }, [activeProjectId]);
 
   if (isLoading) {
     return (

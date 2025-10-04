@@ -17,7 +17,7 @@ export const useUserProfile = () => {
 
       const { data: profile } = await supabase
         .from('profiles' as any)
-        .select('email,first_name,last_name,organization_id,user_role,subscription_status,stripe_customer_id') // Rétablir la sélection complète
+        .select('email,organization_id,user_role') // Sélectionner seulement les colonnes qui existent
         .eq('id', user.id)
         .single();
 

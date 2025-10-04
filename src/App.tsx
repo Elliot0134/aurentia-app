@@ -8,6 +8,7 @@ import Signup from "./pages/Signup";
 import ConfirmEmail from "./pages/ConfirmEmail";
 import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
 import UpdatePassword from "./pages/UpdatePassword";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import OrganisationRedirect from "./pages/OrganisationRedirect";
@@ -60,7 +61,6 @@ import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import useMounted from "./hooks/useMounted"; // Import the new hook
 
 import "./index.css";
 
@@ -110,7 +110,6 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
 const ProtectedRoute = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const mounted = useMounted(); // Use the new hook
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -118,16 +117,12 @@ const ProtectedRoute = () => {
         console.log("Checking authentication...");
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Session:", session);
-        if (mounted.current) { // Only update state if component is still mounted
-          setIsAuthenticated(!!session);
-          setLoading(false);
-        }
+        setIsAuthenticated(!!session);
+        setLoading(false);
       } catch (error) {
         console.error("Error checking authentication:", error);
-        if (mounted.current) { // Only update state if component is still mounted
-          setIsAuthenticated(false);
-          setLoading(false);
-        }
+        setIsAuthenticated(false);
+        setLoading(false);
       }
     };
 
@@ -135,15 +130,13 @@ const ProtectedRoute = () => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("Auth state changed:", _event, session);
-      if (mounted.current) { // Only update state if component is still mounted
-        setIsAuthenticated(!!session);
-      }
+      setIsAuthenticated(!!session);
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [mounted]); // Add mounted to dependency array
+  }, []);
 
   if (loading) {
     return (
@@ -186,6 +179,7 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 {/* <Route path="/role-selection" element={<RoleSelection />} /> */} {/* Supprimé car le rôle est attribué par défaut */}
                 <Route path="/update-password" element={<UpdatePassword />} />
