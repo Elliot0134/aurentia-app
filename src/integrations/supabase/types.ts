@@ -1475,37 +1475,43 @@ export type Database = {
       }
       project_invitations: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           email: string
-          expires_at: string
+          expires_at: string | null
           id: string
-          invited_at: string
+          invited_at: string | null
           invited_by: string
           project_id: string
           role: string
+          status: string
           token: string
-          used: boolean
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           email: string
-          expires_at: string
+          expires_at?: string | null
           id?: string
-          invited_at?: string
+          invited_at?: string | null
           invited_by: string
           project_id: string
-          role: string
-          token: string
-          used?: boolean
+          role?: string
+          status?: string
+          token?: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           email?: string
-          expires_at?: string
+          expires_at?: string | null
           id?: string
-          invited_at?: string
+          invited_at?: string | null
           invited_by?: string
           project_id?: string
           role?: string
+          status?: string
           token?: string
-          used?: boolean
         }
         Relationships: [
           {

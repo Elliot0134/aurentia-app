@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { CollaboratorRole, Collaborator, Invitation } from '@/types/collaboration';
+import { Collaborator, CollaboratorRole, CollaboratorStatus, Invitation } from '@/types/collaboration';
+import { EmailService } from './email.service';
 
 export class CollaboratorsService {
   // Récupérer tous les collaborateurs d'un projet
@@ -7,110 +8,153 @@ export class CollaboratorsService {
     const { data, error } = await supabase
       .from('project_collaborators')
       .select('*')
-      .eq('project_id', projectId)
-      .order('invited_at', { ascending: false });
+          .eq('project_id', projectId)
+          .order('joined_at', { ascending: false });
 
-    if (error) throw error;
-    if (!data) return [];
+        if (error) throw error;
+        if (!data) return [];
 
-    // Enrichir les données avec les informations des utilisateurs et projets
-    const enrichedCollaborators = await Promise.all(
-      data.map(async (collab) => {
-        // Récupérer les informations de l'utilisateur
-        const { data: user } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .eq('id', collab.user_id)
-          .single();
+        // Enrichir les données avec les informations des utilisateurs et projets
+        const collaborators = await Promise.all(
+          data.map(async (collab) => {
+            // Récupérer les informations de l'utilisateur
+            const { data: user } = await supabase
+              .from('profiles')
+              .select('id, email')
+              .eq('id', collab.user_id)
+              .single();
 
-        // Récupérer les informations du projet
-        const { data: project } = await supabase
-          .from('project_summary')
-          .select('project_id, nom_projet, description_synthetique')
-          .eq('project_id', collab.project_id)
-          .single();
+            // Récupérer les informations du projet
+            const { data: project } = await supabase
+              .from('project_summary')
+              .select('project_id, nom_projet, description_synthetique')
+              .eq('project_id', collab.project_id)
+              .single();
 
-        // Récupérer les informations de la personne qui a invité
-        const { data: inviter } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .eq('id', collab.invited_by)
-          .single();
+            // Les informations de la personne qui a invité sont stockées dans project_invitations
+            // Pour les collaborateurs existants, nous n'avons pas cette information directement
+            const inviter = null;
 
-        return {
-          ...collab,
-          role: collab.role as CollaboratorRole,
-          status: collab.status as 'accepted' | 'suspended',
-          user: user || undefined,
-          project: project || undefined,
-          inviter: inviter || undefined
-        } as Collaborator;
-      })
-    );
+            return {
+              id: collab.id,
+              project_id: collab.project_id,
+              user_id: collab.user_id,
+              role: collab.role as CollaboratorRole,
+              status: collab.status as CollaboratorStatus,
+              permissions: (collab as any).permissions || null,
+              joined_at: (collab as any).joined_at || new Date().toISOString(),
+              updated_at: (collab as any).updated_at || new Date().toISOString(),
+              user: user || undefined,
+              project: project || undefined,
+              inviter: inviter || undefined
+            } as Collaborator;
+          })
+        );
 
-    return enrichedCollaborators;
+        return collaborators;
   }
 
   // Récupérer tous les collaborateurs de l'utilisateur connecté
   static async getUserCollaborators(): Promise<Collaborator[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('Utilisateur non authentifié pour getUserCollaborators');
+        return [];
+      }
 
-    // Récupérer tous les projets de l'utilisateur
-    const { data: projects, error: projectsError } = await supabase
-      .from('project_summary')
-      .select('project_id')
-      .eq('user_id', user.id);
+      console.log('Récupération des projets pour l\'utilisateur:', user.id);
 
-    if (projectsError) throw projectsError;
-    if (!projects || projects.length === 0) return [];
+      // Récupérer tous les projets de l'utilisateur
+      const { data: projects, error: projectsError } = await supabase
+        .from('project_summary')
+        .select('project_id, nom_projet')
+        .eq('user_id', user.id);
 
-    // Récupérer tous les collaborateurs de ces projets
-    const { data, error } = await supabase
-      .from('project_collaborators')
-      .select('*')
-      .in('project_id', projects.map(p => p.project_id))
-      .order('invited_at', { ascending: false });
+      if (projectsError) {
+        console.error('Erreur lors de la récupération des projets:', projectsError);
+        throw projectsError;
+      }
 
-    if (error) throw error;
-    if (!data) return [];
+      console.log('Projets trouvés:', projects?.length || 0);
 
-    // Enrichir les données avec les informations des utilisateurs et projets
-    const enrichedCollaborators = await Promise.all(
-      data.map(async (collab) => {
-        // Récupérer les informations de l'utilisateur
-        const { data: user } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .eq('id', collab.user_id)
-          .single();
+      if (!projects || projects.length === 0) {
+        console.log('Aucun projet trouvé pour cet utilisateur');
+        return [];
+      }
 
-        // Récupérer les informations du projet
-        const { data: project } = await supabase
-          .from('project_summary')
-          .select('project_id, nom_projet, description_synthetique')
-          .eq('project_id', collab.project_id)
-          .single();
+      // Récupérer tous les collaborateurs de ces projets
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .select('*')
+        .in('project_id', projects.map(p => p.project_id))
+        .order('joined_at', { ascending: false });
 
-        // Récupérer les informations de la personne qui a invité
-        const { data: inviter } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .eq('id', collab.invited_by)
-          .single();
+      if (error) {
+        console.error('Erreur lors de la récupération des collaborateurs:', error);
+        throw error;
+      }
 
-        return {
-          ...collab,
-          role: collab.role as CollaboratorRole,
-          status: collab.status as 'accepted' | 'suspended',
-          user: user || undefined,
-          project: project || undefined,
-          inviter: inviter || undefined
-        } as Collaborator;
-      })
-    );
+      console.log('Collaborateurs trouvés:', data?.length || 0);
 
-    return enrichedCollaborators;
+      if (!data) return [];
+
+      // Enrichir les données avec les informations des utilisateurs et projets
+      const enrichedCollaborators = await Promise.all(
+        data.map(async (collab) => {
+          try {
+            // Récupérer les informations de l'utilisateur
+            const { data: userProfile } = await supabase
+              .from('profiles')
+              .select('id, email')
+              .eq('id', collab.user_id)
+              .single();
+
+            // Trouver le projet correspondant dans notre liste
+            const project = projects.find(p => p.project_id === collab.project_id);
+
+            return {
+              id: collab.id,
+              project_id: collab.project_id,
+              user_id: collab.user_id,
+              role: collab.role as CollaboratorRole,
+              status: collab.status as CollaboratorStatus,
+              permissions: (collab as any).permissions || null,
+              joined_at: (collab as any).joined_at || new Date().toISOString(),
+              updated_at: (collab as any).updated_at || new Date().toISOString(),
+              user: userProfile || undefined,
+              project: project ? {
+                project_id: project.project_id,
+                nom_projet: project.nom_projet,
+                description_synthetique: ''
+              } : undefined,
+              inviter: null
+            } as Collaborator;
+          } catch (error) {
+            console.error('Erreur lors de l\'enrichissement du collaborateur:', collab.id, error);
+            // Retourner un collaborateur minimal en cas d'erreur
+            return {
+              id: collab.id,
+              project_id: collab.project_id,
+              user_id: collab.user_id,
+              role: collab.role as CollaboratorRole,
+              status: collab.status as CollaboratorStatus,
+              permissions: null,
+              joined_at: (collab as any).joined_at || new Date().toISOString(),
+              updated_at: (collab as any).updated_at || new Date().toISOString(),
+              user: undefined,
+              project: undefined,
+              inviter: undefined
+            } as Collaborator;
+          }
+        })
+      );
+
+      return enrichedCollaborators;
+    } catch (error) {
+      console.error('Erreur dans getUserCollaborators:', error);
+      throw error;
+    }
   }
 
   // Inviter un collaborateur
@@ -120,6 +164,9 @@ export class CollaboratorsService {
     role: CollaboratorRole
   ): Promise<{ success: boolean; invitation_id?: string; token?: string; error?: string }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       // Vérifier si l'utilisateur existe déjà comme collaborateur
       const { data: userProfile } = await supabase
         .from('profiles')
@@ -146,7 +193,7 @@ export class CollaboratorsService {
         .select('*')
         .eq('project_id', projectId)
         .eq('email', email)
-        .eq('used', false)
+        .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())
         .single();
 
@@ -159,14 +206,23 @@ export class CollaboratorsService {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // Expire dans 7 jours
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Récupérer le nom du projet
+      const { data: project, error: projectError } = await supabase
+        .from('project_summary')
+        .select('nom_projet')
+        .eq('project_id', projectId)
+        .single();
 
-      // Créer l'invitation
+      if (projectError) {
+        throw new Error(`Impossible de récupérer les informations du projet: ${projectError.message}`);
+      }
+
+      // Créer l'invitation avec le nom du projet
       const { data: invitation, error } = await supabase
         .from('project_invitations')
         .insert({
           project_id: projectId,
+          project_name: project.nom_projet,
           email,
           role,
           token,
@@ -178,8 +234,28 @@ export class CollaboratorsService {
 
       if (error) throw error;
 
-      // Envoyer l'email d'invitation
-      await this.sendInvitationEmail(email, token, projectId);
+      // Récupérer l'email de l'inviteur
+      const { data: inviterProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      // Envoyer l'email d'invitation avec le nouveau service
+      console.log('📧 Tentative d\'envoi d\'email d\'invitation...');
+      const emailResult = await EmailService.sendCollaborationInvitation(
+        email,
+        token,
+        project.nom_projet || 'Projet Aurentia',
+        inviterProfile?.email || user.email || 'un collaborateur'
+      );
+      
+      if (!emailResult.success) {
+        console.error('❌ Email d\'invitation non envoyé:', emailResult.error);
+        // Ne pas faire échouer l'invitation si l'email ne peut pas être envoyé
+      } else {
+        console.log('✅ Email d\'invitation envoyé avec succès');
+      }
 
       return {
         success: true,
@@ -191,30 +267,138 @@ export class CollaboratorsService {
     }
   }
 
+  // Récupérer une invitation par token
+  static async getInvitationByToken(token: string): Promise<any> {
+    try {
+      // D'abord, vérifier si l'invitation existe, quel que soit son statut
+      const { data: invitation, error } = await supabase
+        .from('project_invitations')
+        .select('*')
+        .eq('token', token)
+        .single();
+
+      if (error || !invitation) {
+        throw new Error('Invitation introuvable');
+      }
+
+      // Vérifier le statut de l'invitation
+      if (invitation.status === 'accepted') {
+        throw new Error('Cette invitation a déjà été acceptée');
+      }
+
+      if (invitation.status !== 'pending') {
+        throw new Error('Invitation invalide');
+      }
+
+      // Vérifier l'expiration
+      if (new Date(invitation.expires_at) <= new Date()) {
+        throw new Error('Cette invitation a expiré');
+      }
+
+      // Récupérer les informations du projet séparément
+      const { data: project } = await supabase
+        .from('project_summary')
+        .select('nom_projet, description_synthetique')
+        .eq('project_id', invitation.project_id)
+        .single();
+
+      return {
+        id: invitation.id,
+        email: invitation.email,
+        role: invitation.role,
+        projectName: project?.nom_projet || 'Projet inconnu',
+        projectDescription: project?.description_synthetique || '',
+        expiresAt: invitation.expires_at
+      };
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
   // Accepter une invitation
   static async acceptInvitation(token: string): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log('Tentative d\'acceptation avec token:', token);
+      
       // Récupérer l'invitation
       const { data: invitation, error: invitationError } = await supabase
         .from('project_invitations')
         .select('*')
         .eq('token', token)
-        .eq('used', false)
+        .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())
         .single();
+
+      console.log('Invitation trouvée:', invitation);
+      console.log('Erreur invitation:', invitationError);
 
       if (invitationError || !invitation) {
         return { success: false, error: 'Invitation invalide ou expirée' };
       }
 
+      return this.processInvitationAcceptance(invitation);
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Accepter une invitation par ID
+  static async acceptInvitationById(invitationId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('Tentative d\'acceptation avec ID:', invitationId);
+      
+      // Récupérer l'invitation
+      const { data: invitation, error: invitationError } = await supabase
+        .from('project_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      console.log('Invitation trouvée:', invitation);
+      console.log('Erreur invitation:', invitationError);
+
+      if (invitationError || !invitation) {
+        return { success: false, error: 'Invitation invalide ou expirée' };
+      }
+
+      return this.processInvitationAcceptance(invitation);
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Méthode commune pour traiter l'acceptation d'une invitation
+  private static async processInvitationAcceptance(invitation: any): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('=== DÉBUT ACCEPTATION INVITATION ===');
+      console.log('Invitation reçue:', invitation);
+      
       // Récupérer l'utilisateur actuel
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Utilisateur actuel:', user?.email, user?.id);
+      
       if (!user) {
         return { success: false, error: 'Vous devez être connecté pour accepter une invitation' };
       }
 
+      // Récupérer le profil correspondant pour s'assurer de l'ID correct
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('id', user.id)
+        .single();
+
+      console.log('Profil trouvé:', profile);
+
+      if (!profile) {
+        return { success: false, error: 'Profil utilisateur introuvable' };
+      }
+
       // Vérifier que l'email correspond
-      if (user.email !== invitation.email) {
+      if (profile.email !== invitation.email) {
+        console.log('Email mismatch:', profile.email, 'vs', invitation.email);
         return { success: false, error: 'Cette invitation n\'est pas destinée à votre compte' };
       }
 
@@ -223,14 +407,18 @@ export class CollaboratorsService {
         .from('project_collaborators')
         .select('*')
         .eq('project_id', invitation.project_id)
-        .eq('user_id', user.id)
+        .eq('user_id', profile.id)
         .single();
 
       if (existingCollaborator) {
         // Marquer l'invitation comme utilisée même si déjà collaborateur
         await supabase
           .from('project_invitations')
-          .update({ used: true })
+          .update({ 
+            status: 'accepted',
+            accepted_at: new Date().toISOString(),
+            accepted_by: profile.id
+          })
           .eq('id', invitation.id);
         
         return { success: false, error: 'Vous êtes déjà collaborateur sur ce projet' };
@@ -241,25 +429,50 @@ export class CollaboratorsService {
         .from('project_collaborators')
         .insert({
           project_id: invitation.project_id,
-          user_id: user.id,
-          role: invitation.role,
-          invited_by: invitation.invited_by,
-          invited_at: invitation.invited_at,
-          accepted_at: new Date().toISOString()
-        });
+          user_id: profile.id,
+          role: invitation.role
+        } as any);
 
       if (collaboratorError) throw collaboratorError;
 
       // Marquer l'invitation comme utilisée
+      console.log('Mise à jour de l\'invitation avec ID:', invitation.id);
       const { error: updateError } = await supabase
         .from('project_invitations')
-        .update({ used: true })
+        .update({ 
+          status: 'accepted',
+          accepted_at: new Date().toISOString(),
+          accepted_by: profile.id
+        })
         .eq('id', invitation.id);
 
+      console.log('Erreur de mise à jour:', updateError);
       if (updateError) throw updateError;
 
+      // Récupérer les informations pour envoyer l'email de confirmation
+      const { data: inviterProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', invitation.invited_by)
+        .single();
+
+      // Envoyer l'email de confirmation d'acceptation
+      if (inviterProfile?.email) {
+        const emailResult = await EmailService.sendInvitationAcceptedNotification(
+          inviterProfile.email,
+          invitation.email,
+          invitation.project_id
+        );
+        
+        if (!emailResult.success) {
+          console.warn('Email de confirmation non envoyé:', emailResult.error);
+        }
+      }
+
+      console.log('=== INVITATION ACCEPTÉE AVEC SUCCÈS ===');
       return { success: true };
     } catch (error: any) {
+      console.error('=== ERREUR LORS DE L\'ACCEPTATION ===', error);
       return { success: false, error: error.message };
     }
   }
@@ -269,47 +482,69 @@ export class CollaboratorsService {
     collaboratorId: string,
     newRole: CollaboratorRole
   ): Promise<Collaborator> {
-    const { data, error } = await supabase
-      .from('project_collaborators')
-      .update({ role: newRole })
-      .eq('id', collaboratorId)
-      .select()
-      .single();
+    try {
+      // Pour l'instant, utilisons la méthode directe car TypeScript ne reconnaît pas encore les nouvelles fonctions
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .update({ 
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', collaboratorId)
+        .select()
+        .single();
 
-    if (error) throw error;
+      if (error) throw error;
 
-    // Enrichir les données
-    const enrichedData = await this.enrichCollaboratorData(data);
-    return enrichedData;
+      // Enrichir les données
+      return await this.enrichCollaboratorData(data);
+    } catch (error: any) {
+      console.error('Erreur updateCollaboratorRole:', error);
+      throw error;
+    }
   }
 
   // Mettre à jour le statut d'un collaborateur
   static async updateCollaboratorStatus(
     collaboratorId: string,
-    status: 'accepted' | 'suspended'
+    status: CollaboratorStatus
   ): Promise<Collaborator> {
-    const { data, error } = await supabase
-      .from('project_collaborators')
-      .update({ status })
-      .eq('id', collaboratorId)
-      .select()
-      .single();
+    try {
+      // Pour l'instant, utilisons la méthode directe
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', collaboratorId)
+        .select()
+        .single();
 
-    if (error) throw error;
+      if (error) throw error;
 
-    // Enrichir les données
-    const enrichedData = await this.enrichCollaboratorData(data);
-    return enrichedData;
+      // Enrichir les données
+      return await this.enrichCollaboratorData(data);
+    } catch (error: any) {
+      console.error('Erreur updateCollaboratorStatus:', error);
+      throw error;
+    }
   }
 
-  // Retirer un collaborateur
+  // Supprimer un collaborateur
   static async removeCollaborator(collaboratorId: string): Promise<void> {
-    const { error } = await supabase
-      .from('project_collaborators')
-      .delete()
-      .eq('id', collaboratorId);
+    try {
+      // Pour l'instant, utilisons la méthode directe
+      const { error } = await supabase
+        .from('project_collaborators')
+        .delete()
+        .eq('id', collaboratorId);
 
-    if (error) throw error;
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Erreur removeCollaborator:', error);
+      throw error;
+    }
   }
 
   // Récupérer les invitations en attente pour l'utilisateur connecté
@@ -324,7 +559,7 @@ export class CollaboratorsService {
         .from('project_invitations')
         .select('*')
         .eq('email', user.email)
-        .eq('used', false)
+        .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())
         .order('invited_at', { ascending: false });
 
@@ -360,6 +595,8 @@ export class CollaboratorsService {
       .from('project_invitations')
       .select('*')
       .eq('invited_by', user.id)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
       .order('invited_at', { ascending: false });
 
     if (error) throw error;
@@ -459,10 +696,10 @@ export class CollaboratorsService {
     const role = collaborator.role as CollaboratorRole;
     const permissions = {
       canRead: true,
-      canWrite: role === 'write' || role === 'admin',
-      canDelete: role === 'admin',
-      canManageCollaborators: role === 'admin',
-      canChangeSettings: role === 'admin'
+      canWrite: role === 'editor' || role === 'admin' || role === 'owner',
+      canDelete: role === 'admin' || role === 'owner',
+      canManageCollaborators: role === 'admin' || role === 'owner',
+      canChangeSettings: role === 'admin' || role === 'owner'
     };
 
     return {
@@ -489,17 +726,19 @@ export class CollaboratorsService {
       .eq('project_id', collab.project_id)
       .single();
 
-    // Récupérer les informations de la personne qui a invité
-    const { data: inviter } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .eq('id', collab.invited_by)
-      .single();
+    // Les informations de la personne qui a invité sont stockées dans project_invitations
+    // Pour les collaborateurs existants, nous n'avons pas cette information directement
+    const inviter = null;
 
     return {
-      ...collab,
+      id: collab.id,
+      project_id: collab.project_id,
+      user_id: collab.user_id,
       role: collab.role as CollaboratorRole,
-      status: collab.status as 'accepted' | 'suspended',
+      status: collab.status as CollaboratorStatus,
+      permissions: (collab as any).permissions || null,
+      joined_at: (collab as any).joined_at || new Date().toISOString(),
+      updated_at: (collab as any).updated_at || new Date().toISOString(),
       user: user || undefined,
       project: project || undefined,
       inviter: inviter || undefined
@@ -516,7 +755,8 @@ export class CollaboratorsService {
         .eq('project_id', projectId)
         .single();
 
-      const inviteUrl = `${window.location.origin}/accept-invitation?token=${token}`;
+      const baseUrl = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
+      const inviteUrl = `${baseUrl}/accept-invitation?token=${token}`;
       
       // Utiliser la fonction Edge de Supabase pour envoyer l'email
       const { error } = await supabase.functions.invoke('send-invitation-email', {
@@ -534,6 +774,69 @@ export class CollaboratorsService {
     } catch (error) {
       console.error('Erreur lors de l\'envoi de l\'email d\'invitation:', error);
       // Ne pas faire échouer l'invitation si l'email ne peut pas être envoyé
+    }
+  }
+
+  // Traiter les invitations acceptées lors de la connexion d'un utilisateur
+  static async processAcceptedInvitations(userEmail: string, userId: string): Promise<number> {
+    try {
+      // Sécuriser userEmail pour éviter les erreurs toLowerCase sur undefined
+      if (!userEmail) {
+        console.error('Email utilisateur non fourni pour processAcceptedInvitations');
+        return 0;
+      }
+
+      // Récupérer les invitations acceptées non encore traitées
+      // Utiliser une fonction RPC pour éviter les problèmes de types
+      const { data: acceptedInvitations, error: invitationsError } = await (supabase as any)
+        .rpc('get_accepted_invitations_for_email', { 
+          user_email: userEmail.toLowerCase() 
+        });
+
+      if (invitationsError) {
+        console.error('Erreur lors de la récupération des invitations acceptées:', invitationsError);
+        return 0;
+      }
+
+      if (!acceptedInvitations || !Array.isArray(acceptedInvitations) || acceptedInvitations.length === 0) {
+        return 0;
+      }
+
+      let projectsJoined = 0;
+
+      // Pour chaque invitation acceptée, créer un collaborateur si il n'existe pas
+      for (const invitation of acceptedInvitations) {
+        // Vérifier si le collaborateur existe déjà
+        const { data: existingCollaborator } = await (supabase as any)
+          .from('project_collaborators')
+          .select('id')
+          .eq('project_id', invitation.project_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (!existingCollaborator) {
+          // Créer le collaborateur - utiliser seulement les colonnes qui existent réellement
+          const { error: createError } = await (supabase as any)
+            .from('project_collaborators')
+            .insert({
+              project_id: invitation.project_id,
+              user_id: userId,
+              role: invitation.role,
+              status: 'active'
+            });
+
+          if (!createError) {
+            projectsJoined++;
+          } else {
+            console.error('Erreur lors de la création du collaborateur:', createError);
+          }
+        }
+      }
+
+      return projectsJoined;
+    } catch (error) {
+      console.error('Erreur lors du traitement des invitations acceptées:', error);
+      return 0;
     }
   }
 }

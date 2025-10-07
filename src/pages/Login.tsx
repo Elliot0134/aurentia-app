@@ -1,9 +1,20 @@
 
 import { FormEvent, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { CollaboratorsService } from "@/services/collaborators.service";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, XCircle, Users } from "lucide-react";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,15 +22,33 @@ const Login = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const navigate = useNavigate();
-  const { getDefaultDashboard } = useUserRole(); // Utiliser le hook pour obtenir la fonction de redirection
+  const [searchParams] = useSearchParams();
+  const { getDefaultDashboard } = useUserRole();
+  
+  // États pour la gestion des invitations
+  const [invitationToken, setInvitationToken] = useState<string | null>(null);
+  const [invitationData, setInvitationData] = useState<any>(null);
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [invitationLoading, setInvitationLoading] = useState(false);
 
   useEffect(() => {
+    // Vérifier s'il y a un token d'invitation dans l'URL
+    const token = searchParams.get('invitation_token');
+    if (token) {
+      setInvitationToken(token);
+      checkInvitation(token);
+    }
+
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        // Attendre que le profil utilisateur soit chargé pour obtenir le rôle
-        // et rediriger vers le tableau de bord par défaut
-        const defaultDashboardPath = getDefaultDashboard();
-        navigate(defaultDashboardPath);
+        // Si l'utilisateur vient de se connecter et qu'il y a une invitation, la traiter
+        if (invitationToken) {
+          await handleAcceptInvitation();
+        } else {
+          // Sinon, rediriger vers le tableau de bord par défaut
+          const defaultDashboardPath = getDefaultDashboard();
+          navigate(defaultDashboardPath);
+        }
       }
     });
 
@@ -27,8 +56,14 @@ const Login = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const defaultDashboardPath = getDefaultDashboard();
-        navigate(defaultDashboardPath);
+        // Si l'utilisateur est connecté et qu'il y a un token d'invitation, afficher le modal
+        if (invitationToken && invitationData) {
+          setShowInvitationModal(true);
+        } else if (!invitationToken) {
+          // Sinon, rediriger vers le tableau de bord
+          const defaultDashboardPath = getDefaultDashboard();
+          navigate(defaultDashboardPath);
+        }
       }
     };
     
@@ -40,7 +75,87 @@ const Login = () => {
         authListener.subscription.unsubscribe();
       }
     };
-  }, [navigate, getDefaultDashboard]); // Ajouter getDefaultDashboard aux dépendances
+  }, [navigate, getDefaultDashboard, searchParams, invitationToken]);
+
+  // Vérifier la validité de l'invitation
+  const checkInvitation = async (token: string) => {
+    try {
+      const invitation = await CollaboratorsService.getInvitationByToken(token);
+      if (invitation) {
+        setInvitationData(invitation);
+        // Vérifier si l'utilisateur est connecté pour afficher le modal
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setShowInvitationModal(true);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l\'invitation:', error);
+      // Si l'invitation est invalide ou a expiré, nettoyer les états et supprimer le token de l'URL
+      setInvitationToken(null);
+      setInvitationData(null);
+      navigate('/login', { replace: true });
+      
+      toast({
+        title: "Invitation invalide",
+        description: "Le lien d'invitation est invalide ou a expiré",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Accepter l'invitation
+  const handleAcceptInvitation = async () => {
+    if (!invitationToken || !invitationData) return;
+
+    setInvitationLoading(true);
+    try {
+      const result = await CollaboratorsService.acceptInvitation(invitationToken);
+      if (result.success) {
+        toast({
+          title: "Invitation acceptée",
+          description: `Vous avez rejoint le projet "${invitationData.projectName}" avec succès`,
+        });
+        
+        // Fermer le modal et nettoyer les états
+        setShowInvitationModal(false);
+        setInvitationToken(null);
+        setInvitationData(null);
+        
+        // Supprimer le token de l'URL
+        navigate('/login', { replace: true });
+        
+        // Rediriger vers la page du projet ou le tableau de bord après un délai
+        setTimeout(() => {
+          navigate(getDefaultDashboard());
+        }, 1000);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'acceptation de l\'invitation:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'accepter l'invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setInvitationLoading(false);
+    }
+  };
+
+  // Refuser l'invitation
+  const handleRejectInvitation = () => {
+    setShowInvitationModal(false);
+    setInvitationToken(null);
+    setInvitationData(null);
+    // Supprimer le token de l'URL
+    navigate('/login', { replace: true });
+    toast({
+      title: "Invitation refusée",
+      description: "Vous avez refusé l'invitation de collaboration",
+    });
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -248,6 +363,75 @@ const Login = () => {
           </a>
         </div>
       </div>
+
+      {/* Modal d'invitation */}
+      <Dialog open={showInvitationModal} onOpenChange={setShowInvitationModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="text-blue-600" size={24} />
+              Invitation de collaboration
+            </DialogTitle>
+            <DialogDescription>
+              Vous avez été invité à collaborer sur un projet Aurentia
+            </DialogDescription>
+          </DialogHeader>
+          
+          {invitationData && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  {invitationData.projectName}
+                </h3>
+                {invitationData.projectDescription && (
+                  <p className="text-blue-700 text-sm">
+                    {invitationData.projectDescription}
+                  </p>
+                )}
+                <div className="mt-2 text-sm text-blue-600">
+                  <strong>Rôle :</strong> {
+                    invitationData.role === 'admin' ? 'Administrateur' :
+                    invitationData.role === 'editor' ? 'Éditeur' : 'Lecteur'
+                  }
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600">
+                En acceptant cette invitation, vous rejoindrez l'équipe de ce projet et pourrez collaborer selon vos permissions.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2 sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={handleRejectInvitation}
+              disabled={invitationLoading}
+              className="flex items-center gap-2"
+            >
+              <XCircle size={16} />
+              Refuser
+            </Button>
+            <Button
+              onClick={handleAcceptInvitation}
+              disabled={invitationLoading}
+              className="bg-gradient-primary text-white flex items-center gap-2"
+            >
+              {invitationLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Acceptation...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={16} />
+                  Accepter
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

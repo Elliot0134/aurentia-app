@@ -1,18 +1,16 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import MarketplaceLayout from '@/components/marketplace/MarketplaceLayout';
+import { useNavigate } from 'react-router-dom';
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
-import { useProject } from '@/contexts/ProjectContext'; // Import useProject
-import { Button } from "@/components/ui/button"; // Import Button
-import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
+import { useProject } from '@/contexts/ProjectContext';
+import { Button } from "@/components/ui/button";
+import ResourcesPage from '@/pages/individual/ResourcesPage';
 
 const Ressources = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
-  const { currentProjectId, userProjectsLoading } = useProject(); // Use userProjectsLoading
-  const { userRole } = useUserRole(); // Get user role
+  const navigate = useNavigate();
+  const { currentProjectId, userProjectsLoading } = useProject();
 
   if (userProjectsLoading) {
-    return <div>Chargement...</div>; // Ou un composant de chargement
+    return <div>Chargement...</div>;
   }
 
   if (!currentProjectId) {
@@ -35,7 +33,7 @@ const Ressources = () => {
   return (
     <ProjectRequiredGuard>
       <div className="animate-fade-in">
-        <MarketplaceLayout />
+        <ResourcesPage />
       </div>
     </ProjectRequiredGuard>
   );

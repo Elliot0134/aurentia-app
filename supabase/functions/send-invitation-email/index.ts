@@ -154,7 +154,7 @@ https://aurentia.app
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Aurentia <noreply@aurentia.app>',
+        from: 'Aurentia <team@mail.aurentia.fr>',
         to: [email],
         subject: `🚀 Invitation à collaborer sur "${projectName}" - Aurentia`,
         html: htmlContent,

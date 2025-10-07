@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 
 const TemplatePage = () => {
   const navigate = useNavigate();
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -259,19 +259,33 @@ const TemplatePage = () => {
           {filteredCards.map((card) => (
             <Card
               key={card.id}
-              className="group cursor-pointer transition-all duration-300 overflow-hidden border"
+              className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 overflow-hidden border"
               onClick={() => handleCardClick(card.id)}
             >
               <CardContent className="p-4">
-                {/* Titre et description */}
-                <CardTitle className="text-lg font-semibold mb-2 group-hover:text-blue-600 transition-colors">
-                  {card.title}
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 mb-3 line-clamp-2">
-                  {card.description}
-                </CardDescription>
+                {/* Première ligne : Image + Titre + Description */}
+                <div className="flex gap-4 mb-4">
+                  {/* Image carrée à gauche */}
+                  <div className="flex-shrink-0">
+                    <img
+                      src={card.image}
+                      alt={card.title}
+                      className="w-20 h-20 object-cover rounded-lg"
+                    />
+                  </div>
+                  
+                  {/* Titre et description à droite de l'image */}
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg font-semibold mb-2">
+                      {card.title}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-600 line-clamp-2">
+                      {card.description}
+                    </CardDescription>
+                  </div>
+                </div>
                 
-                {/* Étiquettes */}
+                {/* Étiquettes en dessous */}
                 <div className="flex flex-wrap gap-1 mb-4">
                   {card.tags.map((tag, index) => (
                     <span
@@ -286,7 +300,7 @@ const TemplatePage = () => {
                 {/* Informations de bas de carte */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <img src="/credit-image.svg" alt="Crédits" className="h-4 w-4" />
+                    <img src="/credit-3D.png" alt="Crédits" className="h-4 w-4" />
                     <span className="text-sm font-medium">{card.credits}</span>
                   </div>
                   <div className="flex items-center gap-2">

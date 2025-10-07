@@ -20,9 +20,10 @@ import FormBusinessIdea from "./pages/FormBusinessIdea";
 import ProjectBusiness from "./pages/ProjectBusiness";
 import WarningPage from "./pages/WarningPage";
 import Outils from "./pages/Outils";
+import ToolDetailPage from "./pages/individual/ToolDetailPage";
 import Partenaires from "./pages/Partenaires";
 import Roadmap from "./pages/Roadmap";
-import Ressources from "./pages/Ressources"; // Import the new Ressources component
+import Ressources from "./pages/Ressources"; // Import the Ressources component
 import Collaborateurs from "./pages/Collaborateurs"; // Import the new Collaborateurs component
 import TemplatePage from "./pages/TemplatePage"; // Import the new TemplatePage component
 import ToolTemplatePage from "./pages/ToolTemplatePage"; // Import the new ToolTemplatePage component
@@ -58,6 +59,7 @@ import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback 
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
 import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
+import PendingInvitationsProvider from "./components/collaboration/PendingInvitationsProvider";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,6 +176,7 @@ const App = () => {
             <ProjectProvider>
               <CreditsDialogProvider>
                 <BuyCreditsDialog />
+                <PendingInvitationsProvider />
                 <Routes>
                 {/* Public routes without sidebar */}
                 <Route path="/login" element={<Login />} />
@@ -201,6 +204,7 @@ const App = () => {
                     <Route path="/individual/chatbot" element={<ChatbotPage />} />
                     <Route path="/individual/chatbot/:projectId" element={<ChatbotPage />} />
                     <Route path="/individual/outils" element={<Outils />} />
+                    <Route path="/individual/outils/:slug/:id" element={<ToolDetailPage />} />
                     <Route path="/individual/ressources" element={<Ressources />} />
                     <Route path="/individual/collaborateurs" element={<Collaborateurs />} />
 <Route path="/individual/template" element={<TemplatePage />} />

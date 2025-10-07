@@ -19,6 +19,17 @@ export const useCollaborators = (projectId?: string) => {
     description: `Créé le ${new Date(project.created_at).toLocaleDateString('fr-FR')}`
   }));
 
+  // Fonction pour normaliser les collaborateurs et s'assurer qu'ils ont toutes les propriétés requises
+  const normalizeCollaborators = (data) => {
+    return data.map(collaborator => ({
+      ...collaborator,
+      email: collaborator.email || collaborator.user?.email || '',
+      projects: collaborator.projects || [],
+      status: collaborator.status || 'active',
+      role: collaborator.role || 'viewer'
+    }));
+  };
+
   // Charger les collaborateurs
   const loadCollaborators = async () => {
     setLoading(true);
@@ -27,7 +38,7 @@ export const useCollaborators = (projectId?: string) => {
         ? await CollaboratorsService.getProjectCollaborators(projectId)
         : await CollaboratorsService.getUserCollaborators();
       
-      setCollaborators(data);
+      setCollaborators(normalizeCollaborators(data));
     } catch (err) {
       setError(err.message);
       toast({
@@ -43,7 +54,7 @@ export const useCollaborators = (projectId?: string) => {
   // Charger les invitations en attente
   const loadPendingInvitations = async () => {
     try {
-      const data = await CollaboratorsService.getPendingInvitations();
+      const data = await CollaboratorsService.getSentInvitations();
       setPendingInvitations(data);
     } catch (err) {
       console.error('Erreur lors du chargement des invitations:', err);

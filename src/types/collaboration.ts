@@ -1,6 +1,6 @@
-export type CollaboratorRole = 'read' | 'write' | 'admin';
-export type CollaboratorStatus = 'accepted' | 'suspended';
-export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
+export type CollaboratorRole = 'owner' | 'admin' | 'editor' | 'viewer';
+export type CollaboratorStatus = 'active' | 'inactive' | 'suspended';
+export type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
 
 export interface Collaborator {
   id: string;
@@ -8,9 +8,9 @@ export interface Collaborator {
   user_id: string;
   role: CollaboratorRole;
   status: CollaboratorStatus;
-  invited_by: string;
-  invited_at: string;
-  accepted_at: string;
+  permissions?: any;
+  joined_at: string;
+  updated_at: string;
   user?: {
     id: string;
     email: string;
@@ -34,8 +34,10 @@ export interface Invitation {
   invited_by: string;
   token: string;
   expires_at: string;
-  used: boolean;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
   invited_at: string;
+  accepted_at?: string;
+  accepted_by?: string;
   project?: {
     project_id: string;
     nom_projet: string;
@@ -57,7 +59,7 @@ export interface CollaboratorPermissions {
 
 export const getPermissions = (role: CollaboratorRole): CollaboratorPermissions => {
   switch (role) {
-    case 'read':
+    case 'viewer':
       return {
         canRead: true,
         canWrite: false,
@@ -65,7 +67,7 @@ export const getPermissions = (role: CollaboratorRole): CollaboratorPermissions 
         canManageCollaborators: false,
         canChangeSettings: false
       };
-    case 'write':
+    case 'editor':
       return {
         canRead: true,
         canWrite: true,
@@ -74,6 +76,14 @@ export const getPermissions = (role: CollaboratorRole): CollaboratorPermissions 
         canChangeSettings: false
       };
     case 'admin':
+      return {
+        canRead: true,
+        canWrite: true,
+        canDelete: true,
+        canManageCollaborators: true,
+        canChangeSettings: false
+      };
+    case 'owner':
       return {
         canRead: true,
         canWrite: true,
@@ -94,12 +104,14 @@ export const getPermissions = (role: CollaboratorRole): CollaboratorPermissions 
 
 export const getRoleLabel = (role: CollaboratorRole): string => {
   switch (role) {
-    case 'read':
+    case 'viewer':
       return 'Lecteur';
-    case 'write':
+    case 'editor':
       return 'Éditeur';
     case 'admin':
       return 'Administrateur';
+    case 'owner':
+      return 'Propriétaire';
     default:
       return 'Inconnu';
   }
@@ -107,8 +119,10 @@ export const getRoleLabel = (role: CollaboratorRole): string => {
 
 export const getStatusLabel = (status: CollaboratorStatus): string => {
   switch (status) {
-    case 'accepted':
+    case 'active':
       return 'Actif';
+    case 'inactive':
+      return 'Inactif';
     case 'suspended':
       return 'Suspendu';
     default:

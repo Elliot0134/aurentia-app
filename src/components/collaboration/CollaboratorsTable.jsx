@@ -55,6 +55,17 @@ import {
   UserCog
 } from 'lucide-react';
 
+// Fonction utilitaire pour obtenir l'email de manière sécurisée
+const getCollaboratorEmail = (collaborator) => {
+  return collaborator?.email || collaborator?.user?.email || '';
+};
+
+// Fonction utilitaire pour obtenir les initiales de manière sécurisée
+const getInitials = (email) => {
+  if (!email || typeof email !== 'string') return '?';
+  return email.split('@')[0].substring(0, 2).toUpperCase();
+};
+
 const CollaboratorsTable = ({
   collaborators = [],
   projects = [],
@@ -63,6 +74,18 @@ const CollaboratorsTable = ({
   onChangeStatus,
   loading = false
 }) => {
+  // Normaliser les collaborateurs pour s'assurer qu'ils ont toutes les propriétés requises
+  const normalizedCollaborators = collaborators.map(collaborator => ({
+    ...collaborator,
+    email: collaborator?.email || collaborator?.user?.email || '',
+    projects: collaborator?.projects || [],
+    status: collaborator?.status || 'active',
+    role: collaborator?.role || 'viewer',
+    id: collaborator?.id || '',
+    user: collaborator?.user || null,
+    project: collaborator?.project || null
+  }));
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -72,9 +95,11 @@ const CollaboratorsTable = ({
   const [collaboratorToDelete, setCollaboratorToDelete] = useState(null);
 
   // Filtrer et trier les collaborateurs
-  const filteredCollaborators = collaborators
+  const filteredCollaborators = normalizedCollaborators
     .filter(collaborator => {
-      const matchesSearch = collaborator.email.toLowerCase().includes(searchQuery.toLowerCase());
+      // Utiliser la fonction utilitaire pour obtenir l'email de manière sécurisée
+      const email = getCollaboratorEmail(collaborator);
+      const matchesSearch = email.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || collaborator.status === statusFilter;
       const matchesRole = roleFilter === 'all' || collaborator.role === roleFilter;
       return matchesSearch && matchesStatus && matchesRole;
@@ -84,8 +109,8 @@ const CollaboratorsTable = ({
       let bValue = b[sortBy];
       
       if (sortBy === 'projects') {
-        aValue = a.projects.length;
-        bValue = b.projects.length;
+        aValue = (a.projects || []).length;
+        bValue = (b.projects || []).length;
       }
       
       if (typeof aValue === 'string') {
@@ -99,11 +124,6 @@ const CollaboratorsTable = ({
         return aValue < bValue ? 1 : -1;
       }
     });
-
-  // Obtenir les initiales pour l'avatar
-  const getInitials = (email) => {
-    return email.split('@')[0].substring(0, 2).toUpperCase();
-  };
 
   // Obtenir le label du rôle
   const getRoleLabel = (role) => {
@@ -220,11 +240,11 @@ const CollaboratorsTable = ({
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="text-sm bg-blue-100 text-blue-600">
-                      {getInitials(collaborator.email)}
+                      {getInitials(getCollaboratorEmail(collaborator))}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium text-sm">{collaborator.email}</div>
+                    <div className="font-medium text-sm">{getCollaboratorEmail(collaborator)}</div>
                     <StatusBadge status={collaborator.status} />
                   </div>
                 </div>
@@ -249,7 +269,7 @@ const CollaboratorsTable = ({
                     onClick={() => setEditingCollaborator(collaborator)}
                   >
                     <span className="text-sm text-gray-900">
-                      {collaborator.projects.length} projet{collaborator.projects.length > 1 ? 's' : ''}
+                      {(collaborator.projects || []).length} projet{(collaborator.projects || []).length > 1 ? 's' : ''}
                     </span>
                   </Button>
                 </div>
@@ -336,12 +356,12 @@ const CollaboratorsTable = ({
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
-                          {getInitials(collaborator.email)}
+                          {getInitials(getCollaboratorEmail(collaborator))}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex items-center gap-2">
                         <Mail size={14} className="text-gray-400" />
-                        <span className="font-medium">{collaborator.email}</span>
+                        <span className="font-medium">{getCollaboratorEmail(collaborator)}</span>
                       </div>
                     </div>
                   </TableCell>
@@ -357,7 +377,7 @@ const CollaboratorsTable = ({
                       <div className="flex items-center gap-2">
                         <Folder size={14} className="text-gray-400" />
                         <span className="text-sm text-gray-900 hover:text-gray-700">
-                          {collaborator.projects.length} projet{collaborator.projects.length > 1 ? 's' : ''}
+                          {(collaborator.projects || []).length} projet{(collaborator.projects || []).length > 1 ? 's' : ''}
                         </span>
                       </div>
                     </Button>
@@ -423,7 +443,7 @@ const CollaboratorsTable = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">
-              Modifier {editingCollaborator.email}
+              Modifier {getCollaboratorEmail(editingCollaborator)}
             </h3>
             
             <div className="space-y-4">
@@ -431,7 +451,7 @@ const CollaboratorsTable = ({
                 <label className="block text-sm font-medium mb-2">Projets assignés</label>
                 <ProjectSelector
                   projects={projects}
-                  selectedProjects={editingCollaborator.projects}
+                  selectedProjects={editingCollaborator.projects || []}
                   onChange={(newProjects) => 
                     setEditingCollaborator(prev => ({ ...prev, projects: newProjects }))
                   }
@@ -448,7 +468,7 @@ const CollaboratorsTable = ({
               </Button>
               <Button 
                 onClick={() => {
-                  handleProjectsUpdate(editingCollaborator.id, editingCollaborator.projects);
+                  handleProjectsUpdate(editingCollaborator.id, editingCollaborator.projects || []);
                   setEditingCollaborator(null);
                 }}
               >
@@ -466,7 +486,7 @@ const CollaboratorsTable = ({
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action ne peut pas être annulée. Cela supprimera définitivement le collaborateur 
-              "{collaboratorToDelete?.email}" et retirera son accès à tous les projets.
+              "{getCollaboratorEmail(collaboratorToDelete)}" et retirera son accès à tous les projets.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
