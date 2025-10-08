@@ -41,6 +41,13 @@ export type Database = {
             referencedRelation: "ai_tools"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_tool_favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       ai_tool_usage_history: {
@@ -101,6 +108,13 @@ export type Database = {
             referencedRelation: "ai_tools"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_tool_usage_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       ai_tool_user_settings: {
@@ -135,6 +149,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ai_tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_tool_user_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -207,199 +228,49 @@ export type Database = {
         }
         Relationships: []
       }
-      resource_ratings: {
+      backup_profiles: {
         Row: {
-          comment: string | null
           created_at: string | null
+          credit_limit: string | null
+          credits_restants: string | null
+          email: string | null
           id: string
-          rating: number
-          resource_id: string
-          user_ip: string
         }
         Insert: {
-          comment?: string | null
           created_at?: string | null
-          id?: string
-          rating: number
-          resource_id: string
-          user_ip: string
+          credit_limit?: string | null
+          credits_restants?: string | null
+          email?: string | null
+          id: string
         }
         Update: {
-          comment?: string | null
           created_at?: string | null
+          credit_limit?: string | null
+          credits_restants?: string | null
+          email?: string | null
           id?: string
-          rating?: number
-          resource_id?: string
-          user_ip?: string
         }
         Relationships: [
           {
-            foreignKeyName: "resource_ratings_resource_id_fkey"
-            columns: ["resource_id"]
-            isOneToOne: false
-            referencedRelation: "resources"
-            referencedColumns: ["id"]
+            foreignKeyName: "backup_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
-      resources: {
-        Row: {
-          average_rating: number | null
-          category: string | null
-          created_at: string | null
-          credit_cost: number | null
-          description: string | null
-          detailed_description: string | null
-          difficulty: string | null
-          download_count: number | null
-          estimated_time: string | null
-          faq_answer_1: string | null
-          faq_answer_2: string | null
-          faq_answer_3: string | null
-          faq_question_1: string | null
-          faq_question_2: string | null
-          faq_question_3: string | null
-          favorite_count: number | null
-          file_name: string | null
-          file_size: number | null
-          file_type: string | null
-          file_url: string | null
-          id: string
-          image_2_url: string | null
-          image_3_url: string | null
-          image_4_url: string | null
-          image_url: string | null
-          included_items: Json | null
-          is_featured: boolean | null
-          is_published: boolean | null
-          long_description: string | null
-          meta_description: string | null
-          meta_title: string | null
-          name: string
-          price: number | null
-          reason_1_text: string | null
-          reason_1_title: string | null
-          reason_2_text: string | null
-          reason_2_title: string | null
-          reason_3_text: string | null
-          reason_3_title: string | null
-          slug: string
-          tags: string[] | null
-          total_ratings: number | null
-          type: string | null
-          updated_at: string | null
-          video_url: string | null
-          view_count: number | null
-        }
-        Insert: {
-          average_rating?: number | null
-          category?: string | null
-          created_at?: string | null
-          credit_cost?: number | null
-          description?: string | null
-          detailed_description?: string | null
-          difficulty?: string | null
-          download_count?: number | null
-          estimated_time?: string | null
-          faq_answer_1?: string | null
-          faq_answer_2?: string | null
-          faq_answer_3?: string | null
-          faq_question_1?: string | null
-          faq_question_2?: string | null
-          faq_question_3?: string | null
-          favorite_count?: number | null
-          file_name?: string | null
-          file_size?: number | null
-          file_type?: string | null
-          file_url?: string | null
-          id?: string
-          image_2_url?: string | null
-          image_3_url?: string | null
-          image_4_url?: string | null
-          image_url?: string | null
-          included_items?: Json | null
-          is_featured?: boolean | null
-          is_published?: boolean | null
-          long_description?: string | null
-          meta_description?: string | null
-          meta_title?: string | null
-          name: string
-          price?: number | null
-          reason_1_text?: string | null
-          reason_1_title?: string | null
-          reason_2_text?: string | null
-          reason_2_title?: string | null
-          reason_3_text?: string | null
-          reason_3_title?: string | null
-          slug: string
-          tags?: string[] | null
-          total_ratings?: number | null
-          type?: string | null
-          updated_at?: string | null
-          video_url?: string | null
-          view_count?: number | null
-        }
-        Update: {
-          average_rating?: number | null
-          category?: string | null
-          created_at?: string | null
-          credit_cost?: number | null
-          description?: string | null
-          detailed_description?: string | null
-          difficulty?: string | null
-          download_count?: number | null
-          estimated_time?: string | null
-          faq_answer_1?: string | null
-          faq_answer_2?: string | null
-          faq_answer_3?: string | null
-          faq_question_1?: string | null
-          faq_question_2?: string | null
-          faq_question_3?: string | null
-          favorite_count?: number | null
-          file_name?: string | null
-          file_size?: number | null
-          file_type?: string | null
-          file_url?: string | null
-          id?: string
-          image_2_url?: string | null
-          image_3_url?: string | null
-          image_4_url?: string | null
-          image_url?: string | null
-          included_items?: Json | null
-          is_featured?: boolean | null
-          is_published?: boolean | null
-          long_description?: string | null
-          meta_description?: string | null
-          meta_title?: string | null
-          name?: string
-          price?: number | null
-          reason_1_text?: string | null
-          reason_1_title?: string | null
-          reason_2_text?: string | null
-          reason_2_title?: string | null
-          reason_3_text?: string | null
-          reason_3_title?: string | null
-          slug?: string
-          tags?: string[] | null
-          total_ratings?: number | null
-          type?: string | null
-          updated_at?: string | null
-          video_url?: string | null
-          view_count?: number | null
-        }
-        Relationships: []
-      }
-      user_favorites: {
+      backup_project_summary: {
         Row: {
           created_at: string | null
-          project_id: string | null
+          project_id: string
           statut_project: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
-          project_id?: string | null
+          project_id: string
           statut_project?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -418,6 +289,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "backup_project_summary_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -486,6 +364,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "business_model_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -729,6 +614,13 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "concurrence_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       conversation: {
@@ -763,6 +655,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "conversation_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -918,6 +817,13 @@ export type Database = {
             referencedRelation: "email_confirmations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "email_confirmation_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       email_confirmations: {
@@ -987,7 +893,15 @@ export type Database = {
           user_agent?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_confirmations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -1138,6 +1052,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_business_idea_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1323,6 +1244,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "invitation_code_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "invitation_code_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -1373,6 +1301,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "juridique_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1787,6 +1722,13 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "marche_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       member_subscriptions: {
@@ -1867,6 +1809,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2133,6 +2082,13 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       mini_swot: {
@@ -2216,6 +2172,13 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "mini_swot_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       organisation_applications: {
@@ -2280,6 +2243,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2425,7 +2395,15 @@ export type Database = {
           website?: string | null
           welcome_message?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       partners: {
         Row: {
@@ -2533,7 +2511,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       persona_express_b2b: {
         Row: {
@@ -2579,6 +2565,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "buyer_b2b_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "persona_express_b2b_project_id_fkey"
             columns: ["project_id"]
@@ -2642,6 +2635,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "buyer_b2c_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "persona_express_b2c_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: true
@@ -2695,6 +2695,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "buyer_organismes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "persona_express_organismes_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: true
@@ -2747,6 +2754,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "Pitch_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2859,7 +2873,15 @@ export type Database = {
           user_role?: string | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       project_collaborators: {
         Row: {
@@ -2918,6 +2940,9 @@ export type Database = {
       }
       project_invitations: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          accepted_email: string | null
           email: string
           expires_at: string | null
           id: string
@@ -2930,17 +2955,24 @@ export type Database = {
           token: string
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          accepted_email?: string | null
           email: string
           expires_at?: string | null
           id?: string
           invited_at?: string | null
           invited_by: string
           project_id: string
-          role: string
-          token: string
-          used?: boolean
+          project_name?: string | null
+          role?: string
+          status?: string
+          token?: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          accepted_email?: string | null
           email?: string
           expires_at?: string | null
           id?: string
@@ -3146,6 +3178,13 @@ export type Database = {
             referencedRelation: "form_business_idea"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "project_summary_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       projects: {
@@ -3234,6 +3273,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "projects_organization_id_fkey"
             columns: ["organization_id"]
@@ -3328,6 +3374,13 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "proposition_valeur_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       rag: {
@@ -3365,6 +3418,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "rag_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3406,6 +3466,7 @@ export type Database = {
       resources: {
         Row: {
           average_rating: number | null
+          benefits: Json | null
           category: string | null
           created_at: string | null
           credit_cost: number | null
@@ -3444,8 +3505,10 @@ export type Database = {
           reason_2_title: string | null
           reason_3_text: string | null
           reason_3_title: string | null
+          review_count: number | null
           slug: string
           tags: string[] | null
+          title_description: string | null
           total_ratings: number | null
           type: string | null
           updated_at: string | null
@@ -3454,6 +3517,7 @@ export type Database = {
         }
         Insert: {
           average_rating?: number | null
+          benefits?: Json | null
           category?: string | null
           created_at?: string | null
           credit_cost?: number | null
@@ -3492,8 +3556,10 @@ export type Database = {
           reason_2_title?: string | null
           reason_3_text?: string | null
           reason_3_title?: string | null
+          review_count?: number | null
           slug: string
           tags?: string[] | null
+          title_description?: string | null
           total_ratings?: number | null
           type?: string | null
           updated_at?: string | null
@@ -3502,6 +3568,7 @@ export type Database = {
         }
         Update: {
           average_rating?: number | null
+          benefits?: Json | null
           category?: string | null
           created_at?: string | null
           credit_cost?: number | null
@@ -3540,8 +3607,10 @@ export type Database = {
           reason_2_title?: string | null
           reason_3_text?: string | null
           reason_3_title?: string | null
+          review_count?: number | null
           slug?: string
           tags?: string[] | null
+          title_description?: string | null
           total_ratings?: number | null
           type?: string | null
           updated_at?: string | null
@@ -3585,6 +3654,61 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "ressources_requises_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          rating: number
+          resource_id: string
+          updated_at: string | null
+          user_id: string
+          verified_purchase: boolean | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating: number
+          resource_id: string
+          updated_at?: string | null
+          user_id: string
+          verified_purchase?: boolean | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number
+          resource_id?: string
+          updated_at?: string | null
+          user_id?: string
+          verified_purchase?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3633,6 +3757,13 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "score_projet_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       stripe_customers: {
@@ -3663,7 +3794,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stripe_customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       stripe_subscriptions: {
         Row: {
@@ -3715,6 +3854,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "stripe_customers"
             referencedColumns: ["stripe_customer_id"]
+          },
+          {
+            foreignKeyName: "stripe_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3785,7 +3931,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscription_intents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       success_story: {
         Row: {
@@ -3835,6 +3989,13 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "success_story_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       Template: {
@@ -3860,6 +4021,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "form_business_idea"
             referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "Template_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3917,6 +4085,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_activity_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3998,6 +4173,13 @@ export type Database = {
             referencedRelation: "public_organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_organizations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       vision_mission_valeurs: {
@@ -4046,6 +4228,20 @@ export type Database = {
             referencedRelation: "project_summary"
             referencedColumns: ["project_id"]
           },
+          {
+            foreignKeyName: "vision_mission_valeurs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vision_mission_valeurs_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
     }
@@ -4088,6 +4284,13 @@ export type Database = {
           website: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "user_organizations_organization_id_fkey"
             columns: ["organization_id"]
@@ -4155,6 +4358,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_organizations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -4246,6 +4456,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "projects_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_user"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "projects_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -4332,6 +4549,30 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      reviews_with_user: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string | null
+          rating: number | null
+          resource_id: string | null
+          updated_at: string | null
+          user_email: string | null
+          user_first_name: string | null
+          user_id: string | null
+          user_last_name: string | null
+          verified_purchase: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -4732,6 +4973,14 @@ export type Database = {
           updated_at: string
           user_id: string | null
         }[]
+      }
+      get_resource_average_rating: {
+        Args: { resource_uuid: string }
+        Returns: number
+      }
+      get_resource_review_count: {
+        Args: { resource_uuid: string }
+        Returns: number
       }
       get_subscription_status: {
         Args: { org_id: string; user_id: string }
