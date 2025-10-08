@@ -39,12 +39,12 @@ const InviteModal = ({
 
   const roles = [
     {
-      value: 'viewer',
+      value: 'read',
       label: 'Lecteur',
       description: 'Peut consulter les projets et livrables'
     },
     {
-      value: 'editor',
+      value: 'write',
       label: 'Éditeur',
       description: 'Peut modifier les projets et créer des livrables'
     },

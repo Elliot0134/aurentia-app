@@ -1,1 +1,13 @@
-{"mcpServers":{}}
+{
+  "mcpServers": {
+    "resend": {
+      "command": "node",
+      "args": ["/Users/elliotestrade/Desktop/Documents/03. ESST-SOLUTIONS/Coding/aurentia-app-feature-chatbot/mcp-servers/resend/build/index.js"],
+      "env": {
+        "RESEND_API_KEY": "re_QRvJqQrk_6frQuf67Q8Hpu1He93EqTXmQ",
+        "SENDER_EMAIL_ADDRESS": "team@mail.aurentia.fr",
+        "REPLY_TO_EMAIL_ADDRESS": "team@mail.aurentia.fr"
+      }
+    }
+  }
+}

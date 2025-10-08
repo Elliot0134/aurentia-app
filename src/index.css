@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter+Display:wght@300;400;500;600;700&display=swap');
+@import './styles/ai-tools-animations.css';
+
 @font-face {
   font-family: 'BIZ UDPMincho';
   src: url('/fonts/biz-udpmincho/BIZUDPMincho-Regular.ttf') format('truetype');
@@ -9,6 +11,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Classes utilitaires pour line-clamp */
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+}
 
 /* Animations pour les composants de collaboration */
 @keyframes fade-in {
@@ -456,6 +482,184 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Styles pour le ResourceModal refonte */
+.resource-modal-content {
+  width: 80%;
+  max-width: 95vw;
+  max-height: 90vh;
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .resource-modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+}
+
+/* Container principal pour le nouveau modal */
+.resource-popup-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  padding: 2rem;
+}
+
+/* Section gauche - images fixes */
+.image-section {
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+}
+
+/* Section droite - scrollable */
+.info-section {
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+/* Section "Pourquoi choisir" */
+.why-choose-section {
+  background: transparent;
+  margin-top: 3rem;
+  padding: 2rem 0;
+}
+
+.why-choose-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.why-choose-card {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  box-shadow: none;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.why-choose-card:hover {
+  transform: translateY(-4px);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Section FAQ */
+.faq-section {
+  background: #EDEBE6;
+  padding: 3rem 2rem;
+  margin-top: 3rem;
+  border-radius: 16px;
+}
+
+.faq-accordion-item {
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.faq-question-button {
+  width: 100%;
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.faq-question-button:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.faq-answer {
+  padding: 0 1.5rem;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+}
+
+.faq-answer.open {
+  max-height: 500px;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.faq-icon {
+  transition: transform 0.3s ease;
+}
+
+.faq-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Section Avis clients */
+.reviews-section {
+  margin-top: 2rem;
+}
+
+.review-card {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.review-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.review-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* Prix */
+.price-section {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.tax-info {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .resource-popup-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .image-section {
+    position: relative;
+    top: 0;
+  }
 }
 }
 

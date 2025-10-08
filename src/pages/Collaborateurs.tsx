@@ -1,27 +1,29 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, Users } from 'lucide-react';
+import { UserPlus, Users, Mail, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import ComingSoonDialog from "@/components/ui/ComingSoonDialog"; // Import ComingSoonDialog
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
-import { useProject } from '@/contexts/ProjectContext'; // Import useProject
-import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
+import { useProject } from '@/contexts/ProjectContext';
+import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
 
 // Import des composants de collaboration
 import CollaboratorStats from '@/components/collaboration/CollaboratorStats';
 import CollaboratorsTable from '@/components/collaboration/CollaboratorsTable';
 import InviteModal from '@/components/collaboration/InviteModal';
 import { useCollaborators } from '@/hooks/useCollaborators';
+import { TemplateDataTable } from '@/pages/individual/ComponentsTemplate';
 
 const CollaboratorsPage = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
-  const { currentProjectId, userProjectsLoading } = useProject(); // Use userProjectsLoading
-  const { userRole } = useUserRole(); // Get user role
+  const navigate = useNavigate();
+  const { currentProjectId, userProjectsLoading } = useProject();
+  const { userRole } = useUserRole();
   const { toast } = useToast();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false); // State for ComingSoonDialog
+  const [invitations, setInvitations] = useState([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(true);
   
   const {
     collaborators,
@@ -36,6 +38,65 @@ const CollaboratorsPage = () => {
     clearError
   } = useCollaborators();
 
+  // Récupérer les invitations
+  useEffect(() => {
+    refreshInvitations();
+  }, [currentProjectId]);
+
+  // Fonction pour recharger les invitations
+  const refreshInvitations = async () => {
+    if (!currentProjectId) return;
+    
+    setInvitationsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('project_invitations')
+        .select(`
+          id,
+          email,
+          status,
+          role,
+          invited_at,
+          expires_at,
+          project_id
+        `)
+        .eq('project_id', currentProjectId)
+        .order('invited_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Récupérer les informations du projet séparément
+      const { data: project } = await supabase
+        .from('project_summary')
+        .select('nom_projet')
+        .eq('project_id', currentProjectId)
+        .single();
+
+      const formattedInvitations = data?.map((invitation) => ({
+        id: invitation.id,
+        col1: invitation.email,
+        col2: project?.nom_projet || 'Projet inconnu',
+        col3: invitation.role === 'admin' ? 'Administrateur' : 
+              invitation.role === 'editor' ? 'Éditeur' : 'Lecteur',
+        col4: invitation.status === 'pending' ? 'En attente' : 
+              invitation.status === 'accepted' ? 'Acceptée' : 'Expirée',
+        col5: new Date(invitation.invited_at).toLocaleDateString('fr-FR'),
+        dateCreated: new Date(invitation.invited_at),
+        email: invitation.email,
+        status: invitation.status,
+        role: invitation.role,
+        expiresAt: invitation.expires_at,
+        projectName: project?.nom_projet
+      })) || [];
+
+      setInvitations(formattedInvitations);
+    } catch (err) {
+      console.error('Erreur lors du chargement des invitations:', err);
+    } finally {
+      setInvitationsLoading(false);
+    }
+  };
+
   // Gérer l'invitation d'un nouveau collaborateur
   const handleInviteCollaborator = async (inviteData) => {
     const result = await inviteCollaborator(inviteData);
@@ -46,6 +107,8 @@ const CollaboratorsPage = () => {
         description: `L'invitation a été envoyée à ${inviteData.email}`,
       });
       setIsInviteModalOpen(false);
+      // Recharger les invitations pour afficher la nouvelle invitation
+      refreshInvitations();
     } else {
       toast({
         title: "Erreur",
@@ -168,7 +231,7 @@ const CollaboratorsPage = () => {
             </div>
             
             <Button
-              onClick={() => setIsComingSoonOpen(true)}
+              onClick={() => setIsInviteModalOpen(true)}
               className="bg-gradient-primary text-white flex items-center gap-2 w-full lg:w-auto mt-4 lg:mt-0"
             >
               <UserPlus size={16} />
@@ -199,6 +262,36 @@ const CollaboratorsPage = () => {
             </CardContent>
           </Card>
 
+          {/* Tableau de suivi des invitations */}
+          <Card className="mt-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail size={20} />
+                Suivi des Invitations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {invitationsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Chargement des invitations...</span>
+                </div>
+              ) : invitations.length > 0 ? (
+                <TemplateDataTable data={invitations} />
+              ) : (
+                <div className="text-center py-8">
+                  <Mail size={48} className="mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                    Aucune invitation envoyée
+                  </h3>
+                  <p className="text-gray-500">
+                    Les invitations que vous envoyez apparaîtront ici avec leur statut.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Modal d'invitation */}
           <InviteModal
             isOpen={isInviteModalOpen}
@@ -222,7 +315,7 @@ const CollaboratorsPage = () => {
                   Elles pourront consulter, modifier ou administrer vos projets selon leurs permissions.
                 </p>
                 <Button
-                  onClick={() => setIsComingSoonOpen(true)}
+                  onClick={() => setIsInviteModalOpen(true)}
                   className="bg-gradient-primary text-white"
                 >
                   <UserPlus size={16} className="mr-2" />
@@ -231,13 +324,6 @@ const CollaboratorsPage = () => {
               </CardContent>
             </Card>
           )}
-
-          {/* Coming Soon Dialog */}
-          <ComingSoonDialog
-            isOpen={isComingSoonOpen}
-            onClose={() => setIsComingSoonOpen(false)}
-            description="La fonctionnalité d'invitation de collaborateurs sera bientôt disponible. Restez à l'écoute pour les mises à jour !"
-          />
         </div>
       </div>
     </ProjectRequiredGuard>

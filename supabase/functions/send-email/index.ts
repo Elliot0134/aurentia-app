@@ -637,6 +637,213 @@ const templates = {
         </div>
     </div>
 </body>
+</html>`,
+
+  'collaboration-invitation-template': `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitation à collaborer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPMincho:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #F4F4F1;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #F4F4F1;
+            padding: 30px;
+        }
+        .inner-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .header {
+            background: #F4F4F1;
+            color: #333;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            width: 160px;
+            height: auto;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 400;
+            font-family: 'BIZ UDPMincho', serif;
+            color: #333;
+        }
+        .content {
+            padding: 40px 30px;
+            background: white;
+        }
+        .welcome-text {
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+        .project-info {
+            background: #f8f9fa;
+            border-left: 4px solid #FF592C;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 6px;
+        }
+        .project-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #FF592C;
+            margin: 0 0 8px 0;
+        }
+        .project-inviter {
+            color: #666;
+            margin: 0;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        .benefits {
+            margin: 30px 0;
+        }
+        .benefits ul {
+            list-style: none;
+            padding: 0;
+        }
+        .benefits li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .benefits li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .cta-button {
+            display: inline-block !important;
+            background: #FF592C !important;
+            color: #ffffff !important;
+            text-decoration: none !important;
+            padding: 15px 35px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        .cta-button:hover {
+            background: #e04a1f !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+        }
+        .cta-button:visited {
+            color: #ffffff !important;
+        }
+        .cta-button:active {
+            color: #ffffff !important;
+        }
+        .footer {
+            text-align: center;
+            padding: 25px;
+            background: white;
+            color: #6c757d;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+        }
+        .security-info {
+            margin-top: 25px;
+            padding: 15px;
+            background: #FFF1EE;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #FF5B3A;
+        }
+        .warning-info {
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="inner-container">
+            <div class="header">
+                <img src="https://cdn.prod.website-files.com/68b2fd357db03bbb045b95e1/68c5d9c555c56a4153719885_logo-long.svg" alt="Logo Aurentia" class="logo">
+                <h1>Invitation à collaborer</h1>
+            </div>
+            
+            <div class="content">
+                <p class="welcome-text">
+                    Vous avez été invité(e) à collaborer sur un projet entrepreneurial.
+                </p>
+                
+                <div class="project-info">
+                    <div class="project-name">{{ .ProjectName }}</div>
+                    <div class="project-inviter">Invité(e) par : {{ .InviterEmail }}</div>
+                </div>
+                
+                <div class="benefits">
+                    <p><strong>En acceptant cette invitation, vous pourrez :</strong></p>
+                    <ul>
+                        <li>Consulter et modifier le projet selon vos permissions</li>
+                        <li>Collaborer avec l'équipe en temps réel</li>
+                        <li>Suivre l'évolution du projet entrepreneurial</li>
+                        <li>Contribuer au développement des idées et stratégies</li>
+                        <li>Accéder aux outils et ressources partagés</li>
+                    </ul>
+                </div>
+                
+                <p>
+                    Pour accepter cette invitation et rejoindre le projet, cliquez sur le bouton ci-dessous :
+                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{{ .InvitationURL }}" class="cta-button" style="color: #ffffff !important;">
+                        🤝 Accepter l'invitation
+                    </a>
+                </div>
+                
+                <div class="warning-info">
+                    <p><strong>⚠️ Vous ne connaissez pas l'expéditeur ?</strong></p>
+                    <p>Si vous ne connaissez pas la personne qui vous a envoyé cette invitation ou si vous pensez qu'il s'agit d'une erreur, vous pouvez ignorer cet email en toute sécurité.</p>
+                </div>
+                
+                <div class="security-info">
+                    <p><strong>🔒 Sécurité :</strong> Cette invitation expire dans 7 jours pour des raisons de sécurité. Si vous n'avez pas encore de compte Aurentia, vous pourrez vous inscrire directement en cliquant sur le lien d'invitation.</p>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>
+                    Cet email a été envoyé automatiquement, merci de ne pas y répondre.<br>
+                    Si vous avez des questions, contactez notre équipe support.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
 </html>`
 };
 

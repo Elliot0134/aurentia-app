@@ -253,9 +253,9 @@ const OrganisationChatbot = () => {
                       setIsDropdownExiting(false);
                     }, 300);
                   }} className="py-2 px-3 rounded-md hover:bg-gray-100 cursor-pointer">
-                    <div className="flex items-center justify-between w-full">
-                      <span className="">{conv.title}</span>
-                      <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                    <div className="flex items-center w-full">
+                      <span className="truncate flex-1 min-w-0">{conv.title}</span>
+                      <span className="text-xs text-gray-500 flex-shrink-0 ml-auto pl-4">
                         {new Date(conv.updatedAt).toLocaleDateString('fr-FR')}
                       </span>
                     </div>

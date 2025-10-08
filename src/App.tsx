@@ -9,6 +9,7 @@ import ConfirmEmail from "./pages/ConfirmEmail";
 import VerifyEmail from "./pages/VerifyEmail";
 import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
 import UpdatePassword from "./pages/UpdatePassword";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import OrganisationRedirect from "./pages/OrganisationRedirect";
@@ -20,9 +21,10 @@ import FormBusinessIdea from "./pages/FormBusinessIdea";
 import ProjectBusiness from "./pages/ProjectBusiness";
 import WarningPage from "./pages/WarningPage";
 import Outils from "./pages/Outils";
+import ToolDetailPage from "./pages/individual/ToolDetailPage";
 import Partenaires from "./pages/Partenaires";
 import Roadmap from "./pages/Roadmap";
-import Ressources from "./pages/Ressources"; // Import the new Ressources component
+import Ressources from "./pages/Ressources"; // Import the Ressources component
 import Collaborateurs from "./pages/Collaborateurs"; // Import the new Collaborateurs component
 import TemplatePage from "./pages/TemplatePage"; // Import the new TemplatePage component
 import ToolTemplatePage from "./pages/ToolTemplatePage"; // Import the new ToolTemplatePage component
@@ -59,10 +61,10 @@ import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback 
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
 import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
+import PendingInvitationsProvider from "./components/collaboration/PendingInvitationsProvider";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import useMounted from "./hooks/useMounted"; // Import the new hook
 
 import "./index.css";
 
@@ -204,7 +206,7 @@ const ProtectedRoute = () => {
       isCancelled = true;
       authListener.subscription.unsubscribe();
     };
-  }, [mounted]); // Add mounted to dependency array
+  }, []);
 
   console.log("[ProtectedRoute] Render - loading:", loading, "isAuthenticated:", isAuthenticated);
 
@@ -251,12 +253,14 @@ const App = () => {
             <ProjectProvider>
               <CreditsDialogProvider>
                 <BuyCreditsDialog />
+                <PendingInvitationsProvider />
                 <Routes>
                 {/* Public routes without sidebar */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 {/* <Route path="/role-selection" element={<RoleSelection />} /> */} {/* Supprimé car le rôle est attribué par défaut */}
                 <Route path="/update-password" element={<UpdatePassword />} />
@@ -278,6 +282,7 @@ const App = () => {
                     <Route path="/individual/chatbot" element={<ChatbotPage />} />
                     <Route path="/individual/chatbot/:projectId" element={<ChatbotPage />} />
                     <Route path="/individual/outils" element={<Outils />} />
+                    <Route path="/individual/outils/:slug/:id" element={<ToolDetailPage />} />
                     <Route path="/individual/ressources" element={<Ressources />} />
                     <Route path="/individual/collaborateurs" element={<Collaborateurs />} />
                     <Route path="/individual/template" element={<TemplatePage />} />

@@ -545,6 +545,11 @@ class ChatbotService {
 
   // Analyze user intent
   private analyzeUserIntent(message: string): string {
+    // Sécuriser le message pour éviter les erreurs toLowerCase sur undefined/null
+    if (!message || typeof message !== 'string') {
+      return 'general';
+    }
+    
     const lowerMessage = message.toLowerCase();
     
     if (lowerMessage.includes('concurrence') || lowerMessage.includes('concurrent')) {

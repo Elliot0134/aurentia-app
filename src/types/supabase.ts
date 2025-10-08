@@ -207,41 +207,199 @@ export type Database = {
         }
         Relationships: []
       }
-      backup_profiles: {
+      resource_ratings: {
         Row: {
+          comment: string | null
           created_at: string | null
-          credit_limit: string | null
-          credits_restants: string | null
-          email: string | null
           id: string
+          rating: number
+          resource_id: string
+          user_ip: string
         }
         Insert: {
+          comment?: string | null
           created_at?: string | null
-          credit_limit?: string | null
-          credits_restants?: string | null
-          email?: string | null
-          id: string
+          id?: string
+          rating: number
+          resource_id: string
+          user_ip: string
         }
         Update: {
+          comment?: string | null
           created_at?: string | null
-          credit_limit?: string | null
-          credits_restants?: string | null
-          email?: string | null
           id?: string
+          rating?: number
+          resource_id?: string
+          user_ip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_ratings_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          average_rating: number | null
+          category: string | null
+          created_at: string | null
+          credit_cost: number | null
+          description: string | null
+          detailed_description: string | null
+          difficulty: string | null
+          download_count: number | null
+          estimated_time: string | null
+          faq_answer_1: string | null
+          faq_answer_2: string | null
+          faq_answer_3: string | null
+          faq_question_1: string | null
+          faq_question_2: string | null
+          faq_question_3: string | null
+          favorite_count: number | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          image_2_url: string | null
+          image_3_url: string | null
+          image_4_url: string | null
+          image_url: string | null
+          included_items: Json | null
+          is_featured: boolean | null
+          is_published: boolean | null
+          long_description: string | null
+          meta_description: string | null
+          meta_title: string | null
+          name: string
+          price: number | null
+          reason_1_text: string | null
+          reason_1_title: string | null
+          reason_2_text: string | null
+          reason_2_title: string | null
+          reason_3_text: string | null
+          reason_3_title: string | null
+          slug: string
+          tags: string[] | null
+          total_ratings: number | null
+          type: string | null
+          updated_at: string | null
+          video_url: string | null
+          view_count: number | null
+        }
+        Insert: {
+          average_rating?: number | null
+          category?: string | null
+          created_at?: string | null
+          credit_cost?: number | null
+          description?: string | null
+          detailed_description?: string | null
+          difficulty?: string | null
+          download_count?: number | null
+          estimated_time?: string | null
+          faq_answer_1?: string | null
+          faq_answer_2?: string | null
+          faq_answer_3?: string | null
+          faq_question_1?: string | null
+          faq_question_2?: string | null
+          faq_question_3?: string | null
+          favorite_count?: number | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          image_2_url?: string | null
+          image_3_url?: string | null
+          image_4_url?: string | null
+          image_url?: string | null
+          included_items?: Json | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          long_description?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name: string
+          price?: number | null
+          reason_1_text?: string | null
+          reason_1_title?: string | null
+          reason_2_text?: string | null
+          reason_2_title?: string | null
+          reason_3_text?: string | null
+          reason_3_title?: string | null
+          slug: string
+          tags?: string[] | null
+          total_ratings?: number | null
+          type?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          average_rating?: number | null
+          category?: string | null
+          created_at?: string | null
+          credit_cost?: number | null
+          description?: string | null
+          detailed_description?: string | null
+          difficulty?: string | null
+          download_count?: number | null
+          estimated_time?: string | null
+          faq_answer_1?: string | null
+          faq_answer_2?: string | null
+          faq_answer_3?: string | null
+          faq_question_1?: string | null
+          faq_question_2?: string | null
+          faq_question_3?: string | null
+          favorite_count?: number | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          image_2_url?: string | null
+          image_3_url?: string | null
+          image_4_url?: string | null
+          image_url?: string | null
+          included_items?: Json | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          long_description?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name?: string
+          price?: number | null
+          reason_1_text?: string | null
+          reason_1_title?: string | null
+          reason_2_text?: string | null
+          reason_2_title?: string | null
+          reason_3_text?: string | null
+          reason_3_title?: string | null
+          slug?: string
+          tags?: string[] | null
+          total_ratings?: number | null
+          type?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+          view_count?: number | null
         }
         Relationships: []
       }
-      backup_project_summary: {
+      user_favorites: {
         Row: {
           created_at: string | null
-          project_id: string
+          project_id: string | null
           statut_project: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
-          project_id: string
+          project_id?: string | null
           statut_project?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -2760,9 +2918,6 @@ export type Database = {
       }
       project_invitations: {
         Row: {
-          accepted_at: string | null
-          accepted_by: string | null
-          accepted_email: string | null
           email: string
           expires_at: string | null
           id: string
@@ -2775,24 +2930,17 @@ export type Database = {
           token: string
         }
         Insert: {
-          accepted_at?: string | null
-          accepted_by?: string | null
-          accepted_email?: string | null
           email: string
           expires_at?: string | null
           id?: string
           invited_at?: string | null
           invited_by: string
           project_id: string
-          project_name?: string | null
-          role?: string
-          status?: string
-          token?: string
+          role: string
+          token: string
+          used?: boolean
         }
         Update: {
-          accepted_at?: string | null
-          accepted_by?: string | null
-          accepted_email?: string | null
           email?: string
           expires_at?: string | null
           id?: string
