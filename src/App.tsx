@@ -62,6 +62,7 @@ import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
 import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
 import PendingInvitationsProvider from "./components/collaboration/PendingInvitationsProvider";
+import useMounted from "./hooks/useMounted";
 
 import { useState, useEffect, ErrorInfo, Component } from "react";
 import { supabase } from "@/integrations/supabase/client";
