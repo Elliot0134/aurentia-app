@@ -32,11 +32,22 @@ import {
   Check,
   Loader,
   X,
+  Globe,
+  Calendar as CalendarIcon,
+  Tag,
+  Star,
+  DollarSign,
+  MapPin,
+  SquareArrowOutUpRight,
+  ToggleLeft,
+  MousePointer,
 } from "lucide-react";
 
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { DynamicLinkDropdown } from "@/components/ui/dynamic-link-dropdown";
 import { Switch } from "@/components/ui/switch";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
   ColumnDef,
@@ -60,6 +71,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -123,25 +140,22 @@ function DraggableRow<TData extends BaseRowData>({
   row,
   className,
   onRowClick,
+  isMobile,
+  stickyFirstColumn,
 }: {
   row: Row<TData>;
   className?: string;
   onRowClick?: (data: TData) => void;
+  isMobile?: boolean;
+  stickyFirstColumn?: boolean;
 }) {
   const { transform, transition, setNodeRef, isDragging, attributes, listeners } =
     useSortable({
       id: row.original.id,
     });
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isMobile) {
@@ -177,12 +191,27 @@ function DraggableRow<TData extends BaseRowData>({
       data-state={row.getIsSelected() && "selected"}
       data-dragging={isDragging}
       ref={setNodeRef}
-      className={`group relative z-0 data-[state=selected]:bg-[#F5F5F5] data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 ${
+      className={`group relative z-0 hover:bg-[#F5F5F5] data-[state=selected]:bg-[#F5F5F5] data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 transition-colors duration-200 ${
         isMobile ? "cursor-pointer" : ""
       } ${className || ""}`}
       style={{
         transform: CSS.Transform.toString(transform),
         transition: transition,
+      }}
+      onMouseEnter={(e) => {
+        // Synchroniser les colonnes sticky quand on survole la ligne
+        const stickyCells = e.currentTarget.querySelectorAll('td[style*="position: sticky"]');
+        stickyCells.forEach((cell: any) => {
+          cell.style.backgroundColor = '#F5F5F5';
+        });
+      }}
+      onMouseLeave={(e) => {
+        // Retirer le hover des colonnes sticky quand on quitte la ligne
+        const stickyCells = e.currentTarget.querySelectorAll('td[style*="position: sticky"]');
+        const bgColor = row.getIsSelected() ? '#F5F5F5' : 'white';
+        stickyCells.forEach((cell: any) => {
+          cell.style.backgroundColor = bgColor;
+        });
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -193,20 +222,72 @@ function DraggableRow<TData extends BaseRowData>({
         }
       }}
     >
-      {row.getVisibleCells().map((cell) => {
-        if (cell.column.id === "drag") {
+      {row.getVisibleCells().map((cell, cellIndex) => {
+        const isDragColumn = cell.column.id === "drag";
+        const isSelectColumn = cell.column.id === "select";
+        const isFirstDataColumn = cellIndex === 2; // After drag and select columns
+        const isStickyColumn = !isMobile && stickyFirstColumn && (isSelectColumn || isFirstDataColumn);
+        
+        if (isDragColumn) {
           return (
             <TableCell key={cell.id} className="py-2 px-4">
-              <DragHandle
-                id={row.original.id}
-                attributes={attributes}
-                listeners={listeners}
-              />
+              <div className="flex items-center justify-center -mr-2.5">
+                <DragHandle
+                  id={row.original.id}
+                  attributes={attributes}
+                  listeners={listeners}
+                />
+              </div>
             </TableCell>
           );
         }
+        
         return (
-          <TableCell key={cell.id} className="py-2 px-4">
+          <TableCell 
+            key={cell.id} 
+            className={`py-2 px-4 ${
+              isStickyColumn
+                ? `sticky z-10 transition-colors duration-200 ${
+                    isFirstDataColumn 
+                      ? 'relative after:absolute after:top-0 after:right-0 after:h-full after:w-[1px] after:bg-gradient-to-b after:from-gray-200 after:to-gray-300 after:shadow-[1px_0_3px_0px_rgba(0,0,0,0.1)] after:z-10' 
+                      : ''
+                  }`
+                : 'transition-colors duration-200'
+            }`}
+            style={isStickyColumn ? { 
+              position: 'sticky', 
+              left: isSelectColumn ? '0px' : '40px',
+              backgroundColor: row.getIsSelected() ? '#F5F5F5' : 'white',
+              minWidth: isSelectColumn ? '40px' : undefined,
+              maxWidth: isSelectColumn ? '40px' : undefined
+            } : {}}
+            onMouseEnter={(e) => {
+              if (isStickyColumn) {
+                const currentCell = e.currentTarget;
+                const row = currentCell.closest('tr');
+                if (row) {
+                  const stickyCells = row.querySelectorAll('td[style*="position: sticky"]');
+                  stickyCells.forEach((cell: any) => {
+                    cell.style.backgroundColor = '#F5F5F5';
+                  });
+                }
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (isStickyColumn) {
+                const currentCell = e.currentTarget;
+                const row = currentCell.closest('tr');
+                if (row) {
+                  const isSelected = row.getAttribute('data-state') === 'selected';
+                  const bgColor = isSelected ? '#F5F5F5' : 'white';
+                  const stickyCells = row.querySelectorAll('td[style*="position: sticky"]');
+                  stickyCells.forEach((cell: any) => {
+                    cell.style.backgroundColor = bgColor;
+                  });
+                }
+              }
+            }}
+          >
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </TableCell>
         );
@@ -219,7 +300,8 @@ function DraggableRow<TData extends BaseRowData>({
 function generateColumns<TData extends BaseRowData>(
   config: ModularTableConfig<TData>,
   handleOpenModal: (data: TData) => void,
-  isDragEnabled: boolean = true
+  isDragEnabled: boolean = true,
+  isMobile: boolean = false
 ): ColumnDef<TData>[] {
   const columns: ColumnDef<TData>[] = [];
 
@@ -227,11 +309,35 @@ function generateColumns<TData extends BaseRowData>(
   if (isDragEnabled) {
     columns.push({
       id: "drag",
-      header: () => null,
+      header: () => isMobile ? (
+        <div className="flex items-center justify-center">
+          <SquareArrowOutUpRight className="h-4 w-4" />
+        </div>
+      ) : null,
       cell: ({ row }) => {
+        if (isMobile) {
+          // En mobile, remplacer le drag par le bouton ouvrir
+          return (
+            <div className="flex items-center justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground size-7 hover:bg-transparent"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenModal(row.original);
+                }}
+              >
+                <SquareArrowOutUpRight className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        }
+        
+        // En desktop, garder le drag handle
         const { attributes, listeners } = useSortable({ id: row.original.id });
         return (
-          <div className="flex items-center justify-center -mr-2.5">
+          <div className="flex items-center justify-center -mr-1">
             <DragHandle id={row.original.id} attributes={attributes} listeners={listeners} />
           </div>
         );
@@ -245,7 +351,7 @@ function generateColumns<TData extends BaseRowData>(
     columns.push({
       id: "select",
       header: ({ table }) => (
-        <div className="flex items-center justify-center -ml-2.5">
+        <div className="flex items-center justify-center">
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
@@ -255,7 +361,7 @@ function generateColumns<TData extends BaseRowData>(
       ),
       cell: ({ row }) => (
         <div
-          className="flex items-center justify-center -ml-2.5"
+          className="flex items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
           <Checkbox
@@ -267,7 +373,7 @@ function generateColumns<TData extends BaseRowData>(
       ),
       enableSorting: false,
       enableHiding: false,
-      size: 15,
+      size: 40,
     });
   }
 
@@ -279,8 +385,8 @@ function generateColumns<TData extends BaseRowData>(
       cell: ({ row }) => {
         const value = row.original[colConfig.accessorKey];
         
-        // Si c'est la première colonne et modal activé, ajouter le bouton "Ouvrir"
-        if (index === 0 && config.modalEnabled) {
+        // Si c'est la première colonne et modal activé, ajouter le bouton "Ouvrir" (seulement en desktop)
+        if (index === 0 && config.modalEnabled && !isMobile) {
           return (
             <div className="flex items-center justify-between min-w-[180px] gap-2">
               <div className="text-sm whitespace-nowrap flex-grow">
@@ -312,10 +418,81 @@ function generateColumns<TData extends BaseRowData>(
       enableSorting: colConfig.enableSorting,
       enableHiding: colConfig.enableHiding,
       filterFn: colConfig.filterFn,
+      meta: (index === 0 && config.stickyFirstColumn && !isMobile) ? { sticky: 'left' } : undefined,
     });
   });
 
-  // Colonne des étiquettes si configurée
+  // Colonne URL si configurée
+  if (config.hasUrlColumn) {
+    const UrlIcon = config.hasUrlColumn.icon || Globe;
+    columns.push({
+      accessorKey: config.hasUrlColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><UrlIcon className="h-4 w-4" />URL</div>,
+      cell: ({ row }) => {
+        const url = row.original[config.hasUrlColumn!.accessorKey];
+        if (!url) return <div className="flex items-center gap-2 text-sm text-gray-500"><UrlIcon className="h-4 w-4 text-gray-400" />-</div>;
+        
+        return (
+          <a 
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 cursor-pointer max-w-[150px] truncate"
+            onClick={(e) => e.stopPropagation()}
+            title={url}
+          >
+            <UrlIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            <span className="truncate">{url}</span>
+          </a>
+        );
+      },
+      size: 150,
+    });
+  }
+
+  // Colonne Date si configurée
+  if (config.hasDateColumn) {
+    const DateIcon = config.hasDateColumn.icon || CalendarIcon;
+    columns.push({
+      accessorKey: config.hasDateColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><DateIcon className="h-4 w-4" />Date</div>,
+      cell: ({ row }) => {
+        const [date, setDate] = useState<Date | undefined>(row.original[config.hasDateColumn!.accessorKey]);
+        const [isOpen, setIsOpen] = useState(false);
+
+        return (
+          <Popover open={isOpen} onOpenChange={setIsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="text-sm text-gray-900 hover:text-gray-700 hover:bg-[#F3F4F6] h-auto p-1 font-normal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {date ? date.toLocaleDateString('fr-FR') : 'Sélectionner'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={date}
+                onSelect={(newDate) => {
+                  setDate(newDate);
+                  setIsOpen(false);
+                  if (config.hasDateColumn?.onChange) {
+                    config.hasDateColumn.onChange(row.original, newDate);
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        );
+      },
+      size: 120,
+    });
+  }
+
+  // Colonne des étiquettes si configurée (simple affichage)
   if (config.hasLabelsColumn) {
     columns.push({
       accessorKey: config.hasLabelsColumn.accessorKey,
@@ -348,6 +525,84 @@ function generateColumns<TData extends BaseRowData>(
     });
   }
 
+  // Colonne des étiquettes éditables si configurée
+  if (config.hasEditableLabelsColumn) {
+    const LabelIcon = Tag;
+    columns.push({
+      accessorKey: config.hasEditableLabelsColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><LabelIcon className="h-4 w-4" />Etiquettes</div>,
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id));
+      },
+      cell: ({ row }) => {
+        const [currentLabel, setCurrentLabel] = useState(row.original[config.hasEditableLabelsColumn!.accessorKey] || config.hasEditableLabelsColumn!.options[0]);
+        const [isOpen, setIsOpen] = useState(false);
+        const labelOptions = config.hasEditableLabelsColumn!.options;
+
+        const getLabelDisplay = (label: string) => {
+          const labelCfg = config.hasEditableLabelsColumn!.labelConfig[label];
+          return labelCfg || { icon: null, iconBgColor: "bg-gray-200", iconColor: "text-gray-700" };
+        };
+
+        const { icon: IconComponent, iconBgColor, iconColor } = getLabelDisplay(currentLabel);
+
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Popover open={isOpen} onOpenChange={setIsOpen}>
+              <PopoverTrigger asChild>
+                <div className="cursor-pointer">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-white border border-[#E5E5E5] text-[#747474] whitespace-nowrap hover:border-[#F86E19] transition-colors">
+                    {IconComponent && (
+                      <span className={`flex items-center justify-center mr-1 ${iconBgColor} ${iconColor} h-3 w-3 ${iconBgColor !== 'bg-transparent' ? 'rounded-lg' : ''}`}>
+                        <IconComponent className={`${iconBgColor === 'bg-transparent' ? 'h-3 w-3' : 'h-2 w-2'}`} />
+                      </span>
+                    )}
+                    {currentLabel}
+                  </span>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0" align="start">
+                <Command>
+                  <CommandList>
+                    <CommandGroup>
+                      {labelOptions.map((option) => {
+                        const optionCfg = getLabelDisplay(option);
+                        const OptionIcon = optionCfg.icon;
+                        return (
+                          <CommandItem
+                            key={option}
+                            onSelect={() => {
+                              setCurrentLabel(option);
+                              setIsOpen(false);
+                              if (config.hasEditableLabelsColumn?.onChange) {
+                                config.hasEditableLabelsColumn.onChange(row.original, option);
+                              }
+                            }}
+                            className="justify-start hover:!bg-[#F3F4F6] hover:!text-black data-[highlighted]:!bg-[#F3F4F6] data-[highlighted]:!text-black !bg-transparent !text-black"
+                          >
+                            <div className="flex items-center gap-2">
+                              {OptionIcon && (
+                                <span className={`flex items-center justify-center ${optionCfg.iconBgColor} ${optionCfg.iconColor} h-3 w-3 ${optionCfg.iconBgColor !== 'bg-transparent' ? 'rounded-lg' : ''}`}>
+                                  <OptionIcon className={`${optionCfg.iconBgColor === 'bg-transparent' ? 'h-3 w-3' : 'h-2 w-2'}`} />
+                                </span>
+                              )}
+                              <span className="text-black">{option}</span>
+                            </div>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        );
+      },
+      size: 120,
+    });
+  }
+
   // Colonne de progression si configurée
   if (config.hasProgressColumn) {
     columns.push({
@@ -357,15 +612,20 @@ function generateColumns<TData extends BaseRowData>(
         const progress = row.original.progressValue;
         if (typeof progress === "number") {
           return (
-            <div className="flex items-center space-x-2">
-              <ProgressBar value={progress} className="w-24" />
-              <span className="text-sm text-gray-500">{progress}%</span>
+            <div className="flex items-center space-x-3">
+              <div className="flex-1 bg-gray-100 rounded-full h-2 w-28 shadow-inner">
+                <div 
+                  className="h-full rounded-full bg-gradient-to-r from-[#F86E19] to-[#E55A0F] transition-all duration-500 ease-out shadow-sm"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-gray-600 min-w-[2.5rem] text-right">{progress}%</span>
             </div>
           );
         }
         return <div className="text-sm text-gray-500">N/A</div>;
       },
-      size: 150,
+      size: 180,
     });
   }
 
@@ -391,9 +651,10 @@ function generateColumns<TData extends BaseRowData>(
 
   // Colonne Switch si configurée
   if (config.hasSwitchColumn) {
+    const SwitchIcon = ToggleLeft;
     columns.push({
       accessorKey: config.hasSwitchColumn.accessorKey,
-      header: config.hasSwitchColumn.header,
+      header: () => <div className="flex items-center gap-2"><SwitchIcon className="h-4 w-4" />{config.hasSwitchColumn!.header}</div>,
       cell: ({ row }) => {
         const [isHovering, setIsHovering] = useState(false);
         const isActive = row.original[config.hasSwitchColumn!.accessorKey] ?? false;
@@ -417,20 +678,217 @@ function generateColumns<TData extends BaseRowData>(
                 config.hasSwitchColumn!.onChange(row.original, newChecked);
               }}
               className={cn(
-                "data-[state=checked]:bg-[#4CAF50] data-[state=unchecked]:bg-[#E0E0E0]"
+                "data-[state=checked]:bg-[#F86E19] data-[state=unchecked]:bg-[#E0E0E0] transition-colors duration-200",
+                (isHovering && !checked) ? "bg-gray-300" : ""
               )}
-              style={{
-                backgroundColor: checked
-                  ? undefined
-                  : isHovering
-                  ? "#D0D0D0"
-                  : "#E0E0E0",
-              }}
             />
           </div>
         );
       },
       size: 80,
+    });
+  }
+
+  // Colonne Action Button si configurée
+  if (config.hasActionButtonColumn) {
+    const ActionIcon = config.hasActionButtonColumn.icon || MousePointer;
+    const buttonLabel = config.hasActionButtonColumn.buttonLabel || "Action";
+    columns.push({
+      accessorKey: config.hasActionButtonColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><ActionIcon className="h-4 w-4" />Bouton</div>,
+      cell: ({ row }) => {
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-3 text-xs bg-white border-gray-300 hover:bg-[#F3F4F6] hover:border-[#F86E19] hover:text-black transition-colors"
+              onClick={() => {
+                config.hasActionButtonColumn!.onClick(row.original);
+              }}
+            >
+              {buttonLabel}
+            </Button>
+          </div>
+        );
+      },
+      size: 100,
+    });
+  }
+
+  // Colonne Rating si configurée
+  if (config.hasRatingColumn) {
+    const RatingIcon = Star;
+    const maxRating = config.hasRatingColumn.maxRating || 5;
+    columns.push({
+      accessorKey: config.hasRatingColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><RatingIcon className="h-4 w-4" />Rating</div>,
+      cell: ({ row }) => {
+        const [rating, setRating] = useState(row.original[config.hasRatingColumn!.accessorKey] || 0);
+        const [hoveredStar, setHoveredStar] = useState(0);
+
+        return (
+          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+            {[...Array(maxRating)].map((_, index) => {
+              const star = index + 1;
+              return (
+                <Star
+                  key={star}
+                  className={`h-4 w-4 cursor-pointer transition-colors ${
+                    star <= (hoveredStar || rating)
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'text-gray-300'
+                  }`}
+                  onMouseEnter={() => setHoveredStar(star)}
+                  onMouseLeave={() => setHoveredStar(0)}
+                  onClick={() => {
+                    setRating(star);
+                    if (config.hasRatingColumn?.onChange) {
+                      config.hasRatingColumn.onChange(row.original, star);
+                    }
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+      },
+      size: 120,
+    });
+  }
+
+  // Colonne Étiquettes multiples si configurée
+  if (config.hasMultiSelectLabelsColumn) {
+    const MultiLabelIcon = Tag;
+    columns.push({
+      accessorKey: config.hasMultiSelectLabelsColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><MultiLabelIcon className="h-4 w-4" />Étiquettes</div>,
+      cell: ({ row }) => {
+        const allOptions = config.hasMultiSelectLabelsColumn!.options;
+        const [selectedOptions, setSelectedOptions] = useState<string[]>(row.original[config.hasMultiSelectLabelsColumn!.accessorKey] || []);
+        const [isOpen, setIsOpen] = useState(false);
+
+        const toggleOption = (option: string) => {
+          const newOptions = selectedOptions.includes(option)
+            ? selectedOptions.filter((o) => o !== option)
+            : [...selectedOptions, option];
+          setSelectedOptions(newOptions);
+          if (config.hasMultiSelectLabelsColumn?.onChange) {
+            config.hasMultiSelectLabelsColumn.onChange(row.original, newOptions);
+          }
+        };
+
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Popover open={isOpen} onOpenChange={setIsOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-8 px-3 text-xs border-[#E5E5E5] hover:border-[#D0D0D0] bg-white"
+                >
+                  {selectedOptions.length > 0 ? `${selectedOptions.length} sélectionné(s)` : 'Sélectionner'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="space-y-1">
+                  {allOptions.map((option) => (
+                    <Button
+                      key={option}
+                      variant="ghost"
+                      className="w-full justify-start text-sm h-8 px-2"
+                      onClick={() => toggleOption(option)}
+                    >
+                      <Checkbox checked={selectedOptions.includes(option)} className="mr-2" />
+                      {option}
+                    </Button>
+                  ))}
+                </div>
+                {selectedOptions.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-1">
+                      {selectedOptions.map((option) => (
+                        <span
+                          key={option}
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.hasMultiSelectLabelsColumn!.getTagColor(option)}`}
+                        >
+                          {option}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          </div>
+        );
+      },
+      size: 250,
+    });
+  }
+
+  // Colonne Montant (Devise) si configurée
+  if (config.hasCurrencyColumn) {
+    const CurrencyIcon = DollarSign;
+    const currency = config.hasCurrencyColumn.currency || 'EUR';
+    const locale = config.hasCurrencyColumn.locale || 'fr-FR';
+    
+    columns.push({
+      accessorKey: config.hasCurrencyColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><CurrencyIcon className="h-4 w-4" />Montant</div>,
+      cell: ({ row }) => {
+        const amount = row.original[config.hasCurrencyColumn!.accessorKey];
+        
+        return (
+          <div className="text-sm font-medium">
+            {amount !== undefined ? (
+              new Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency: currency,
+              }).format(amount)
+            ) : (
+              <span className="text-gray-500">N/A</span>
+            )}
+          </div>
+        );
+      },
+      size: 100,
+    });
+  }
+
+  // Colonne Géolocalisation si configurée
+  if (config.hasLocationColumn) {
+    const LocationIcon = config.hasLocationColumn.icon || MapPin;
+    columns.push({
+      accessorKey: config.hasLocationColumn.accessorKey,
+      header: () => <div className="flex items-center gap-2"><LocationIcon className="h-4 w-4" />Localisation</div>,
+      cell: ({ row }) => {
+        const location = row.original[config.hasLocationColumn!.accessorKey];
+        
+        if (!location?.address) {
+          return <div className="text-sm text-gray-500">N/A</div>;
+        }
+
+        const handleOpenMaps = () => {
+          const query = encodeURIComponent(location.address);
+          const url = `https://maps.google.com/maps?q=${query}`;
+          window.open(url, '_blank');
+        };
+
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-sm text-gray-700 hover:text-[#F86E19] hover:bg-[#FFF5F0]"
+              onClick={handleOpenMaps}
+            >
+              <LocationIcon className="h-4 w-4 mr-1" />
+              {location.address}
+            </Button>
+          </div>
+        );
+      },
+      size: 200,
     });
   }
 
@@ -506,6 +964,7 @@ export function ModularDataTable<TData extends BaseRowData>({
     null
   );
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const sortableId = useId();
   
@@ -533,6 +992,13 @@ export function ModularDataTable<TData extends BaseRowData>({
   });
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Détection des changements de taille d'écran
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (selectedRowData) {
@@ -607,8 +1073,8 @@ export function ModularDataTable<TData extends BaseRowData>({
   };
 
   const columns = useMemo(
-    () => generateColumns<TData>(config, handleOpenModal, isDragEnabled),
-    [config, isDragEnabled]
+    () => generateColumns<TData>(config, handleOpenModal, isDragEnabled, isMobile),
+    [config, isDragEnabled, isMobile]
   );
 
   const table = useReactTable({
@@ -983,7 +1449,7 @@ export function ModularDataTable<TData extends BaseRowData>({
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border mx-4 lg:mx-6">
+      <div className={`rounded-lg border overflow-x-auto ${isMobile ? 'w-[95%] mx-auto' : 'mx-4 lg:mx-6'}`}>
         {isDragEnabled ? (
           <DndContext
             collisionDetection={closestCenter}
@@ -1027,6 +1493,8 @@ export function ModularDataTable<TData extends BaseRowData>({
                         row={row}
                         className="h-8"
                         onRowClick={config.modalEnabled ? handleOpenModal : undefined}
+                        isMobile={isMobile}
+                        stickyFirstColumn={config.stickyFirstColumn}
                       />
                     ))}
                   </SortableContext>

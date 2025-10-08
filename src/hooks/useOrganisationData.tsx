@@ -24,6 +24,10 @@ import {
   updateEvent as updateEventService,
   deleteEvent as deleteEventService,
   getOrganisationPartners,
+  getOrganisationAdherents,
+  getOrganisationMembersWithRole,
+  getOrganisationProjectsWithStats,
+  getOrganisationMentorsWithStats,
   type OrganisationData,
   type OrganisationMember,
   type Project,
@@ -113,20 +117,23 @@ export const useOrganisationStats = () => {
         setLoading(true);
         const serviceStats = await getOrganisationStats(organisationId);
         
-        // Les données du service correspondent maintenant aux types de l'interface
+        console.log('🔄 Raw stats from optimized service:', serviceStats);
+        
+        // The service now returns data in the correct format
         const adaptedStats: OrganisationStats = {
-          totalAdherents: serviceStats.totalEntrepreneurs,
+          totalAdherents: serviceStats.totalAdherents,
           activeProjects: serviceStats.activeProjects,
           completedProjects: serviceStats.completedProjects,
           totalMentors: serviceStats.totalMentors,
-          activeMentors: serviceStats.totalMentors, // Using totalMentors as activeMentors
-          thisMonthSignups: serviceStats.newThisMonth, // Using newThisMonth as thisMonthSignups
-          averageProjectDuration: 6.5, // TODO: Calculer la durée moyenne depuis les projets
-          successRate: serviceStats.conversionRate, // Using conversionRate as successRate
+          activeMentors: serviceStats.totalMentors, // All mentors are considered active
+          thisMonthSignups: serviceStats.newThisMonth,
+          averageProjectDuration: 6.5, // TODO: Calculate from actual project data
+          successRate: serviceStats.conversionRate,
           totalDeliverables: serviceStats.totalDeliverables,
           completedDeliverables: serviceStats.completedDeliverables
         };
 
+        console.log('🎯 Final adapted stats:', adaptedStats);
         setStats(adaptedStats);
       } catch (err) {
         console.error('Erreur lors du chargement des statistiques:', err);
@@ -153,29 +160,51 @@ export const useAdherents = () => {
 
       try {
         setLoading(true);
-        const members = await getOrganisationMembers(organisationId);
+        // Use the new simplified service function
+        const adherentsData = await getOrganisationAdherents(organisationId);
         
-        console.log('🔄 Raw members from service:', members.length, members);
+        console.log('🔄 Raw adherents from optimized service:', adherentsData.length, adherentsData);
         
         // Adapter les données du service aux types de l'interface
-        const adaptedAdherents: Adherent[] = members
-          .filter(member => member.user_role === 'member') // Garder seulement les adhérents (membres)
-          .map((member) => ({
-            id: member.id,
-            user_id: member.id,
-            organisation_id: member.organization_id,
-            first_name: member.first_name || member.email.split('@')[0],
-            last_name: member.last_name || '',
-            email: member.email,
-            phone: member.phone || '',
-            status: 'active',
-            joined_at: member.created_at,
-            mentor_id: null, // TODO: Implémenter le système de mentors depuis mentor_assignments
-            project_count: member.projects_count || 0,
-            completed_deliverables: 0, // TODO: Calculer depuis la table deliverables
-            total_deliverables: 0, // TODO: Calculer depuis la table deliverables
-            last_activity: member.created_at
-          }));
+        const adaptedAdherents: Adherent[] = adherentsData.map((adherent: any) => ({
+          id: adherent.user_id,
+          user_id: adherent.user_id,
+          organisation_id: organisationId,
+          first_name: adherent.first_name || adherent.email?.split('@')[0] || 'Prénom',
+          last_name: adherent.last_name || '',
+          email: adherent.email,
+          phone: adherent.phone || '',
+          avatar_url: adherent.avatar_url,
+          linkedin_url: adherent.linkedin_url,
+          website: adherent.website,
+          bio: adherent.bio,
+          location: adherent.location,
+          company: adherent.company,
+          job_title: adherent.job_title,
+          program_type: adherent.program_type,
+          cohort_year: adherent.cohort_year,
+          training_budget: adherent.training_budget,
+          availability_schedule: adherent.availability_schedule,
+          monthly_credits_remaining: adherent.monthly_credits_remaining,
+          purchased_credits_remaining: adherent.purchased_credits_remaining,
+          status: adherent.activity_status === 'active' ? 'active' : 'inactive',
+          joined_at: adherent.joined_at,
+          mentor_id: null, // Will be populated from mentor assignments if available
+          mentor_names: adherent.mentor_names || [],
+          project_count: adherent.total_projects || 0,
+          completed_deliverables: adherent.completed_deliverables || 0,
+          total_deliverables: adherent.total_deliverables || 0,
+          project_names: adherent.project_names || [],
+          active_projects: adherent.active_projects || 0,
+          completion_rate: adherent.completion_rate || 0,
+          activity_status: adherent.activity_status,
+          payment_status: adherent.payment_status || 'no_subscription',
+          subscription_days_overdue: adherent.subscription_days_overdue || 0,
+          last_payment_date: adherent.last_payment_date,
+          next_payment_date: adherent.next_payment_date,
+          subscription_amount: adherent.subscription_amount,
+          last_activity: adherent.joined_at
+        }));
 
         console.log('🎯 Final adapted adherents:', adaptedAdherents.length, adaptedAdherents);
         setAdherents(adaptedAdherents);
@@ -204,9 +233,12 @@ export const useProjects = () => {
 
       try {
         setLoading(true);
+        // Use the new optimized service function
         const orgProjects = await getOrganisationProjects(organisationId);
         
-        // Use the Project type from service directly
+        console.log('🔄 Raw projects from optimized service:', orgProjects.length, orgProjects);
+        
+        // Projects are already properly formatted by the service
         setProjects(orgProjects);
       } catch (err) {
         console.error('Erreur lors du chargement des projets:', err);
@@ -234,28 +266,100 @@ export const useMentors = () => {
       try {
         setLoading(true);
         
-        // Utiliser la nouvelle table mentors avec le service
+        // Fetch current user to check if they're the owner
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Fetch organization to get the owner
+        const { data: orgData } = await (supabase as any)
+          .from('organizations')
+          .select('created_by')
+          .eq('id', organisationId)
+          .single();
+
+        // Use the new optimized service function
         const mentorData = await getOrganisationMentors(organisationId);
 
+        console.log('🔄 Raw mentors from optimized service:', mentorData.length, mentorData);
+
         // Adapter les données aux types Mentor
-        const adaptedMentors: Mentor[] = mentorData.map((mentor: any) => ({
+        let adaptedMentors: Mentor[] = mentorData.map((mentor: any) => ({
           id: mentor.id,
           user_id: mentor.user_id,
-          organisation_id: mentor.organization_id,
+          organisation_id: organisationId,
           first_name: mentor.first_name || mentor.email?.split('@')[0] || '',
           last_name: mentor.last_name || '',
           email: mentor.email || '',
+          phone: mentor.phone,
+          avatar_url: mentor.avatar_url,
+          linkedin_url: mentor.mentor_linkedin_url || mentor.profile_linkedin_url,
+          website: mentor.website,
+          bio: mentor.mentor_bio || mentor.profile_bio,
+          location: mentor.location,
+          company: mentor.company,
+          job_title: mentor.job_title,
           expertise: mentor.expertise || ['Business Development'],
-          bio: mentor.bio || 'Mentor de l\'organisation',
+          mentor_bio: mentor.mentor_bio,
+          availability: mentor.availability,
+          max_projects: mentor.max_projects,
+          max_entrepreneurs: mentor.max_entrepreneurs,
           status: mentor.status as 'active' | 'inactive' | 'pending',
           total_entrepreneurs: mentor.total_entrepreneurs || 0,
           success_rate: mentor.success_rate || 0,
           rating: mentor.rating || 0,
           invitation_code: null,
-          joined_at: mentor.created_at || mentor.joined_at,
-          user_role: mentor.user_role || 'staff'
+          joined_at: mentor.joined_at,
+          user_role: mentor.user_role || 'staff',
+          current_entrepreneurs: mentor.current_entrepreneurs || 0,
+          total_assignments: mentor.total_assignments || 0,
+          completed_assignments: mentor.completed_assignments || 0,
+          recent_assignments: mentor.recent_assignments || 0
         }));
 
+        // Check if the owner is already in the mentor list
+        const ownerInList = adaptedMentors.find(m => m.user_id === orgData?.created_by);
+        
+        // If the owner is not in the list, fetch and add them
+        if (orgData?.created_by && !ownerInList) {
+          const { data: ownerProfile } = await (supabase as any)
+            .from('profiles')
+            .select('*')
+            .eq('id', orgData.created_by)
+            .single();
+
+          if (ownerProfile) {
+            // Check if owner has a mentor entry
+            const { data: ownerMentor } = await (supabase as any)
+              .from('mentors')
+              .select('*')
+              .eq('user_id', orgData.created_by)
+              .eq('organization_id', organisationId)
+              .single();
+
+            const ownerMentorData: Mentor = {
+              id: ownerMentor?.id || `owner-${orgData.created_by}`,
+              user_id: orgData.created_by,
+              organisation_id: organisationId,
+              first_name: ownerProfile.first_name || ownerProfile.email?.split('@')[0] || '',
+              last_name: ownerProfile.last_name || '',
+              email: ownerProfile.email || '',
+              expertise: ownerMentor?.expertise || ['Direction', 'Stratégie'],
+              bio: ownerMentor?.bio || 'Fondateur de l\'organisation',
+              status: 'active',
+              total_entrepreneurs: ownerMentor?.total_entrepreneurs || 0,
+              success_rate: ownerMentor?.success_rate || 0,
+              rating: ownerMentor?.rating || 0,
+              invitation_code: null,
+              joined_at: ownerProfile.created_at,
+              user_role: 'organisation',
+              current_entrepreneurs: ownerMentor?.current_entrepreneurs || 0
+            };
+
+            // Add owner at the beginning of the list
+            adaptedMentors = [ownerMentorData, ...adaptedMentors];
+          }
+        }
+
+        console.log('🎯 Final adapted mentors:', adaptedMentors.length, adaptedMentors);
         setMentors(adaptedMentors);
       } catch (err) {
         console.error('Erreur lors du chargement des mentors:', err);
@@ -436,7 +540,10 @@ export const useInvitationCodes = () => {
         id: code.id,
         code: code.code,
         organisation_id: code.organization_id,
-        role: code.type === 'organisation_member' ? 'entrepreneur' : 'mentor',
+        // Use assigned_role if available, otherwise fallback to type mapping
+        role: code.assigned_role === 'entrepreneur' ? 'entrepreneur' : 
+              code.assigned_role === 'mentor' ? 'mentor' :
+              code.type === 'organisation_member' ? 'entrepreneur' : 'mentor',
         created_by: code.created_by,
         created_at: code.created_at,
         expires_at: code.expires_at || null,
@@ -470,6 +577,9 @@ export const useInvitationCodes = () => {
 
       // Adapter le type de rôle pour le service - utiliser le nouveau mapping
       const serviceType = codeData.role === 'entrepreneur' ? 'organisation_member' : 'organisation_staff';
+      
+      // Map role to assigned_role for database
+      const assignedRole = codeData.role === 'entrepreneur' ? 'entrepreneur' : 'mentor';
 
       const newCodeData = {
         code: codeData.code,
@@ -477,7 +587,8 @@ export const useInvitationCodes = () => {
         organization_id: organisationId,
         created_by: user.id,
         expires_at: codeData.expires_at || undefined,
-        max_uses: codeData.max_uses
+        max_uses: codeData.max_uses,
+        assigned_role: assignedRole as 'individual' | 'member' | 'staff' | 'organisation' | 'super_admin' | 'entrepreneur' | 'mentor'
       };
 
       const serviceResult = await createInvitationCode(newCodeData);
@@ -488,7 +599,7 @@ export const useInvitationCodes = () => {
           id: serviceResult.id,
           code: serviceResult.code,
           organisation_id: serviceResult.organization_id,
-          role: serviceResult.type === 'organisation_member' ? 'entrepreneur' : 'mentor',
+          role: serviceResult.assigned_role === 'entrepreneur' ? 'entrepreneur' : 'mentor',
           created_by: serviceResult.created_by,
           created_at: serviceResult.created_at,
           expires_at: serviceResult.expires_at || null,

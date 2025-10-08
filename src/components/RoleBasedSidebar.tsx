@@ -11,6 +11,7 @@ import { useCreditsSimple } from "@/hooks/useCreditsSimple";
 import { useOrganisationNavigation } from '@/hooks/useOrganisationNavigation';
 import { useUserOrganization } from '@/hooks/useUserOrganization';
 import { useUserOrganizations } from '@/hooks/useOrganisationData';
+import { useUserRole } from '@/hooks/useUserRole';
 import clsx from 'clsx';
 import { useInvitationCode } from "@/services/invitationService";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
+import PublicOrganizationsModal from "./PublicOrganizationsModal";
+import OrganizationSetupGuideModal from "./OrganizationSetupGuideModal";
 
 interface SidebarConfig {
   menuItems: Array<{
@@ -54,6 +57,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
   const { hasOrganization, loading: organizationLoading } = useUserOrganization();
   const { userOrganizations, loading: userOrganizationsLoading, switchToOrganization } = useUserOrganizations();
+  const { organizationId } = useUserRole(); // Get organizationId from useUserRole hook
   const isUserProfileLoading = !userProfile;
 
   // Modal state for joining organization
@@ -65,6 +69,44 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   // Modal state for switching organization (staff with multiple orgs)
   const [switchOrgModalOpen, setSwitchOrgModalOpen] = useState(false);
   const [switchOrgLoading, setSwitchOrgLoading] = useState(false);
+
+  // Modal state for public organizations discovery
+  const [publicOrgsModalOpen, setPublicOrgsModalOpen] = useState(false);
+
+  // Modal state for organization setup guide (one-time modal)
+  const [showOrgSetupGuide, setShowOrgSetupGuide] = useState(false);
+  
+  // Check if user should see the organization setup guide
+  useEffect(() => {
+    const checkOrgSetupGuide = async () => {
+      if (!userProfile || !user) return;
+      
+      // Only show for organization role without an organization in user_organizations
+      if (userProfile.user_role === 'organisation') {
+        // Check if user has an organization via user_organizations
+        const { data: userOrg } = await (supabase as any)
+          .from('user_organizations')
+          .select('organization_id')
+          .eq('user_id', userProfile.id)
+          .eq('status', 'active')
+          .single();
+        
+        if (!userOrg?.organization_id) {
+          // Check localStorage to see if user has dismissed this modal
+          const hasSeenGuide = localStorage.getItem(`org_setup_guide_seen_${user.id}`);
+          
+          if (!hasSeenGuide) {
+            // Show the guide modal after a short delay
+            setTimeout(() => {
+              setShowOrgSetupGuide(true);
+            }, 1000);
+          }
+        }
+      }
+    };
+    
+    checkOrgSetupGuide();
+  }, [userProfile, user]);
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -180,6 +222,23 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     }
   };
 
+  // Handle organization setup guide modal
+  const handleStartOrgSetup = () => {
+    if (user?.id) {
+      localStorage.setItem(`org_setup_guide_seen_${user.id}`, 'true');
+    }
+    setShowOrgSetupGuide(false);
+    // Navigate to organization onboarding
+    navigate('/organisation/onboarding');
+  };
+
+  const handleCloseOrgSetupGuide = () => {
+    if (user?.id) {
+      localStorage.setItem(`org_setup_guide_seen_${user.id}`, 'true');
+    }
+    setShowOrgSetupGuide(false);
+  };
+
   const getSidebarConfig = (): SidebarConfig => {
     if (!userProfile) return getIndividualConfig();
 
@@ -192,7 +251,8 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
 
       case 'organisation':
       case 'staff':
-        const orgId = userProfile?.organization_id;
+        // Use organizationId from useUserRole hook
+        const orgId = organizationId;
         if (!orgId) {
           // If no organization ID, redirect to individual space
           return getIndividualConfig();
@@ -200,6 +260,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         return {
           menuItems: [
             { name: "Tableau de bord", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+            { name: "Mon Profil Mentor", path: `/organisation/${orgId}/my-profile`, icon: <UserCheck size={20} /> },
             { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
             { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
             { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
@@ -400,9 +461,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
               <button
                 key={`${item.path}-${item.name}-${index}`}
                 onClick={() => {
-                  setJoinOrgModalOpen(true);
-                  setInvitationCode('');
-                  setJoinOrgError('');
+                  setPublicOrgsModalOpen(true);
                 }}
                 disabled={organizationLoading}
                 className={cn(
@@ -511,7 +570,8 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   return (
     <>
       {isMobile ? <RoleBasedMobileNavbar 
-        userProfile={userProfile} 
+        userProfile={userProfile}
+        organizationId={organizationId}
         joinOrgModalOpen={joinOrgModalOpen}
         setJoinOrgModalOpen={setJoinOrgModalOpen}
         invitationCode={invitationCode}
@@ -520,6 +580,8 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         joinOrgError={joinOrgError}
         setJoinOrgError={setJoinOrgError}
         handleJoinOrganization={handleJoinOrganization}
+        publicOrgsModalOpen={publicOrgsModalOpen}
+        setPublicOrgsModalOpen={setPublicOrgsModalOpen}
       /> : <DesktopSidebar />}
       
       {/* Join Organization Modal */}
@@ -639,6 +701,20 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Public Organizations Discovery Modal */}
+      <PublicOrganizationsModal
+        isOpen={publicOrgsModalOpen}
+        onClose={() => setPublicOrgsModalOpen(false)}
+        userAddress={userProfile?.address}
+      />
+
+      {/* Organization Setup Guide Modal (one-time) */}
+      <OrganizationSetupGuideModal
+        isOpen={showOrgSetupGuide}
+        onClose={handleCloseOrgSetupGuide}
+        onStartSetup={handleStartOrgSetup}
+      />
     </>
   );
 });
@@ -646,6 +722,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
 // Role-based Mobile Navbar
 const RoleBasedMobileNavbar = ({ 
   userProfile,
+  organizationId,
   joinOrgModalOpen,
   setJoinOrgModalOpen,
   invitationCode,
@@ -653,9 +730,12 @@ const RoleBasedMobileNavbar = ({
   joinOrgLoading,
   joinOrgError,
   setJoinOrgError,
-  handleJoinOrganization
+  handleJoinOrganization,
+  publicOrgsModalOpen,
+  setPublicOrgsModalOpen
 }: { 
   userProfile: UserProfile | null;
+  organizationId: string | null;
   joinOrgModalOpen: boolean;
   setJoinOrgModalOpen: (open: boolean) => void;
   invitationCode: string;
@@ -664,6 +744,8 @@ const RoleBasedMobileNavbar = ({
   joinOrgError: string;
   setJoinOrgError: (error: string) => void;
   handleJoinOrganization: () => Promise<void>;
+  publicOrgsModalOpen: boolean;
+  setPublicOrgsModalOpen: (open: boolean) => void;
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -710,18 +792,18 @@ const RoleBasedMobileNavbar = ({
     switch (userProfile.user_role) {
       case 'organisation':
       case 'staff':
-        const orgId = userProfile?.organization_id;
-        if (!orgId) {
+        // Use organizationId from parent scope
+        if (!organizationId) {
           // If no organization ID, fallback to individual items
           return getIndividualMobileItems();
         }
         return [
-          { name: "Tableau de bord", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
-          { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
-          { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
-          { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
-          { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
-          { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> }
+          { name: "Tableau de bord", path: `/organisation/${organizationId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+          { name: "Adhérents", path: `/organisation/${organizationId}/adherents`, icon: <Users size={20} /> },
+          { name: "Projets", path: `/organisation/${organizationId}/projets`, icon: <FileText size={20} /> },
+          { name: "Codes d'invitation", path: `/organisation/${organizationId}/invitations`, icon: <Code size={20} /> },
+          { name: "Analytics", path: `/organisation/${organizationId}/analytics`, icon: <BarChart3 size={20} /> },
+          { name: "Paramètres", path: `/organisation/${organizationId}/settings`, icon: <Settings size={20} /> }
         ];
         
       case 'member':
@@ -838,9 +920,7 @@ const RoleBasedMobileNavbar = ({
                   <button
                     key={item.name}
                     onClick={() => {
-                      setJoinOrgModalOpen(true);
-                      setInvitationCode('');
-                      setJoinOrgError('');
+                      setPublicOrgsModalOpen(true);
                     }}
                     disabled={organizationLoading}
                     className={cn(
@@ -945,44 +1025,35 @@ const CreditInfo = ({
   const { userProjectsLoading } = useProject();
 
   if (isLoading || userProjectsLoading) {
-    return <p className="text-xs text-gray-500">Chargement...</p>;
+    return <p className="text-xs text-gray-500">{isCollapsed ? "..." : "Chargement crédits..."}</p>;
   }
 
   if (error) {
-    return <p className="text-xs text-red-500">Erreur crédits</p>;
+    return <p className="text-xs text-red-500">{isCollapsed ? "!" : "Erreur crédits"}</p>;
   }
 
-  const totalCredits = (monthlyRemaining || 0) + (purchasedRemaining || 0);
-  const displayMonthlyLimit = monthlyLimit || 0;
+  // Handle null/undefined values gracefully
+  const displayMonthlyRemaining = monthlyRemaining ?? 0;
+  const displayMonthlyLimit = monthlyLimit ?? 0;
+  const displayPurchasedRemaining = purchasedRemaining ?? 0;
+  const totalCredits = displayMonthlyRemaining + displayPurchasedRemaining;
 
   return (
     <div className={cn("flex flex-col gap-2 w-full", isCollapsed ? "items-center" : "items-start")}>
-      <div className={cn(
-        "bg-gray-100/80 backdrop-blur-sm p-2 rounded-md transition-all duration-300",
-        isCollapsed ? "w-14 h-auto flex flex-col items-center justify-center" : "w-full text-left"
-      )}>
-        {isCollapsed ? (
-          <div className="flex flex-col items-center gap-0.5 py-2">
-            <img src="/credit-3D.png" alt="Crédits" className="h-4 w-4" />
-            <span className="font-medium text-gray-700 text-sm">
-              {totalCredits}
-            </span>
-            <div className="w-4 h-px bg-gray-300 my-0.5"></div>
-            <span className="font-medium text-gray-700 text-sm">
-              {displayMonthlyLimit}
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1">
-            <img src="/credit-3D.png" alt="Crédits" className="h-4 w-4" />
-            <span className="text-sm font-medium text-gray-700">
-              {totalCredits} / {displayMonthlyLimit}
-            </span>
-          </div>
-        )}
+      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
+        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
+          <Coins size={16} className="text-gray-600" />
+          {!isCollapsed && <span className="text-sm font-medium text-gray-700">Mensuels:</span>}
+          <span className="text-sm text-gray-600">{displayMonthlyRemaining} / {displayMonthlyLimit}</span>
+        </div>
+      </div>
+      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
+        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
+          <Coins size={16} className="text-gray-600" />
+          {!isCollapsed && <span className="text-sm font-medium text-gray-700">Achetés:</span>}
+          <span className="text-sm text-gray-600">{displayPurchasedRemaining}</span>
+        </div>
       </div>
     </div>
   );
-};
-
-export default RoleBasedSidebar;
+};export default RoleBasedSidebar;

@@ -36,42 +36,30 @@ const OrganisationFlowWrapper = ({
       }
 
       try {
-        const { data: profile, error: profileError } = await (supabase as any)
-          .from('profiles')
-          .select('organization_id, user_role')
-          .eq('id', userId)
+        // Vérifier si l'utilisateur a une organisation via user_organizations
+        const { data: userOrg, error: userOrgError } = await (supabase as any)
+          .from('user_organizations')
+          .select('organization_id, user_role, status')
+          .eq('user_id', userId)
+          .eq('status', 'active')
           .single();
 
-        if (profileError) {
-          console.error('Erreur lors de la récupération du profil:', profileError);
+        if (userOrgError && userOrgError.code !== 'PGRST116') {
+          console.error('Erreur lors de la récupération de user_organizations:', userOrgError);
           setLoading(false);
           return;
         }
 
-        if (profile?.organization_id && profile?.user_role === 'organisation') {
-          // L'utilisateur a déjà une organisation, vérifier si l'onboarding est terminé
-          try {
-            const onboardingStatus = await getOnboardingStatus(profile.organization_id);
-            setOrganisationId(profile.organization_id);
-            
-            if (onboardingStatus.onboarding_completed) {
-              // Onboarding déjà terminé, rediriger vers le dashboard
-              if (onComplete) {
-                onComplete();
-              } else {
-                navigate(`/organisation/${profile.organization_id}/dashboard`);
-              }
-              return;
-            } else {
-              // Organisation créée mais onboarding pas terminé, rediriger vers la page d'onboarding
-              navigate(`/organisation/${profile.organization_id}/onboarding`);
-              return;
-            }
-          } catch (orgError) {
-            console.error('Erreur lors de la récupération de l\'organisation:', orgError);
-            // L'organisation n'existe pas, recommencer le setup
-            setCurrentStep('setup');
+        if (userOrg?.organization_id) {
+          // L'utilisateur a déjà une organisation, rediriger vers le dashboard
+          setOrganisationId(userOrg.organization_id);
+          
+          if (onComplete) {
+            onComplete();
+          } else {
+            navigate(`/organisation/${userOrg.organization_id}/dashboard`);
           }
+          return;
         } else {
           // Pas d'organisation, commencer par le setup
           setCurrentStep('setup');
@@ -95,29 +83,35 @@ const OrganisationFlowWrapper = ({
       if (organisationData?.id) {
         orgId = organisationData.id;
       } else {
-        // Sinon, récupérer l'organisation depuis le profil utilisateur
-        const { data: profile, error: profileError } = await (supabase as any)
-          .from('profiles')
+        // Sinon, récupérer l'organisation depuis user_organizations
+        const { data: userOrg, error: userOrgError } = await (supabase as any)
+          .from('user_organizations')
           .select('organization_id')
-          .eq('id', userId)
+          .eq('user_id', userId)
+          .eq('status', 'active')
           .single();
 
-        if (profileError) {
-          throw profileError;
+        if (userOrgError) {
+          throw userOrgError;
         }
 
-        if (!profile?.organization_id) {
+        if (!userOrg?.organization_id) {
           throw new Error('Organisation non trouvée après création');
         }
 
-        orgId = profile.organization_id;
+        orgId = userOrg.organization_id;
       }
 
-      // Rediriger vers la page d'onboarding dédiée
-      navigate(`/organisation/${orgId}/onboarding`);
+      // Appeler le callback de succès qui redirigera vers le dashboard
+      if (onComplete) {
+        onComplete();
+      } else {
+        // Rediriger vers le dashboard de l'organisation
+        navigate(`/organisation/${orgId}/dashboard`, { replace: true });
+      }
 
     } catch (error) {
-      console.error('Erreur lors de la transition vers l\'onboarding:', error);
+      console.error('Erreur lors de la redirection:', error);
       toast({
         title: "Erreur",
         description: "Une erreur s'est produite. Veuillez réessayer.",

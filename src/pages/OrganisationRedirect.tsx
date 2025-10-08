@@ -1,13 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useOrganisationNavigation } from '@/hooks/useOrganisationNavigation';
 
 const OrganisationRedirect: React.FC = () => {
   const { navigateToOrganisation, loading } = useOrganisationNavigation();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    // Navigate directly to the final destination
-    navigateToOrganisation();
-  }, [navigateToOrganisation]);
+    // Only navigate once to prevent infinite loops
+    if (!hasNavigated.current && !loading) {
+      hasNavigated.current = true;
+      navigateToOrganisation();
+    }
+  }, [navigateToOrganisation, loading]);
 
   if (loading) {
     return (

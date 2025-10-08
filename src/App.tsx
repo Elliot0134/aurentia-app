@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ConfirmEmail from "./pages/ConfirmEmail";
+import VerifyEmail from "./pages/VerifyEmail";
 import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
 import UpdatePassword from "./pages/UpdatePassword";
 import Dashboard from "./pages/Dashboard";
@@ -51,6 +52,7 @@ import {
   OrganisationFormCreate, // Ajouter l'importation du composant de création de formulaire
   OrganisationOnboarding
 } from "./pages/organisation";
+import OrganisationMentorProfile from "./pages/organisation/OrganisationMentorProfile";
 import OrganisationOnboardingPage from "./pages/organisation/OrganisationOnboarding";
 import OnboardingGuard from "./components/organisation/OnboardingGuard";
 import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback component
@@ -110,22 +112,77 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
 const ProtectedRoute = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
   const mounted = useMounted(); // Use the new hook
 
   useEffect(() => {
+    let isCancelled = false;
+    
     const checkAuth = async () => {
       try {
-        console.log("Checking authentication...");
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Session:", session);
-        if (mounted.current) { // Only update state if component is still mounted
+        console.log("[ProtectedRoute] Checking authentication...");
+        
+        // Use getSession() - it checks localStorage first (fast)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        console.log("[ProtectedRoute] Local session exists:", !!session);
+        console.log("[ProtectedRoute] Session error:", sessionError);
+        
+        if (isCancelled || !mounted.current) return;
+        
+        if (sessionError) {
+          console.error("[ProtectedRoute] Error getting session:", sessionError);
+          if (mounted.current) {
+            setIsAuthenticated(false);
+            setLoading(false);
+          }
+          return;
+        }
+        
+        if (mounted.current) {
           setIsAuthenticated(!!session);
+          console.log("[ProtectedRoute] Is authenticated:", !!session);
+          
+          // Check if user needs email verification
+          if (session?.user) {
+            try {
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('email_confirmation_required, email_confirmed_at')
+                .eq('id', session.user.id)
+                .single() as { data: { email_confirmation_required: boolean | null, email_confirmed_at: string | null } | null, error: any };
+              
+              if (profileError) {
+                console.error("[ProtectedRoute] Error fetching profile:", profileError);
+                // Don't fail authentication if profile fetch fails - just assume no verification needed
+                setNeedsEmailVerification(false);
+              } else {
+                // User needs verification if EITHER:
+                // 1. email_confirmation_required is NOT false (is true or null)
+                // 2. email_confirmed_at IS empty (is null)
+                const needsVerification = 
+                  profileData?.email_confirmation_required !== false || 
+                  profileData?.email_confirmed_at === null;
+                
+                console.log("[ProtectedRoute] Needs verification:", needsVerification);
+                setNeedsEmailVerification(needsVerification);
+              }
+            } catch (error) {
+              console.error("[ProtectedRoute] Exception fetching profile:", error);
+              // Don't fail authentication if profile fetch fails
+              setNeedsEmailVerification(false);
+            }
+          }
+          
+          console.log("[ProtectedRoute] Setting loading to false");
           setLoading(false);
         }
       } catch (error) {
-        console.error("Error checking authentication:", error);
-        if (mounted.current) { // Only update state if component is still mounted
+        console.error("[ProtectedRoute] Error checking authentication:", error);
+        if (mounted.current && !isCancelled) {
           setIsAuthenticated(false);
+          setNeedsEmailVerification(false);
+          console.log("[ProtectedRoute] Setting loading to false (after error)");
           setLoading(false);
         }
       }
@@ -133,19 +190,26 @@ const ProtectedRoute = () => {
 
     checkAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", _event, session);
-      if (mounted.current) { // Only update state if component is still mounted
-        setIsAuthenticated(!!session);
+    // Subscribe to auth state changes to keep UI in sync
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[ProtectedRoute] Auth state changed:", event, "Session:", !!session);
+      if (mounted.current && !isCancelled) {
+        // Re-run auth check on state change
+        console.log("[ProtectedRoute] Auth state changed, re-checking authentication...");
+        await checkAuth();
       }
     });
 
     return () => {
+      isCancelled = true;
       authListener.subscription.unsubscribe();
     };
   }, [mounted]); // Add mounted to dependency array
 
+  console.log("[ProtectedRoute] Render - loading:", loading, "isAuthenticated:", isAuthenticated);
+
   if (loading) {
+    console.log("[ProtectedRoute] Showing loading state");
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Loading...</div>
@@ -156,6 +220,12 @@ const ProtectedRoute = () => {
   if (!isAuthenticated) {
     console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" replace />;
+  }
+
+  // If user needs email verification and not already on verify-email page
+  if (needsEmailVerification && window.location.pathname !== '/verify-email') {
+    console.log("Email verification required, redirecting to verify-email");
+    return <Navigate to="/verify-email" replace />;
   }
 
   console.log("Authenticated, rendering protected content");
@@ -185,6 +255,7 @@ const App = () => {
                 {/* Public routes without sidebar */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 {/* <Route path="/role-selection" element={<RoleSelection />} /> */} {/* Supprimé car le rôle est attribué par défaut */}
@@ -209,10 +280,10 @@ const App = () => {
                     <Route path="/individual/outils" element={<Outils />} />
                     <Route path="/individual/ressources" element={<Ressources />} />
                     <Route path="/individual/collaborateurs" element={<Collaborateurs />} />
-<Route path="/individual/template" element={<TemplatePage />} />
-<Route path="/individual/template/tool-template" element={<ToolTemplatePage />} />
-<Route path="/individual/components-template" element={<ComponentsTemplate />} />
-<Route path="/individual/plan-action" element={<PlanActionPage />} />
+                    <Route path="/individual/template" element={<TemplatePage />} />
+                    <Route path="/individual/template/tool-template" element={<ToolTemplatePage />} />
+                    <Route path="/individual/components-template" element={<ComponentsTemplate />} />
+                    <Route path="/individual/plan-action" element={<PlanActionPage />} />
                     <Route path="/individual/roadmap/:id" element={<Roadmap />} />
                     <Route path="/individual/project/:projectId" element={<Project />} />
                     <Route path="/individual/form-business-idea" element={<FormBusinessIdea />} />
@@ -291,6 +362,13 @@ const App = () => {
                       <OrganisationRouteGuard>
                         <OnboardingGuard>
                           <OrganisationMentors />
+                        </OnboardingGuard>
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/my-profile" element={
+                      <OrganisationRouteGuard>
+                        <OnboardingGuard>
+                          <OrganisationMentorProfile />
                         </OnboardingGuard>
                       </OrganisationRouteGuard>
                     } />

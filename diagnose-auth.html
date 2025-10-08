@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Diagnostics</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .log {
+            background: #000;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .error { color: #ff4444; }
+        .success { color: #00ff00; }
+        .warning { color: #ffaa00; }
+        .info { color: #4444ff; }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        h2 {
+            color: #00ff00;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Aurentia Auth Diagnostics</h1>
+    
+    <div>
+        <button onclick="checkLocalStorage()">Check LocalStorage</button>
+        <button onclick="testSupabaseClient()">Test Supabase Client</button>
+        <button onclick="testGetSession()">Test getSession()</button>
+        <button onclick="clearAll()">Clear All</button>
+    </div>
+
+    <h2>📊 Results</h2>
+    <div id="results"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
+
+        const SUPABASE_URL = "https://llcliurrrrxnkquwmwsi.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsY2xpdXJycnJ4bmtxdXdtd3NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5MDMwOTEsImV4cCI6MjA1MzQ3OTA5MX0.UWfFrlMEQRvRhXYUORmUhrc1A6WLAJbLBnpCWAVaWSQ";
+
+        const results = document.getElementById('results');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toISOString()}] ${message}`;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        window.checkLocalStorage = function() {
+            log('=== CHECKING LOCALSTORAGE ===', 'info');
+            
+            const storageKey = 'sb-llcliurrrrxnkquwmwsi-auth-token';
+            const value = localStorage.getItem(storageKey);
+            
+            log(`Storage Key: ${storageKey}`, 'info');
+            log(`Value exists: ${!!value}`, value ? 'success' : 'error');
+            
+            if (value) {
+                try {
+                    const parsed = JSON.parse(value);
+                    log(`Session data: ${JSON.stringify(parsed, null, 2)}`, 'success');
+                    log(`Access Token exists: ${!!parsed.access_token}`, 'success');
+                    log(`Refresh Token exists: ${!!parsed.refresh_token}`, 'success');
+                    log(`Expires at: ${new Date(parsed.expires_at * 1000).toLocaleString()}`, 'info');
+                } catch (e) {
+                    log(`Error parsing storage: ${e.message}`, 'error');
+                }
+            } else {
+                log('NO SESSION IN LOCALSTORAGE!', 'error');
+                log('All localStorage keys:', 'info');
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    log(`  - ${key}`, 'info');
+                }
+            }
+        };
+
+        window.testSupabaseClient = async function() {
+            log('=== TESTING SUPABASE CLIENT ===', 'info');
+            
+            try {
+                log('Creating Supabase client...', 'info');
+                const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: {
+                        autoRefreshToken: true,
+                        persistSession: true,
+                        storage: window.localStorage,
+                        detectSessionInUrl: true,
+                        storageKey: 'sb-llcliurrrrxnkquwmwsi-auth-token',
+                        flowType: 'pkce',
+                    }
+                });
+                
+                log('Client created successfully', 'success');
+                log(`Client type: ${typeof supabase}`, 'info');
+                log(`Auth object exists: ${!!supabase.auth}`, 'success');
+                
+                return supabase;
+            } catch (e) {
+                log(`Error creating client: ${e.message}`, 'error');
+                log(`Stack: ${e.stack}`, 'error');
+            }
+        };
+
+        window.testGetSession = async function() {
+            log('=== TESTING getSession() ===', 'info');
+            
+            try {
+                const supabase = await testSupabaseClient();
+                if (!supabase) {
+                    log('Cannot test getSession - client creation failed', 'error');
+                    return;
+                }
+                
+                log('Calling getSession()...', 'info');
+                const startTime = Date.now();
+                
+                // Test with timeout
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout after 5s')), 5000)
+                );
+                
+                try {
+                    const result = await Promise.race([sessionPromise, timeoutPromise]);
+                    const elapsed = Date.now() - startTime;
+                    
+                    log(`getSession() completed in ${elapsed}ms`, 'success');
+                    log(`Result: ${JSON.stringify(result, null, 2)}`, 'info');
+                    
+                    const { data, error } = result;
+                    
+                    if (error) {
+                        log(`Error: ${error.message}`, 'error');
+                    } else {
+                        log(`Session exists: ${!!data.session}`, data.session ? 'success' : 'warning');
+                        if (data.session) {
+                            log(`User ID: ${data.session.user.id}`, 'success');
+                            log(`User Email: ${data.session.user.email}`, 'success');
+                            log(`Access Token (first 20 chars): ${data.session.access_token.substring(0, 20)}...`, 'success');
+                        }
+                    }
+                } catch (timeoutError) {
+                    const elapsed = Date.now() - startTime;
+                    log(`getSession() TIMEOUT after ${elapsed}ms!`, 'error');
+                    log(`Error: ${timeoutError.message}`, 'error');
+                }
+                
+            } catch (e) {
+                log(`Error during test: ${e.message}`, 'error');
+                log(`Stack: ${e.stack}`, 'error');
+            }
+        };
+
+        window.clearAll = function() {
+            results.innerHTML = '';
+            log('Console cleared', 'info');
+        };
+
+        // Auto-run diagnostics on load
+        setTimeout(() => {
+            log('🚀 Running automatic diagnostics...', 'info');
+            checkLocalStorage();
+            setTimeout(() => testGetSession(), 1000);
+        }, 500);
+    </script>
+</body>
+</html>

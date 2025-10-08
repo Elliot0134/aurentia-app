@@ -1,32 +1,55 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
 import OrganisationFlowWrapper from '@/components/organisation/OrganisationFlowWrapper';
 
 const SetupOrganization = () => {
   const navigate = useNavigate();
-  const { userProfile, loading } = useUserRole();
+  const { userProfile, organizationId, loading } = useUserRole();
 
   useEffect(() => {
+    console.log('[SetupOrganization] useEffect triggered', { loading, userProfile: !!userProfile, organizationId });
+    
     // Wait for loading to complete before checking conditions
     if (loading) return;
     
-    // Si l'utilisateur a déjà une organisation, rediriger
-    if (userProfile?.organization_id) {
-      navigate(`/organisation/${userProfile.organization_id}/dashboard`);
-      return;
-    }
-    
     // Si pas de profil utilisateur, rediriger vers login
     if (!userProfile) {
+      console.log('[SetupOrganization] No user profile, redirecting to login');
       navigate('/login');
       return;
     }
-  }, [userProfile, loading, navigate]);
 
-  const handleComplete = () => {
-    // Recharger les données utilisateur et rediriger
-    window.location.reload();
+    // Si l'utilisateur a déjà une organisation, rediriger vers le dashboard
+    if (organizationId) {
+      console.log('[SetupOrganization] Organization exists, redirecting to dashboard:', organizationId);
+      navigate(`/organisation/${organizationId}/dashboard`, { replace: true });
+    } else {
+      console.log('[SetupOrganization] No organization, staying on setup page');
+    }
+  }, [userProfile, organizationId, loading, navigate]);
+
+  const handleComplete = async () => {
+    // Récupérer l'organisation nouvellement créée
+    if (userProfile?.id) {
+      const { data: userOrg } = await (supabase as any)
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', userProfile.id)
+        .eq('status', 'active')
+        .single();
+      
+      if (userOrg?.organization_id) {
+        // Rediriger directement vers le dashboard de l'organisation
+        navigate(`/organisation/${userOrg.organization_id}/dashboard`, { replace: true });
+      } else {
+        // Si pas d'organisation trouvée, recharger la page
+        window.location.reload();
+      }
+    } else {
+      window.location.reload();
+    }
   };
 
   const handleBack = () => {

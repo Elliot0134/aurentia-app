@@ -1,4 +1,4 @@
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -8,6 +8,7 @@ import { emailConfirmationService } from "@/services/emailConfirmationService";
 import { EmailConfirmationModal } from "@/components/auth/EmailConfirmationModal";
 import { useUserRole } from "@/hooks/useUserRole";
 import OrganisationFlowWrapper from "@/components/organisation/OrganisationFlowWrapper";
+import { AddressAutocompleteInput } from "@/components/ui/address-autocomplete-input";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ const Signup = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0); // 0: sélection rôle, 1: code invitation, 2: inscription
   const [invitationCode, setInvitationCode] = useState("");
@@ -25,10 +27,19 @@ const Signup = () => {
   const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
   const [showOrganisationSetup, setShowOrganisationSetup] = useState(false);
   const navigate = useNavigate();
-  const { getDefaultDashboard, userProfile, loading: userProfileLoading } = useUserRole(); // Utiliser le hook pour obtenir la fonction de redirection et le profil utilisateur
+  const { getDefaultDashboard, userProfile, loading: userProfileLoading } = useUserRole();
+  
+  // Ref to prevent auth state listener from interfering with signup flow
+  const isSigningUp = useRef(false);
 
   useEffect(() => {
     const checkUserAndRole = async () => {
+      // Don't interfere if we're in the signup flow or showing the email confirmation modal
+      if (isSigningUp.current || showEmailConfirmationModal) {
+        console.log('[SIGNUP] Skipping auth check - signup in progress or modal showing');
+        return;
+      }
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session && !userProfileLoading && !userProfile?.user_role) {
         // Si l'utilisateur est connecté via SSO et n'a pas de rôle, passer à l'étape de sélection de rôle
@@ -36,7 +47,7 @@ const Signup = () => {
       }
     };
     checkUserAndRole();
-  }, [userProfile, userProfileLoading]); // Dépendances pour re-vérifier quand le profil est chargé
+  }, [userProfile, userProfileLoading, showEmailConfirmationModal]); // Dépendances pour re-vérifier quand le profil est chargé
 
   const handleCodeValidation = async () => {
     if (!invitationCode.trim()) {
@@ -91,34 +102,31 @@ const Signup = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    console.log("🚀 [SIGNUP] Form submitted - starting signup process");
+    
     setLoading(true);
+    isSigningUp.current = true; // Mark that we're signing up
 
     if (password !== confirmPassword) {
+      console.log("❌ [SIGNUP] Password mismatch");
       toast({
         title: "Erreur d'inscription",
         description: "Les mots de passe ne correspondent pas.",
         variant: "destructive",
       });
       setLoading(false);
+      isSigningUp.current = false;
       return;
     }
 
-    console.log("handleSubmit: Début du processus d'inscription.");
+    console.log("✅ [SIGNUP] Starting user registration process...");
     try {
-      if (password !== confirmPassword) {
-        console.log("handleSubmit: Mots de passe ne correspondent pas.");
-        toast({
-          title: "Erreur d'inscription",
-          description: "Les mots de passe ne correspondent pas.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
 
-      console.log("handleSubmit: Appel à supabase.auth.signUp...");
-      // Étape 1: Créer le compte utilisateur SANS confirmation automatique
-      const { error, data } = await supabase.auth.signUp({
+      console.log("📧 [SIGNUP] Calling supabase.auth.signUp with timeout protection...");
+      
+      // Add timeout protection to prevent hanging
+      const signUpPromise = supabase.auth.signUp({
         email,
         password,
         options: {
@@ -126,29 +134,117 @@ const Signup = () => {
             first_name: firstName,
             last_name: lastName,
             phone_number: phoneNumber,
+            location: location,
           },
-          // Désactiver la confirmation automatique de Supabase pour utiliser notre système
-          emailRedirectTo: undefined,
+          // Bypass Supabase's built-in email confirmation - we use our own system
+          emailRedirectTo: `${window.location.origin}/auth/callback?skip=true`,
         },
       });
+      
+      // Create timeout promise (30 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Signup timeout - please check your internet connection')), 30000);
+      });
+      
+      console.log("⏳ [SIGNUP] Waiting for signUp response...");
+      
+      let signUpResult;
+      try {
+        signUpResult = await Promise.race([signUpPromise, timeoutPromise]) as any;
+      } catch (timeoutError: any) {
+        console.warn("⚠️ [SIGNUP] SignUp timed out, but user might still be created. Checking...");
+        
+        // Even if signup timed out, the user might have been created
+        // Try to sign in to check
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (signInData.user) {
+          console.log("✅ [SIGNUP] User was created despite timeout!");
+          signUpResult = { data: signInData, error: null };
+        } else {
+          throw timeoutError;
+        }
+      }
+      
+      const { error, data } = signUpResult;
+      console.log("📬 [SIGNUP] signUp response received");
 
       if (error) {
-        console.error("handleSubmit: Erreur lors de supabase.auth.signUp:", error);
+        console.error("❌ [SIGNUP] Error from supabase.auth.signUp:", error);
+        
+        // Check if user already exists
+        if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+          toast({
+            title: "Compte existant",
+            description: "Un compte avec cet email existe déjà. Veuillez vous connecter.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          isSigningUp.current = false;
+          return;
+        }
+        
         throw error;
       }
-      console.log("handleSubmit: supabase.auth.signUp réussi. Data:", data);
+      console.log("✅ [SIGNUP] supabase.auth.signUp successful. User ID:", data.user?.id);
 
       const user = data.user;
 
       if (user) {
         console.log("handleSubmit: Utilisateur créé. ID:", user.id);
         
-        // IMPORTANT: Déconnecter immédiatement l'utilisateur pour empêcher l'accès
-        // jusqu'à ce que l'email soit confirmé
-        await supabase.auth.signOut();
-        console.log("handleSubmit: Utilisateur déconnecté pour forcer la confirmation d'email");
-        // Étape 2: Configurer le rôle utilisateur
-        let userRole: string | null = null;
+        // Sync user metadata to profile using the database function
+        // This ensures first_name, last_name, phone, and role are saved to profiles table
+        // Determine the initial user role based on invitation code or selected role
+        const initialUserRole = (invitationCode && codeValidation?.valid) 
+          ? codeValidation.role 
+          : (selectedRole || 'individual');
+        
+        try {
+          const { error: syncError } = await (supabase as any).rpc('sync_user_metadata_to_profile', {
+            p_user_id: user.id,
+            p_email: email,
+            p_first_name: firstName,
+            p_last_name: lastName,
+            p_phone: phoneNumber,
+            p_location: location,
+            p_user_role: initialUserRole  // Pass the selected role
+          });
+
+          if (syncError) {
+            console.error("handleSubmit: Erreur lors de la synchronisation du profil:", syncError);
+            // Fallback: try direct upsert with correct role
+            const { error: profileError } = await supabase
+              .from('profiles' as any)
+              .upsert({
+                id: user.id,
+                email: email,
+                first_name: firstName,
+                last_name: lastName,
+                phone: phoneNumber,
+                location: location,
+                user_role: initialUserRole,  // Use the correct role, not hardcoded 'individual'
+                email_confirmation_required: true,
+              }, {
+                onConflict: 'id',
+                ignoreDuplicates: false
+              });
+
+            if (profileError) {
+              console.error("handleSubmit: Erreur fallback lors de la création du profil:", profileError);
+            }
+          } else {
+            console.log("handleSubmit: Profil synchronisé avec succès via RPC avec le rôle:", initialUserRole);
+          }
+        } catch (syncException) {
+          console.error("handleSubmit: Exception lors de la synchronisation:", syncException);
+        }
+        
+        // Étape 2: Handle invitation code or organization setup flag
+        let userRole: string | null = initialUserRole;
         
         if (invitationCode && codeValidation?.valid) {
           console.log("handleSubmit: Gestion du code d'invitation...");
@@ -200,98 +296,95 @@ const Signup = () => {
             });
             // Continuer malgré l'erreur pour permettre la confirmation d'email
           }
-        } else if (selectedRole) {
-          console.log("handleSubmit: Gestion de la sélection de rôle manuelle...");
-          // Cas avec sélection de rôle manuelle
+        } else if (selectedRole === 'organisation') {
+          // For organization role WITHOUT invitation code, set the setup pending flag
+          console.log("handleSubmit: Organisation role selected - setting organization_setup_pending flag...");
           try {
-            let updateData: any = { user_role: selectedRole };
-            
-            // Pour les individus, on configure directement le rôle
-            if (selectedRole === 'individual') {
-              const { error: updateError } = await supabase
-                .from('profiles' as any)
-                .update(updateData)
-                .eq('id', user.id);
+            const { error: updateError } = await supabase
+              .from('profiles' as any)
+              .update({ 
+                organization_setup_pending: true  // Flag to redirect to setup after email confirmation
+              })
+              .eq('id', user.id);
 
-              if (updateError) {
-                console.warn("handleSubmit: Erreur lors de l'attribution du rôle:", updateError);
-                // Ne pas faire échouer l'inscription pour ça
-              } else {
-                userRole = selectedRole;
-              }
-              
-              toast({
-                title: "Inscription réussie",
-                description: "Bienvenue ! Vous êtes maintenant configuré en tant qu'entrepreneur.",
-              });
-              
-              // Rediriger vers le dashboard approprié après confirmation d'email
-            } else if (selectedRole === 'organisation') {
-              // Pour les organisations, attribuer le rôle organisation mais sans organization_id
-              // L'organization_id sera ajouté après la création de l'organisation dans le setup
-              const { error: updateError } = await supabase
-                .from('profiles' as any)
-                .update({ user_role: 'organisation' }) // Attribuer le bon rôle dès le départ
-                .eq('id', user.id);
-
-              if (updateError) {
-                console.warn("handleSubmit: Erreur lors de l'attribution du rôle organisation:", updateError);
-              }
-              
-              userRole = 'organisation';
-              
-              toast({
-                title: "Inscription réussie",
-                description: "Veuillez confirmer votre email, puis vous pourrez configurer votre organisation.",
-              });
+            if (updateError) {
+              console.warn("handleSubmit: Erreur lors de la définition du flag organization_setup_pending:", updateError);
+            } else {
+              console.log("handleSubmit: Flag organization_setup_pending défini avec succès");
             }
+            
+            toast({
+              title: "Inscription réussie",
+              description: "Veuillez confirmer votre email, puis vous pourrez configurer votre organisation.",
+            });
           } catch (roleError: any) {
-            console.warn("handleSubmit: Erreur lors de l'attribution du rôle:", roleError);
+            console.warn("handleSubmit: Erreur lors de la définition du flag:", roleError);
             // Ne pas faire échouer l'inscription pour ça
           }
+        } else if (selectedRole === 'individual') {
+          // For individual role, just show success message
+          toast({
+            title: "Inscription réussie",
+            description: "Bienvenue ! Vous êtes maintenant configuré en tant qu'entrepreneur.",
+          });
         }
-
-        console.log("handleSubmit: Appel à emailConfirmationService.sendConfirmationEmail...");
-        // Étape 3: Envoyer l'email de confirmation
+        
+        // Étape 3: Envoyer l'email de confirmation (AVANT de déconnecter pour que la requête soit authentifiée)
+        console.log("📧 [SIGNUP] Sending confirmation email to:", email);
+        let emailSent = false;
         try {
           const confirmationResult = await emailConfirmationService.sendConfirmationEmail({
             email,
             userId: user.id,
             isResend: false
           });
-          console.log("handleSubmit: Résultat de sendConfirmationEmail:", confirmationResult);
-
-          // Toujours afficher le modal après l'inscription
-          setRegisteredUserId(user.id);
-          setShowEmailConfirmationModal(true);
+          console.log("📬 [SIGNUP] Email confirmation result:", confirmationResult);
+          emailSent = confirmationResult.success;
 
           if (confirmationResult.success) {
-            console.log("handleSubmit: Email de confirmation envoyé avec succès. Affichage du modal.");
+            console.log("✅ [SIGNUP] Confirmation email sent successfully");
             toast({
               title: "Email de confirmation envoyé !",
               description: "Vérifiez votre boîte de réception pour activer votre compte.",
             });
           } else {
-            console.log("handleSubmit: Email de confirmation non envoyé (success: false). Affichage du modal.");
-            toast({
-              title: "Inscription réussie",
-              description: confirmationResult.error || "Erreur d'envoi de l'email de confirmation. Veuillez vérifier votre boîte de réception ou demander un nouveau lien.",
-              variant: "destructive",
-            });
+            console.log("❌ [SIGNUP] Email de confirmation non envoyé (success: false).");
+            
+            // Handle rate limiting specifically
+            if (confirmationResult.error?.includes("Trop de tentatives") || confirmationResult.retryAfter) {
+              const waitTime = Math.ceil((confirmationResult.retryAfter || 3600) / 60);
+              toast({
+                title: "Limite de tentatives atteinte",
+                description: `Trop de tentatives d'envoi d'email. Veuillez patienter ${waitTime} minute${waitTime > 1 ? 's' : ''} avant de réessayer.`,
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Inscription réussie",
+                description: confirmationResult.error || "Erreur d'envoi de l'email de confirmation. Veuillez vérifier votre boîte de réception ou demander un nouveau lien.",
+                variant: "destructive",
+              });
+            }
           }
         } catch (emailError: any) {
-          console.error("handleSubmit: Erreur lors de l'envoi de l'email de confirmation:", emailError);
+          console.error("❌ [SIGNUP] Erreur lors de l'envoi de l'email de confirmation:", emailError);
           
-          // Inscription réussie mais email échoué, afficher le modal
-          setRegisteredUserId(user.id);
-          setShowEmailConfirmationModal(true);
-
           toast({
             title: "Inscription réussie",
             description: emailError.message || "Erreur d'envoi de l'email. Veuillez vérifier votre boîte de réception ou demander un nouveau lien.",
             variant: "destructive",
           });
         }
+        
+        // Étape 4: Afficher le modal de confirmation d'email
+        // Note: On ne déconnecte PAS l'utilisateur car:
+        // - Le modal a besoin de la session pour les subscriptions realtime
+        // - Le ProtectedRoute bloque déjà l'accès via email_confirmation_required
+        // - Les RLS policies protègent les données sensibles
+        console.log("🎭 [SIGNUP] Opening email confirmation modal for user:", user.id);
+        setRegisteredUserId(user.id);
+        setShowEmailConfirmationModal(true);
+        console.log("✅ [SIGNUP] Modal state updated - should be visible now");
       } else {
         console.error("handleSubmit: data.user est null après supabase.auth.signUp réussi. Ceci est inattendu.");
         // Si data.user est null, c'est une erreur inattendue après un signUp réussi.
@@ -303,15 +396,16 @@ const Signup = () => {
         });
       }
     } catch (error: any) {
-      console.error("handleSubmit: Erreur globale d'inscription:", error);
+      console.error("❌ [SIGNUP] Global signup error:", error);
       toast({
         title: "Erreur d'inscription",
         description: error.message || "Une erreur s'est produite lors de l'inscription",
         variant: "destructive",
       });
     } finally {
-      console.log("handleSubmit: Fin du processus d'inscription. Loading:", false);
+      console.log("🏁 [SIGNUP] Signup process completed. Resetting loading state.");
       setLoading(false);
+      isSigningUp.current = false; // Clear signup flag
     }
   };
 
@@ -403,6 +497,17 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
+      {/* Modal de confirmation d'email - Rendu en premier pour être visible même si d'autres états changent */}
+      {showEmailConfirmationModal && registeredUserId && (
+        <EmailConfirmationModal
+          isOpen={showEmailConfirmationModal}
+          onClose={handleCloseEmailModal}
+          email={email}
+          userId={registeredUserId}
+          onConfirmed={handleEmailConfirmed}
+        />
+      )}
+
       {/* Étape de configuration d'organisation */}
       {showOrganisationSetup && registeredUserId && (
         <OrganisationFlowWrapper
@@ -654,6 +759,23 @@ const Signup = () => {
             </div>
 
             <div className="space-y-2">
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                Ville / Région
+              </label>
+              <AddressAutocompleteInput
+                id="location"
+                value={location}
+                onChange={(value) => setLocation(value)}
+                placeholder="Commencer à taper une ville ou région..."
+                disabled={loading}
+                addressType="regions"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Nous utilisons votre localisation pour vous proposer des organisations proches de vous
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
@@ -752,17 +874,6 @@ const Signup = () => {
             </div>
           </form>
         </div>
-      )}
-
-      {/* Modal de confirmation d'email */}
-      {showEmailConfirmationModal && registeredUserId && (
-        <EmailConfirmationModal
-          isOpen={showEmailConfirmationModal}
-          onClose={handleCloseEmailModal}
-          email={email}
-          userId={registeredUserId}
-          onConfirmed={handleEmailConfirmed}
-        />
       )}
     </div>
   );

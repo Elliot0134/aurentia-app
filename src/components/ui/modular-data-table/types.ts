@@ -128,4 +128,54 @@ export interface ModularTableConfig<TData extends BaseRowData> {
       iconColor: string;
     }>;
   };
+  hasUrlColumn?: {
+    accessorKey: string;
+    icon?: LucideIcon;
+  };
+  hasDateColumn?: {
+    accessorKey: string;
+    icon?: LucideIcon;
+    onChange?: (data: TData, newDate: Date | undefined) => void;
+  };
+  hasEditableLabelsColumn?: {
+    accessorKey: string;
+    options: string[];
+    labelConfig: Record<string, {
+      icon?: LucideIcon;
+      iconBgColor: string;
+      iconColor: string;
+    }>;
+    onChange?: (data: TData, newLabel: string) => void;
+  };
+  hasRatingColumn?: {
+    accessorKey: string;
+    maxRating?: number;
+    onChange?: (data: TData, newRating: number) => void;
+  };
+  hasMultiSelectLabelsColumn?: {
+    accessorKey: string;
+    options: string[];
+    getTagColor: (option: string) => string;
+    onChange?: (data: TData, selectedOptions: string[]) => void;
+  };
+  hasCurrencyColumn?: {
+    accessorKey: string;
+    currency?: string;
+    locale?: string;
+  };
+  hasLocationColumn?: {
+    accessorKey: string;
+    icon?: LucideIcon;
+  };
+  
+  // Action Button column
+  hasActionButtonColumn?: {
+    accessorKey: string;
+    buttonLabel?: string;
+    icon?: LucideIcon;
+    onClick: (data: TData) => void;
+  };
+  
+  // Sticky columns
+  stickyFirstColumn?: boolean;
 }

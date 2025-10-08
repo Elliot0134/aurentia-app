@@ -24,6 +24,14 @@ export const EmailConfirmationModal: React.FC<EmailConfirmationModalProps> = ({
   userId,
   onConfirmed
 }) => {
+  // Debug logging
+  console.log('========================================');
+  console.log('EmailConfirmationModal RENDER');
+  console.log('isOpen:', isOpen);
+  console.log('userId:', userId);
+  console.log('email:', email);
+  console.log('========================================');
+  
   const [state, setState] = useState<ModalState>('waiting');
   const [confirmationData, setConfirmationData] = useState<EmailConfirmationStatus | null>(null);
   const [canResend, setCanResend] = useState(false);
@@ -277,7 +285,11 @@ export const EmailConfirmationModal: React.FC<EmailConfirmationModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent 
+        className="sm:max-w-md z-[100]" 
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Mail className="h-12 w-12 text-aurentia-orange" />

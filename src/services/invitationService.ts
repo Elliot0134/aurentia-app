@@ -1,50 +1,42 @@
 import { supabase } from '@/integrations/supabase/client';
-import { CODE_TO_ROLE_MAPPING, UserRole, InvitationValidationResult, InvitationUsageResult } from '@/types/userTypes';
+import { UserRole, InvitationValidationResult, InvitationUsageResult } from '@/types/userTypes';
 
 export const validateInvitationCode = async (code: string): Promise<InvitationValidationResult> => {
   try {
-    const { data: directData, error: directError } = await supabase
-      .from('invitation_code' as any)
-      .select('*')
-      .eq('code', code)
-      .eq('is_active', true)
-      .single();
+    // Use the new database function for validation
+    const { data, error } = await supabase.rpc('validate_invitation_code', {
+      p_code: code
+    });
 
-    if (directError || !directData) {
-      return { valid: false, reason: 'Code invalide' };
+    if (error) {
+      console.error('Error validating invitation code:', error);
+      return { valid: false, reason: 'Erreur lors de la validation' };
     }
 
-    const codeData = directData as any;
-    
-    // Vérifier expiration
-    if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
-      return { valid: false, reason: 'Code expiré' };
-    }
-    
-    // Vérifier usage
-    if (codeData.current_uses >= codeData.max_uses) {
-      return { valid: false, reason: 'Code épuisé' };
-    }
-
-    // Récupérer l'organisation si nécessaire
-    let organization = undefined;
-    if (codeData.organization_id) {
-      const { data: orgData } = await supabase
-        .from('organizations' as any)
-        .select('*')
-        .eq('id', codeData.organization_id)
-        .single();
-      organization = orgData;
+    if (!data || !data.valid) {
+      return { valid: false, reason: 'Code invalide ou expiré' };
     }
 
     return {
       valid: true,
-      role: CODE_TO_ROLE_MAPPING[codeData.type as keyof typeof CODE_TO_ROLE_MAPPING],
-      organization,
-      codeData: codeData as any
+      role: data.role as UserRole, // Direct role mapping from database
+      organization: data.organization_name ? {
+        id: data.organization_id,
+        name: data.organization_name
+      } : undefined,
+      codeData: {
+        id: data.code,
+        code: data.code,
+        expires_at: data.expires_at,
+        max_uses: data.max_uses,
+        current_uses: data.current_uses,
+        remaining_uses: data.remaining_uses,
+        is_active: data.is_active,
+        created_at: data.created_at
+      } as any
     };
   } catch (error) {
-    console.error('Erreur validation code:', error);
+    console.error('Error validating invitation code:', error);
     return { valid: false, reason: 'Erreur lors de la validation' };
   }
 };
@@ -56,99 +48,129 @@ export const useInvitationCode = async (code: string, userId: string): Promise<I
   }
 
   try {
-    // Utiliser la fonction de base de données qui gère les politiques RLS correctement
-    const { data, error } = await supabase.rpc('use_invitation_code_with_role_mapping' as any, {
+    // Use the new simplified redemption function
+    const { data, error } = await supabase.rpc('redeem_invitation_code_v2', {
       p_code: code,
       p_user_id: userId
     });
 
     if (error) {
-      console.error('Erreur lors de l\'utilisation du code d\'invitation:', error);
-      throw new Error('Erreur lors de la mise à jour du code d\'invitation');
+      console.error('Error redeeming invitation code:', error);
+      throw new Error('Erreur lors de l\'utilisation du code d\'invitation');
+    }
+
+    if (!data || !data.success) {
+      throw new Error('Échec de l\'utilisation du code d\'invitation');
     }
 
     return {
-      userRole: (data as any).user_role,
+      userRole: data.user_role as UserRole,
       organization: validation.organization
     };
   } catch (error) {
-    console.error('Erreur utilisation code:', error);
+    console.error('Error using invitation code:', error);
     throw error;
   }
 };
 
 // Créer un code d'invitation (pour les admins)
 export const createInvitationCode = async (
-  type: 'super_admin' | 'organisation_staff' | 'organisation_member',
-  organizationId?: string,
+  role: 'member' | 'staff' | 'organisation',
+  organizationId: string,
   maxUses: number = 1,
-  expiresAt?: string
+  expiresAt?: string,
+  customCode?: string
 ) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('Non authentifié');
   }
 
-  // Générer un code unique
-  const code = 'INV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  try {
+    // Use the new simplified creation function
+    const { data, error } = await supabase.rpc('create_invitation_code_v2', {
+      p_organization_id: organizationId,
+      p_role: role,
+      p_created_by: user.id,
+      p_expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+      p_max_uses: maxUses,
+      p_custom_code: customCode || null
+    });
 
-  const { data, error } = await supabase
-    .from('invitation_code' as any)
-    .insert({
-      code,
-      type,
-      organization_id: organizationId || null,
-      created_by: user.id,
-      max_uses: maxUses,
-      expires_at: expiresAt || null,
-      current_uses: 0,
-      is_active: true
-    })
-    .select()
-    .single();
+    if (error) {
+      console.error('Error creating invitation code:', error);
+      throw new Error('Erreur lors de la création du code');
+    }
 
-  if (error) {
-    throw new Error('Erreur lors de la création du code');
+    return data;
+  } catch (error) {
+    console.error('Error creating invitation code:', error);
+    throw error;
   }
-
-  return data;
 };
 
 // Lister les codes d'invitation (pour les admins)
-export const listInvitationCodes = async (organizationId?: string) => {
+export const listInvitationCodes = async (organizationId: string, includeInactive: boolean = false) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('Non authentifié');
   }
 
-  let query = supabase
-    .from('invitation_code' as any)
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    // Use the new function to get organization invitation codes
+    const { data, error } = await supabase.rpc('get_organization_invitation_codes', {
+      p_organization_id: organizationId,
+      p_include_inactive: includeInactive
+    });
 
-  if (organizationId) {
-    query = query.eq('organization_id', organizationId);
+    if (error) {
+      console.error('Error listing invitation codes:', error);
+      throw new Error('Erreur lors de la récupération des codes');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error listing invitation codes:', error);
+    throw error;
   }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error('Erreur lors de la récupération des codes');
-  }
-
-  return data;
 };
 
 // Désactiver un code d'invitation
-export const deactivateInvitationCode = async (codeId: string) => {
-  const { error } = await supabase
-    .from('invitation_code' as any)
-    .update({ is_active: false })
-    .eq('id', codeId);
+export const deactivateInvitationCode = async (code: string) => {
+  try {
+    // Use the new deactivation function
+    const { data, error } = await supabase.rpc('deactivate_invitation_code', {
+      p_code: code
+    });
 
-  if (error) {
-    throw new Error('Erreur lors de la désactivation du code');
+    if (error) {
+      console.error('Error deactivating invitation code:', error);
+      throw new Error('Erreur lors de la désactivation du code');
+    }
+
+    return data; // Returns boolean indicating success
+  } catch (error) {
+    console.error('Error deactivating invitation code:', error);
+    throw error;
   }
+};
 
-  return true;
+// Étendre la date d'expiration d'un code d'invitation
+export const extendInvitationCodeExpiry = async (code: string, newExpiry: string) => {
+  try {
+    const { data, error } = await supabase.rpc('extend_invitation_code_expiry', {
+      p_code: code,
+      p_new_expiry: new Date(newExpiry).toISOString()
+    });
+
+    if (error) {
+      console.error('Error extending invitation code expiry:', error);
+      throw new Error('Erreur lors de l\'extension de la date d\'expiration');
+    }
+
+    return data; // Returns boolean indicating success
+  } catch (error) {
+    console.error('Error extending invitation code expiry:', error);
+    throw error;
+  }
 };

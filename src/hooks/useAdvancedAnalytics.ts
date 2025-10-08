@@ -262,7 +262,7 @@ export const useAdvancedAnalytics = (timeRange: TimeRangeKey = "6months") => {
         (supabase as any).from('stripe_subscriptions').select('*').in('user_id', memberIds).then((res: any) => res || { data: [] }),
         (supabase as any).from('invitation_code').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
         supabase.from('project_summary').select('*').in('user_id', memberIds),
-        (supabase as any).from('profiles').select('*').eq('organization_id', organisationId),
+        (supabase as any).from('profiles').select('*').in('id', memberIds),
         (supabase as any).from('events').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
         (supabase as any).from('deliverables').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),
         (supabase as any).from('partners').select('*').eq('organization_id', organisationId).then((res: any) => res || { data: [] }),

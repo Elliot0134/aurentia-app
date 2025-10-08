@@ -177,17 +177,18 @@ const Form = () => {
       if (userLoading) return;
       
       try {
-        // Si l'utilisateur est un membre, utiliser son organisation
-        if (userProfile?.user_role === 'member' && userProfile?.organization_id) {
-          const { data: org, error } = await (supabase as any)
-            .from('organizations')
-            .select('id, name')
-            .eq('id', userProfile.organization_id)
+        // Si l'utilisateur est un membre, récupérer son organisation via user_organizations
+        if (userProfile?.user_role === 'member' && userProfile?.id) {
+          const { data: userOrg } = await (supabase as any)
+            .from('user_organizations')
+            .select('organization_id, organizations(id, name)')
+            .eq('user_id', userProfile.id)
+            .eq('status', 'active')
             .single();
             
-          if (!error && org) {
-            setAvailableOrganizations([org]);
-            setSelectedOrganization(org.id);
+          if (userOrg?.organizations) {
+            setAvailableOrganizations([userOrg.organizations]);
+            setSelectedOrganization(userOrg.organizations.id);
           }
         } else {
           // Pour les autres utilisateurs, charger toutes les organisations publiques

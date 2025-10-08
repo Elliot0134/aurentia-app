@@ -8,12 +8,25 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    // Désactiver la confirmation automatique par email au niveau de Supabase
-    // pour que nous puissions gérer notre propre système de confirmation
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
+// Create singleton instance to prevent multiple GoTrueClient instances
+let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
+
+const getSupabaseClient = () => {
+  if (!supabaseInstance) {
+    console.log('[Supabase Client] Creating new singleton instance');
+    supabaseInstance = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        storage: window.localStorage,
+        detectSessionInUrl: true,
+        storageKey: 'sb-llcliurrrrxnkquwmwsi-auth-token',
+        flowType: 'pkce',
+      }
+    });
+    console.log('[Supabase Client] Singleton instance created');
   }
-});
+  return supabaseInstance;
+};
+
+export const supabase = getSupabaseClient();

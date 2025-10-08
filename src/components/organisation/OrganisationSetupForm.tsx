@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -36,6 +36,26 @@ const OrganisationSetupForm = ({
 
   const navigate = useNavigate();
 
+  // Load saved form data from localStorage on mount
+  useEffect(() => {
+    const savedFormData = localStorage.getItem('organisation-setup-form');
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        setFormData(prev => ({ ...prev, ...parsedData, email: userEmail })); // Keep userEmail current
+      } catch (error) {
+        console.error('Error parsing saved setup form data:', error);
+      }
+    }
+  }, [userEmail]);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (formData.name || formData.type || formData.description) { // Only save if there's actual data
+      localStorage.setItem('organisation-setup-form', JSON.stringify(formData));
+    }
+  }, [formData]);
+
   const organisationTypes = [
     { value: "incubator", label: "Incubateur" },
     { value: "accelerator", label: "Accélérateur" },
@@ -59,20 +79,22 @@ const OrganisationSetupForm = ({
     setLoading(true);
 
     try {
-      // Créer l'organisation
+      // Créer l'organisation - le setup ici EST l'onboarding de l'organisation
       const organizationData = {
         ...formData,
         created_by: userId,
+        onboarding_completed: true, // Le setup-organization EST l'onboarding de l'org
+        onboarding_step: 6, // Toutes les étapes sont complétées
       };
 
       const newOrganization = await createOrganisation(organizationData);
       
-      // Mettre à jour le profil utilisateur avec l'organisation et le rôle
+      // Mettre à jour le rôle utilisateur et marquer que l'organisation est configurée
       const { error: updateError } = await supabase
         .from('profiles' as any)
         .update({
           user_role: 'organisation',
-          organization_id: newOrganization.id
+          organization_setup_pending: false // Marquer que le setup est terminé
         })
         .eq('id', userId);
 
@@ -81,10 +103,29 @@ const OrganisationSetupForm = ({
         throw updateError;
       }
 
+      // Créer l'entrée dans user_organizations pour lier l'utilisateur à l'organisation
+      const { error: userOrgError } = await supabase
+        .from('user_organizations' as any)
+        .insert({
+          user_id: userId,
+          organization_id: newOrganization.id,
+          user_role: 'organisation',
+          is_primary: true,
+          status: 'active'
+        });
+
+      if (userOrgError) {
+        console.error('Erreur lors de la création de la relation user_organizations:', userOrgError);
+        throw userOrgError;
+      }
+
       toast({
         title: "Organisation créée avec succès !",
         description: `Bienvenue dans ${formData.name}. Redirection vers votre tableau de bord...`,
       });
+
+      // Clear saved form data from localStorage on successful completion
+      localStorage.removeItem('organisation-setup-form');
 
       // Appeler le callback de succès si fourni
       if (onSuccess) {

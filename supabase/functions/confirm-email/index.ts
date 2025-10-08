@@ -27,10 +27,18 @@ serve(async (req) => {
   }
 
   try {
-    // Initialiser Supabase client avec service role
+    // Initialiser Supabase client avec service role (pas besoin d'auth pour cette fonction)
+    // Cette fonction est accessible publiquement car elle valide le token lui-même
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false
+        }
+      }
     );
 
     const method = req.method;
@@ -231,42 +239,24 @@ serve(async (req) => {
 
     // Transaction : confirmer le token et mettre à jour le profil utilisateur
     try {
-      // 1. Marquer la confirmation comme réussie
-      const { error: updateConfirmationError } = await supabase
-        .from('email_confirmations')
-        .update({ 
-          status: 'confirmed',
-          confirmed_at: now.toISOString(),
-          updated_at: now.toISOString()
-        })
-        .eq('id', confirmationData.id);
-
-      if (updateConfirmationError) {
-        throw new Error(`Erreur confirmation update: ${updateConfirmationError.message}`);
-      }
-
-      // 2. Mettre à jour le profil utilisateur si user_id existe
+      // Use the database function to handle confirmation and profile update atomically
       if (confirmationData.user_id) {
-        const { error: updateProfileError } = await supabase
-          .from('profiles')
-          .update({ 
-            email_confirmed_at: now.toISOString(),
-            email_confirmation_required: false
-          })
-          .eq('id', confirmationData.user_id);
+        const { data: confirmResult, error: confirmError } = await supabase
+          .rpc('confirm_user_email', {
+            p_user_id: confirmationData.user_id,
+            p_confirmation_id: confirmationData.id
+          });
 
-        if (updateProfileError) {
-          console.warn('Erreur mise à jour profil:', updateProfileError);
-          // Ne pas faire échouer la confirmation pour ça
+        if (confirmError || !confirmResult?.success) {
+          throw new Error(`Erreur confirmation: ${confirmError?.message || confirmResult?.error || 'Unknown error'}`);
         }
 
-        // Mettre à jour les métadonnées auth user si possible
+        // Update auth.users email_confirm field
         const { error: updateUserError } = await supabase.auth.admin.updateUserById(
           confirmationData.user_id,
           { 
             email_confirm: true,
             user_metadata: {
-              ...confirmationData.user_id.user_metadata || {},
               email_confirmed_at: now.toISOString()
             }
           }
@@ -274,6 +264,21 @@ serve(async (req) => {
 
         if (updateUserError) {
           console.warn('Erreur mise à jour auth user:', updateUserError);
+          // Don't fail the confirmation for this
+        }
+      } else {
+        // Fallback: No user_id, just update the confirmation record
+        const { error: updateConfirmationError } = await supabase
+          .from('email_confirmations')
+          .update({ 
+            status: 'confirmed',
+            confirmed_at: now.toISOString(),
+            updated_at: now.toISOString()
+          })
+          .eq('id', confirmationData.id);
+
+        if (updateConfirmationError) {
+          throw new Error(`Erreur confirmation update: ${updateConfirmationError.message}`);
         }
       }
 
@@ -294,6 +299,20 @@ serve(async (req) => {
         }
       });
 
+      // Redirect to verify-email page with success message for GET requests (email link clicks)
+      if (req.method === 'GET') {
+        const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:8080';
+        const redirectUrl = `${siteUrl}/verify-email?confirmed=true`;
+        
+        return new Response(null, {
+          status: 302,
+          headers: {
+            'Location': redirectUrl,
+          }
+        });
+      }
+
+      // Return JSON for POST requests (API calls)
       return new Response(
         JSON.stringify({ 
           success: true,
@@ -321,6 +340,7 @@ serve(async (req) => {
         .eq('id', confirmationData.id);
 
       const responseTime = Date.now() - startTime;
+      const errorMessage = transactionError instanceof Error ? transactionError.message : 'Erreur inconnue';
 
       // Logger l'échec
       await supabase.from('email_confirmation_logs').insert({
@@ -331,7 +351,7 @@ serve(async (req) => {
         user_agent: finalUserAgent,
         success: false,
         response_time_ms: responseTime,
-        error_message: transactionError.message,
+        error_message: errorMessage,
         metadata: { 
           error_type: 'transaction_failed',
           attempted_at: now.toISOString()
@@ -352,11 +372,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Erreur générale:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     return new Response(
       JSON.stringify({ 
         error: 'Erreur interne du serveur',
         code: 'INTERNAL_ERROR',
-        details: error.message 
+        details: errorMessage 
       }),
       { 
         status: 500, 

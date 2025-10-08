@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from './useUserProfile';
-import { getOnboardingStatus } from '@/services/organisationService';
 import { toast } from '@/components/ui/use-toast';
 
 export const useOrganisationNavigation = () => {
@@ -10,7 +9,7 @@ export const useOrganisationNavigation = () => {
   const { userProfile, loading: userProfileLoading } = useUserProfile();
   const [loading, setLoading] = useState(false);
 
-  const navigateToOrganisation = async () => {
+  const navigateToOrganisation = useCallback(async () => {
     // Don't proceed if user profile is still loading
     if (userProfileLoading) {
       return;
@@ -62,7 +61,7 @@ export const useOrganisationNavigation = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, userProfile, userProfileLoading]);
 
   return {
     navigateToOrganisation,

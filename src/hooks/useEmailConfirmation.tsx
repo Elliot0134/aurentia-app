@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { emailConfirmationService, EmailConfirmationStatus } from '@/services/emailConfirmationService';
@@ -32,9 +32,20 @@ export const useEmailConfirmation = (user: User | null): UseEmailConfirmationRet
     canResendAt: null,
     error: null,
   });
+  
+  // Use ref to track if we're currently checking to prevent duplicate calls
+  const isCheckingRef = useRef(false);
+  const lastCheckRef = useRef<number>(0);
 
   // Vérifier le statut de confirmation
   const checkStatus = useCallback(async () => {
+    // Prevent duplicate checks within 1 second
+    const now = Date.now();
+    if (isCheckingRef.current || (now - lastCheckRef.current < 1000)) {
+      console.log('[useEmailConfirmation] Skipping duplicate check');
+      return;
+    }
+    
     if (!user) {
       setState(prev => ({
         ...prev,
@@ -46,11 +57,17 @@ export const useEmailConfirmation = (user: User | null): UseEmailConfirmationRet
       return;
     }
 
+    isCheckingRef.current = true;
+    lastCheckRef.current = now;
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       // Vérifier si la confirmation est requise
       const needsConfirmation = await emailConfirmationService.needsEmailConfirmation(user.id);
+      
+      // User is confirmed when:
+      // - needsConfirmation is false (meaning email_confirmed_at is NOT null AND email_confirmation_required is false)
+      const isConfirmed = !needsConfirmation;
       
       if (!needsConfirmation) {
         setState(prev => ({
@@ -60,13 +77,13 @@ export const useEmailConfirmation = (user: User | null): UseEmailConfirmationRet
           isLoading: false,
           confirmationStatus: null,
         }));
+        isCheckingRef.current = false;
         return;
       }
 
       // Récupérer le statut actuel
       const confirmationStatus = await emailConfirmationService.getConfirmationStatus(user.id);
       
-      const isConfirmed = confirmationStatus?.status === 'confirmed';
       let canResendAt: Date | null = null;
 
       // Calculer quand on peut renvoyer l'email
@@ -96,6 +113,8 @@ export const useEmailConfirmation = (user: User | null): UseEmailConfirmationRet
         isConfirmed: !user?.email,
         isRequired: !!user?.email,
       }));
+    } finally {
+      isCheckingRef.current = false;
     }
   }, [user]);
 
@@ -151,11 +170,12 @@ export const useEmailConfirmation = (user: User | null): UseEmailConfirmationRet
   // Setup des subscriptions et vérifications initiales
   useEffect(() => {
     checkStatus();
-  }, [checkStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only re-run when user ID changes, not when checkStatus changes
 
   // Subscription aux changements en temps réel
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     let unsubscribe: (() => void) | null = null;
 
@@ -165,45 +185,37 @@ export const useEmailConfirmation = (user: User | null): UseEmailConfirmationRet
         (confirmationStatus) => {
           if (!confirmationStatus) return;
 
+          console.log('[useEmailConfirmation] Realtime update:', confirmationStatus.status);
+
+          // Update the confirmation status in state
           setState(prev => ({
             ...prev,
             confirmationStatus,
-            isConfirmed: confirmationStatus.status === 'confirmed',
           }));
-
-          // Si confirmé, rafraîchir tout le statut pour mettre à jour isRequired
+          
+          // If the email was just confirmed, trigger a full status check
+          // This will verify both email_confirmed_at and email_confirmation_required from profiles table
           if (confirmationStatus.status === 'confirmed') {
+            console.log('[useEmailConfirmation] Email confirmed in email_confirmations, checking profiles...');
+            // The checkStatus has built-in duplicate prevention via refs
             setTimeout(() => {
               checkStatus();
-            }, 1000);
+            }, 500);
           }
         }
       );
     } catch (error) {
       console.warn('Realtime subscription failed:', error);
-      // Utiliser le polling comme fallback
-      const interval = setInterval(() => {
-        checkStatus();
-      }, 30000); // Toutes les 30 secondes
-
-      return () => clearInterval(interval);
+      // No polling fallback - user must manually refresh
     }
 
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user, checkStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user.id, not checkStatus
 
-  // Polling de secours si pas de changements en temps réel
-  useEffect(() => {
-    if (!user || !state.isRequired || state.isConfirmed) return;
-
-    const interval = setInterval(() => {
-      checkStatus();
-    }, 15000); // Toutes les 15 secondes si en attente
-
-    return () => clearInterval(interval);
-  }, [user, state.isRequired, state.isConfirmed, checkStatus]);
+  // REMOVED: No automatic polling - user must manually check status
 
   return {
     state,

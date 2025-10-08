@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProjects } from '@/hooks/useOrganisationData';
 import { ModularDataTable } from "@/components/ui/modular-data-table";
 import { projetsTableConfig, ProjetData } from "@/config/tables";
 import type { Project } from '@/services/organisationService';
+import StaffProjectManagement from "@/components/organisation/StaffProjectManagement";
+import CustomTabs from "@/components/ui/CustomTabs";
+import { FolderKanban, Settings } from "lucide-react";
 
 const OrganisationProjets = () => {
   const { id: organisationId } = useParams();
+  const [activeTab, setActiveTab] = useState("overview");
 
   const { projects, loading } = useProjects();
 
@@ -63,19 +68,42 @@ const OrganisationProjets = () => {
         </div>
       </div>
 
-      {/* Tableau des projets avec le composant modulaire */}
-      <Card>
-        <CardContent className="p-6">
-          <ModularDataTable
-            data={mappedProjects}
-            config={projetsTableConfig}
-            onDataChange={(newData) => {
-              console.log("Nouvelles données:", newData);
-              // Ici vous pouvez sauvegarder l'ordre dans Supabase
-            }}
-          />
-        </CardContent>
-      </Card>
+      {/* Onglets pour séparer la vue des projets et la gestion */}
+      <CustomTabs
+        tabs={[
+          {
+            key: "overview",
+            label: "Vue d'ensemble",
+            icon: FolderKanban
+          },
+          {
+            key: "management",
+            label: "Gestion & Validation",
+            icon: Settings
+          }
+        ]}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      >
+        {activeTab === "overview" && (
+          <Card>
+            <CardContent className="p-6">
+              <ModularDataTable
+                data={mappedProjects}
+                config={projetsTableConfig}
+                onDataChange={(newData) => {
+                  console.log("Nouvelles données:", newData);
+                  // Ici vous pouvez sauvegarder l'ordre dans Supabase
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === "management" && organisationId && (
+          <StaffProjectManagement organizationId={organisationId} />
+        )}
+      </CustomTabs>
     </>
   );
 };

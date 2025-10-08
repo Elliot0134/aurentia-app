@@ -59,6 +59,14 @@ class EmailConfirmationService {
    */
   async sendConfirmationEmail(request: EmailConfirmationRequest): Promise<EmailConfirmationResponse> {
     try {
+      console.log('[EmailConfirmationService] Sending confirmation email request:', {
+        email: request.email,
+        userId: request.userId,
+        isResend: request.isResend
+      });
+      
+      console.log('[EmailConfirmationService] Invoking edge function: send-confirmation-email');
+      
       const { data, error } = await supabase.functions.invoke('send-confirmation-email', {
         body: {
           ...request,
@@ -66,10 +74,12 @@ class EmailConfirmationService {
         },
       });
 
+      console.log('[EmailConfirmationService] Edge function response:', { data, error });
+
       if (error) {
-        console.error('Erreur fonction send-confirmation-email:', error);
+        console.error('[EmailConfirmationService] Erreur fonction send-confirmation-email:', error);
         // Log the full error object to see the response body
-        console.error('Détails de l\'erreur de la fonction Edge:', error);
+        console.error('[EmailConfirmationService] Détails de l\'erreur de la fonction Edge:', JSON.stringify(error, null, 2));
         
         // Tenter de parser le corps de la réponse si disponible
         let errorMessage = error.message || 'Erreur lors de l\'envoi';
@@ -97,6 +107,8 @@ class EmailConfirmationService {
           console.warn('Erreur lors du parsing du détail de l\'erreur de la fonction Edge:', parseError);
         }
 
+        console.error('[EmailConfirmationService] Returning error response:', { errorMessage, retryAfter, limits });
+
         return {
           success: false,
           error: errorMessage,
@@ -105,6 +117,7 @@ class EmailConfirmationService {
         };
       }
 
+      console.log('[EmailConfirmationService] Email sent successfully, returning data:', data);
       return data;
     } catch (error: any) {
       console.error('Erreur sendConfirmationEmail (catch global):', error);
@@ -161,7 +174,7 @@ class EmailConfirmationService {
     try {
       // Utiliser la fonction PostgreSQL get_email_confirmation_status pour contourner la RLS
       // et récupérer le statut de confirmation pour l'utilisateur spécifié.
-      const { data, error } = await supabase.rpc('get_email_confirmation_status', { p_user_id: userId });
+      const { data, error } = await supabase.rpc('get_email_confirmation_status' as any, { p_user_id: userId });
 
       if (error) {
         console.error('Erreur getConfirmationStatus via RPC:', error);
@@ -186,23 +199,59 @@ class EmailConfirmationService {
 
   /**
    * Vérifie si un utilisateur a besoin de confirmer son email
+   * Vérifie d'abord le champ profiles.email_confirmation_required et email_confirmed_at
+   * 
+   * User can enter app ONLY if:
+   * - email_confirmed_at is NOT empty (has a date)
+   * - email_confirmation_required is false
    */
   async needsEmailConfirmation(userId: string): Promise<boolean> {
     try {
-      const { count, error } = await supabase
-        .from('email_confirmations' as any) // Temporarily bypass type checking
-        .select('id', { count: 'exact' })
-        .eq('user_id', userId)
-        .eq('status', 'pending');
+      // Check the profiles table first - this is the source of truth
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('email_confirmation_required, email_confirmed_at')
+        .eq('id', userId)
+        .single() as { data: { email_confirmation_required: boolean | null, email_confirmed_at: string | null } | null, error: any };
 
-      if (error) {
-        console.error('Erreur needsEmailConfirmation:', error);
-        return false;
+      if (profileError) {
+        console.error('Erreur needsEmailConfirmation (profiles):', profileError);
+        // Fallback to checking email_confirmations table
+        const { count, error } = await supabase
+          .from('email_confirmations' as any)
+          .select('id', { count: 'exact' })
+          .eq('user_id', userId)
+          .eq('status', 'pending');
+
+        if (error) {
+          console.error('Erreur needsEmailConfirmation (email_confirmations):', error);
+          return false;
+        }
+
+        return (count || 0) > 0;
       }
 
-      return (count || 0) > 0;
+      // User needs confirmation if EITHER:
+      // 1. email_confirmation_required is NOT false (is true or null)
+      // 2. email_confirmed_at IS empty (is null)
+      // 
+      // User can enter app ONLY when:
+      // - email_confirmation_required === false
+      // - email_confirmed_at !== null
+      const needsConfirmation = 
+        profileData?.email_confirmation_required !== false || 
+        profileData?.email_confirmed_at === null;
+
+      console.log('DEBUG - needsEmailConfirmation:', { 
+        userId, 
+        email_confirmation_required: profileData?.email_confirmation_required,
+        email_confirmed_at: profileData?.email_confirmed_at,
+        needsConfirmation 
+      });
+
+      return needsConfirmation;
     } catch (error) {
-      console.error('Erreur needsEmailConfirmation:', error);
+      console.error('Erreur needsEmailConfirmation (catch):', error);
       return false;
     }
   }

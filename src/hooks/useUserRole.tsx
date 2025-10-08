@@ -1,10 +1,23 @@
 import { useUserProfile } from './useUserProfile';
 import { UserRole } from '@/types/userTypes';
+import { useUserOrganizationId } from './useUserOrganizationId';
 
 export const useUserRole = () => {
-  const { userProfile, loading } = useUserProfile();
+  const { userProfile, loading: profileLoading } = useUserProfile();
+  const { organizationId, loading: orgIdLoading } = useUserOrganizationId(userProfile?.id);
+  
+  // Combined loading state - wait for both profile AND organization ID
+  const loading = profileLoading || orgIdLoading;
   
   const userRole: UserRole = userProfile?.user_role || 'individual';
+  
+  console.log('[useUserRole]', { 
+    userRole, 
+    organizationId, 
+    profileLoading, 
+    orgIdLoading, 
+    loading 
+  });
   
   const isIndividual = userRole === 'individual';
   const isMember = userRole === 'member';
@@ -17,7 +30,7 @@ export const useUserRole = () => {
   
   // Helper functions pour les vérifications de permissions
   const hasOrganizationAccess = () => {
-    return userProfile?.organization_id !== null && userProfile?.organization_id !== undefined;
+    return organizationId !== null && organizationId !== undefined;
   };
 
   const canManageUsers = () => {
@@ -55,11 +68,11 @@ export const useUserRole = () => {
         return '/super-admin';
       case 'organisation':
       case 'staff':
-        // Pour les admins d'organisation, vérifier que l'organization_id existe
-        if (userProfile?.organization_id) {
-          return `/organisation/${userProfile.organization_id}`;
+        // Pour les admins d'organisation, utiliser l'organization_id du hook
+        if (organizationId) {
+          return `/organisation/${organizationId}`;
         } else {
-          // Si pas d'organization_id, rediriger vers setup au lieu du fallback
+          // Si pas d'organization_id, rediriger vers setup
           console.warn('Utilisateur organisation sans organization_id, redirection vers setup');
           return '/setup-organization';
         }
@@ -79,6 +92,7 @@ export const useUserRole = () => {
   return {
     userRole,
     userProfile,
+    organizationId, // Export the organizationId from user_organizations
     loading,
     isIndividual,
     isMember,

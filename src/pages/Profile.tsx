@@ -7,45 +7,37 @@ import SubscriptionManager from '@/components/subscription/SubscriptionManager';
 import CreditsDisplay from '@/components/subscription/CreditsDisplay';
 import { useProject } from '@/contexts/ProjectContext';
 import { Label } from "@/components/ui/label";
-import { Edit2, Save, X, ShieldCheck } from "lucide-react";
+import { Edit2, Save, X } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
 import { User } from '@supabase/supabase-js';
 import { userInitializationService } from '@/services/userInitializationService';
-
-interface ProfileData {
-  id: string;
-  email: string;
-  full_name: string;
-  company: string;
-  phone: string;
-  location: string;
-  created_at: string;
-  updated_at: string;
-}
+import { profileService, ProfileData } from '@/services/profileService';
+import { AddressAutocompleteInput } from "@/components/ui/address-autocomplete-input";
 
 const Profile = () => {
   const [newEmail, setNewEmail] = useState('');
   const [user, setUser] = useState<ProfileData>({
     id: "",
     email: "",
-    full_name: "",
+    first_name: "",
+    last_name: "",
     company: "",
     phone: "",
     location: "",
-    created_at: "",
-    updated_at: ""
+    created_at: ""
   });
   
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editableFields, setEditableFields] = useState({
-    full_name: "",
+    first_name: "",
+    last_name: "",
     company: "",
     phone: "",
     location: ""
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [emailLoading, setEmailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("Informations");
   const { subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
@@ -53,36 +45,60 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Stocker l'utilisateur auth pour la confirmation d'email
-        setAuthUser(session.user);
-        
-        // S'assurer que l'utilisateur a des crédits initialisés
-        await userInitializationService.ensureUserCreditsExist(session.user.id);
-        
-        // In a real application, you would fetch the full user profile from your database
-        // Fetch first_name from user_metadata
-        const firstName = session.user.user_metadata?.first_name || "";
+      setIsLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // Stocker l'utilisateur auth pour la confirmation d'email
+          setAuthUser(session.user);
+          
+          // S'assurer que l'utilisateur a des crédits initialisés
+          await userInitializationService.ensureUserCreditsExist(session.user.id);
+          
+          // Fetch profile from profiles table
+          const profile = await profileService.getProfile(session.user.id);
+          
+          if (profile) {
+            setUser(profile);
+            setEditableFields({
+              first_name: profile.first_name || "",
+              last_name: profile.last_name || "",
+              company: profile.company || "",
+              phone: profile.phone || "",
+              location: profile.location || ""
+            });
+          } else {
+            // Fallback to auth metadata if profile doesn't exist
+            const userData: ProfileData = {
+              id: session.user.id,
+              email: session.user.email || "",
+              first_name: session.user.user_metadata?.first_name || "",
+              last_name: session.user.user_metadata?.last_name || "",
+              company: session.user.user_metadata?.company || "",
+              phone: session.user.user_metadata?.phone || "",
+              location: session.user.user_metadata?.location || "",
+              created_at: session.user.created_at
+            };
 
-        const userData = {
-          email: session.user.email || "",
-          full_name: firstName, // Use first_name for full_name
-          id: session.user.id,
-          created_at: session.user.created_at,
-          updated_at: session.user.updated_at,
-          company: session.user.user_metadata?.company || "",
-          phone: session.user.user_metadata?.phone || "",
-          location: session.user.user_metadata?.location || ""
-        };
-
-        setUser(userData);
-        setEditableFields({
-          full_name: userData.full_name,
-          company: userData.company,
-          phone: userData.phone,
-          location: userData.location
+            setUser(userData);
+            setEditableFields({
+              first_name: userData.first_name,
+              last_name: userData.last_name,
+              company: userData.company,
+              phone: userData.phone,
+              location: userData.location
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger votre profil.",
+          variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -103,7 +119,8 @@ const Profile = () => {
   const handleEdit = () => {
     setIsEditing(true);
     setEditableFields({
-      full_name: user.full_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       company: user.company,
       phone: user.phone,
       location: user.location
@@ -113,7 +130,8 @@ const Profile = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setEditableFields({
-      full_name: user.full_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       company: user.company,
       phone: user.phone,
       location: user.location
@@ -123,22 +141,18 @@ const Profile = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // Update user metadata in Supabase Auth
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          first_name: editableFields.full_name,
-          company: editableFields.company,
-          phone: editableFields.phone,
-          location: editableFields.location
-        }
-      });
+      // Update profile in database
+      const success = await profileService.updateProfile(user.id, editableFields);
 
-      if (error) throw error;
+      if (!success) {
+        throw new Error('Failed to update profile');
+      }
 
       // Update local state
       setUser(prev => ({
         ...prev,
-        full_name: editableFields.full_name,
+        first_name: editableFields.first_name,
+        last_name: editableFields.last_name,
         company: editableFields.company,
         phone: editableFields.phone,
         location: editableFields.location
@@ -222,7 +236,9 @@ const Profile = () => {
   };
 
   const displayValue = (value: string) => {
-    return value.trim() || "Non renseigné";
+    if (value === null || value === undefined) return "Non renseigné";
+    const str = String(value).trim();
+    return str || "Non renseigné";
   };
 
   return (
@@ -260,10 +276,16 @@ const Profile = () => {
         </div>
 
         <div className="mt-8 animate-popup-appear" key={activeTab}>
-          {activeTab === "Informations" && (
-            <div>
-              <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mb-6">
-                <h2 className="text-2xl font-bold text-slate-800">Informations du profil</h2>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-96">
+              <p className="text-slate-500">Chargement de votre profil...</p>
+            </div>
+          ) : (
+            <>
+              {activeTab === "Informations" && (
+                <div>
+                  <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800">Informations du profil</h2>
                 {!isEditing ? (
                   <Button onClick={handleEdit} variant="outline" className="flex items-center gap-2">
                     <Edit2 size={16} />
@@ -303,13 +325,26 @@ const Profile = () => {
                       <Label className="text-sm font-medium text-gray-600">Prénom</Label>
                       {isEditing ? (
                         <Input
-                          value={editableFields.full_name}
-                          onChange={(e) => handleFieldChange('full_name', e.target.value)}
+                          value={editableFields.first_name}
+                          onChange={(e) => handleFieldChange('first_name', e.target.value)}
                           placeholder="Entrez votre prénom"
                           className="mt-1"
                         />
                       ) : (
-                        <p className="mt-1 text-gray-900">{displayValue(user.full_name)}</p>
+                        <p className="mt-1 text-gray-900">{displayValue(user.first_name)}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Nom</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editableFields.last_name}
+                          onChange={(e) => handleFieldChange('last_name', e.target.value)}
+                          placeholder="Entrez votre nom"
+                          className="mt-1"
+                        />
+                      ) : (
+                        <p className="mt-1 text-gray-900">{displayValue(user.last_name)}</p>
                       )}
                     </div>
                     <div>
@@ -348,11 +383,11 @@ const Profile = () => {
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Localisation</Label>
                       {isEditing ? (
-                        <Input
+                        <AddressAutocompleteInput
                           value={editableFields.location}
-                          onChange={(e) => handleFieldChange('location', e.target.value)}
+                          onChange={(value) => handleFieldChange('location', value)}
                           placeholder="Entrez votre localisation"
-                          className="mt-1"
+                          addressType="regions"
                         />
                       ) : (
                         <p className="mt-1 text-gray-900">{displayValue(user.location)}</p>
@@ -373,20 +408,18 @@ const Profile = () => {
             <div>
               <CreditsDisplay />
               <h2 className="text-2xl font-bold mb-6 text-slate-800 mt-8">Abonnements</h2>
-              {userProjectsLoading ? (
+              {isLoading || userProjectsLoading ? (
                 <div className="flex justify-center items-center h-48">
                   <p className="text-slate-500">Chargement des informations...</p>
                 </div>
               ) : user.id && currentProjectId ? (
                 <SubscriptionManager userId={user.id} projectId={currentProjectId} />
-              ) : (
+              ) : user.id ? (
                 <div className="text-center p-8 bg-gray-50 rounded-lg">
                   <p className="text-slate-600">Vous n'avez pas encore de projet actif.</p>
                   <p className="text-slate-500 mt-2">Veuillez créer un projet pour gérer votre abonnement.</p>
-                  {/* Optionnel : Ajouter un bouton pour créer un projet */}
-                  {/* <Button className="mt-4">Créer un projet</Button> */}
                 </div>
-              )}
+              ) : null}
             </div>
           )}
           {activeTab === "Sécurité" && (
@@ -477,6 +510,8 @@ const Profile = () => {
               </p>
             </Card>
           )}
+          </>
+        )}
         </div>
       </div>
     </div>

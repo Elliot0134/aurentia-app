@@ -20,28 +20,41 @@ export const useUserOrganization = () => {
       }
 
       try {
-        // Check if user has an organization_id (is a member) OR owns an organization
-        const hasOrgId = !!userProfile.organization_id;
-        const hasOrgRole = userProfile.user_role === 'organisation' || userProfile.user_role === 'staff' || userProfile.user_role === 'member';
+        // NEW: Check user_organizations table for active membership
+        const { data: userOrg, error: userOrgError } = await supabase
+          .from('user_organizations' as any)
+          .select('id, organization_id, status')
+          .eq('user_id', userProfile.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
 
-        if (hasOrgId || hasOrgRole) {
+        if (userOrgError && userOrgError.code !== 'PGRST116') {
+          console.error('Error checking user_organizations:', userOrgError);
+          setHasOrganization(false);
+          setLoading(false);
+          return;
+        }
+
+        if (userOrg) {
           setHasOrganization(true);
           setLoading(false);
           return;
         }
 
-        // Fallback: Check if user owns an organization (legacy check)
-        const { data: existingOrg, error: orgError } = await (supabase as any)
-          .from('organizations')
-          .select('id, onboarding_completed')
-          .eq('owner_id', userProfile.id)
-          .single();
+        // Fallback: Check if user owns/created an organization
+        const { data: ownedOrg, error: ownedOrgError } = await supabase
+          .from('organizations' as any)
+          .select('id')
+          .eq('created_by', userProfile.id)
+          .limit(1)
+          .maybeSingle();
 
-        if (orgError && orgError.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error('Error checking existing organization:', orgError);
+        if (ownedOrgError && ownedOrgError.code !== 'PGRST116') {
+          console.error('Error checking owned organizations:', ownedOrgError);
           setHasOrganization(false);
         } else {
-          setHasOrganization(!!existingOrg);
+          setHasOrganization(!!ownedOrg);
         }
       } catch (error) {
         console.error('Error checking user organization:', error);

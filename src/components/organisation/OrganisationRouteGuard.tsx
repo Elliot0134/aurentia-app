@@ -11,8 +11,15 @@ interface OrganisationRouteGuardProps {
  * Les membres ('member') sont redirigés vers leur espace membre
  */
 const OrganisationRouteGuard = ({ children }: OrganisationRouteGuardProps) => {
-  const { userRole, userProfile, loading } = useUserRole();
+  const { userRole, organizationId, loading } = useUserRole();
   const location = useLocation();
+
+  console.log('[OrganisationRouteGuard]', { 
+    userRole, 
+    organizationId, 
+    loading, 
+    path: location.pathname 
+  });
 
   if (loading) {
     return (
@@ -26,6 +33,7 @@ const OrganisationRouteGuard = ({ children }: OrganisationRouteGuardProps) => {
   const canAccessOrganisationRoutes = userRole === 'organisation' || userRole === 'staff' || userRole === 'super_admin';
 
   if (!canAccessOrganisationRoutes) {
+    console.log('[OrganisationRouteGuard] Cannot access, role:', userRole);
     // Rediriger les membres vers leur espace membre
     if (userRole === 'member') {
       return <Navigate to="/individual/my-organization" replace />;
@@ -40,11 +48,13 @@ const OrganisationRouteGuard = ({ children }: OrganisationRouteGuardProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Vérifier que l'utilisateur a bien un organization_id pour les routes d'organisation
-  if ((userRole === 'organisation' || userRole === 'staff') && !userProfile?.organization_id) {
+  // Vérifier que l'utilisateur a bien un organizationId (depuis user_organizations) pour les routes d'organisation
+  if ((userRole === 'organisation' || userRole === 'staff') && !organizationId) {
+    console.log('[OrganisationRouteGuard] No organizationId, redirecting to setup');
     return <Navigate to="/setup-organization" replace />;
   }
 
+  console.log('[OrganisationRouteGuard] Access granted');
   return <>{children}</>;
 };
 

@@ -32,18 +32,23 @@ async function sendEmail(to: string, subject: string, html: string) {
   if (!resendApiKey || !senderEmail) {
     throw new Error('Variables d\'environnement RESEND_API_KEY ou SENDER_EMAIL manquantes.');
   }
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${resendApiKey}`,
-    },
-    body: JSON.stringify({ from: senderEmail, to: [to], subject, html }),
-  });
-  if (!res.ok) {
-    const errorBody = await res.json();
-    throw new Error(`Erreur de l'API Resend: ${errorBody.message || 'Envoi échoué'}`);
-  }
+    const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${resendApiKey}`,
+        },
+        body: JSON.stringify({ from: senderEmail, to: [to], subject, html }),
+    });
+    if (!res.ok) {
+        let errorBody;
+        try {
+            errorBody = await res.json();
+        } catch (jsonError) {
+            errorBody = { message: await res.text() };
+        }
+        throw new Error(`Erreur de l'API Resend: ${errorBody.message || 'Envoi échoué'}`);
+    }
 }
 
 serve(async (req) => {
@@ -440,10 +445,19 @@ serve(async (req) => {
 
       const lastConfirmation = existingConfirmations?.[0];
       const now = new Date();
-      const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 heure
-      const MAX_ATTEMPTS_PER_WINDOW = 5;
       
-      if (lastConfirmation) {
+      // Rate limiting configuration - can be disabled for testing
+      const DISABLE_RATE_LIMIT = true; // Disable rate limiting for testing purposes
+      const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+      const MAX_ATTEMPTS_PER_WINDOW = 60; // Increased to 60 attempts per hour
+
+      console.log('[send-confirmation-email] Rate limit check:', {
+        DISABLE_RATE_LIMIT,
+        lastConfirmation: lastConfirmation ? 'exists' : 'none',
+        attempts: lastConfirmation?.attempts
+      });
+      
+      if (!DISABLE_RATE_LIMIT && lastConfirmation) {
         const lastSentAt = new Date(lastConfirmation.last_sent_at || lastConfirmation.created_at);
         const timeSinceLastSend = now.getTime() - lastSentAt.getTime();
 
@@ -456,11 +470,19 @@ serve(async (req) => {
       const token = crypto.randomUUID();
       const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
       const redirectToUrl = `${siteUrl}/login`;
-      const confirmUrl = `${supabaseUrl}/auth/v1/verify?token=${token}&type=signup&redirect_to=${encodeURIComponent(redirectToUrl)}`;
+      // Use custom confirm-email edge function instead of Supabase's built-in auth endpoint
+      const confirmUrl = `${supabaseUrl}/functions/v1/confirm-email?token=${token}`;
+      
+      // Hash the token before storing it in the database
+      const tokenData = new TextEncoder().encode(token);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', tokenData);
+      const tokenHash = Array.from(new Uint8Array(hashBuffer), byte => 
+        byte.toString(16).padStart(2, '0')
+      ).join('');
       
       if (lastConfirmation && (now.getTime() - new Date(lastConfirmation.last_sent_at || lastConfirmation.created_at).getTime()) < RATE_LIMIT_WINDOW_MS) {
         await supabase.from('email_confirmations').update({ 
-          token_hash: token, 
+          token_hash: tokenHash, 
           expires_at: expiresAt, 
           status: 'pending', 
           attempts: lastConfirmation.attempts + 1, 
@@ -470,7 +492,7 @@ serve(async (req) => {
         await supabase.from('email_confirmations').insert({ 
           user_id: userId, 
           email: email, 
-          token_hash: token, 
+          token_hash: tokenHash, 
           expires_at: expiresAt, 
           status: 'pending', 
           attempts: 1, 
@@ -623,6 +645,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
   } catch (error) {
     console.error('Erreur dans send-confirmation-email:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
   }
 });

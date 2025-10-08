@@ -11,12 +11,19 @@ export interface MentorData extends BaseRowData {
   prenom: string;
   email: string;
   telephone: string;
+  photoUrl?: string;
+  description?: string;
   specialite: string;
+  linkedin?: string;
+  disponibilites?: string;
+  nombreProjetsMax?: number;
+  nombreProjetsActuels?: number;
   statut: "Actif" | "En attente" | "Inactif";
   nombreMentores: number;
   dateInscription: string;
   progressValue?: number;
   relatedLinks?: { label: string; href: string; target?: string }[];
+  user_id?: string; // For permission checks
 }
 
 /**
@@ -29,37 +36,35 @@ export const mentorsTableConfig: ModularTableConfig<MentorData> = {
   // Colonnes principales
   columns: [
     {
+      accessorKey: "photoUrl",
+      header: "Photo",
+      size: 80,
+      cell: (data) => (
+        <div className="flex items-center justify-center">
+          {data.photoUrl ? (
+            <img 
+              src={data.photoUrl} 
+              alt={`${data.prenom} ${data.nom}`}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+              {data.prenom?.[0]}{data.nom?.[0]}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
       accessorKey: "nom",
       header: "Nom",
-      size: 200,
-      minSize: 150,
+      size: 150,
+      minSize: 120,
     },
     {
       accessorKey: "prenom",
       header: "Prénom",
-      size: 200,
-    },
-    {
-      accessorKey: "specialite",
-      header: "Spécialité",
-      size: 200,
-      cell: (data) => (
-        <div className="flex items-center gap-2">
-          <Award className="w-4 h-4 text-gray-400" />
-          <span className="text-sm">{data.specialite}</span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "nombreMentores",
-      header: "Mentorés",
-      size: 120,
-      cell: (data) => (
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-semibold">{data.nombreMentores}</span>
-        </div>
-      ),
+      size: 150,
     },
     {
       accessorKey: "email",
@@ -79,8 +84,79 @@ export const mentorsTableConfig: ModularTableConfig<MentorData> = {
       cell: (data) => (
         <div className="flex items-center gap-2">
           <Phone className="w-4 h-4 text-gray-400" />
-          <span className="text-sm">{data.telephone}</span>
+          <span className="text-sm">{data.telephone || "Non renseigné"}</span>
         </div>
+      ),
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      size: 200,
+      cell: (data) => (
+        <span className="text-sm text-gray-600 line-clamp-2">
+          {data.description || "Aucune description"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "nombreProjetsActuels",
+      header: "Mentorés",
+      size: 120,
+      cell: (data) => (
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-semibold">{data.nombreMentores}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "specialite",
+      header: "Spécialité",
+      size: 180,
+      cell: (data) => (
+        <div className="flex items-center gap-2">
+          <Award className="w-4 h-4 text-gray-400" />
+          <span className="text-sm">{data.specialite}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "linkedin",
+      header: "LinkedIn",
+      size: 120,
+      cell: (data) => (
+        data.linkedin ? (
+          <a 
+            href={data.linkedin} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline text-sm"
+          >
+            Profil
+          </a>
+        ) : (
+          <span className="text-gray-400 text-sm">N/A</span>
+        )
+      ),
+    },
+    {
+      accessorKey: "disponibilites",
+      header: "Disponibilités",
+      size: 150,
+      cell: (data) => (
+        <span className="text-sm text-gray-600">
+          {data.disponibilites || "À définir"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "nombreProjetsMax",
+      header: "Projets Max",
+      size: 120,
+      cell: (data) => (
+        <span className="text-sm font-medium">
+          {data.nombreProjetsMax || "N/A"} / {data.nombreProjetsActuels || 0}
+        </span>
       ),
     },
   ],
@@ -194,8 +270,8 @@ export const mentorsTableConfig: ModularTableConfig<MentorData> = {
   }),
   modalTabs: [
     {
-      id: "details",
-      label: "Détails",
+      id: "resume",
+      label: "Résumé des informations",
       render: (data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="space-y-4">
@@ -207,57 +283,122 @@ export const mentorsTableConfig: ModularTableConfig<MentorData> = {
               </p>
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-              <h4 className="text-sm font-semibold mb-2">Spécialité</h4>
-              <p className="text-[#4B5563]">{data.specialite}</p>
+              <h4 className="text-sm font-semibold mb-2">Email</h4>
+              <p className="text-[#4B5563]">{data.email}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-gray-500" />
-              <span>{data.email}</span>
+            <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+              <h4 className="text-sm font-semibold mb-2">Téléphone</h4>
+              <p className="text-[#4B5563]">{data.telephone || "Non renseigné"}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-gray-500" />
-              <span>{data.telephone || "Non renseigné"}</span>
-            </div>
+            {data.linkedin && (
+              <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                <h4 className="text-sm font-semibold mb-2">LinkedIn</h4>
+                <a 
+                  href={data.linkedin} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {data.linkedin}
+                </a>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Statistiques</h3>
+            <h3 className="font-semibold text-lg">Informations professionnelles</h3>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-              <h4 className="text-sm font-semibold mb-2">Nombre de mentorés</h4>
-              <p className="text-2xl font-bold text-[#F86E19]">{data.nombreMentores}</p>
+              <h4 className="text-sm font-semibold mb-2">Spécialité</h4>
+              <p className="text-[#4B5563]">{data.specialite}</p>
+            </div>
+            {data.description && (
+              <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+                <h4 className="text-sm font-semibold mb-2">Description</h4>
+                <p className="text-[#4B5563]">{data.description}</p>
+              </div>
+            )}
+            <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
+              <h4 className="text-sm font-semibold mb-2">Disponibilités</h4>
+              <p className="text-[#4B5563]">{data.disponibilites || "À définir"}</p>
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-              <h4 className="text-sm font-semibold mb-2">Statut</h4>
-              <p className="text-[#4B5563]">{data.statut}</p>
+              <h4 className="text-sm font-semibold mb-2">Capacité</h4>
+              <p className="text-[#4B5563]">
+                {data.nombreProjetsActuels || 0} / {data.nombreProjetsMax || "Non défini"} projets
+              </p>
+            </div>
+          </div>
+
+          <div className="col-span-full">
+            <h3 className="font-semibold text-lg mb-4">Statistiques</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-[#F9FAFB] rounded-md px-4 py-4 text-center">
+                <p className="text-sm text-gray-600 mb-1">Mentorés actuels</p>
+                <p className="text-2xl font-bold text-[#F86E19]">{data.nombreMentores}</p>
+              </div>
+              <div className="bg-[#F9FAFB] rounded-md px-4 py-4 text-center">
+                <p className="text-sm text-gray-600 mb-1">Taux de réussite</p>
+                <p className="text-2xl font-bold text-green-600">{data.progressValue || 0}%</p>
+              </div>
+              <div className="bg-[#F9FAFB] rounded-md px-4 py-4 text-center">
+                <p className="text-sm text-gray-600 mb-1">Statut</p>
+                <p className="text-lg font-semibold text-[#4B5563]">{data.statut}</p>
+              </div>
             </div>
           </div>
         </div>
       ),
     },
     {
-      id: "mentores",
-      label: "Mentorés",
+      id: "projets",
+      label: "Projets",
       render: (data) => (
         <div className="space-y-6">
-          <h3 className="font-semibold text-lg">Liste des mentorés</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg">Projets des mentorés</h3>
+            <span className="text-sm text-gray-500">{data.nombreMentores} mentoré(s)</span>
+          </div>
           <div className="bg-[#F9FAFB] rounded-md px-4 py-8 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">{data.nombreMentores} mentoré(s)</p>
+            <p className="text-gray-500">Liste des projets associés</p>
             <p className="text-sm text-gray-400 mt-1">
-              La liste détaillée apparaîtra ici.
+              Les projets des entrepreneurs mentorés apparaîtront ici.
             </p>
           </div>
         </div>
       ),
     },
     {
-      id: "activity",
-      label: "Activité",
+      id: "relationnel",
+      label: "Relationnel",
       render: (data) => (
         <div className="space-y-6">
-          <h3 className="font-semibold text-lg">Activité récente</h3>
+          <h3 className="font-semibold text-lg">Relations et interactions</h3>
           <div className="bg-[#F9FAFB] rounded-md px-4 py-8 text-center">
-            <p className="text-gray-500">Aucune activité récente</p>
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">Historique des interactions</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Messages, rendez-vous et interactions avec les mentorés.
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "historique",
+      label: "Historique",
+      render: (data) => (
+        <div className="space-y-6">
+          <h3 className="font-semibold text-lg">Historique d'activité</h3>
+          <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+            <h4 className="text-sm font-semibold mb-2">Date d'inscription</h4>
+            <p className="text-[#4B5563]">{data.dateInscription}</p>
+          </div>
+          <div className="bg-[#F9FAFB] rounded-md px-4 py-8 text-center">
+            <p className="text-gray-500">Journal d'activité</p>
+            <p className="text-sm text-gray-400 mt-1">
+              L'historique complet des activités, événements et rendez-vous.
+            </p>
           </div>
         </div>
       ),

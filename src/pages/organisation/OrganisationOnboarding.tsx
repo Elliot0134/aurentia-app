@@ -141,6 +141,17 @@ const OrganisationOnboardingPage = () => {
     const initializeOrganisation = async () => {
       if (userLoading) return;
 
+      // Load saved form data from localStorage
+      const savedFormData = localStorage.getItem('organisation-onboarding-form');
+      if (savedFormData) {
+        try {
+          const parsedData = JSON.parse(savedFormData);
+          setFormData(prev => ({ ...prev, ...parsedData }));
+        } catch (error) {
+          console.error('Error parsing saved form data:', error);
+        }
+      }
+
       // If we have an organisationId, load existing organization
       if (organisationId) {
         try {
@@ -240,21 +251,43 @@ const OrganisationOnboardingPage = () => {
         }
       } else {
         // No organisationId in params - this is a new organization setup
+        // Don't show error immediately if userProfile is still loading
+        if (userLoading) return;
+
         if (!userProfile) {
-          toast({
-            title: "Erreur",
-            description: "Profil utilisateur manquant",
-            variant: "destructive",
-          });
-          navigate('/login');
+          // Instead of showing error immediately, wait a bit and retry
+          setTimeout(() => {
+            if (!userProfile) {
+              toast({
+                title: "Erreur",
+                description: "Profil utilisateur manquant. Veuillez vous reconnecter.",
+                variant: "destructive",
+              });
+              navigate('/login');
+            }
+          }, 2000);
           return;
         }
 
-        // Check if user already has an organization
-        if (userProfile.organization_id) {
-          // User already has an organization, redirect to onboarding
-          if (!window.location.pathname.startsWith('/individual')) {
-            navigate(`/organisation/${userProfile.organization_id}/onboarding`);
+        // Check if user already has an organization via user_organizations table
+        const { data: userOrg } = await (supabase as any)
+          .from('user_organizations')
+          .select('organization_id, status')
+          .eq('user_id', userProfile.id)
+          .eq('status', 'active')
+          .single();
+        
+        if (userOrg?.organization_id) {
+          // User already has an organization
+          // If we're not already on the onboarding page, redirect to it
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes('/onboarding') && !currentPath.startsWith('/individual')) {
+            navigate(`/organisation/${userOrg.organization_id}/onboarding`);
+            return;
+          }
+          // If already on onboarding page, just set the org ID to load it
+          if (!organisationId) {
+            navigate(`/organisation/${userOrg.organization_id}/onboarding`, { replace: true });
             return;
           }
         }
@@ -270,6 +303,13 @@ const OrganisationOnboardingPage = () => {
 
     initializeOrganisation();
   }, [organisationId, navigate, userProfile, userLoading]);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (formData.name || formData.type || formData.description) { // Only save if there's actual data
+      localStorage.setItem('organisation-onboarding-form', JSON.stringify(formData));
+    }
+  }, [formData]);
 
   const handleFieldClick = (field: string, content: string, title: string) => {
     setCurrentField(field);
@@ -369,14 +409,35 @@ const OrganisationOnboardingPage = () => {
     setLoading(true);
     
     try {
+      // Ensure userProfile is loaded and session is valid
+      if (!userProfile?.id) {
+        // Wait a bit and retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!userProfile?.id) {
+          throw new Error("Profil utilisateur manquant. Veuillez rafraîchir la page et réessayer.");
+        }
+      }
+
+      // Refresh the session to ensure we have a valid token
+      // This prevents timeout issues when user takes time to complete onboarding
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Session error before submit:', sessionError);
+        // Try to refresh the session
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshData.session) {
+          throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+        }
+        
+        console.log('Session refreshed successfully');
+      }
+
       let finalOrganisationId = organisationId;
 
       if (isNewOrganisation) {
         // Create new organization first
-        if (!userProfile?.id) {
-          throw new Error("Profil utilisateur manquant");
-        }
-
         const organizationData = {
           name: formData.name,
           type: formData.type,
@@ -394,10 +455,8 @@ const OrganisationOnboardingPage = () => {
           banner_path: formData.banner_path || null,
           newsletter_enabled: formData.newsletter_enabled,
           created_by: userProfile.id,
-          founded_year: formData.foundedYear,
           team_size: typeof formData.teamSize === 'number' ? formData.teamSize : 0,
           founded_year: Number(formData.foundedYear) || new Date().getFullYear(),
-          team_size: Number(formData.teamSize) || 0,
           mission: formData.mission,
           vision: formData.vision,
           values: JSON.stringify(formData.values),
@@ -424,12 +483,12 @@ const OrganisationOnboardingPage = () => {
         const newOrganization = await createOrganisation(organizationData);
         finalOrganisationId = newOrganization.id;
 
-        // Update user profile with organization info
+        // Update user profile role and mark organization setup as complete
         const { error: updateError } = await supabase
           .from('profiles' as any)
           .update({
             user_role: 'organisation',
-            organization_id: newOrganization.id
+            organization_setup_pending: false // Marquer que le setup est terminé
           })
           .eq('id', userProfile.id);
 
@@ -437,6 +496,25 @@ const OrganisationOnboardingPage = () => {
           console.error('Erreur lors de la mise à jour du profil:', updateError);
           throw updateError;
         }
+
+        // Create entry in user_organizations to link user to organization
+        const { error: userOrgError } = await supabase
+          .from('user_organizations' as any)
+          .insert({
+            user_id: userProfile.id,
+            organization_id: newOrganization.id,
+            user_role: 'organisation',
+            is_primary: true,
+            status: 'active'
+          });
+
+        if (userOrgError) {
+          console.error('Erreur lors de la création de la relation user_organizations:', userOrgError);
+          throw userOrgError;
+        }
+
+        // Clear saved form data from localStorage on successful completion
+        localStorage.removeItem('organisation-onboarding-form');
 
       } else {
         // Update existing organization
@@ -483,6 +561,9 @@ const OrganisationOnboardingPage = () => {
         };
 
         await updateOrganisation(finalOrganisationId!, updateData);
+
+        // Clear saved form data from localStorage on successful completion
+        localStorage.removeItem('organisation-onboarding-form');
       }
 
       toast({

@@ -1,46 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import RoleBasedSidebar from './RoleBasedSidebar';
 import { Outlet, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
 
 const RoleBasedLayout = () => {
   const { userProfile, loading } = useUserRole();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [userLoading, setUserLoading] = useState(true);
   const location = useLocation();
+
+  console.log('[RoleBasedLayout] Render - loading:', loading, 'userProfile:', userProfile?.id);
 
   // Check if current route is an organisation route
   const isOrganisationRoute = location.pathname.startsWith('/organisation/');
-
-  // Récupérer l'utilisateur actuel pour la confirmation d'email
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-      } catch (error) {
-        console.error('Erreur récupération utilisateur:', error);
-        setUser(null);
-      } finally {
-        setUserLoading(false);
-      }
-    };
-
-    getUser();
-
-    // Écouter les changements d'authentification
-    const { data: { subscription } = {} } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription?.unsubscribe();
-  }, []);
   
-  if (loading || userLoading) {
+  if (loading) {
+    console.log('[RoleBasedLayout] Showing loading state');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Chargement...</div>

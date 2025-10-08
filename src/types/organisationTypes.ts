@@ -50,14 +50,38 @@ export interface Adherent {
   last_name: string;
   email: string;
   phone?: string;
+  avatar_url?: string;
+  linkedin_url?: string;
+  website?: string;
+  bio?: string;
+  location?: string;
+  company?: string;
+  job_title?: string;
+  program_type?: string;
+  cohort_year?: number;
+  training_budget?: number;
+  availability_schedule?: any;
+  monthly_credits_remaining?: number;
+  purchased_credits_remaining?: number;
   status: 'active' | 'inactive' | 'pending';
   joined_at: string;
   mentor_id?: string;
+  mentor_names?: string[];
   project_count: number;
   completed_deliverables: number;
   total_deliverables: number;
   last_activity?: string;
   project_names?: string[];
+  // New fields from optimized views
+  active_projects?: number;
+  completion_rate?: number;
+  activity_status?: string;
+  // Subscription fields
+  payment_status?: string;
+  subscription_days_overdue?: number;
+  last_payment_date?: string;
+  next_payment_date?: string;
+  subscription_amount?: number;
 }
 
 export interface Mentor {
@@ -67,8 +91,19 @@ export interface Mentor {
   first_name: string;
   last_name: string;
   email: string;
-  expertise: string[];
+  phone?: string;
+  avatar_url?: string;
+  linkedin_url?: string;
+  website?: string;
   bio?: string;
+  location?: string;
+  company?: string;
+  job_title?: string;
+  expertise: string[];
+  mentor_bio?: string;
+  availability?: any;
+  max_projects?: number;
+  max_entrepreneurs?: number;
   status: 'active' | 'inactive' | 'pending';
   total_entrepreneurs: number;
   success_rate: number;
@@ -76,6 +111,12 @@ export interface Mentor {
   invitation_code?: string;
   joined_at: string;
   user_role?: string; // Rôle de l'utilisateur (organisation, staff, etc.)
+  // New fields from optimized views
+  current_entrepreneurs?: number;
+  total_assignments?: number;
+  completed_assignments?: number;
+  recent_assignments?: number;
+  activity_status?: string;
 }
 
 export interface Project {
@@ -92,6 +133,15 @@ export interface Project {
   budget?: number;
   category: string;
   tags: string[];
+  // New fields from optimized views
+  creator_email?: string;
+  creator_name?: string;
+  creator_first_name?: string;
+  creator_last_name?: string;
+  deliverables_count?: number;
+  completed_deliverables_count?: number;
+  deadline_status?: string;
+  activity_status?: string;
 }
 
 export interface Deliverable {

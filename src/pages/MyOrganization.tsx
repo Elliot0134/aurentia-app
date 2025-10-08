@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import ApplyProjectToOrganisation from '@/components/organisation/ApplyProjectToOrganisation';
 
 const MyOrganization = () => {
   const { userProfile } = useUserRole();
@@ -443,7 +444,18 @@ const MyOrganization = () => {
             </CardContent>
           </Card>
 
-
+          {/* Lier un projet à l'organisation */}
+          {organisation && userProjects && userProjects.length > 0 && (
+            <ApplyProjectToOrganisation
+              userProjects={userProjects}
+              organisationId={organisation.id}
+              organisationName={organisation.name}
+              onSuccess={() => {
+                // Refresh projects data after successful application
+                window.location.reload();
+              }}
+            />
+          )}
 
           {/* Prochaines étapes */}
           <Card>

@@ -253,27 +253,32 @@ const CreditInfo = ({ isCollapsed }: CreditInfoProps) => {
   const { monthlyRemaining, monthlyLimit, purchasedRemaining, isLoading, error } = useCredits();
 
   if (isLoading) {
-    return <p className="text-xs text-gray-500">Chargement crédits...</p>;
+    return <p className="text-xs text-gray-500">{isCollapsed ? "..." : "Chargement crédits..."}</p>;
   }
 
   if (error) {
-    return <p className="text-xs text-red-500">Erreur crédits</p>;
+    return <p className="text-xs text-red-500">{isCollapsed ? "!" : "Erreur crédits"}</p>;
   }
+
+  // Handle null/undefined values gracefully
+  const displayMonthlyRemaining = monthlyRemaining ?? 0;
+  const displayMonthlyLimit = monthlyLimit ?? 0;
+  const displayPurchasedRemaining = purchasedRemaining ?? 0;
 
   return (
     <div className={cn("flex flex-col gap-2 w-full", isCollapsed ? "items-center" : "items-start")}>
       <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
         <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
           <Coins size={16} className="text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Mensuels:</span>
-          <span className="text-sm text-gray-600">{monthlyRemaining} / {monthlyLimit}</span>
+          {!isCollapsed && <span className="text-sm font-medium text-gray-700">Mensuels:</span>}
+          <span className="text-sm text-gray-600">{displayMonthlyRemaining} / {displayMonthlyLimit}</span>
         </div>
       </div>
       <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
         <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
           <Coins size={16} className="text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Achetés:</span>
-          <span className="text-sm text-gray-600">{purchasedRemaining}</span>
+          {!isCollapsed && <span className="text-sm font-medium text-gray-700">Achetés:</span>}
+          <span className="text-sm text-gray-600">{displayPurchasedRemaining}</span>
         </div>
       </div>
     </div>

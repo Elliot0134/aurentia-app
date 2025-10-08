@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getOnboardingStatus, getOrganisation } from "@/services/organisationService";
 import { toast } from "@/components/ui/use-toast";
@@ -12,16 +12,21 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
+  const hasChecked = useRef(false);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
+      // Prevent duplicate checks
+      if (hasChecked.current) return;
+      hasChecked.current = true;
+
       if (!organisationId) {
         toast({
           title: "Erreur",
           description: "ID d'organisation manquant",
           variant: "destructive",
         });
-        navigate('/dashboard');
+        navigate('/individual/dashboard');
         return;
       }
 
@@ -47,7 +52,7 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children }) => {
               description: "Veuillez compléter la configuration de votre organisation avant de continuer.",
             });
           }
-          navigate(`/organisation/${organisationId}/onboarding`);
+          navigate(`/organisation/${organisationId}/onboarding`, { replace: true });
           return;
         }
 
@@ -58,7 +63,7 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children }) => {
           description: error.message || "Une erreur s'est produite",
           variant: "destructive",
         });
-        navigate('/dashboard');
+        navigate('/individual/dashboard', { replace: true });
       } finally {
         setIsLoading(false);
       }

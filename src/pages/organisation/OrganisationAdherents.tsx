@@ -18,15 +18,27 @@ const OrganisationAdherents = () => {
     nom: adherent.last_name || 'N/A',
     prenom: adherent.first_name || 'N/A',
     email: adherent.email || 'N/A',
-    telephone: adherent.phone || 'N/A',
-    statut: (["Actif", "En attente", "Inactif"][adherents.indexOf(adherent) % 3] as "Actif" | "En attente" | "Inactif"), // Attribution cyclique
-    dateInscription: new Date().toLocaleDateString('fr-FR'), // Date fictive pour la démo
-    progressValue: Math.floor(Math.random() * 100), // Valeur aléatoire pour la démo
+    telephone: adherent.phone || '',
+    photoUrl: adherent.avatar_url,
+    projetsAssocies: adherent.project_names || undefined,
+    linkedin: adherent.linkedin_url,
+    siteWeb: adherent.website,
+    creditsRestants: adherent.monthly_credits_remaining,
+    mentorsAssocies: adherent.mentor_names || undefined,
+    cotisationPayee: adherent.payment_status === 'paid',
+    joursRetard: adherent.subscription_days_overdue || 0,
+    formationChoisie: adherent.program_type,
+    promotion: adherent.cohort_year,
+    budgetFormation: adherent.training_budget,
+    disponibilites: adherent.availability_schedule ? JSON.stringify(adherent.availability_schedule) : undefined,
+    statut: adherent.status === 'active' ? 'Actif' : adherent.status === 'pending' ? 'En attente' : 'Inactif',
+    dateInscription: adherent.joined_at ? new Date(adherent.joined_at).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'),
+    progressValue: adherent.completion_rate || 0,
     relatedLinks: [
       { label: "Voir le profil", href: `/organisation/${organisationId}/adherents/${adherent.id}` },
       { label: "Projets", href: `/organisation/${organisationId}/adherents/${adherent.id}/projets` },
     ],
-    isLuthaneActive: Math.random() > 0.5, // Valeur aléatoire pour la démo
+    isLuthaneActive: Math.random() > 0.5,
   }));
 
   if (loading) {

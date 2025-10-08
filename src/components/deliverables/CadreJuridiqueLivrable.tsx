@@ -6,15 +6,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import ReactMarkdown from 'react-markdown';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal'; // Import the new hook
-
-// Initialiser Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface StructureContent {
   title: string;

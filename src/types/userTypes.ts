@@ -1,5 +1,5 @@
 export type UserRole = 'individual' | 'member' | 'staff' | 'organisation' | 'super_admin';
-export type InvitationType = 'super_admin' | 'organisation_staff' | 'organisation_member';
+export type InvitationRole = 'member' | 'staff' | 'organisation';
 
 // Organization roles breakdown:
 // - 'individual': Standalone users (current individual)
@@ -25,8 +25,8 @@ export interface UserProfile {
   id: string;
   email: string;
   user_role: UserRole;
-  organization_id?: string;
-  organization?: Organization;
+  organization?: Organization; // Loaded via join, not a direct column
+  organization_setup_pending?: boolean; // Flag indicating user needs to complete organization setup
   invitation_code_used?: string;
   created_at?: string;
   nb_projects?: string;
@@ -38,6 +38,7 @@ export interface UserProfile {
   abonnement?: string;
   stripe_customer_id?: string;
   subscription_status?: string;
+  address?: string;
   user_type?: string; // Legacy field for backwards compatibility
   is_member?: boolean; // Legacy field for backwards compatibility
   incubateur_id?: string; // Legacy field for backwards compatibility
@@ -46,23 +47,19 @@ export interface UserProfile {
 export interface InvitationCode {
   id: string;
   code: string;
-  type: InvitationType;
+  role: InvitationRole; // Direct role instead of type mapping
   organization_id?: string;
   organization?: Organization;
   created_by?: string;
+  created_by_email?: string;
   expires_at?: string;
   max_uses: number;
   current_uses: number;
+  remaining_uses: number;
   is_active: boolean;
+  status: 'active' | 'inactive' | 'expired' | 'exhausted';
   created_at: string;
 }
-
-// Mapping des codes vers rôles
-export const CODE_TO_ROLE_MAPPING: Record<InvitationType, UserRole> = {
-  'super_admin': 'super_admin',
-  'organisation_staff': 'staff', 
-  'organisation_member': 'member'
-} as const;
 
 // Types pour la validation des codes d'invitation
 export interface InvitationValidationResult {
