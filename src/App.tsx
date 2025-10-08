@@ -24,13 +24,13 @@ import Outils from "./pages/Outils";
 import ToolDetailPage from "./pages/individual/ToolDetailPage";
 import Partenaires from "./pages/Partenaires";
 import Roadmap from "./pages/Roadmap";
-import Ressources from "./pages/Ressources"; // Import the Ressources component
-import Collaborateurs from "./pages/Collaborateurs"; // Import the new Collaborateurs component
-import TemplatePage from "./pages/TemplatePage"; // Import the new TemplatePage component
-import ToolTemplatePage from "./pages/ToolTemplatePage"; // Import the new ToolTemplatePage component
+import Ressources from "./pages/Ressources";
+import Collaborateurs from "./pages/Collaborateurs";
+import TemplatePage from "./pages/TemplatePage";
+import ToolTemplatePage from "./pages/ToolTemplatePage";
 import ComponentsTemplate from "./pages/individual/ComponentsTemplate";
 import ChatbotPage from "./pages/ChatbotPage";
-import PlanActionPage from "./pages/PlanActionPage"; // Import the new PlanActionPage component
+import PlanActionPage from "./pages/PlanActionPage";
 import ProtectedLayout from "./components/ProtectedLayout";
 import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
@@ -51,25 +51,33 @@ import {
   OrganisationSettings,
   OrganisationPartenaires,
   OrganisationProfile,
-  OrganisationFormCreate, // Ajouter l'importation du composant de création de formulaire
+  OrganisationFormCreate,
   OrganisationOnboarding
 } from "./pages/organisation";
 import OrganisationMentorProfile from "./pages/organisation/OrganisationMentorProfile";
 import OrganisationOnboardingPage from "./pages/organisation/OrganisationOnboarding";
 import OnboardingGuard from "./components/organisation/OnboardingGuard";
-import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback component
+import AuthCallback from "./pages/AuthCallback";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
 import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
 import PendingInvitationsProvider from "./components/collaboration/PendingInvitationsProvider";
-import useMounted from "./hooks/useMounted";
 
-import { useState, useEffect, ErrorInfo, Component } from "react";
+import { useState, useEffect, ErrorInfo, Component, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 import "./index.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false, // Évite les refetch intempestifs
+    },
+  },
+});
 
 // Error Boundary Component
 class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean; error?: Error}> {
@@ -113,106 +121,144 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
 }
 
 const ProtectedRoute = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
-  const mounted = useMounted(); // Use the new hook
+  const mountedRef = useRef(true);
+  const authCheckInProgressRef = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const checkAuth = useCallback(async () => {
+    // Éviter les checks simultanés
+    if (authCheckInProgressRef.current) {
+      console.log("[ProtectedRoute] Auth check already in progress, skipping");
+      return;
+    }
+
+    authCheckInProgressRef.current = true;
+
+    try {
+      console.log("[ProtectedRoute] Starting auth check...");
+      
+      // Timeout de sécurité
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutRef.current = setTimeout(() => {
+          reject(new Error('Auth check timeout'));
+        }, 5000); // 5 secondes max
+      });
+
+      const sessionPromise = supabase.auth.getSession();
+
+      const { data: { session }, error: sessionError } = await Promise.race([
+        sessionPromise,
+        timeoutPromise
+      ]) as any;
+
+      // Clear timeout si réussi
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      if (!mountedRef.current) return;
+      
+      if (sessionError) {
+        console.error("[ProtectedRoute] Session error:", sessionError);
+        setIsAuthenticated(false);
+        return;
+      }
+      
+      if (!session?.user) {
+        console.log("[ProtectedRoute] No session found");
+        setIsAuthenticated(false);
+        return;
+      }
+
+      console.log("[ProtectedRoute] Session valid for user:", session.user.id);
+      setIsAuthenticated(true);
+      
+      // Check email verification avec timeout
+      try {
+        const profilePromise = supabase
+          .from('profiles')
+          .select('email_confirmation_required, email_confirmed_at')
+          .eq('id', session.user.id)
+          .single();
+
+        const profileTimeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
+        });
+
+        const { data: profileData, error: profileError } = await Promise.race([
+          profilePromise,
+          profileTimeoutPromise
+        ]) as any;
+        
+        if (!mountedRef.current) return;
+
+        if (profileError) {
+          console.warn("[ProtectedRoute] Profile fetch error (non-critical):", profileError);
+          setNeedsEmailVerification(false);
+        } else {
+          const needsVerification = 
+            profileData?.email_confirmation_required !== false || 
+            profileData?.email_confirmed_at === null;
+          
+          setNeedsEmailVerification(needsVerification);
+        }
+      } catch (profileErr) {
+        console.warn("[ProtectedRoute] Profile check failed (non-critical):", profileErr);
+        setNeedsEmailVerification(false);
+      }
+
+    } catch (error) {
+      console.error("[ProtectedRoute] Auth check error:", error);
+      if (mountedRef.current) {
+        setIsAuthenticated(false);
+      }
+    } finally {
+      authCheckInProgressRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    let isCancelled = false;
+    mountedRef.current = true;
+    console.log("[ProtectedRoute] Mounting, performing initial auth check");
     
-    const checkAuth = async () => {
-      try {
-        console.log("[ProtectedRoute] Checking authentication...");
-        
-        // Use getSession() - it checks localStorage first (fast)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        console.log("[ProtectedRoute] Local session exists:", !!session);
-        console.log("[ProtectedRoute] Session error:", sessionError);
-        
-        if (isCancelled || !mounted.current) return;
-        
-        if (sessionError) {
-          console.error("[ProtectedRoute] Error getting session:", sessionError);
-          if (mounted.current) {
-            setIsAuthenticated(false);
-            setLoading(false);
-          }
-          return;
-        }
-        
-        if (mounted.current) {
-          setIsAuthenticated(!!session);
-          console.log("[ProtectedRoute] Is authenticated:", !!session);
-          
-          // Check if user needs email verification
-          if (session?.user) {
-            try {
-              const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('email_confirmation_required, email_confirmed_at')
-                .eq('id', session.user.id)
-                .single() as { data: { email_confirmation_required: boolean | null, email_confirmed_at: string | null } | null, error: any };
-              
-              if (profileError) {
-                console.error("[ProtectedRoute] Error fetching profile:", profileError);
-                // Don't fail authentication if profile fetch fails - just assume no verification needed
-                setNeedsEmailVerification(false);
-              } else {
-                // User needs verification if EITHER:
-                // 1. email_confirmation_required is NOT false (is true or null)
-                // 2. email_confirmed_at IS empty (is null)
-                const needsVerification = 
-                  profileData?.email_confirmation_required !== false || 
-                  profileData?.email_confirmed_at === null;
-                
-                console.log("[ProtectedRoute] Needs verification:", needsVerification);
-                setNeedsEmailVerification(needsVerification);
-              }
-            } catch (error) {
-              console.error("[ProtectedRoute] Exception fetching profile:", error);
-              // Don't fail authentication if profile fetch fails
-              setNeedsEmailVerification(false);
-            }
-          }
-          
-          console.log("[ProtectedRoute] Setting loading to false");
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("[ProtectedRoute] Error checking authentication:", error);
-        if (mounted.current && !isCancelled) {
-          setIsAuthenticated(false);
-          setNeedsEmailVerification(false);
-          console.log("[ProtectedRoute] Setting loading to false (after error)");
-          setLoading(false);
-        }
-      }
-    };
-
     checkAuth();
 
-    // Subscribe to auth state changes to keep UI in sync
+    // Un seul listener auth
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[ProtectedRoute] Auth state changed:", event, "Session:", !!session);
-      if (mounted.current && !isCancelled) {
-        // Re-run auth check on state change
-        console.log("[ProtectedRoute] Auth state changed, re-checking authentication...");
-        await checkAuth();
+      console.log("[ProtectedRoute] Auth state changed:", event);
+      
+      if (!mountedRef.current) return;
+
+      // Actions immédiates pour certains événements
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setNeedsEmailVerification(false);
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Attendre un peu avant de recheck pour éviter les race conditions
+        setTimeout(() => {
+          if (mountedRef.current) {
+            checkAuth();
+          }
+        }, 100);
       }
     });
 
     return () => {
-      isCancelled = true;
+      mountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [checkAuth]);
 
-  console.log("[ProtectedRoute] Render - loading:", loading, "isAuthenticated:", isAuthenticated);
-
-  if (loading) {
-    console.log("[ProtectedRoute] Showing loading state");
+  // État de chargement
+  if (isAuthenticated === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Loading...</div>
@@ -221,17 +267,15 @@ const ProtectedRoute = () => {
   }
 
   if (!isAuthenticated) {
-    console.log("Not authenticated, redirecting to login");
+    console.log("[ProtectedRoute] Not authenticated, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
-  // If user needs email verification and not already on verify-email page
   if (needsEmailVerification && window.location.pathname !== '/verify-email') {
-    console.log("Email verification required, redirecting to verify-email");
+    console.log("[ProtectedRoute] Email verification required");
     return <Navigate to="/verify-email" replace />;
   }
 
-  console.log("Authenticated, rendering protected content");
   return (
     <>
       <RoleBasedRedirect />
@@ -239,7 +283,6 @@ const ProtectedRoute = () => {
     </>
   );
 };
-
 
 const App = () => {
   console.log("App component rendered");
@@ -256,26 +299,22 @@ const App = () => {
                 <BuyCreditsDialog />
                 <PendingInvitationsProvider />
                 <Routes>
-                {/* Public routes without sidebar */}
+                {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
-                {/* <Route path="/role-selection" element={<RoleSelection />} /> */} {/* Supprimé car le rôle est attribué par défaut */}
                 <Route path="/update-password" element={<UpdatePassword />} />
-                <Route path="/auth/callback" element={<AuthCallback />} /> {/* Nouvelle route pour le callback SSO */}
-                <Route path="/setup-organization" element={<OrganisationOnboarding />} /> {/* Route pour setup organisation */}
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/setup-organization" element={<OrganisationOnboarding />} />
                 
-                {/* Protected routes with role-based redirection and layout */}
+                {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
-                  {/* Organisation redirect route */}
                   <Route path="/organisation" element={<OrganisationRedirect />} />
                   
                   <Route element={<RoleBasedLayout />}>
-                    
-                    {/* Individual (interface actuelle) */}
                     <Route path="/individual/dashboard" element={<Dashboard />} />
                     <Route path="/individual/profile" element={<Profile />} />
                     <Route path="/individual/project-business/:projectId" element={<ProjectBusiness />} />
@@ -299,15 +338,13 @@ const App = () => {
                     <Route path="/individual/partenaires" element={<Partenaires />} />
                     <Route path="/individual/my-organization" element={<MyOrganization />} />
                     
-                    {/* Organisation (anciennement Admin incubateur) */}
-                    {/* Route d'onboarding sans guard */}
+                    {/* Organisation routes */}
                     <Route path="/organisation/:id/onboarding" element={
                       <OrganisationRouteGuard>
                         <OrganisationOnboardingPage />
                       </OrganisationRouteGuard>
                     } />
                     
-                    {/* Routes d'organisation protégées par le guard d'onboarding ET de rôle */}
                     <Route path="/organisation/:id/dashboard" element={
                       <OrganisationRouteGuard>
                         <OnboardingGuard>
@@ -406,24 +443,23 @@ const App = () => {
                         </OnboardingGuard>
                       </OrganisationRouteGuard>
                     } />
+                    
                     {/* Super admin */}
                     <Route path="/super-admin/organizations" element={<div>Organisations - À créer</div>} />
                     <Route path="/super-admin/users" element={<div>Utilisateurs - À créer</div>} />
                     <Route path="/super-admin/analytics" element={<div>Analytics Global - À créer</div>} />
                     <Route path="/super-admin/invitations" element={<div>Codes d'invitation - À créer</div>} />
                     <Route path="/super-admin/settings" element={<div>Paramètres Super Admin - À créer</div>} />
-                    
                   </Route>
                 </Route>
                 
-                {/* Legacy routes - redirect to role-based paths */}
+                {/* Legacy redirects */}
                 <Route path="/dashboard" element={<Navigate to="/individual/dashboard" replace />} />
                 <Route path="/profile" element={<Navigate to="/individual/profile" replace />} />
                 <Route path="/project-business" element={<Navigate to="/individual/project-business" replace />} />
                 <Route path="/outils" element={<Navigate to="/individual/outils" replace />} />
                 <Route path="/ressources" element={<Navigate to="/individual/ressources" replace />} />
                 <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
-                {/* Redirect old member routes to individual */}
                 <Route path="/member/*" element={<Navigate to="/individual/dashboard" replace />} />
                 <Route path="/member/incubator" element={<Navigate to="/individual/my-organization" replace />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />

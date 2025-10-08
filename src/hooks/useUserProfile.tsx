@@ -6,19 +6,17 @@ export const useUserProfile = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
-  const lastFetchRef = useRef<number>(0);
+  const fetchInProgressRef = useRef(false);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchUserProfile = useCallback(async (forceRefresh = false) => {
-    const now = Date.now();
-
-    // Prevent too frequent fetches (unless forced)
-    if (!forceRefresh && now - lastFetchRef.current < 1000) {
-      console.log('[useUserProfile] Skipping fetch - too soon since last fetch');
+    // Prévenir les appels simultanés
+    if (fetchInProgressRef.current && !forceRefresh) {
+      console.log('[useUserProfile] Fetch already in progress, skipping...');
       return;
     }
 
-    lastFetchRef.current = now;
+    fetchInProgressRef.current = true;
     console.log('[useUserProfile] Starting fetchUserProfile...', forceRefresh ? '(forced)' : '');
 
     // Clear any existing timeout
@@ -26,13 +24,14 @@ export const useUserProfile = () => {
       clearTimeout(fetchTimeoutRef.current);
     }
 
-    // Set a reasonable timeout
+    // Set a timeout
     fetchTimeoutRef.current = setTimeout(() => {
-      console.warn('[useUserProfile] Fetch timeout after 10 seconds');
+      console.warn('[useUserProfile] Fetch timeout after 8 seconds');
       if (mountedRef.current) {
         setLoading(false);
+        fetchInProgressRef.current = false;
       }
-    }, 10000);
+    }, 8000);
 
     try {
       // Get current session
@@ -58,56 +57,21 @@ export const useUserProfile = () => {
 
       console.log('[useUserProfile] Session valid, fetching profile for user:', session.user.id);
 
-      // Fetch profile with retry logic
-      let profile = null;
-      let profileError = null;
-
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        const { data, error } = await supabase
-          .from('profiles' as any)
-          .select('email,first_name,last_name,user_role,subscription_status,stripe_customer_id,organization_setup_pending')
-          .eq('id', session.user.id)
-          .single();
-
-        if (!error) {
-          profile = data;
-          break;
-        }
-
-        profileError = error;
-
-        // If it's a token error and we haven't tried refreshing yet, try to refresh
-        if (attempt === 1 && (error.message?.includes('JWT') || error.message?.includes('token'))) {
-          console.log('[useUserProfile] Token error, attempting refresh...');
-          try {
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            if (refreshError) {
-              console.error('[useUserProfile] Session refresh failed:', refreshError);
-              break;
-            }
-            if (!refreshData.session) {
-              console.log('[useUserProfile] No session after refresh');
-              break;
-            }
-            console.log('[useUserProfile] Session refreshed, retrying profile fetch');
-            // Continue to retry with refreshed session
-          } catch (refreshException) {
-            console.error('[useUserProfile] Exception during refresh:', refreshException);
-            break;
-          }
-        }
-      }
-
-      if (profileError && !profile) {
-        console.error('[useUserProfile] Profile fetch failed after retries:', profileError);
-        if (mountedRef.current) {
-          setUserProfile(null);
-          setLoading(false);
-        }
-        return;
-      }
+      // Fetch profile - un seul essai, pas de retry automatique
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles' as any)
+        .select('email,first_name,last_name,user_role,subscription_status,stripe_customer_id,organization_setup_pending')
+        .eq('id', session.user.id)
+        .single();
 
       if (!mountedRef.current) return;
+
+      if (profileError) {
+        console.error('[useUserProfile] Profile fetch failed:', profileError);
+        setUserProfile(null);
+        setLoading(false);
+        return;
+      }
 
       if (profile) {
         const profileData = profile as any;
@@ -171,42 +135,37 @@ export const useUserProfile = () => {
       if (mountedRef.current) {
         setLoading(false);
       }
+      fetchInProgressRef.current = false;
     }
   }, []);
 
   useEffect(() => {
     console.log('[useUserProfile] useEffect mounting');
     mountedRef.current = true;
-    let isFetching = false;
 
-    // Debounced fetch to prevent race conditions
-    const debouncedFetch = async () => {
-      if (isFetching) {
-        console.log('[useUserProfile] Already fetching, skipping...');
-        return;
-      }
-      isFetching = true;
-      await fetchUserProfile();
-      isFetching = false;
-    };
-
-    // Fetch immediately on mount to check existing session
+    // Fetch immédiatement au montage
     console.log('[useUserProfile] Fetching profile on mount...');
-    debouncedFetch();
+    fetchUserProfile();
 
-    // Listen to auth state changes for future updates
+    // Listen to auth state changes UNIQUEMENT pour les événements critiques
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       console.log('[useUserProfile] Auth state changed:', event);
       if (!mountedRef.current) return;
 
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // Refetch profile on sign in or token refresh
-        await debouncedFetch();
+      // Refetch UNIQUEMENT sur sign in
+      if (event === 'SIGNED_IN') {
+        // Petit délai pour laisser Supabase se stabiliser
+        setTimeout(() => {
+          if (mountedRef.current) {
+            fetchUserProfile();
+          }
+        }, 200);
       } else if (event === 'SIGNED_OUT') {
-        // Clear profile on sign out
+        // Clear profile immédiatement
         setUserProfile(null);
         setLoading(false);
       }
+      // TOKEN_REFRESHED ne nécessite PAS de refetch du profile
     });
 
     return () => {
@@ -219,76 +178,8 @@ export const useUserProfile = () => {
     };
   }, [fetchUserProfile]);
 
-  // Periodic session check to prevent stale sessions (less aggressive)
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      if (!mountedRef.current) return;
-      
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.warn('[useUserProfile] Session check error:', error);
-          // Only act on critical auth errors - ignore network issues
-          const isCriticalAuthError = error.message?.toLowerCase().includes('invalid') || 
-                                      error.message?.toLowerCase().includes('malformed');
-          
-          if (isCriticalAuthError) {
-            console.error('[useUserProfile] Critical auth error detected:', error.message);
-            if (mountedRef.current) {
-              setUserProfile(null);
-              setLoading(false);
-            }
-          } else {
-            console.log('[useUserProfile] Non-critical error during session check, ignoring:', error.message);
-          }
-        } else if (!session) {
-          console.log('[useUserProfile] Periodic check: no valid session');
-          if (mountedRef.current) {
-            setUserProfile(null);
-            setLoading(false);
-          }
-        }
-        // If session exists and profile exists, do nothing - no need to refetch
-      } catch (error) {
-        console.error('[useUserProfile] Periodic check error:', error);
-      }
-    }, 300000); // Check every 5 minutes instead of 2 (less aggressive)
-
-    return () => clearInterval(interval);
-  }, [fetchUserProfile]);
-
-  // Handle visibility change (when user switches tabs or comes back)
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (!mountedRef.current) return;
-      
-      if (!document.hidden && userProfile) {
-        console.log('[useUserProfile] Tab became visible, checking session...');
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          // Only act on critical auth errors
-          const isCriticalAuthError = error?.message?.toLowerCase().includes('invalid') || 
-                                      error?.message?.toLowerCase().includes('malformed');
-          
-          if (isCriticalAuthError || (!error && !session)) {
-            console.error('[useUserProfile] Session invalid on visibility change (critical error or no session)');
-            setUserProfile(null);
-            setLoading(false);
-          } else if (error) {
-            console.log('[useUserProfile] Non-critical error on visibility change, ignoring:', error.message);
-          }
-          // If session is valid and no critical error, do nothing - Supabase handles auto-refresh
-        } catch (error) {
-          console.error('[useUserProfile] Error during visibility change check:', error);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [userProfile, fetchUserProfile]);
+  // SUPPRESSION des checks périodiques agressifs
+  // SUPPRESSION du check sur visibilitychange
 
   console.log('[useUserProfile] Current state - loading:', loading, 'userProfile:', userProfile?.id);
 
