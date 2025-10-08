@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Download, Star, Eye } from 'lucide-react';
+import { Heart, Download, Star, Eye, ShoppingCart } from 'lucide-react';
 import { ResourceWithStats } from '@/types/resources';
 import { cn } from '@/lib/utils';
 
@@ -168,14 +168,14 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
               <span className="font-semibold text-gray-700">{resource.price}</span>
             </div>
 
-            {/* Bouton téléchargement */}
+            {/* Bouton achat */}
             <Button
               size="sm"
               className="h-7 px-3 text-xs bg-[#F86E19] hover:bg-[#E55A00] text-white"
               disabled={isDownloading}
               onClick={(e) => {
                 e.stopPropagation();
-                onDownload();
+                onClick(); // Ouvre la modal au lieu de télécharger directement
               }}
             >
               {isDownloading ? (
@@ -185,8 +185,8 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
                 </>
               ) : (
                 <>
-                  <Download className="h-3 w-3 mr-1" />
-                  Télécharger
+                  <ShoppingCart className="h-3 w-3 mr-1" />
+                  Acheter
                 </>
               )}
             </Button>

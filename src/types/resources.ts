@@ -2,16 +2,46 @@ export interface Resource {
   id: string;
   name: string;
   description: string;
+  detailed_description?: string; // NOUVEAU
   category: string;
   type: 'notion' | 'canva' | 'pdf' | 'template' | 'guide' | 'video' | 'audio' | 'tool';
   price: number; // en crédits
+  
+  // Images
   image_url?: string;
+  image_2_url?: string; // NOUVEAU
+  image_3_url?: string; // NOUVEAU
+  image_4_url?: string; // NOUVEAU
+  
+  // Vidéo
+  video_url?: string; // NOUVEAU
+  
   file_url?: string;
   tags: string[];
   difficulty: 'Débutant' | 'Intermédiaire' | 'Avancé';
   estimated_time?: string;
   view_count: number;
   download_count: number;
+  
+  // FAQ
+  faq_question_1?: string; // NOUVEAU
+  faq_answer_1?: string;
+  faq_question_2?: string;
+  faq_answer_2?: string;
+  faq_question_3?: string;
+  faq_answer_3?: string;
+  
+  // Raisons de choisir
+  reason_1_title?: string; // NOUVEAU
+  reason_1_text?: string;
+  reason_2_title?: string;
+  reason_2_text?: string;
+  reason_3_title?: string;
+  reason_3_text?: string;
+  
+  // Items inclus
+  included_items?: Array<{ emoji: string; text: string }>; // NOUVEAU
+  
   created_at: string;
   updated_at: string;
 }

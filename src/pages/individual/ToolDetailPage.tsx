@@ -57,7 +57,6 @@ const ToolDetailPage = () => {
 
   // États pour les accordéons
   const [paramsOpen, setParamsOpen] = useState(true); // Accordéon ouvert par défaut
-  const [howToUseOpen, setHowToUseOpen] = useState(false);
   
   // États pour les formulaires
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -138,6 +137,68 @@ const ToolDetailPage = () => {
       setParamSettings(settings);
     }
   }, [settings]);
+
+  // Fonction pour nettoyer et formater le contenu avant affichage Markdown
+  const cleanContentForMarkdown = (content: string): string => {
+    if (typeof content !== 'string') return content;
+    
+    // Supprimer les blocs JSON au début (comme {"keyword": "CBD chien arthrose"})
+    let cleaned = content.replace(/^[\s\S]*?```[\s\S]*?```\s*/m, '');
+    
+    // Supprimer les lignes JSON isolées au début
+    cleaned = cleaned.replace(/^{\s*"[^"]*":\s*"[^"]*"\s*}\s*/m, '');
+    
+    // Supprimer les lignes qui commencent par "json" suivies de JSON
+    cleaned = cleaned.replace(/^json\s*\n\s*{[\s\S]*?}\s*/m, '');
+    
+    // Supprimer les espaces/retours à la ligne en excès au début
+    cleaned = cleaned.trim();
+    
+    // FORMATAGE MARKDOWN :
+    
+    // 1. Convertir les \n en vrais retours à la ligne
+    cleaned = cleaned.replace(/\\n/g, '\n');
+    
+    // 2. Convertir les \t en tabulations
+    cleaned = cleaned.replace(/\\t/g, '\t');
+    
+    // 3. S'assurer que les hashtags sont bien formatés avec espaces
+    cleaned = cleaned.replace(/^(#{1,6})([^\s#])/gm, '$1 $2');
+    
+    // 4. Ajouter des retours à la ligne après les titres s'ils n'y en a pas
+    cleaned = cleaned.replace(/^(#{1,6}\s.+)(\n?)([^#\n])/gm, '$1\n\n$3');
+    
+    // 5. S'assurer qu'il y a des espaces autour des éléments de liste
+    cleaned = cleaned.replace(/^(\*|\-|\+)([^\s])/gm, '$1 $2');
+    cleaned = cleaned.replace(/^(\d+\.)([^\s])/gm, '$1 $2');
+    
+    // 6. Ajouter des retours à la ligne autour des blocs de code
+    cleaned = cleaned.replace(/```(\w*)\n?/g, '\n```$1\n');
+    cleaned = cleaned.replace(/\n```\n/g, '\n```\n\n');
+    
+    // 7. S'assurer qu'il y a des retours à la ligne autour des paragraphes
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+    
+    // 8. Nettoyer les espaces en fin de ligne
+    cleaned = cleaned.replace(/[ \t]+$/gm, '');
+    
+    return cleaned;
+  };
+
+  // Fonction pour obtenir la couleur selon la catégorie
+  const getCategoryColor = (category: string): string => {
+    const colors: Record<string, string> = {
+      'Marketing & Com': '#38bdf8',
+      'Commercial': '#fbbf24',
+      'Stratégie': '#ef4444',
+      'Juridique': '#9333ea',
+      'RH': '#047857',
+      'Finance': '#a8a29e',
+      'Productivité': '#34d399',
+      'text': '#000000'
+    };
+    return colors[category] || '#6b7280'; // Gris par défaut
+  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -400,10 +461,10 @@ const ToolDetailPage = () => {
       case 'utilisation':
         return (
           <div className="w-full">
-            {/* Zone principale - 2 colonnes */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Colonne INPUT */}
-              <div className="bg-white rounded-lg shadow-lg border-0">
+            {/* Zone principale - Layout vertical */}
+            <div className="flex flex-col gap-6">
+              {/* Container Zone d'entrée - EN HAUT */}
+              <div className="bg-white rounded-lg shadow-lg border-0 w-full">
                 <CardHeader>
                   <CardTitle>Zone d'entrée</CardTitle>
                   <CardDescription>Configurez votre article de blog SEO</CardDescription>
@@ -505,8 +566,8 @@ const ToolDetailPage = () => {
                 </CardContent>
               </div>
 
-              {/* Colonne OUTPUT */}
-              <div className="bg-white rounded-lg shadow-lg border-0">
+              {/* Container Résultat - EN BAS */}
+              <div className="bg-white rounded-lg shadow-lg border-0 w-full">
                 <CardHeader>
                   <CardTitle>Résultat</CardTitle>
                   <CardDescription>Le résultat généré apparaîtra ici</CardDescription>
@@ -526,7 +587,7 @@ const ToolDetailPage = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="bg-gray-50 p-4 rounded-lg border max-h-96 overflow-y-auto">
+                      <div className="bg-gray-50 p-4 rounded-lg border">
                         <div className="markdown-content text-sm text-gray-700">
                           <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
@@ -549,7 +610,7 @@ const ToolDetailPage = () => {
                               td: ({children}) => <td className="border border-gray-300 px-2 py-1">{children}</td>
                             }}
                           >
-                            {result}
+                            {cleanContentForMarkdown(result)}
                           </ReactMarkdown>
                         </div>
                       </div>
@@ -655,14 +716,20 @@ const ToolDetailPage = () => {
                   </div>
 
                   {/* Container Catégorie */}
-                  <div className="bg-gray-100 rounded-lg p-4 text-center">
+                  <div 
+                    className="rounded-lg p-4 text-center" 
+                    style={{ 
+                      backgroundColor: getCategoryColor(tool.category),
+                      color: tool.category === 'Finance' ? '#000000' : '#ffffff' // Texte noir pour Finance (gris clair)
+                    }}
+                  >
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
                       </svg>
-                      <span className="text-sm font-medium text-gray-600">Catégorie</span>
+                      <span className="text-sm font-medium">Catégorie</span>
                     </div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-lg font-bold">
                       {tool.category}
                     </div>
                   </div>
@@ -670,41 +737,11 @@ const ToolDetailPage = () => {
               </div>
             </div>
 
-            {/* Vidéo YouTube - Pleine largeur */}
+            {/* NOUVEAU: Container transparent avec Fonctionnalités (gauche) + Vidéo (droite) */}
             <div className="mt-6 mb-6">
-              <div className="flex justify-center">
-                <div className="relative bg-transparent rounded-xl overflow-hidden shadow-2xl" style={{ width: '100%', maxWidth: '800px', aspectRatio: '16/9' }}>
-                  {tool.video_url ? (
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      src={tool.video_url.includes('youtube.com') || tool.video_url.includes('youtu.be') 
-                        ? tool.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
-                        : tool.video_url
-                      }
-                      title="Vidéo de démonstration"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full rounded-xl"
-                    ></iframe>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-xl">
-                      <div className="text-center">
-                        <Play className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-600">Vidéo de démonstration</p>
-                        <p className="text-sm text-gray-500">Aucune vidéo disponible</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Deux colonnes - Fonctionnalités et Comment utiliser */}
-            <div className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Colonne gauche - Fonctionnalités */}
+              <div className="bg-transparent grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* GAUCHE: Fonctionnalités */}
                 <div className="bg-white rounded-lg shadow-lg border-0">
                   <div className="p-6">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">Fonctionnalités</h2>
@@ -723,52 +760,33 @@ const ToolDetailPage = () => {
                     </ul>
                   </div>
                 </div>
-
-                {/* Colonne droite - Comment utiliser cet outil */}
-                <div className="bg-white rounded-lg shadow-lg border-0">
-                  <div className="p-6">
-                    <div
-                      className="cursor-pointer flex items-center justify-between mb-4"
-                      onClick={() => setHowToUseOpen(!howToUseOpen)}
-                    >
-                      <h2 className="text-xl font-bold text-gray-900">Comment utiliser cet outil ?</h2>
-                      <ChevronDown className={cn("h-5 w-5 text-gray-600 transition-transform duration-300", howToUseOpen && "rotate-180")} />
-                    </div>
-                    
-                    <div className={cn(
-                      "transition-all duration-300 overflow-hidden",
-                      howToUseOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                    )}>
-                      <div className="space-y-4">
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full text-white flex items-center justify-center font-semibold text-sm" style={{ backgroundColor: '#ff5932' }}>
-                            1
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-1">Configurez vos paramètres</h4>
-                            <p className="text-gray-600 text-sm">Définissez votre public cible et le format de sortie souhaité dans les paramètres généraux.</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full text-white flex items-center justify-center font-semibold text-sm" style={{ backgroundColor: '#ff5932' }}>
-                            2
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-1">Saisissez votre contenu</h4>
-                            <p className="text-gray-600 text-sm">Remplissez le formulaire avec votre texte principal et vos instructions spéciales.</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full text-white flex items-center justify-center font-semibold text-sm" style={{ backgroundColor: '#ff5932' }}>
-                            3
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-1">Générez le résultat</h4>
-                            <p className="text-gray-600 text-sm">Cliquez sur "Générer" et obtenez votre contenu optimisé en quelques secondes.</p>
-                          </div>
+                
+                {/* DROITE: Vidéo */}
+                <div className="flex justify-center items-start">
+                  <div className="relative bg-transparent rounded-xl overflow-hidden shadow-2xl" style={{ width: '100%', maxWidth: '600px', aspectRatio: '16/9' }}>
+                    {tool.video_url ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={tool.video_url.includes('youtube.com') || tool.video_url.includes('youtu.be') 
+                          ? tool.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
+                          : tool.video_url
+                        }
+                        title="Vidéo de démonstration"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full rounded-xl"
+                      ></iframe>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-xl">
+                        <div className="text-center">
+                          <Play className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-600">Vidéo de démonstration</p>
+                          <p className="text-sm text-gray-500">Aucune vidéo disponible</p>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -789,7 +807,11 @@ const ToolDetailPage = () => {
             ) : (
               <div className="space-y-4">
                 {history.map((item) => (
-                  <div key={item.id} className="border rounded-lg hover:shadow-md transition-shadow cursor-pointer" onClick={() => openHistoryModal(item)}>
+                  <div 
+                    key={item.id} 
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer border-0"
+                    onClick={() => openHistoryModal(item)}
+                  >
                     <div className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -924,77 +946,122 @@ const ToolDetailPage = () => {
 
         {/* Modal pour les détails de l'historique */}
         <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Détails de l'utilisation</DialogTitle>
-              <DialogDescription>
+          <DialogContent 
+            className="history-modal-content" 
+            style={{
+              width: window.innerWidth < 768 ? '90%' : '60%',
+              maxWidth: '90vw',
+              maxHeight: '80vh',
+              borderRadius: '12px',
+              padding: '0',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Navbar fixe */}
+            <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-white border-b">
+              <DialogTitle className="text-lg font-semibold">Détails de l'utilisation</DialogTitle>
+              <button 
+                onClick={() => setHistoryModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <XCircle className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Corps scrollable */}
+            <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(80vh - 80px)' }}>
+              <DialogDescription className="sr-only">
                 Informations détaillées sur cette utilisation de l'outil
               </DialogDescription>
-            </DialogHeader>
-            {selectedHistory && (
-              <div className="space-y-4">
-                {/* Métadonnées */}
-                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Date</p>
-                    <p className="text-sm">{formatDate(selectedHistory.created_at)}</p>
+              
+              {selectedHistory && (
+                <div className="space-y-4">
+                  {/* Métadonnées */}
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Date</p>
+                      <p className="text-sm">{formatDate(selectedHistory.created_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Statut</p>
+                      <Badge 
+                        className={selectedHistory.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
+                      >
+                        {selectedHistory.status === 'completed' ? 'Terminé' : 'Échoué'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Crédits</p>
+                      <p className="text-sm">{selectedHistory.credits_used}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Statut</p>
-                    <Badge 
-                      className={selectedHistory.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
-                    >
-                      {selectedHistory.status === 'completed' ? 'Terminé' : 'Échoué'}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Crédits</p>
-                    <p className="text-sm">{selectedHistory.credits_used}</p>
-                  </div>
-                </div>
 
-                {/* Données d'entrée */}
-                <div>
-                  <h4 className="font-medium mb-2">Données d'entrée</h4>
-                  <div className="bg-gray-50 p-3 rounded border text-sm">
-                    <pre className="whitespace-pre-wrap">
-                      {selectedHistory.input_data ? 
-                        (typeof selectedHistory.input_data === 'string' ? 
-                          selectedHistory.input_data : 
-                          JSON.stringify(selectedHistory.input_data, null, 2)
-                        ) : 
-                        'Aucune donnée d\'entrée'
-                      }
-                    </pre>
-                  </div>
-                </div>
-
-                {/* Résultat */}
-                {selectedHistory.output_data && (
+                  {/* Données d'entrée */}
                   <div>
-                    <h4 className="font-medium mb-2">Résultat</h4>
-                    <div className="bg-green-50 p-3 rounded border border-green-200 text-sm">
+                    <h4 className="font-medium mb-2">Données d'entrée</h4>
+                    <div className="bg-gray-50 p-3 rounded border text-sm">
                       <pre className="whitespace-pre-wrap">
-                        {typeof selectedHistory.output_data === 'string' ? 
-                          selectedHistory.output_data : 
-                          JSON.stringify(selectedHistory.output_data, null, 2)
+                        {selectedHistory.input_data ? 
+                          (typeof selectedHistory.input_data === 'string' ? 
+                            selectedHistory.input_data : 
+                            JSON.stringify(selectedHistory.input_data, null, 2)
+                          ) : 
+                          'Aucune donnée d\'entrée'
                         }
                       </pre>
                     </div>
                   </div>
-                )}
 
-                {/* Erreur */}
-                {selectedHistory.status === 'failed' && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-red-600">Erreur</h4>
-                    <div className="bg-red-50 p-3 rounded border border-red-200 text-sm text-red-700">
-                      Une erreur s'est produite lors du traitement.
+                  {/* Container résultat avec fond blanc et ombre */}
+                  {selectedHistory.output_data && (
+                    <div>
+                      <h4 className="font-medium mb-2">Résultat</h4>
+                      <div className="bg-white shadow-md p-4 rounded-lg border-0">
+                        <div className="markdown-content text-sm text-gray-700">
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              h1: ({children}) => <h1 className="text-xl font-bold mb-4 text-gray-900">{children}</h1>,
+                              h2: ({children}) => <h2 className="text-lg font-semibold mb-3 text-gray-800">{children}</h2>,
+                              h3: ({children}) => <h3 className="text-md font-medium mb-2 text-gray-800">{children}</h3>,
+                              p: ({children}) => <p className="mb-3 leading-relaxed">{children}</p>,
+                              ul: ({children}) => <ul className="mb-3 ml-4 list-disc">{children}</ul>,
+                              ol: ({children}) => <ol className="mb-3 ml-4 list-decimal">{children}</ol>,
+                              li: ({children}) => <li className="mb-1">{children}</li>,
+                              strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                              em: ({children}) => <em className="italic">{children}</em>,
+                              code: ({children}) => <code className="bg-gray-200 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                              pre: ({children}) => <pre className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto mb-3">{children}</pre>,
+                              blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic mb-3">{children}</blockquote>,
+                              a: ({href, children}) => <a href={href} className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                              table: ({children}) => <table className="w-full border-collapse border border-gray-300 mb-3">{children}</table>,
+                              th: ({children}) => <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-semibold">{children}</th>,
+                              td: ({children}) => <td className="border border-gray-300 px-2 py-1">{children}</td>
+                            }}
+                          >
+                            {cleanContentForMarkdown(
+                              typeof selectedHistory.output_data === 'string' ? 
+                                selectedHistory.output_data : 
+                                JSON.stringify(selectedHistory.output_data, null, 2)
+                            )}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+
+                  {/* Erreur */}
+                  {selectedHistory.status === 'failed' && (
+                    <div>
+                      <h4 className="font-medium mb-2 text-red-600">Erreur</h4>
+                      <div className="bg-red-50 p-3 rounded border border-red-200 text-sm text-red-700">
+                        Une erreur s'est produite lors du traitement.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>

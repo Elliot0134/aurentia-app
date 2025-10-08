@@ -85,52 +85,6 @@ async function fetchResourceById(id: string): Promise<ResourceWithStats | null> 
   }
 }
 
-async function downloadResource(resourceId: string): Promise<void> {
-  try {
-    // Increment download count
-    const { error } = await supabase
-      .from('resources')
-      .update({ 
-        download_count: supabase.raw('download_count + 1')
-      })
-      .eq('id', resourceId);
-
-    if (error) {
-      console.error('Error updating download count:', error);
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error in downloadResource:', error);
-    throw error;
-  }
-}
-
-async function updateResourceRating(resourceId: string, rating: number, comment?: string): Promise<void> {
-  try {
-    const userIp = 'user-ip'; // TODO: Get real user IP or user ID
-    
-    const { error } = await supabase
-      .from('resource_ratings')
-      .upsert({
-        resource_id: resourceId,
-        user_ip: userIp,
-        rating,
-        comment: comment || null
-      }, {
-        onConflict: 'resource_id,user_ip'
-      });
-
-    if (error) {
-      console.error('Error updating rating:', error);
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error in updateResourceRating:', error);
-    throw error;
-  }
-}
-
-// React Query Hooks
 export function useResources(filters?: ResourceFilters) {
   return useQuery({
     queryKey: ['resources', filters],
@@ -145,36 +99,6 @@ export function useResourceDetails(id: string) {
     queryFn: () => fetchResourceById(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useResourceDownload() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: downloadResource,
-    onSuccess: (_, resourceId) => {
-      // Invalidate and refetch resources to update download count
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
-      queryClient.invalidateQueries({ queryKey: ['resource', resourceId] });
-    },
-  });
-}
-
-export function useUpdateResourceRating() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ resourceId, rating, comment }: { 
-      resourceId: string; 
-      rating: number; 
-      comment?: string;
-    }) => updateResourceRating(resourceId, rating, comment),
-    onSuccess: (_, { resourceId }) => {
-      // Invalidate and refetch to update ratings
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
-      queryClient.invalidateQueries({ queryKey: ['resource', resourceId] });
-    },
   });
 }
 

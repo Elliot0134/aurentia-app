@@ -2,10 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Grid3X3, List, Star, TrendingUp, Loader2 } from 'lucide-react';
-import { useResources, useFavorites } from '@/hooks/useResourcesNew';
+import { useResources, useFavorites } from '@/hooks/useResourcesClean';
 import { ResourceFilters, ResourceWithStats } from '@/types/resources';
 import ResourceCard from '@/components/resources/ResourceCard';
-import ResourceModal from '@/components/resources/ResourceModal';
+import ResourceModal from '@/components/resources/ResourceModalNew';
 import ResourceFiltersComponent from '@/components/resources/ResourceFilters';
 import { toast } from 'sonner';
 
