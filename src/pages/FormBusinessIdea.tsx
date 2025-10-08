@@ -450,30 +450,7 @@ const Form = () => {
                 />
               </div>
 
-              {/* Select d'organisation - affiché uniquement s'il y a des organisations disponibles */}
-              {availableOrganizations.length > 0 && (
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                  <label className="block text-base md:text-lg font-semibold text-gray-800 mb-2">
-                    🏢 Relier ce projet à une organisation (optionnel)
-                  </label>
-                  <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
-                    <SelectTrigger className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors">
-                      <SelectValue placeholder="Sélectionner une organisation..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Aucune organisation</SelectItem>
-                      {availableOrganizations.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-gray-600 mt-2">
-                    En reliant votre projet à une organisation, vous pourrez bénéficier de son accompagnement et vos livrables y seront visibles.
-                  </p>
-                </div>
-              )}
+                // ...existing code...
             </div>
           </div>
         );

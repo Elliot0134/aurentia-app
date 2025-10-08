@@ -4,6 +4,7 @@ import { LayoutDashboard, Settings, Zap, BookOpen, LogOut, MessageSquare, Handsh
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
+import { useCredits } from "@/hooks/useCreditsSimple";
 import { useIsMobile } from "@/hooks/use-mobile";
 import clsx from 'clsx';
 
@@ -11,7 +12,8 @@ const MobileNavbar = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
   const { projectId } = useParams();
-  const { currentProjectId, userProjects, userCredits, creditsLoading } = useProject();
+  const { currentProjectId, userProjects } = useProject();
+  const { monthlyRemaining, monthlyLimit, purchasedRemaining, isLoading, error } = useCredits();
   const [user, setUser] = useState<any>(null);
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
 
@@ -115,14 +117,13 @@ const MobileNavbar = () => {
         {/* Main navigation with scrollable content */}
         <nav className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           {/* Credits display for mobile - integrated into navbar */}
-          {user && userCredits && (
+          {user && (
             <div className="bg-white px-4 py-2 border-b border-gray-200">
               <div className="flex items-center justify-center gap-2 text-sm">
-                <Zap size={16} className="text-yellow-500" />
-                <span className="font-medium text-gray-700">
-                  {creditsLoading ? '...' : `${userCredits.monthly_credits_remaining} / ${userCredits.monthly_credits_limit}`}
+                <img src="/credit-3D.png" alt="Crédit" className="w-5 h-5" />
+                <span className="text-gray-700">
+                  {isLoading ? '...' : `${(monthlyRemaining ?? 0) + (purchasedRemaining ?? 0)} / ${monthlyLimit ?? 0}`}
                 </span>
-                <span className="text-xs text-gray-500">crédits</span>
               </div>
             </div>
           )}

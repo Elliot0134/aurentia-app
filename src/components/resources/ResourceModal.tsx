@@ -12,11 +12,11 @@ import { Heart, Download, Star, Eye, Clock, Calendar, Tag, ExternalLink, Shoppin
 import { ResourceWithStats } from '@/types/resources';
 import { cn } from '@/lib/utils';
 import { useResourceDownload } from '@/hooks/useResourcesNew';
+import { useCredits } from '@/hooks/useCreditsSimple';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import ImageSlider from './ImageSlider';
-import FAQAccordion from './FAQAccordion';
-import ReviewSection from './ReviewSection';
+import ResourceRatingForm from './ResourceRatingForm';
+import ResourceRatingsList from './ResourceRatingsList';
 
 interface ResourceModalProps {
   resource: ResourceWithStats | null;
@@ -34,6 +34,7 @@ const ResourceModal: React.FC<ResourceModalProps> = ({
   isFavorite
 }) => {
   const downloadMutation = useResourceDownload();
+  const { consumeCredits, totalRemaining } = useCredits();
   
   // États pour les nouvelles fonctionnalités
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -161,11 +162,25 @@ const ResourceModal: React.FC<ResourceModalProps> = ({
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
-      // Logique d'achat (déduire les crédits, débloquer la ressource, etc.)
-      // await purchaseResource(resource.id);
-      handleDownload();
-      toast.success('Achat réussi ! Téléchargement en cours...');
+      // Vérifier si l'utilisateur a assez de crédits
+      if (totalRemaining < resource.price) {
+        toast.error(`Crédits insuffisants. Vous avez ${totalRemaining} crédits, ${resource.price} requis.`);
+        setPurchasing(false);
+        return;
+      }
+
+      // Déduire les crédits
+      const result = await consumeCredits(resource.price);
+      
+      if (result.success) {
+        // Lancer le téléchargement après l'achat réussi
+        handleDownload();
+        toast.success('Achat réussi ! Téléchargement en cours...');
+      } else {
+        toast.error(result.error || 'Erreur lors de l\'achat');
+      }
     } catch (error) {
+      console.error('Erreur lors de l\'achat:', error);
       toast.error('Erreur lors de l\'achat');
     } finally {
       setPurchasing(false);
@@ -379,12 +394,12 @@ const ResourceModal: React.FC<ResourceModalProps> = ({
           )}
 
           {/* Section "Inclus dans la template" */}
-          {resource.included_items && resource.included_items.length > 0 && (
+          {includedItems && includedItems.length > 0 && (
             <div className="px-6 py-8 bg-white">
               <h3 className="text-2xl font-bold mb-6">✨ Inclus dans la template</h3>
               
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-4xl">
-                {resource.included_items.map((item, index) => (
+                {includedItems.map((item, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <span className="text-2xl flex-shrink-0">{item.emoji}</span>
                     <span className="text-gray-700 pt-1">{item.text}</span>
@@ -408,12 +423,23 @@ const ResourceModal: React.FC<ResourceModalProps> = ({
                 </Button>
               </div>
 
-              {/* Note: Section avis temporairement désactivée */}
+              {/* Formulaire d'ajout d'avis (conditionnel) */}
               {showReviewForm && (
                 <div className="mb-6 bg-white p-6 rounded-lg shadow-md">
-                  <p className="text-gray-600">Fonctionnalité d'avis en cours de développement...</p>
+                  <ResourceRatingForm
+                    resourceId={resource.id}
+                    onSuccess={() => {
+                      setShowReviewForm(false);
+                      toast.success('Avis ajouté avec succès !');
+                    }}
+                  />
                 </div>
               )}
+
+              {/* Liste des avis */}
+              <div className="space-y-4">
+                <ResourceRatingsList resourceId={resource.id} />
+              </div>
             </div>
           </div>
 

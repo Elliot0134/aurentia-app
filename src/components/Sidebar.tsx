@@ -264,22 +264,31 @@ const CreditInfo = ({ isCollapsed }: CreditInfoProps) => {
   const displayMonthlyRemaining = monthlyRemaining ?? 0;
   const displayMonthlyLimit = monthlyLimit ?? 0;
   const displayPurchasedRemaining = purchasedRemaining ?? 0;
+  const totalCredits = displayMonthlyRemaining + displayPurchasedRemaining;
 
-  return (
-    <div className={cn("flex flex-col gap-2 w-full", isCollapsed ? "items-center" : "items-start")}>
-      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
-        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
-          <Coins size={16} className="text-gray-600" />
-          {!isCollapsed && <span className="text-sm font-medium text-gray-700">Mensuels:</span>}
-          <span className="text-sm text-gray-600">{displayMonthlyRemaining} / {displayMonthlyLimit}</span>
-        </div>
+  // Affichage fusionné
+  if (isCollapsed) {
+    return (
+      <div className="flex flex-col items-center w-full">
+        <img src="/credit-3D.png" alt="Crédit" className="w-8 h-8 mb-1" />
+        <span className="text-sm font-semibold text-gray-700">{totalCredits}</span>
+        <hr className="w-8 my-1 border-gray-300" />
+        <span className="text-xs text-gray-500">Limite: {displayMonthlyLimit}</span>
       </div>
-      <div className={cn("bg-gray-100 p-2 rounded-md w-full", isCollapsed ? "text-center" : "text-left")}>
-        <div className={cn("flex items-center gap-2", isCollapsed ? "flex-col" : "flex-row")}>
-          <Coins size={16} className="text-gray-600" />
-          {!isCollapsed && <span className="text-sm font-medium text-gray-700">Achetés:</span>}
-          <span className="text-sm text-gray-600">{displayPurchasedRemaining}</span>
-        </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2 w-full items-start">
+      <div className="flex items-center gap-2">
+        <img src="/credit-3D.png" alt="Crédit" className="w-6 h-6" />
+        <span className="text-sm font-medium text-gray-700">Crédits restants:</span>
+        <span className="text-sm text-gray-600 font-semibold">{totalCredits}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-500">(Achetés: {displayPurchasedRemaining} + Mensuels: {displayMonthlyRemaining})</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-500">Limite mensuelle: {displayMonthlyLimit}</span>
       </div>
     </div>
   );
