@@ -51,12 +51,10 @@ import {
   OrganisationSettings,
   OrganisationPartenaires,
   OrganisationProfile,
-  OrganisationFormCreate,
-  OrganisationOnboarding
+  OrganisationFormCreate
 } from "./pages/organisation";
 import OrganisationMentorProfile from "./pages/organisation/OrganisationMentorProfile";
-import OrganisationOnboardingPage from "./pages/organisation/OrganisationOnboarding";
-import OnboardingGuard from "./components/organisation/OnboardingGuard";
+import SetupOrganization from "./pages/SetupOrganization";
 import AuthCallback from "./pages/AuthCallback";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
@@ -308,7 +306,7 @@ const App = () => {
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/setup-organization" element={<OrganisationOnboarding />} />
+                <Route path="/setup-organization" element={<SetupOrganization />} />
                 
                 {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
@@ -339,108 +337,74 @@ const App = () => {
                     <Route path="/individual/my-organization" element={<MyOrganization />} />
                     
                     {/* Organisation routes */}
-                    <Route path="/organisation/:id/onboarding" element={
-                      <OrganisationRouteGuard>
-                        <OrganisationOnboardingPage />
-                      </OrganisationRouteGuard>
-                    } />
-                    
                     <Route path="/organisation/:id/dashboard" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationDashboard />
-                        </OnboardingGuard>
+                        <OrganisationDashboard />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/adherents" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationAdherents />
-                        </OnboardingGuard>
+                        <OrganisationAdherents />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/projets" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationProjets />
-                        </OnboardingGuard>
+                        <OrganisationProjets />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/invitations" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationInvitations />
-                        </OnboardingGuard>
+                        <OrganisationInvitations />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/analytics" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationAnalytics />
-                        </OnboardingGuard>
+                        <OrganisationAnalytics />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/forms" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationForms />
-                        </OnboardingGuard>
+                        <OrganisationForms />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/settings" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationSettings />
-                        </OnboardingGuard>
+                        <OrganisationSettings />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/evenements" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationEvenements />
-                        </OnboardingGuard>
+                        <OrganisationEvenements />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/mentors" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationMentors />
-                        </OnboardingGuard>
+                        <OrganisationMentors />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/my-profile" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationMentorProfile />
-                        </OnboardingGuard>
+                        <OrganisationMentorProfile />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/partenaires" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationPartenaires />
-                        </OnboardingGuard>
+                        <OrganisationPartenaires />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/livrables" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationLivrables />
-                        </OnboardingGuard>
+                        <OrganisationLivrables />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/chatbot" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationChatbot />
-                        </OnboardingGuard>
+                        <OrganisationChatbot />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/profile" element={
                       <OrganisationRouteGuard>
-                        <OnboardingGuard>
-                          <OrganisationProfile />
-                        </OnboardingGuard>
+                        <OrganisationProfile />
                       </OrganisationRouteGuard>
                     } />
                     

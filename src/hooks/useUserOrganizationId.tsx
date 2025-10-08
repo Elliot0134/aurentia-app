@@ -27,7 +27,7 @@ export const useUserOrganizationId = (userId: string | undefined) => {
       try {
         const { data, error } = await (supabase as any)
           .from('user_organizations')
-          .select('organization_id')
+          .select('organization_id, user_role, status')
           .eq('user_id', userId)
           .eq('status', 'active')
           .maybeSingle();
@@ -36,10 +36,21 @@ export const useUserOrganizationId = (userId: string | undefined) => {
           console.error('[useUserOrganizationId] Error fetching organization_id:', error);
         }
 
-        console.log('[useUserOrganizationId] Result:', { data, organizationId: data?.organization_id });
-        setOrganizationId(data?.organization_id || null);
+        console.log('[useUserOrganizationId] Query result:', { 
+          userId,
+          data, 
+          organizationId: data?.organization_id,
+          userRole: data?.user_role,
+          status: data?.status,
+          error 
+        });
+        
+        const orgId = data?.organization_id || null;
+        console.log('[useUserOrganizationId] Setting organizationId to:', orgId);
+        setOrganizationId(orgId);
       } catch (err) {
         console.error('[useUserOrganizationId] Exception fetching organization_id:', err);
+        setOrganizationId(null);
       } finally {
         setLoading(false);
       }

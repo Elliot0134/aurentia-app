@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -24,16 +24,26 @@ const OrganisationFlowWrapper = ({
   const [organisationId, setOrganisationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const hasCheckedRef = useRef(false);
 
   // Vérifier si l'utilisateur a déjà une organisation
   useEffect(() => {
     const checkExistingOrganisation = async () => {
+      // Prevent duplicate checks
+      if (hasCheckedRef.current) {
+        console.log('[OrganisationFlowWrapper] Already checked, skipping');
+        return;
+      }
+      
       // Validate userId before making the query
       if (!userId) {
-        console.error('UserId is required for OrganisationFlowWrapper');
+        console.error('[OrganisationFlowWrapper] UserId is required');
         setLoading(false);
         return;
       }
+
+      console.log('[OrganisationFlowWrapper] Checking for existing organization for user:', userId);
+      hasCheckedRef.current = true;
 
       try {
         // Vérifier si l'utilisateur a une organisation via user_organizations
@@ -45,12 +55,13 @@ const OrganisationFlowWrapper = ({
           .single();
 
         if (userOrgError && userOrgError.code !== 'PGRST116') {
-          console.error('Erreur lors de la récupération de user_organizations:', userOrgError);
+          console.error('[OrganisationFlowWrapper] Error fetching user_organizations:', userOrgError);
           setLoading(false);
           return;
         }
 
         if (userOrg?.organization_id) {
+          console.log('[OrganisationFlowWrapper] Organization found:', userOrg.organization_id);
           // L'utilisateur a déjà une organisation, rediriger vers le dashboard
           setOrganisationId(userOrg.organization_id);
           
@@ -61,11 +72,12 @@ const OrganisationFlowWrapper = ({
           }
           return;
         } else {
+          console.log('[OrganisationFlowWrapper] No organization found, showing setup form');
           // Pas d'organisation, commencer par le setup
           setCurrentStep('setup');
         }
       } catch (error) {
-        console.error('Erreur lors de la vérification de l\'organisation existante:', error);
+        console.error('[OrganisationFlowWrapper] Error checking existing organization:', error);
         setCurrentStep('setup');
       } finally {
         setLoading(false);

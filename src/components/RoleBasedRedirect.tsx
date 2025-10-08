@@ -21,7 +21,8 @@ const RoleBasedRedirect = () => {
   const currentPath = location.pathname;
 
   // PRIORITY CHECK: If user needs to setup organization, redirect them there first
-  if (userProfile?.organization_setup_pending && !currentPath.startsWith('/setup-organization')) {
+  // BUT only if they don't already have an organization (organizationId exists means setup is done)
+  if (userProfile?.organization_setup_pending && !organizationId && !currentPath.startsWith('/setup-organization')) {
     console.log('[RoleBasedRedirect] Organization setup pending - redirecting to setup');
     return <Navigate to="/setup-organization" replace />;
   }

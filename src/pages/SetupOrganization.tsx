@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,12 +7,21 @@ import OrganisationFlowWrapper from '@/components/organisation/OrganisationFlowW
 const SetupOrganization = () => {
   const navigate = useNavigate();
   const { userProfile, organizationId, loading } = useUserRole();
+  const hasCheckedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    console.log('[SetupOrganization] useEffect triggered', { loading, userProfile: !!userProfile, organizationId });
+    console.log('[SetupOrganization] useEffect triggered', { 
+      loading, 
+      userProfile: !!userProfile, 
+      organizationId,
+      hasChecked: hasCheckedRef.current 
+    });
     
     // Wait for loading to complete before checking conditions
-    if (loading) return;
+    if (loading) {
+      console.log('[SetupOrganization] Still loading, waiting...');
+      return;
+    }
     
     // Si pas de profil utilisateur, rediriger vers login
     if (!userProfile) {
@@ -21,12 +30,23 @@ const SetupOrganization = () => {
       return;
     }
 
-    // Si l'utilisateur a déjà une organisation, rediriger vers le dashboard
-    if (organizationId) {
-      console.log('[SetupOrganization] Organization exists, redirecting to dashboard:', organizationId);
+    // ONLY redirect to dashboard if organizationId exists AND setup is complete
+    // IMPORTANT: Only block duplicate checks when we actually have an org to redirect to
+    if (organizationId && userProfile.organization_setup_pending === false) {
+      // Prevent duplicate redirects for the same organizationId
+      if (hasCheckedRef.current === organizationId) {
+        console.log('[SetupOrganization] Already redirected for this org, skipping');
+        return;
+      }
+      
+      hasCheckedRef.current = organizationId;
+      console.log('[SetupOrganization] Organization exists and setup complete, redirecting to dashboard:', organizationId);
       navigate(`/organisation/${organizationId}/dashboard`, { replace: true });
     } else {
-      console.log('[SetupOrganization] No organization, staying on setup page');
+      console.log('[SetupOrganization] No organization or setup pending, staying on setup page', {
+        hasOrg: !!organizationId,
+        setupPending: userProfile.organization_setup_pending
+      });
     }
   }, [userProfile, organizationId, loading, navigate]);
 

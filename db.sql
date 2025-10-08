@@ -1019,6 +1019,9 @@ CREATE TABLE public.resources (
   difficulty text DEFAULT 'Débutant'::text,
   estimated_time text DEFAULT '10-15 minutes'::text,
   price integer DEFAULT 0,
+  title_description text,
+  benefits jsonb DEFAULT '[]'::jsonb,
+  review_count integer DEFAULT 0,
   CONSTRAINT resources_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.ressources_requises (
@@ -1032,6 +1035,19 @@ CREATE TABLE public.ressources_requises (
   CONSTRAINT ressources_requises_pkey PRIMARY KEY (project_id),
   CONSTRAINT ressources_requises_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT ressources_requises_project_id_fkey1 FOREIGN KEY (project_id) REFERENCES public.project_summary(project_id)
+);
+CREATE TABLE public.reviews (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  resource_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  verified_purchase boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT reviews_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id),
+  CONSTRAINT reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.score_projet (
   project_id uuid NOT NULL,

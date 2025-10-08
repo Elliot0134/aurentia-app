@@ -12,13 +12,15 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
-  const hasChecked = useRef(false);
+  const hasCheckedRef = useRef<string | null>(null); // Store the last checked org ID
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
-      // Prevent duplicate checks
-      if (hasChecked.current) return;
-      hasChecked.current = true;
+      // Prevent duplicate checks for the same organization ID
+      if (hasCheckedRef.current === organisationId) {
+        console.log('[OnboardingGuard] Already checked for org:', organisationId);
+        return;
+      }
 
       if (!organisationId) {
         toast({
@@ -30,34 +32,37 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children }) => {
         return;
       }
 
+      console.log('[OnboardingGuard] Checking onboarding status for org:', organisationId);
+      hasCheckedRef.current = organisationId;
+      setIsLoading(true);
+
       try {
         // Vérifier le statut d'onboarding en utilisant le service
         const onboardingStatus = await getOnboardingStatus(organisationId);
         const onboardingComplete = onboardingStatus.onboarding_completed;
 
+        console.log('[OnboardingGuard] Onboarding status:', {
+          organisationId,
+          onboardingComplete,
+          onboarding_step: onboardingStatus.onboarding_step
+        });
+
         setIsOnboardingComplete(onboardingComplete);
 
-        // Si l'onboarding n'est pas complété, rediriger vers la page d'onboarding
+        // Si l'onboarding n'est pas complété, rediriger vers la page de setup
         if (!onboardingComplete) {
-          try {
-            // Récupérer le nom de l'organisation pour le message
-            const organisation = await getOrganisation(organisationId);
-            toast({
-              title: "Onboarding requis",
-              description: `Veuillez compléter la configuration de ${organisation.name || 'votre organisation'} avant de continuer.`,
-            });
-          } catch {
-            toast({
-              title: "Onboarding requis",
-              description: "Veuillez compléter la configuration de votre organisation avant de continuer.",
-            });
-          }
+          console.log('[OnboardingGuard] Onboarding not complete, redirecting to setup');
+          toast({
+            title: "Configuration requise",
+            description: "Veuillez compléter la configuration de votre organisation.",
+          });
           navigate(`/organisation/${organisationId}/onboarding`, { replace: true });
           return;
         }
 
+        console.log('[OnboardingGuard] Onboarding complete, rendering children');
       } catch (error: any) {
-        console.error('Erreur lors de la vérification de l\'onboarding:', error);
+        console.error('[OnboardingGuard] Error checking onboarding:', error);
         toast({
           title: "Erreur",
           description: error.message || "Une erreur s'est produite",
