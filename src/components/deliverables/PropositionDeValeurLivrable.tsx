@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
@@ -54,7 +55,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
   }, [projectId]);
 
   const renderSectionContent = (key: string, placeholder: string) => {
-    if (loading) return <p>Chargement...</p>;
+    if (loading) return <LoadingSpinner size="sm" message="Chargement..." />;
     if (error) return <p>Erreur: {error}</p>;
     if (!data) return <p>{placeholder}</p>;
 
@@ -223,7 +224,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={title}
-        iconSrc="/icones-livrables/proposition-valeur-icon.png"
+        iconComponent={<img src="/icones-livrables/proposition-valeur-icon.png" alt="Proposition de Valeur Icon" />}
         contentComponent={propositionValeurContent}
         definition={definition}
         importance={importance}

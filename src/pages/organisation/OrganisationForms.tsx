@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, FileText, Eye, Edit, Trash2, Copy, BarChart } from 'lucide-react';
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -157,11 +158,7 @@ export default function OrganisationForms() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Chargement...</div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   return (

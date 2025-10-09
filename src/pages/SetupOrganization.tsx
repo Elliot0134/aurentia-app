@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import OrganisationFlowWrapper from '@/components/organisation/OrganisationFlowWrapper';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const SetupOrganization = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const SetupOrganization = () => {
       hasChecked: hasCheckedRef.current 
     });
     
-    // Wait for loading to complete before checking conditions
+    // CRITICAL: Wait for loading to complete before checking conditions
     if (loading) {
       console.log('[SetupOrganization] Still loading, waiting...');
       return;
@@ -30,8 +31,10 @@ const SetupOrganization = () => {
       return;
     }
 
-    // ONLY redirect to dashboard if organizationId exists AND setup is complete
-    // IMPORTANT: Only block duplicate checks when we actually have an org to redirect to
+    // CRITICAL FIX: Only redirect to dashboard if BOTH conditions are met:
+    // 1. organizationId exists (user has an organization)
+    // 2. organization_setup_pending is false (setup is complete)
+    // This prevents the redirect loop where organizationId exists but setup is still marked as pending
     if (organizationId && userProfile.organization_setup_pending === false) {
       // Prevent duplicate redirects for the same organizationId
       if (hasCheckedRef.current === organizationId) {
@@ -43,9 +46,10 @@ const SetupOrganization = () => {
       console.log('[SetupOrganization] Organization exists and setup complete, redirecting to dashboard:', organizationId);
       navigate(`/organisation/${organizationId}/dashboard`, { replace: true });
     } else {
-      console.log('[SetupOrganization] No organization or setup pending, staying on setup page', {
+      console.log('[SetupOrganization] Staying on setup page:', {
         hasOrg: !!organizationId,
-        setupPending: userProfile.organization_setup_pending
+        setupPending: userProfile.organization_setup_pending,
+        reason: !organizationId ? 'No organization' : 'Setup still pending'
       });
     }
   }, [userProfile, organizationId, loading, navigate]);
@@ -77,14 +81,7 @@ const SetupOrganization = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-pink mx-auto mb-4"></div>
-          <p className="text-gray-500">Chargement...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!userProfile?.id) {

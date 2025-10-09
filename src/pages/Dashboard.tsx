@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { FileText, Plus, Zap, Book, X } from "lucide-react";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/contexts/ProjectContext";
 import {
@@ -108,7 +109,7 @@ const Dashboard = () => {
             <h2 className="text-base font-semibold mb-4">Vos projets</h2>
             {userProjectsLoading ? (
               <div className="flex justify-center py-6">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aurentia-pink"></div>
+                <LoadingSpinner size="sm" />
               </div>
             ) : formattedProjects.length > 0 ? (
               <div className="space-y-3">

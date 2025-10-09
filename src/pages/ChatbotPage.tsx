@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 import { toast } from "sonner";
 import { useProject } from '@/contexts/ProjectContext';
@@ -266,7 +267,7 @@ const ChatbotPage = () => {
 
   // Afficher le popup "Que l'aventure commence !" si aucun projet n'est sélectionné
   if (userProjectsLoading) {
-    return <div>Chargement...</div>; // Ou un composant de chargement
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!currentProjectId) {

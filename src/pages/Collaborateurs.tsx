@@ -8,6 +8,7 @@ import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useProject } from '@/contexts/ProjectContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 // Import des composants de collaboration
 import CollaboratorStats from '@/components/collaboration/CollaboratorStats';
@@ -194,7 +195,7 @@ const CollaboratorsPage = () => {
   }, []);
 
   if (userProjectsLoading) {
-    return <div>Chargement...</div>; // Ou un composant de chargement
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!currentProjectId) {
@@ -272,10 +273,7 @@ const CollaboratorsPage = () => {
             </CardHeader>
             <CardContent>
               {invitationsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-2">Chargement des invitations...</span>
-                </div>
+                <LoadingSpinner message="Chargement des invitations..." />
               ) : invitations.length > 0 ? (
                 <TemplateDataTable data={invitations} />
               ) : (

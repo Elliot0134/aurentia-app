@@ -1,5 +1,6 @@
 import { useUserRole } from '@/hooks/useUserRole';
 import { Navigate, useLocation } from 'react-router-dom';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface OrganisationRouteGuardProps {
   children: React.ReactNode;
@@ -21,12 +22,9 @@ const OrganisationRouteGuard = ({ children }: OrganisationRouteGuardProps) => {
     path: location.pathname 
   });
 
+  // CRITICAL: Wait for loading to complete before making ANY redirect decisions
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Vérification des permissions...</div>
-      </div>
-    );
+    return <LoadingSpinner message="Vérification des permissions..." fullScreen />;
   }
 
   // Vérifier si l'utilisateur a le bon rôle pour accéder aux routes d'organisation
@@ -48,9 +46,10 @@ const OrganisationRouteGuard = ({ children }: OrganisationRouteGuardProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Vérifier que l'utilisateur a bien un organizationId (depuis user_organizations) pour les routes d'organisation
+  // CRITICAL FIX: Only redirect to setup if we're CERTAIN there's no organization
+  // The loading check above ensures organizationId has finished loading
   if ((userRole === 'organisation' || userRole === 'staff') && !organizationId) {
-    console.log('[OrganisationRouteGuard] No organizationId, redirecting to setup');
+    console.log('[OrganisationRouteGuard] User has org role but no organizationId - redirecting to setup');
     return <Navigate to="/setup-organization" replace />;
   }
 

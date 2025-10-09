@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Download, Settings, DollarSign, Briefcase, Lightbulb, Package, Shield, TrendingUp, Book, ListChecks, BarChart, Globe, HelpCircle, UserPlus, Mail, Eye, Edit, FolderSearch } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -417,7 +418,7 @@ const ProjectBusiness = () => {
   // Les listeners pour 'deliverablesCompleted' ont été supprimés car la logique est maintenant gérée par le polling sur `statut_project`.
 
   if (loading) {
-    return <div>Chargement...</div>; // Or a loading spinner component
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!project) {

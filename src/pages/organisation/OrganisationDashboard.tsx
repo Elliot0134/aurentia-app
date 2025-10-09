@@ -16,6 +16,7 @@ import RecentActivitiesList from "@/components/ui/recent-activities-list";
 import { useEvents, EventFormData } from "@/hooks/useEvents";
 import { getInvitationStatusColor, getInvitationStatusLabel, getInvitationRoleLabel, INVITATION_ROLE_OPTIONS } from "@/lib/invitationConstants";
 import { getEventTypeColor } from "@/lib/eventConstants";
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import {
   Users,
   FileText,
@@ -137,11 +138,7 @@ const OrganisationDashboard = () => {
   };
 
   if (orgLoading || statsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Chargement du dashboard...</div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement du dashboard..." fullScreen />;
   }
 
   return (
@@ -350,8 +347,7 @@ const OrganisationDashboard = () => {
               <CardContent className="pt-0 h-[calc(100%-80px)] overflow-y-auto">
                 {codesLoading ? (
                   <div className="text-center py-6">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aurentia-pink mx-auto mb-2"></div>
-                    <p className="text-sm text-gray-600">Chargement...</p>
+                    <LoadingSpinner size="sm" message="Chargement..." />
                   </div>
                 ) : (() => {
                   // Filtrer les invitations récentes (30 derniers jours)

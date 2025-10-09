@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Download, Settings } from "lucide-react";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useProject } from "@/contexts/ProjectContext";
 
 const Project = () => {
@@ -26,7 +27,7 @@ const Project = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aurentia-pink"></div>
+          <LoadingSpinner message="Chargement..." />
         </div>
       </div>
     );

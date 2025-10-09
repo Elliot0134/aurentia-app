@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAdherents } from '@/hooks/useOrganisationData';
 import { ModularDataTable } from "@/components/ui/modular-data-table";
 import { adherentsTableConfig, AdherentData } from "@/config/tables";
@@ -44,12 +45,7 @@ const OrganisationAdherents = () => {
   if (loading) {
     return (
       <div className="space-y-6 p-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-500">Chargement des adhérents...</p>
-          </div>
-        </div>
+        <LoadingSpinner message="Chargement des adhérents..." fullScreen />
       </div>
     );
   }

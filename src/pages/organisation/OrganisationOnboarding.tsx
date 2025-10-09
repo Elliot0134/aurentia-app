@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, ChevronLeft, ChevronRight, Building, Target, Users, Award, Globe, Settings } from 'lucide-react';
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { getOrganisation, updateOrganisation, createOrganisation } from "@/services/organisationService";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from '@/hooks/useUserRole';
@@ -600,16 +601,8 @@ const OrganisationOnboardingPage = () => {
   };
 
   if (userLoading || (!isNewOrganisation && !organisation)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-pink mx-auto mb-4"></div>
-          <p className="text-gray-500">
-            {userLoading ? "Chargement..." : "Chargement de l'organisation..."}
-          </p>
-        </div>
-      </div>
-    );
+    const message = userLoading ? "Chargement..." : "Chargement de l'organisation...";
+    return <LoadingSpinner message={message} fullScreen />;
   }
 
   return (

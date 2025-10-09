@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import SimpleTeamTable from "@/components/ui/SimpleTeamTable";
 import { format } from "date-fns";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { fr } from "date-fns/locale";
 import { CalendarIcon, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -527,7 +528,7 @@ const PlanActionPage = () => {
 
   // Afficher le popup "Que l'aventure commence !" si aucun projet n'est sélectionné
   if (userProjectsLoading) {
-    return <div>Chargement...</div>; // Ou un composant de chargement
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!activeProjectId) {

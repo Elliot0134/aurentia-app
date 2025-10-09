@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"; // Import cn for conditional class names
 import { supabase } from '@/integrations/supabase/client';
 import { EmailConfirmationGuard } from './auth/EmailConfirmationGuard';
 import { User } from '@supabase/supabase-js';
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const ProtectedLayout = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -36,11 +37,7 @@ const ProtectedLayout = () => {
   }, [navigate]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Chargement...</p>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!user) {

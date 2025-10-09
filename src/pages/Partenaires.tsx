@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ComingSoonDialog from '@/components/ui/ComingSoonDialog';
 import {
   Dialog,
@@ -299,7 +300,7 @@ const Partenaires = () => {
   }, []);
 
   if (userProjectsLoading) {
-    return <div>Chargement...</div>; // Ou un composant de chargement
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!currentProjectId) {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -104,11 +105,7 @@ const Outils: React.FC = () => {
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   return (

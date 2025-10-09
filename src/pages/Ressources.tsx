@@ -4,13 +4,14 @@ import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useProject } from '@/contexts/ProjectContext';
 import { Button } from "@/components/ui/button";
 import ResourcesPage from '@/pages/individual/ResourcesPage';
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const Ressources = () => {
   const navigate = useNavigate();
   const { currentProjectId, userProjectsLoading } = useProject();
 
   if (userProjectsLoading) {
-    return <div>Chargement...</div>;
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!currentProjectId) {

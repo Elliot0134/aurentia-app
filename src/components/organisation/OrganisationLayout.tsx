@@ -1,4 +1,5 @@
 import React from 'react';
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOrganisationData } from '@/hooks/useOrganisationData';
@@ -28,14 +29,7 @@ export const OrganisationPageLayout: React.FC<OrganisationPageLayoutProps> = ({
   const { organisation, loading: orgLoading } = useOrganisationData();
 
   if (orgLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-aurentia-pink" />
-          <p className="text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (error) {

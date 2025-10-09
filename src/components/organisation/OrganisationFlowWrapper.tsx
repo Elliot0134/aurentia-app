@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { getOrganisation, getOnboardingStatus } from "@/services/organisationService";
 import OrganisationSetupForm from "./OrganisationSetupForm";
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface OrganisationFlowWrapperProps {
   userId: string;
@@ -52,7 +53,7 @@ const OrganisationFlowWrapper = ({
           .select('organization_id, user_role, status')
           .eq('user_id', userId)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
 
         if (userOrgError && userOrgError.code !== 'PGRST116') {
           console.error('[OrganisationFlowWrapper] Error fetching user_organizations:', userOrgError);
@@ -64,6 +65,17 @@ const OrganisationFlowWrapper = ({
           console.log('[OrganisationFlowWrapper] Organization found:', userOrg.organization_id);
           // L'utilisateur a déjà une organisation, rediriger vers le dashboard
           setOrganisationId(userOrg.organization_id);
+          
+          // CRITICAL: Also ensure organization_setup_pending is set to false
+          // This prevents the redirect loop
+          const { error: updateError } = await supabase
+            .from('profiles' as any)
+            .update({ organization_setup_pending: false })
+            .eq('id', userId);
+          
+          if (updateError) {
+            console.error('[OrganisationFlowWrapper] Error updating organization_setup_pending:', updateError);
+          }
           
           if (onComplete) {
             onComplete();
@@ -139,14 +151,7 @@ const OrganisationFlowWrapper = ({
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-aurentia-pink border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement de votre organisation...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement de votre organisation..." fullScreen />;
   }
 
   if (currentStep === 'setup') {

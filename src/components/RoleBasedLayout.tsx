@@ -3,6 +3,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import RoleBasedSidebar from './RoleBasedSidebar';
 import { Outlet, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const RoleBasedLayout = () => {
   const { userProfile, loading } = useUserRole();
@@ -15,12 +16,7 @@ const RoleBasedLayout = () => {
   const isOrganisationRoute = location.pathname.startsWith('/organisation/');
   
   if (loading) {
-    console.log('[RoleBasedLayout] Showing loading state');
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Chargement...</div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
   
   return (

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -432,12 +433,7 @@ const OrganisationProfile = () => {
   if (orgLoading || statsLoading) {
     return (
       <div className="space-y-6 p-4 md:p-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-pink mx-auto mb-4"></div>
-            <p className="text-gray-500">Chargement du profil...</p>
-          </div>
-        </div>
+        <LoadingSpinner message="Chargement du profil..." fullScreen />
       </div>
     );
   }

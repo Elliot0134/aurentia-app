@@ -7,6 +7,7 @@ import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useProject } from '@/contexts/ProjectContext'; // Import useProject
 import { Button } from "@/components/ui/button"; // Import Button
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const Automatisations = () => {
   const navigate = useNavigate(); // Initialize useNavigate
@@ -19,7 +20,7 @@ const Automatisations = () => {
   }, []);
 
   if (userProjectsLoading) {
-    return <div>Chargement...</div>; // Ou un composant de chargement
+    return <LoadingSpinner message="Chargement..." fullScreen />;
   }
 
   if (!currentProjectId) {
