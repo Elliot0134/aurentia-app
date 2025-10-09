@@ -152,6 +152,12 @@ export const useUserProfile = () => {
       console.log('[useUserProfile] Auth state changed:', event);
       if (!mountedRef.current) return;
 
+      // 🔧 CRITICAL FIX: Ignore INITIAL_SESSION to prevent infinite loops
+      if (event === 'INITIAL_SESSION') {
+        console.log('[useUserProfile] 🚫 Ignoring INITIAL_SESSION to prevent loops');
+        return;
+      }
+
       // Refetch UNIQUEMENT sur sign in
       if (event === 'SIGNED_IN') {
         // Petit délai pour laisser Supabase se stabiliser

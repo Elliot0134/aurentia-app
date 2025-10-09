@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -8,20 +8,32 @@ import { supabase } from '@/integrations/supabase/client';
 export const useUserOrganizationId = (userId: string | undefined) => {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchInProgressRef = useRef(false);
+  const lastUserIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchOrganizationId = async () => {
       console.log('[useUserOrganizationId] Fetching for userId:', userId);
+      
+      // CRITICAL FIX: Prevent infinite loops - check if already fetching for the same userId
+      if (fetchInProgressRef.current && lastUserIdRef.current === userId) {
+        console.log('[useUserOrganizationId] 🚫 Already fetching for same userId, skipping...');
+        return;
+      }
       
       // If no userId, set loading to false and return null
       if (!userId) {
         console.log('[useUserOrganizationId] No userId provided, setting loading to false');
         setLoading(false);
         setOrganizationId(null);
+        fetchInProgressRef.current = false;
+        lastUserIdRef.current = undefined;
         return;
       }
 
-      // Start loading
+      // CRITICAL FIX: Set fetch in progress flag and track current userId
+      fetchInProgressRef.current = true;
+      lastUserIdRef.current = userId;
       setLoading(true);
 
       try {
@@ -53,6 +65,7 @@ export const useUserOrganizationId = (userId: string | undefined) => {
         setOrganizationId(null);
       } finally {
         setLoading(false);
+        fetchInProgressRef.current = false; // ✅ CRITICAL: Release the lock
       }
     };
 

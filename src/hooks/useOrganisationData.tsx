@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -40,9 +40,22 @@ export const useOrganisationData = () => {
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchInProgressRef = useRef(false);
 
   const fetchOrganisation = useCallback(async () => {
-    if (!organisationId) return;
+    if (!organisationId) {
+      setLoading(false);
+      return;
+    }
+
+    // Prevent concurrent fetches
+    if (fetchInProgressRef.current) {
+      console.log('[useOrganisationData] Fetch already in progress, skipping');
+      return;
+    }
+
+    fetchInProgressRef.current = true;
+    console.log('[useOrganisationData] Fetching organisation:', organisationId);
 
     try {
       setLoading(true);
@@ -79,21 +92,30 @@ export const useOrganisationData = () => {
           updated_at: data.updated_at || data.created_at
         };
         
+        console.log('[useOrganisationData] Organisation loaded successfully');
         setOrganisation(adaptedOrganisation);
         setError(null);
       } else {
         setError('Organisation non trouvée');
       }
     } catch (err) {
+      console.error('[useOrganisationData] Error:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
   }, [organisationId]);
 
+  // FIX CRITIQUE: Utiliser organisationId directement comme dépendance
+  // au lieu de passer par fetchOrganisation pour éviter la boucle infinie
   useEffect(() => {
-    fetchOrganisation();
-  }, [fetchOrganisation]);
+    if (organisationId) {
+      fetchOrganisation();
+    } else {
+      setLoading(false);
+    }
+  }, [organisationId]); // ✅ Dépend uniquement de organisationId, pas de fetchOrganisation
 
   return {
     organisation,
@@ -108,10 +130,23 @@ export const useOrganisationStats = () => {
   const { id: organisationId } = useParams();
   const [stats, setStats] = useState<OrganisationStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchInProgressRef = useRef(false);
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!organisationId) return;
+      if (!organisationId) {
+        setLoading(false);
+        return;
+      }
+
+      // Prevent concurrent fetches
+      if (fetchInProgressRef.current) {
+        console.log('[useOrganisationStats] Fetch already in progress, skipping');
+        return;
+      }
+
+      fetchInProgressRef.current = true;
+      console.log('[useOrganisationStats] Fetching stats for:', organisationId);
 
       try {
         setLoading(true);
@@ -139,6 +174,7 @@ export const useOrganisationStats = () => {
         console.error('Erreur lors du chargement des statistiques:', err);
       } finally {
         setLoading(false);
+        fetchInProgressRef.current = false;
       }
     };
 
@@ -376,19 +412,27 @@ export const useMentors = () => {
 };
 
 // Hook pour les événements
-export const useEvents = () => {
-  const { id: organisationId } = useParams();
+export const useEvents = (organizationId: string) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchInProgressRef = useRef(false);
 
   const fetchEvents = useCallback(async () => {
-    if (!organisationId) return;
+    if (!organizationId) return;
+
+    // Prevent concurrent fetches
+    if (fetchInProgressRef.current) {
+      console.log('[useEvents] Fetch already in progress, skipping');
+      return;
+    }
+
+    fetchInProgressRef.current = true;
 
     try {
       setLoading(true);
       
       // Utiliser la nouvelle table events avec le service
-      const eventData = await getOrganisationEvents(organisationId);
+      const eventData = await getOrganisationEvents(organizationId);
       
       // Adapter les données aux types Event
             const adaptedEvents: Event[] = eventData.map((event: any) => ({
@@ -414,18 +458,19 @@ export const useEvents = () => {
       setEvents([]);
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
-  }, [organisationId]);
+  }, [organizationId]);
 
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents]);
+  }, [organizationId]); // ✅ Dépend uniquement de organizationId
 
   const addEvent = useCallback(async (eventData: Omit<Event, 'id' | 'organisation_id'>) => {
-    if (!organisationId) return null;
+    if (!organizationId) return null;
 
     try {
-      const newEvent = await createEvent(organisationId, {
+      const newEvent = await createEvent(organizationId, {
         title: eventData.title,
         description: eventData.description,
         start_date: eventData.start.toISOString(),
@@ -444,9 +489,9 @@ export const useEvents = () => {
       console.error('Erreur lors de la création de l\'événement:', err);
       return null;
     }
-  }, [organisationId, fetchEvents]);
+  }, [organizationId, fetchEvents]);
 
-  const updateEvent = useCallback(async (eventId: string, updates: Partial<Event>) => {
+  const editEvent = useCallback(async (eventId: string, updates: Partial<Event>) => {
     try {
       await updateEventService(eventId, updates);
       await fetchEvents(); // Refresh la liste
@@ -468,7 +513,7 @@ export const useEvents = () => {
     events,
     loading,
     addEvent,
-    updateEvent,
+    editEvent,
     deleteEvent,
     refetch: fetchEvents
   };
@@ -527,9 +572,18 @@ export const useInvitationCodes = () => {
   const { id: organisationId } = useParams();
   const [codes, setCodes] = useState<InvitationCode[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchInProgressRef = useRef(false);
 
   const fetchCodes = useCallback(async () => {
     if (!organisationId) return;
+
+    // Prevent concurrent fetches
+    if (fetchInProgressRef.current) {
+      console.log('[useInvitationCodes] Fetch already in progress, skipping');
+      return;
+    }
+
+    fetchInProgressRef.current = true;
 
     try {
       setLoading(true);
@@ -557,12 +611,13 @@ export const useInvitationCodes = () => {
       console.error('Erreur lors du chargement des codes:', err);
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
   }, [organisationId]);
 
   useEffect(() => {
     fetchCodes();
-  }, [fetchCodes]);
+  }, [organisationId]); // ✅ Dépend uniquement de organisationId
 
   const generateCode = useCallback(async (codeData: Omit<InvitationCode, 'id' | 'organisation_id' | 'created_at' | 'current_uses'>) => {
     if (!organisationId) return null;

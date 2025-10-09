@@ -320,16 +320,17 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     // Determine what organization-related item to show
     let orgItem;
     if (organizationLoading) {
-      // Show loading state
-      orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+      // Show loading state - use a direct link to avoid OrganisationRedirect
+      orgItem = { name: "Organisation", path: organizationId ? `/organisation/${organizationId}/dashboard` : "/setup-organization", icon: <Building size={20} />, isCustomAction: true };
     } else if (userProfile && userProfile.user_role === 'member') {
       // Members go directly to my-organization page (no redirect through /organisation)
       const orgName = userProfile?.organization?.name;
       orgItem = { name: orgName || "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> };
     } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
-      // User has an organization OR has organization role - show organization name or "Organisation" button
+      // CRITICAL FIX: User has an organization OR has organization role - use direct dashboard link
       const orgName = userProfile?.organization?.name;
-      orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+      const directPath = organizationId ? `/organisation/${organizationId}/dashboard` : "/setup-organization";
+      orgItem = { name: orgName || "Organisation", path: directPath, icon: <Building size={20} />, isCustomAction: true };
     } else {
       // User doesn't have an organization - show "Rejoindre une organisation" button
       orgItem = { name: "Rejoindre une organisation", path: "/join-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
@@ -830,16 +831,17 @@ const RoleBasedMobileNavbar = ({
     // Determine what organization-related item to show (same logic as desktop)
     let orgItem;
     if (organizationLoading) {
-      // Show loading state
-      orgItem = { name: "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+      // Show loading state - use direct link to avoid OrganisationRedirect  
+      orgItem = { name: "Organisation", path: organizationId ? `/organisation/${organizationId}/dashboard` : "/setup-organization", icon: <Building size={20} />, isCustomAction: true };
     } else if (userProfile && userProfile.user_role === 'member') {
       // Members go directly to my-organization page (no redirect through /organisation)
       const orgName = userProfile?.organization?.name;
       orgItem = { name: orgName || "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> };
     } else if (hasOrganization || (userProfile && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff'))) {
-      // User has an organization OR has organization role - show organization name or "Organisation" button
+      // CRITICAL FIX: User has an organization OR has organization role - use direct dashboard link
       const orgName = userProfile?.organization?.name;
-      orgItem = { name: orgName || "Organisation", path: "/organisation", icon: <Building size={20} />, isCustomAction: true };
+      const directPath = organizationId ? `/organisation/${organizationId}/dashboard` : "/setup-organization";
+      orgItem = { name: orgName || "Organisation", path: directPath, icon: <Building size={20} />, isCustomAction: true };
     } else {
       // User doesn't have an organization - show "Rejoindre une organisation" button
       orgItem = { name: "Rejoindre une organisation", path: "/join-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
