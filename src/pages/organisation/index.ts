@@ -13,4 +13,3 @@ export { default as OrganisationSettings } from './OrganisationSettings';
 export { default as OrganisationPartenaires } from './OrganisationPartenaires';
 export { default as OrganisationProfile } from './OrganisationProfile';
 export { default as OrganisationFormCreate } from './OrganisationFormCreate';
-export { default as OrganisationOnboarding } from './OrganisationOnboarding';

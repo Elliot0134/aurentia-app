@@ -273,6 +273,12 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* White label color variables - defaults to Aurentia colors */
+    --color-primary: #FF592C;
+    --color-secondary: #FF592C;
+    --color-aurentia-pink: #EF4A6D;
+    --color-aurentia-orange: #FF592C;
   }
   .dark {
     --background: 222.2 84% 4.9%;

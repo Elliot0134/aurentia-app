@@ -39,7 +39,6 @@ const OrganisationAdherents = () => {
       { label: "Voir le profil", href: `/organisation/${organisationId}/adherents/${adherent.id}` },
       { label: "Projets", href: `/organisation/${organisationId}/adherents/${adherent.id}/projets` },
     ],
-    isLuthaneActive: Math.random() > 0.5,
   }));
 
   if (loading) {

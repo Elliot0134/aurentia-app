@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import {
   Accordion,
   AccordionContent,
@@ -35,6 +36,13 @@ const PitchLivrable: React.FC = () => {
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
     hasContent: true,
     hasDefinition: true
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'pitch',
+    deliverableTitle: 'Pitch',
   });
 
   useEffect(() => {
@@ -209,11 +217,14 @@ const PitchLivrable: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={title}
-        iconSrc="/icones-livrables/pitch-icon.png"
+        iconComponent={<img src="/icones-livrables/pitch-icon.png" alt="Pitch Icon" className="w-full h-full object-contain" />}
         contentComponent={pitchContent}
         definition={definition}
         importance={importance}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
       />
     </>
   );

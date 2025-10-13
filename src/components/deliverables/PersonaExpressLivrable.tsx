@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 interface PersonaData {
   identite: string;
@@ -62,6 +63,24 @@ const PersonaExpressLivrable: React.FC = () => {
     hasRecommendations: true,
     hasDefinition: true
   });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId, isInOrganization } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'other',
+    deliverableTitle: 'Persona Express',
+  });
+
+  // Debug: Log deliverable info
+  useEffect(() => {
+    console.log('🔍 PersonaExpress Deliverable Debug:', {
+      deliverableId,
+      organizationId,
+      isInOrganization,
+      showCommentsTab: true,
+      shouldShowTab: true && !!deliverableId
+    });
+  }, [deliverableId, organizationId, isInOrganization]);
 
   useEffect(() => {
     const fetchAllPersonaData = async () => {
@@ -451,6 +470,9 @@ const PersonaExpressLivrable: React.FC = () => {
         definition={definition}
         importance={importanceText} // Passage de la nouvelle prop 'importance'
         showContentTab={true}
+        showCommentsTab={true} // Always show comments tab
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
       />
     </>
   );

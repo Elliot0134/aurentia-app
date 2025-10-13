@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 interface LivrableProps {
   title?: string;
@@ -32,6 +33,13 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
     hasContent: true,
     hasDefinition: true
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'business-model',
+    deliverableTitle: 'Business Model Canvas',
   });
 
   useEffect(() => {
@@ -320,11 +328,14 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={title}
-        iconSrc="/icones-livrables/business-model-icon.png"
+        iconComponent={<img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-full h-full object-contain" />}
         contentComponent={businessModelContent}
         definition={definition}
         importance={importance}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
         modalWidthClass="md:w-[90%]"
       />
     </>

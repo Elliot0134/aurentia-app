@@ -11,6 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useOrganisationData, useOrganisationStats } from '@/hooks/useOrganisationData';
 import { updateOrganisation } from '@/services/organisationService';
+import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
+import ImageUploader from '@/components/ui/ImageUploader';
 import {
   Building,
   Users,
@@ -31,37 +34,13 @@ import {
   X,
   Plus
 } from "lucide-react";
-
-// Options prédéfinies
-const sectorOptions = [
-  "Tech", "Fintech", "Healthtech", "Edtech", "Agritech", "Cleantech",
-  "E-commerce", "SaaS", "IoT", "IA/Machine Learning", "Blockchain",
-  "Mobilité", "Immobilier", "Retail", "Manufacturing", "Services",
-  "Entertainment", "Autre"
-];
-
-const stageOptions = [
-  "Idéation", "Pré-seed", "Seed", "Série A", "Série B", "Série C+",
-  "Growth stage", "Scale-up", "Expansion internationale"
-];
-
-const geographicOptions = [
-  "France", "Europe", "Amérique du Nord", "Amérique du Sud",
-  "Afrique", "Asie", "Océanie", "International"
-];
-
-const supportTypeOptions = [
-  "Mentoring individuel", "Workshops collectifs", "Formations",
-  "Financement direct", "Mise en relation investisseurs",
-  "Espaces de coworking", "Support technique", "Support juridique",
-  "Développement commercial", "Networking"
-];
-
-const specializationOptions = [
-  "Accompagnement stratégique", "Développement produit", "Marketing digital",
-  "Financement", "Juridique", "RH", "Technologie", "International",
-  "Opérations", "Ventes", "Partenariats", "Pitch training"
-];
+import { 
+  SECTOR_OPTIONS, 
+  STAGE_OPTIONS, 
+  SPECIALIZATION_OPTIONS, 
+  SUPPORT_TYPE_OPTIONS, 
+  GEOGRAPHIC_OPTIONS 
+} from "@/constants/organizationTags";
 
 interface OrganisationProfile {
   id: string;
@@ -120,9 +99,41 @@ const OrganisationProfile = () => {
   const { id: organisationId } = useParams();
   const { organisation, loading: orgLoading, refetch } = useOrganisationData();
   const { stats, loading: statsLoading } = useOrganisationStats();
+  const { userProfile } = useUserRole();
   const [isEditing, setIsEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isOwner, setIsOwner] = useState(false);
+  const [checkingOwnership, setCheckingOwnership] = useState(true);
+
+  // Check if current user is owner
+  useEffect(() => {
+    const checkOwnership = async () => {
+      if (!userProfile?.id || !organisationId) {
+        setCheckingOwnership(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await (supabase as any)
+          .from('organizations')
+          .select('created_by')
+          .eq('id', organisationId)
+          .single();
+
+        if (error) throw error;
+        
+        setIsOwner(data?.created_by === userProfile.id);
+      } catch (error) {
+        console.error('Error checking ownership:', error);
+        setIsOwner(false);
+      } finally {
+        setCheckingOwnership(false);
+      }
+    };
+
+    checkOwnership();
+  }, [userProfile?.id, organisationId]);
 
   // État local pour l'édition
   const [editFormData, setEditFormData] = useState({
@@ -136,6 +147,8 @@ const OrganisationProfile = () => {
     address: '',
     foundedYear: new Date().getFullYear(),
     teamSize: 0,
+    logo_url: '',
+    banner_url: '',
     
     // Mission, Vision, Valeurs
     mission: '',
@@ -255,6 +268,8 @@ const OrganisationProfile = () => {
         address: profile.headquarters || '',
         foundedYear: profile.foundedYear || new Date().getFullYear(),
         teamSize: profile.stats.teamSize || 0,
+        logo_url: (organisation as any)?.logo_url || '',
+        banner_url: (organisation as any)?.banner_url || '',
         
         // Mission, Vision, Valeurs
         mission: profile.mission || '',
@@ -285,7 +300,7 @@ const OrganisationProfile = () => {
         allowDirectApplications: profile.allowDirectApplications !== undefined ? profile.allowDirectApplications : true
       });
     }
-  }, [profile, isEditing]);
+  }, [profile, isEditing, organisation]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -308,6 +323,8 @@ const OrganisationProfile = () => {
         address: profile.headquarters || '',
         foundedYear: profile.foundedYear || new Date().getFullYear(),
         teamSize: profile.stats.teamSize || 0,
+        logo_url: (organisation as any)?.logo_url || '',
+        banner_url: (organisation as any)?.banner_url || '',
         
         // Mission, Vision, Valeurs
         mission: profile.mission || '',
@@ -399,36 +416,7 @@ const OrganisationProfile = () => {
     }));
   };
 
-  // Options prédéfinies pour les sélections multiples
-  const sectorOptions = [
-    "Tech", "Fintech", "Healthtech", "Edtech", "Agritech", "Cleantech",
-    "E-commerce", "SaaS", "IoT", "IA/Machine Learning", "Blockchain",
-    "Mobilité", "Immobilier", "Retail", "Manufacturing", "Services",
-    "Entertainment", "Autre"
-  ];
-
-  const stageOptions = [
-    "Idéation", "Pré-seed", "Seed", "Série A", "Série B", "Série C+",
-    "Growth stage", "Scale-up", "Expansion internationale"
-  ];
-
-  const specializationOptions = [
-    "Accompagnement stratégique", "Développement produit", "Marketing digital",
-    "Financement", "Juridique", "RH", "Technologie", "International",
-    "Opérations", "Ventes", "Partenariats", "Pitch training"
-  ];
-
-  const supportTypeOptions = [
-    "Mentoring individuel", "Workshops collectifs", "Formations",
-    "Financement direct", "Mise en relation investisseurs",
-    "Espaces de coworking", "Support technique", "Support juridique",
-    "Développement commercial", "Networking"
-  ];
-
-  const geographicOptions = [
-    "France", "Europe", "Amérique du Nord", "Amérique du Sud",
-    "Afrique", "Asie", "Océanie", "International"
-  ];
+  // Use shared options from constants
 
   if (orgLoading || statsLoading) {
     return (
@@ -468,6 +456,8 @@ const OrganisationProfile = () => {
         address: editFormData.address,
         founded_year: editFormData.foundedYear,
         team_size: editFormData.teamSize,
+        logo_url: editFormData.logo_url || null,
+        banner_url: editFormData.banner_url || null,
         
         // Mission, Vision, Valeurs
         mission: editFormData.mission,
@@ -652,45 +642,47 @@ const OrganisationProfile = () => {
       <div className="mb-6 md:mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">Profil de l'Organisation</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Informations de l'Organisation</h1>
             <p className="text-gray-600 text-sm md:text-base">
-              Gérez les informations publiques de votre organisation.
+              {isOwner ? 'Gérez les informations publiques de votre organisation.' : 'Consultez les informations de l\'organisation.'}
             </p>
           </div>
-            <div className="flex items-center gap-3">
-              {isEditing ? (
-                <>
-                  <Button variant="outline" onClick={handleCancel}>
-                    Annuler
-                  </Button>
+            {isOwner && (
+              <div className="flex items-center gap-3">
+                {isEditing ? (
+                  <>
+                    <Button variant="outline" onClick={handleCancel}>
+                      Annuler
+                    </Button>
+                    <Button 
+                      onClick={handleSave}
+                      disabled={saveStatus === 'saving'}
+                      style={{ backgroundColor: '#ff5932' }} 
+                      className="hover:opacity-90 text-white"
+                    >
+                      {saveStatus === 'saving' ? (
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      ) : saveStatus === 'saved' ? (
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      {saveStatus === 'saving' ? 'Enregistrement...' : 
+                       saveStatus === 'saved' ? 'Enregistré' : 'Enregistrer'}
+                    </Button>
+                  </>
+                ) : (
                   <Button 
-                    onClick={handleSave}
-                    disabled={saveStatus === 'saving'}
+                    onClick={handleEdit}
                     style={{ backgroundColor: '#ff5932' }} 
                     className="hover:opacity-90 text-white"
                   >
-                    {saveStatus === 'saving' ? (
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    ) : saveStatus === 'saved' ? (
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                    ) : (
-                      <Save className="w-4 h-4 mr-2" />
-                    )}
-                    {saveStatus === 'saving' ? 'Enregistrement...' : 
-                     saveStatus === 'saved' ? 'Enregistré' : 'Enregistrer'}
+                    <Edit className="w-4 h-4 mr-2" />
+                    Modifier le profil
                   </Button>
-                </>
-              ) : (
-                <Button 
-                  onClick={handleEdit}
-                  style={{ backgroundColor: '#ff5932' }} 
-                  className="hover:opacity-90 text-white"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Modifier le profil
-                </Button>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -712,66 +704,148 @@ const OrganisationProfile = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
           {/* Colonne principale */}
           <div className="xl:col-span-2 space-y-6">
-            {/* Informations générales */}
+            
+            {/* Informations générales avec logo et bannière */}
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-0">
                 <CardTitle className="flex items-center gap-2">
                   <Building className="w-5 h-5" />
                   Informations générales
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-start gap-4">
-                  <div className="w-16 h-16 bg-aurentia-pink rounded-lg flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                    {(isEditing ? editFormData.name : profile.name).charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 w-full">
-                    <div className="space-y-4">
-                      <div>
-                        {isEditing ? (
-                          <div>
-                            <Input 
-                              id="name"
-                              value={editFormData.name}
-                              onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                              className={`text-lg font-semibold ${errors.name ? 'border-red-500' : ''}`}
-                              placeholder="Nom de votre organisation"
-                            />
-                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                          </div>
+                {/* Banner Image */}
+                <div className="relative -mx-6 -mt-6 mb-6">
+                  {isEditing && isOwner ? (
+                    <div className="p-6 pb-0">
+                      <Label className="mb-3 block">Bannière</Label>
+                      <ImageUploader
+                        bucket="organisation-banner"
+                        value={editFormData.banner_url}
+                        folder=""
+                        maxSizeMB={5}
+                        mode="banner"
+                        disabled={!isEditing}
+                        onUpload={(url) => setEditFormData(prev => ({ ...prev, banner_url: url }))}
+                        onDelete={() => setEditFormData(prev => ({ ...prev, banner_url: '' }))}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-gradient-to-r from-aurentia-pink to-aurentia-orange relative overflow-hidden">
+                      {((organisation as any)?.banner_url || editFormData.banner_url) && (
+                        <img
+                          src={(organisation as any)?.banner_url || editFormData.banner_url || ''}
+                          alt="Banner"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Logo and Name Section */}
+                <div className="flex flex-col sm:flex-row items-start gap-4 -mt-16 relative z-10">
+                  {isEditing && isOwner ? (
+                    <div className="w-full">
+                      <Label className="mb-3 block">Logo</Label>
+                      <ImageUploader
+                        bucket="organisation-logo"
+                        value={editFormData.logo_url}
+                        folder=""
+                        maxSizeMB={2}
+                        mode="logo"
+                        disabled={!isEditing}
+                        fallbackText={editFormData.name}
+                        onUpload={(url) => setEditFormData(prev => ({ ...prev, logo_url: url }))}
+                        onDelete={() => setEditFormData(prev => ({ ...prev, logo_url: '' }))}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {/* Logo Display */}
+                      <div className="flex-shrink-0">
+                        {((organisation as any)?.logo_url || editFormData.logo_url) ? (
+                          <img
+                            src={(organisation as any)?.logo_url || editFormData.logo_url || ''}
+                            alt={`${profile.name} logo`}
+                            className="w-24 h-24 rounded-lg object-cover border-4 border-white shadow-lg bg-white"
+                            onError={(e) => {
+                              // Fallback to initial letter
+                              const target = e.target as HTMLImageElement;
+                              const parent = target.parentElement;
+                              if (parent) {
+                                target.style.display = 'none';
+                                const fallback = document.createElement('div');
+                                fallback.className = 'w-24 h-24 rounded-lg flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-lg';
+                                fallback.style.backgroundColor = (organisation as any)?.primary_color || '#FF592C';
+                                fallback.textContent = profile.name.charAt(0).toUpperCase();
+                                parent.appendChild(fallback);
+                              }
+                            }}
+                          />
                         ) : (
-                          <h2 className="text-xl font-semibold">{profile.name}</h2>
+                          <div 
+                            className="w-24 h-24 rounded-lg flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-lg"
+                            style={{ backgroundColor: (organisation as any)?.primary_color || '#FF592C' }}
+                          >
+                            {profile.name.charAt(0).toUpperCase()}
+                          </div>
                         )}
                       </div>
                       
-                      <div>
-                        {isEditing ? (
-                          <Select 
-                            value={editFormData.type}
-                            onValueChange={(value: OrganisationProfile['type']) => 
-                              setEditFormData(prev => ({ ...prev, type: value }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="incubator">Incubateur</SelectItem>
-                              <SelectItem value="accelerator">Accélérateur</SelectItem>
-                              <SelectItem value="venture_capital">Fonds d'investissement</SelectItem>
-                              <SelectItem value="corporate">Corporate</SelectItem>
-                              <SelectItem value="university">Université</SelectItem>
-                              <SelectItem value="government">Public</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge className={getTypeColor(profile.type)}>
-                            {getTypeLabel(profile.type)}
-                          </Badge>
-                        )}
+                      {/* Name and Type */}
+                      <div className="flex-1 w-full pt-12">
+                        <div className="space-y-4">
+                          <div>
+                            {isEditing ? (
+                              <div>
+                                <Input 
+                                  id="name"
+                                  value={editFormData.name}
+                                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                                  className={`text-lg font-semibold ${errors.name ? 'border-red-500' : ''}`}
+                                  placeholder="Nom de votre organisation"
+                                />
+                                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                              </div>
+                            ) : (
+                              <h2 className="text-2xl font-bold">{profile.name}</h2>
+                            )}
+                          </div>
+                          
+                          <div>
+                            {isEditing ? (
+                              <Select 
+                                value={editFormData.type}
+                                onValueChange={(value: OrganisationProfile['type']) => 
+                                  setEditFormData(prev => ({ ...prev, type: value }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="incubator">Incubateur</SelectItem>
+                                  <SelectItem value="accelerator">Accélérateur</SelectItem>
+                                  <SelectItem value="venture_capital">Fonds d'investissement</SelectItem>
+                                  <SelectItem value="corporate">Corporate</SelectItem>
+                                  <SelectItem value="university">Université</SelectItem>
+                                  <SelectItem value="government">Public</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Badge className={getTypeColor(profile.type)}>
+                                {getTypeLabel(profile.type)}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
 
                 <div>
@@ -893,21 +967,21 @@ const OrganisationProfile = () => {
                 <MultiSelectField
                   label="Secteurs d'activité"
                   field="sectors"
-                  options={sectorOptions}
+                  options={SECTOR_OPTIONS}
                   placeholder="Autre secteur..."
                 />
 
                 <MultiSelectField
                   label="Stades d'investissement"
                   field="stages"
-                  options={stageOptions}
+                  options={STAGE_OPTIONS}
                   placeholder="Autre stade..."
                 />
 
                 <MultiSelectField
                   label="Zones géographiques"
                   field="geographicFocus"
-                  options={geographicOptions}
+                  options={GEOGRAPHIC_OPTIONS}
                   placeholder="Autre zone..."
                   className="grid grid-cols-2 md:grid-cols-4 gap-2"
                 />
@@ -915,7 +989,7 @@ const OrganisationProfile = () => {
                 <MultiSelectField
                   label="Spécialisations"
                   field="specializations"
-                  options={specializationOptions}
+                  options={SPECIALIZATION_OPTIONS}
                   placeholder="Autre spécialisation..."
                 />
               </CardContent>
@@ -980,7 +1054,7 @@ const OrganisationProfile = () => {
                 <MultiSelectField
                   label="Types de support"
                   field="supportTypes"
-                  options={supportTypeOptions}
+                  options={SUPPORT_TYPE_OPTIONS}
                   placeholder="Autre type de support..."
                 />
               </CardContent>

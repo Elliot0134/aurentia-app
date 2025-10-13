@@ -1,23 +1,8 @@
-import { useUserProfile } from './useUserProfile';
 import { UserRole } from '@/types/userTypes';
-import { useUserOrganizationId } from './useUserOrganizationId';
+import { useUser } from '@/contexts/UserContext';
 
 export const useUserRole = () => {
-  const { userProfile, loading: profileLoading } = useUserProfile();
-  const { organizationId, loading: orgIdLoading } = useUserOrganizationId(userProfile?.id);
-  
-  // Combined loading state - wait for both profile AND organization ID
-  const loading = profileLoading || orgIdLoading;
-  
-  const userRole: UserRole = userProfile?.user_role || 'individual';
-  
-  console.log('[useUserRole]', { 
-    userRole, 
-    organizationId, 
-    profileLoading, 
-    orgIdLoading, 
-    loading 
-  });
+  const { userProfile, userRole, organizationId, loading } = useUser();
   
   const isIndividual = userRole === 'individual';
   const isMember = userRole === 'member';

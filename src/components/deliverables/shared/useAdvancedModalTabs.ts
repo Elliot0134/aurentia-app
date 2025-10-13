@@ -1,12 +1,13 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 
-export type TabType = 'structure' | 'definition' | 'recommendations' | 'chat';
+export type TabType = 'structure' | 'definition' | 'recommendations' | 'chat' | 'comments';
 
 interface UseModalTabsProps {
   hasContent?: boolean;
   hasDefinition?: boolean;
   hasRecommendations?: boolean;
   hasChat?: boolean;
+  hasComments?: boolean;
   defaultTab?: TabType;
 }
 
@@ -15,6 +16,7 @@ export const useAdvancedModalTabs = ({
   hasDefinition = false,
   hasRecommendations = false,
   hasChat = false,
+  hasComments = false,
   defaultTab
 }: UseModalTabsProps) => {
   // Détermine l'onglet initial
@@ -24,6 +26,7 @@ export const useAdvancedModalTabs = ({
     if (hasRecommendations) return 'recommendations';
     if (hasDefinition) return 'definition';
     if (hasChat) return 'chat';
+    if (hasComments) return 'comments';
     return 'structure';
   };
 

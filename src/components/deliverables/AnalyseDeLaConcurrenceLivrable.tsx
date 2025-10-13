@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 interface AnalyseDeLaConcurrenceData {
   free_direct_definition: string;
@@ -97,6 +98,13 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
     hasContent: true,
     hasRecommendations: !!concurrenceData?.recommandations,
     hasDefinition: true
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'market-analysis',
+    deliverableTitle: 'Analyse de la Concurrence',
   });
 
   useEffect(() => {
@@ -363,11 +371,14 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title="Analyse de la Concurrence"
-        iconSrc="/icones-livrables/concurrence-icon.png"
+        iconComponent={<img src="/icones-livrables/concurrence-icon.png" alt="Concurrence Icon" className="w-full h-full object-contain" />}
         contentComponent={concurrenceContent}
         recommendations={concurrenceData?.recommandations}
         definition={definition}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
       />
     </>
   );

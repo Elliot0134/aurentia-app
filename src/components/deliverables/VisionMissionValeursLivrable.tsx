@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 interface VisionData {
   vision_globale: string;
@@ -81,6 +82,13 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
     hasContent: true,
     hasDefinition: true
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'other',
+    deliverableTitle: 'Vision Mission Valeurs',
   });
 
   useEffect(() => {
@@ -339,11 +347,14 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={livrableTitle}
-        iconSrc="/icones-livrables/vision-icon.png"
+        iconComponent={<img src="/icones-livrables/vision-icon.png" alt="Vision Icon" className="w-full h-full object-contain" />}
         contentComponent={visionMissionContent}
         definition={livrableDefinition}
         importance={livrableImportance}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
       />
     </>
   );

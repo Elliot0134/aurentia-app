@@ -19,6 +19,20 @@ export interface Organization {
   welcome_message?: string;
   newsletter_enabled: boolean;
   created_at: string;
+  settings?: {
+    branding?: {
+      primaryColor?: string;
+      secondaryColor?: string;
+      whiteLabel?: boolean;
+    };
+    notifications?: {
+      emailNotifications?: boolean;
+      projectUpdates?: boolean;
+      mentorAssignments?: boolean;
+      weeklyReports?: boolean;
+      systemAlerts?: boolean;
+    };
+  };
 }
 
 export interface UserProfile {
@@ -27,6 +41,7 @@ export interface UserProfile {
   user_role: UserRole;
   organization?: Organization; // Loaded via join, not a direct column
   organization_setup_pending?: boolean; // Flag indicating user needs to complete organization setup
+  organization_setup_dismissed?: boolean; // Flag indicating user permanently dismissed the setup guide
   invitation_code_used?: string;
   created_at?: string;
   nb_projects?: string;

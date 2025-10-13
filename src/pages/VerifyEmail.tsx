@@ -18,7 +18,9 @@ const VerifyEmail = () => {
   const { state, actions } = useEmailConfirmation(user);
   const [showModal, setShowModal] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [hasShownConfirmedToast, setHasShownConfirmedToast] = useState(false);
+  const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
+  const [hasShownRedirectToast, setHasShownRedirectToast] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Check if user was just confirmed from email link
   const wasConfirmed = searchParams.get('confirmed') === 'true';
@@ -47,9 +49,9 @@ const VerifyEmail = () => {
     // 1. Not loading
     // 2. User exists
     // 3. Email is confirmed (isConfirmed = true AND isRequired = false)
-    // 4. Haven't shown toast yet
-    if (!loading && user && !state.isLoading && state.isConfirmed && !state.isRequired && !hasShownConfirmedToast) {
-      setHasShownConfirmedToast(true);
+    // 4. Haven't shown redirect toast yet
+    if (!loading && user && !state.isLoading && state.isConfirmed && !state.isRequired && !hasShownRedirectToast) {
+      setHasShownRedirectToast(true);
       
       toast({
         title: "Email confirmé !",
@@ -61,12 +63,12 @@ const VerifyEmail = () => {
         navigate('/individual/dashboard', { replace: true });
       }, 1500);
     }
-  }, [loading, user, state.isLoading, state.isConfirmed, state.isRequired, navigate, hasShownConfirmedToast]);
+  }, [loading, user, state.isLoading, state.isConfirmed, state.isRequired, navigate, hasShownRedirectToast]);
 
   useEffect(() => {
     // Show success message if just confirmed via email link - only once
-    if (wasConfirmed && !hasShownConfirmedToast) {
-      setHasShownConfirmedToast(true);
+    if (wasConfirmed && !hasShownWelcomeToast) {
+      setHasShownWelcomeToast(true);
       
       toast({
         title: "Email confirmé !",
@@ -76,12 +78,26 @@ const VerifyEmail = () => {
       // Clean up URL
       window.history.replaceState({}, '', '/verify-email');
       
-      // Refresh the status to update the UI
+      // Refresh the status to update the UI - wait a bit longer for DB trigger to complete
       setTimeout(() => {
         actions.refreshStatus();
-      }, 1000);
+      }, 1500);
     }
-  }, [wasConfirmed, hasShownConfirmedToast, actions]);
+  }, [wasConfirmed, hasShownWelcomeToast, actions]);
+
+  // Retry mechanism: if user arrived with confirmed=true but profile hasn't updated yet, retry a few times
+  useEffect(() => {
+    if (wasConfirmed && !state.isLoading && state.isRequired && retryCount < 3) {
+      // Profile hasn't been updated yet, retry after a delay
+      const retryTimer = setTimeout(() => {
+        console.log(`[VerifyEmail] Retry ${retryCount + 1}/3: Profile not updated yet, refreshing status...`);
+        setRetryCount(prev => prev + 1);
+        actions.refreshStatus();
+      }, 2000); // Wait 2 seconds between retries
+
+      return () => clearTimeout(retryTimer);
+    }
+  }, [wasConfirmed, state.isLoading, state.isRequired, retryCount, actions]);
 
   const handleResendEmail = async () => {
     setIsResending(true);
@@ -144,7 +160,7 @@ const VerifyEmail = () => {
   }
 
   // If confirmed AND no longer required, show success message while redirecting
-  if (state.isConfirmed && !state.isRequired && hasShownConfirmedToast) {
+  if (state.isConfirmed && !state.isRequired && hasShownRedirectToast) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F9F6F2]">
         <Card className="w-full max-w-md">

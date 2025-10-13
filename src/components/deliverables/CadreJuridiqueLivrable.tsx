@@ -9,7 +9,8 @@ import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
-import { useHarmonizedModal } from './shared/useHarmonizedModal'; // Import the new hook
+import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 interface StructureContent {
   title: string;
@@ -53,6 +54,13 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
     hasContent: !!structureData,
     hasDefinition: !!staticDefinition,
     hasRecommendations: !!dbRecommendations,
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'legal',
+    deliverableTitle: 'Cadre Juridique',
   });
 
   useEffect(() => {
@@ -254,6 +262,9 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
         importance={staticImportance}
         recommendations={dbRecommendations}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
       />
     </>
   );

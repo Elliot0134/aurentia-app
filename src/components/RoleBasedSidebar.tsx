@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { UserProfile } from '@/types/userTypes';
-import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot, Plus } from 'lucide-react';
+import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot, Plus, Info } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AurentiaLogo from './AurentiaLogo';
@@ -73,7 +73,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   // Modal state for public organizations discovery
   const [publicOrgsModalOpen, setPublicOrgsModalOpen] = useState(false);
 
-  // Modal state for organization setup guide (one-time modal)
+  // Modal state for organization setup guide (one-time per session)
   const [showOrgSetupGuide, setShowOrgSetupGuide] = useState(false);
   
   // Check if user should see the organization setup guide
@@ -92,10 +92,16 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           .single();
         
         if (!userOrg?.organization_id) {
-          // Check localStorage to see if user has dismissed this modal
-          const hasSeenGuide = localStorage.getItem(`org_setup_guide_seen_${user.id}`);
+          // Check sessionStorage for "one time per session" behavior
+          const shownThisSession = sessionStorage.getItem(`org_setup_guide_shown_${user.id}`);
           
-          if (!hasSeenGuide) {
+          // Check if user permanently dismissed the modal
+          const permanentlyDismissed = userProfile.organization_setup_dismissed === true;
+          
+          if (!shownThisSession && !permanentlyDismissed) {
+            // Mark as shown in this session
+            sessionStorage.setItem(`org_setup_guide_shown_${user.id}`, 'true');
+            
             // Show the guide modal after a short delay
             setTimeout(() => {
               setShowOrgSetupGuide(true);
@@ -104,11 +110,9 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         }
       }
     };
-    
-    checkOrgSetupGuide();
-  }, [userProfile, user]);
 
-  // Check if mobile on mount and when window resizes
+    checkOrgSetupGuide();
+  }, [userProfile, user]);  // Check if mobile on mount and when window resizes
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -224,17 +228,33 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
 
   // Handle organization setup guide modal
   const handleStartOrgSetup = () => {
-    if (user?.id) {
-      localStorage.setItem(`org_setup_guide_seen_${user.id}`, 'true');
-    }
     setShowOrgSetupGuide(false);
-    // Navigate to organization onboarding
-    navigate('/organisation/onboarding');
+    // Navigate to setup organization page
+    navigate('/setup-organization');
   };
 
-  const handleCloseOrgSetupGuide = () => {
+  const handleCloseOrgSetupGuide = async () => {
+    // Just close for this session - modal will appear again on next login/session
+    setShowOrgSetupGuide(false);
+  };
+
+  const handleDismissPermanently = async () => {
     if (user?.id) {
-      localStorage.setItem(`org_setup_guide_seen_${user.id}`, 'true');
+      // Update the database to permanently dismiss
+      try {
+        const { error } = await (supabase as any)
+          .from('profiles')
+          .update({ organization_setup_dismissed: true })
+          .eq('id', user.id);
+        
+        if (error) {
+          console.error('Error updating organization_setup_dismissed:', error);
+        } else {
+          console.log('Organization setup guide permanently dismissed');
+        }
+      } catch (err) {
+        console.error('Failed to update dismissal preference:', err);
+      }
     }
     setShowOrgSetupGuide(false);
   };
@@ -271,8 +291,8 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
             { name: "Partenaires", path: `/organisation/${orgId}/partenaires`, icon: <Handshake size={20} /> },
             { name: "Livrables", path: `/organisation/${orgId}/livrables`, icon: <FileText size={20} /> },
             { name: "Chatbot", path: `/organisation/${orgId}/chatbot`, icon: <Bot size={20} /> },
+            { name: "Informations", path: `/organisation/${orgId}/informations`, icon: <Info size={20} /> },
             { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> },
-            { name: "Profil", path: `/organisation/${orgId}/profile`, icon: <UserCheck size={20} /> },
             { isDivider: true },
             { name: "Retour à l'espace Adhérent", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true },
           ],
@@ -401,20 +421,57 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   };
 
   const config = getSidebarConfig();
+  
+  // Check if white label mode is enabled
+  const whiteLabelEnabled = userProfile?.organization?.settings?.branding?.whiteLabel || false;
+  const orgLogo = userProfile?.organization?.logo_url;
+  const orgName = userProfile?.organization?.name;
+  
+  // Determine if we should show organization branding:
+  // 1. Must be in organization pages (/org/*)
+  // 2. White label must be enabled
+  // 3. Organization must have logo and name
+  const isInOrgPages = location.pathname.startsWith('/org/');
+  const showOrgBranding = isInOrgPages && whiteLabelEnabled && orgLogo && orgName;
+
+  // Helper to get active menu item class
+  const getActiveMenuClass = (isActive: boolean) => {
+    if (!isActive) return "text-gray-700 hover:bg-gray-100";
+    return "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white font-medium";
+  };
 
   // Desktop sidebar
   const DesktopSidebar = () => (
     <div className={cn("hidden md:block h-screen fixed top-0 left-0 z-10 transition-all duration-300", isCollapsed ? "w-20" : "w-64")}>
       <div className="bg-white/80 backdrop-blur-sm h-full rounded-r-xl shadow-sm border-r border-gray-100 relative">
         <div className="flex items-center p-4 gap-2 relative">
-          {isCollapsed ? (
-            <div className="h-8 w-8">
-              <img src="/picto-aurentia.svg" alt="Aurentia Picto" className="h-full w-full" />
-            </div>
+          {showOrgBranding ? (
+            // Show organization branding
+            isCollapsed ? (
+              <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+                <img src={orgLogo} alt={orgName} className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+                  <img src={orgLogo} alt={orgName} className="h-full w-full object-cover" />
+                </div>
+                <span className="font-bold truncate text-gray-900">
+                  {orgName}
+                </span>
+              </div>
+            )
           ) : (
-            <div className="h-8 w-auto"> {/* Adjust width for the long logo */}
-              <img src="/Aurentia-logo-long.svg" alt="Aurentia Logo" className="h-full w-auto" />
-            </div>
+            // Default: Show Aurentia branding
+            isCollapsed ? (
+              <div className="h-8 w-8">
+                <img src="/picto-aurentia.svg" alt="Aurentia Picto" className="h-full w-full" />
+              </div>
+            ) : (
+              <div className="h-8 w-auto">
+                <img src="/Aurentia-logo-long.svg" alt="Aurentia Logo" className="h-full w-auto" />
+              </div>
+            )
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -490,14 +547,14 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 to={item.path}
                 className={cn(
                   "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
-                  (location.pathname === item.path && location.pathname !== "/warning") ||
-                  (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
-                  (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
-                  (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
-                  (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
-                  (item.name === "Plan d'action" && location.pathname.includes("/plan-action"))
-                    ? "bg-gradient-primary text-white font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
+                  getActiveMenuClass(
+                    (location.pathname === item.path && location.pathname !== "/warning") ||
+                    (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
+                    (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
+                    (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
+                    (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
+                    (item.name === "Plan d'action" && location.pathname.includes("/plan-action"))
+                  )
                 )}
               >
                 {item.icon}
@@ -567,6 +624,25 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     await supabase.auth.signOut();
     // navigate("/login"); // Removed as per new requirement
   };
+
+  useEffect(() => {
+    if (userProfile?.organization?.settings?.branding?.whiteLabel !== undefined) {
+      const handleWhiteLabelChange = () => {
+        window.location.reload();
+      };
+
+      const observer = new MutationObserver(handleWhiteLabelChange);
+      const targetNode = document.querySelector('#white-label-toggle'); // Replace with actual toggle element ID
+
+      if (targetNode) {
+        observer.observe(targetNode, { attributes: true });
+      }
+
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, [userProfile?.organization?.settings?.branding?.whiteLabel]);
 
   return (
     <>
@@ -710,11 +786,12 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         userAddress={userProfile?.address}
       />
 
-      {/* Organization Setup Guide Modal (one-time) */}
+      {/* Organization Setup Guide Modal (one-time per session) */}
       <OrganizationSetupGuideModal
         isOpen={showOrgSetupGuide}
         onClose={handleCloseOrgSetupGuide}
         onStartSetup={handleStartOrgSetup}
+        onDismissPermanently={handleDismissPermanently}
       />
     </>
   );

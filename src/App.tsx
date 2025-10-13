@@ -32,11 +32,9 @@ import ToolTemplatePage from "./pages/ToolTemplatePage";
 import ComponentsTemplate from "./pages/individual/ComponentsTemplate";
 import ChatbotPage from "./pages/ChatbotPage";
 import PlanActionPage from "./pages/PlanActionPage";
-import ProtectedLayout from "./components/ProtectedLayout";
 import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
 import MyOrganization from "./pages/MyOrganization";
-import OrganisationLayoutWrapper from "./components/organisation/OrganisationLayoutWrapper";
 import OrganisationRouteGuard from "./components/organisation/OrganisationRouteGuard";
 import {
   OrganisationDashboard,
@@ -55,10 +53,12 @@ import {
   OrganisationFormCreate
 } from "./pages/organisation";
 import OrganisationMentorProfile from "./pages/organisation/OrganisationMentorProfile";
+import OrganisationOnboarding from "./pages/organisation/OrganisationOnboarding";
 import SetupOrganization from "./pages/SetupOrganization";
 import AuthCallback from "./pages/AuthCallback";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
+import { UserProvider } from "./contexts/UserContext";
 import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
 import PendingInvitationsProvider from "./components/collaboration/PendingInvitationsProvider";
 
@@ -289,11 +289,12 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ProjectProvider>
-              <CreditsDialogProvider>
-                <BuyCreditsDialog />
-                <PendingInvitationsProvider />
-                <Routes>
+            <UserProvider>
+              <ProjectProvider>
+                <CreditsDialogProvider>
+                  <BuyCreditsDialog />
+                  <PendingInvitationsProvider />
+                  <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -303,10 +304,12 @@ const App = () => {
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/setup-organization" element={<SetupOrganization />} />
                 
                 {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
+                  {/* Organization Setup - For users without an organization */}
+                  <Route path="/setup-organization" element={<SetupOrganization />} />
+                
                   <Route path="/organisation" element={<OrganisationRedirect />} />
                   
                   <Route element={<RoleBasedLayout />}>
@@ -399,9 +402,14 @@ const App = () => {
                         <OrganisationChatbot />
                       </OrganisationRouteGuard>
                     } />
-                    <Route path="/organisation/:id/profile" element={
+                    <Route path="/organisation/:id/informations" element={
                       <OrganisationRouteGuard>
                         <OrganisationProfile />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/settings" element={
+                      <OrganisationRouteGuard requireOwner={true}>
+                        <OrganisationSettings />
                       </OrganisationRouteGuard>
                     } />
                     
@@ -428,6 +436,7 @@ const App = () => {
               </Routes>
               </CreditsDialogProvider>
             </ProjectProvider>
+            </UserProvider>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

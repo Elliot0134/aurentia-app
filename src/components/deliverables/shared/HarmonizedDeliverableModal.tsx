@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { formatRecommendations } from '@/utils/textFormatter';
 import DeliverableModalHeader from './DeliverableModalHeader';
 import { useAdvancedModalTabs, TabType } from './useAdvancedModalTabs';
+import DeliverableComments from './DeliverableComments';
 
 interface HarmonizedDeliverableModalProps {
   isOpen: boolean;
@@ -20,6 +21,9 @@ interface HarmonizedDeliverableModalProps {
   showContentTab?: boolean;
   children?: React.ReactNode;
   modalWidthClass?: string; // Nouvelle prop pour la largeur de la modal
+  deliverableId?: string; // ID du livrable pour les commentaires
+  organizationId?: string | null; // ID de l'organisation pour les commentaires (nullable pour utilisateurs individuels)
+  showCommentsTab?: boolean; // Afficher l'onglet commentaires
 }
 
 const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
@@ -35,7 +39,27 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
   showContentTab = true,
   children,
   modalWidthClass = "md:w-3/4", // Valeur par défaut
+  deliverableId,
+  organizationId,
+  showCommentsTab = false,
 }) => {
+  // Debug: Log comments tab configuration
+  console.log('🔍 HarmonizedDeliverableModal Debug:', {
+    showCommentsTab,
+    deliverableId,
+    organizationId,
+    hasDeliverableId: !!deliverableId,
+    willRenderComments: showCommentsTab && !!deliverableId,
+  });
+
+  React.useEffect(() => {
+    console.log('🔄 Modal deliverableId changed:', {
+      deliverableId,
+      organizationId,
+      showCommentsTab,
+    });
+  }, [deliverableId, organizationId, showCommentsTab]);
+
   // Utilisation du nouveau hook pour gérer les onglets
   const {
     activeTab,
@@ -50,6 +74,7 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
     hasDefinition: !!definition,
     hasRecommendations: !!recommendations,
     hasChat: !!chatComponent,
+    hasComments: showCommentsTab && !!deliverableId, // organizationId can be null for individual users
     defaultTab: showContentTab ? 'structure' : (recommendations ? 'recommendations' : (definition ? 'definition' : (chatComponent ? 'chat' : 'structure')))
   });
 
@@ -81,10 +106,10 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
         />
         
         {/* Tab Navigation */}
-        <div className="flex bg-white border-b border-gray-100">
+        <div className="flex bg-white border-b border-gray-100 overflow-x-auto">
           {showContentTab && (
             <button
-              className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'structure' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+              className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeTab === 'structure' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
               onClick={() => handleTabChange('structure')}
             >
               Contenu
@@ -92,7 +117,7 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
           )}
           {recommendations && (
             <button
-              className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'recommendations' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+              className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeTab === 'recommendations' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
               onClick={() => handleTabChange('recommendations')}
             >
               Recommandations
@@ -100,7 +125,7 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
           )}
           {definition && (
             <button
-              className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'definition' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+              className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeTab === 'definition' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
               onClick={() => handleTabChange('definition')}
             >
               Définition
@@ -108,10 +133,18 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
           )}
           {chatComponent && (
             <button
-              className={`py-3 px-6 text-sm font-medium transition-all duration-200 ${activeTab === 'chat' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+              className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeTab === 'chat' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
               onClick={() => handleTabChange('chat')}
             >
               Chat
+            </button>
+          )}
+          {showCommentsTab && deliverableId && (
+            <button
+              className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeTab === 'comments' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
+              onClick={() => handleTabChange('comments' as TabType)}
+            >
+              Commentaires
             </button>
           )}
         </div>
@@ -175,6 +208,14 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
                   </div>
                 )}
               </>
+            )}
+
+            {activeTab === 'comments' && showCommentsTab && deliverableId && (
+              <DeliverableComments
+                key={`comments-${deliverableId}`}
+                deliverableId={deliverableId}
+                organizationId={organizationId || null}
+              />
             )}
           </div>
         </div>

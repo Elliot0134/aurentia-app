@@ -71,7 +71,7 @@ const AddressAutocompleteInput = forwardRef<HTMLInputElement, AddressAutocomplet
         const autocompleteService = new google.maps.places.AutocompleteService();
         const autocompleteOptions = {
           types: addressType === 'regions' ? ['(regions)'] : ['geocode'],
-          componentRestrictions: { country: ['fr'] }
+          // No country restrictions - support worldwide addresses
         };
 
         autocompleteService.getPlacePredictions({

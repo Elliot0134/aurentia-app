@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 interface AnalyseDeMarcheLivrableProps {
   projectId: string;
@@ -38,6 +39,13 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
     hasContent: true,
     hasDefinition: true
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'market-analysis',
+    deliverableTitle: 'Analyse de Marché',
   });
 
   useEffect(() => {
@@ -665,11 +673,14 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={title}
-        iconSrc="/icones-livrables/market-icon.png"
+        iconComponent={<img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-full h-full object-contain" />}
         contentComponent={analyseMarche}
         definition={definition}
         importance={importance}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
       />
     </>
   );

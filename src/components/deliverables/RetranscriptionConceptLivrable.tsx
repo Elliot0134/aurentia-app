@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button"; // Import Button component
-import { Edit } from "lucide-react"; // Import Edit icon
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
-import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard'; // Import HarmonizedDeliverableCard
-import RetranscriptionConceptModal from './RetranscriptionConceptModal'; // Import RetranscriptionConceptModal
+import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
+import RetranscriptionConceptModal from './RetranscriptionConceptModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 interface ConceptContent {
   projectName: string;
@@ -68,6 +69,13 @@ const RetranscriptionConceptLivrable: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'other',
+    deliverableTitle: 'Retranscription Concept',
+  });
 
   const handleTemplateClick = () => {
     setIsPopupOpen(true);
@@ -202,6 +210,7 @@ const RetranscriptionConceptLivrable: React.FC = () => {
         onSave={handleSaveEdit}
         content={modalContent}
       />
+      {/* TODO: Add comments tab to RetranscriptionConceptModal - deliverableId: {deliverableId}, organizationId: {organizationId} */}
     </>
   );
 };

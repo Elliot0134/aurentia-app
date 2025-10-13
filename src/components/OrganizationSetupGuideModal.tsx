@@ -6,9 +6,10 @@ interface OrganizationSetupGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStartSetup: () => void;
+  onDismissPermanently: () => void;
 }
 
-const OrganizationSetupGuideModal = ({ isOpen, onClose, onStartSetup }: OrganizationSetupGuideModalProps) => {
+const OrganizationSetupGuideModal = ({ isOpen, onClose, onStartSetup, onDismissPermanently }: OrganizationSetupGuideModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -60,14 +61,7 @@ const OrganizationSetupGuideModal = ({ isOpen, onClose, onStartSetup }: Organiza
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="w-full sm:w-auto"
-          >
-            Plus tard
-          </Button>
+        <DialogFooter className="flex-col gap-3 items-center">
           <Button
             onClick={onStartSetup}
             className="w-full sm:w-auto bg-aurentia-pink hover:bg-aurentia-pink/90"
@@ -75,6 +69,21 @@ const OrganizationSetupGuideModal = ({ isOpen, onClose, onStartSetup }: Organiza
             Créer mon organisation
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
+          <div className="flex flex-col sm:flex-row gap-2 items-center">
+            <button
+              onClick={onClose}
+              className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+            >
+              Je le ferai plus tard
+            </button>
+            <span className="text-gray-300 hidden sm:inline">•</span>
+            <button
+              onClick={onDismissPermanently}
+              className="text-sm text-gray-400 hover:text-gray-600 underline transition-colors"
+            >
+              Ne plus me le rappeler
+            </button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

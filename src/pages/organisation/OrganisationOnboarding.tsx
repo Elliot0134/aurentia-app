@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, ChevronLeft, ChevronRight, Building, Target, Users, Award, Globe, Settings } from 'lucide-react';
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -21,14 +21,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/components/ui/use-toast";
-import ImageUploader from '@/components/ImageUploader';
+import OrganisationImageUploader from '@/components/OrganisationImageUploader';
 import STORAGE_BUCKETS from '@/config/storage';
+import { 
+  ORGANISATION_TYPES,
+  SECTOR_OPTIONS, 
+  STAGE_OPTIONS, 
+  SPECIALIZATION_OPTIONS, 
+  SUPPORT_TYPE_OPTIONS, 
+  GEOGRAPHIC_OPTIONS,
+  DEFAULT_ORGANIZATION_COLORS 
+} from "@/constants/organizationTags";
 
 const OrganisationOnboardingPage = () => {
-  const { id: organisationId } = useParams<{ id: string }>();
+  const { id: organisationIdFromParams } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { userProfile, loading: userLoading } = useUserRole();
+  const { userProfile, organizationId: organizationIdFromHook, loading: userLoading } = useUserRole();
+  
+  // Determine which organization ID to use: from params (if editing existing) or from hook (if user already has one)
+  const organisationId = organisationIdFromParams || organizationIdFromHook;
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState('');
@@ -39,6 +52,9 @@ const OrganisationOnboardingPage = () => {
   const [loading, setLoading] = useState(false);
   const [organisation, setOrganisation] = useState<any>(null);
   const [isNewOrganisation, setIsNewOrganisation] = useState(false);
+  
+  // Prevent multiple redirect checks
+  const hasCheckedRedirectRef = useRef(false);
 
   // État pour les données du formulaire
   const [formData, setFormData] = useState({
@@ -54,13 +70,11 @@ const OrganisationOnboardingPage = () => {
   address: "",
   teamSize: 0 as number | "",
   welcome_message: "",
-  primary_color: "",
-  secondary_color: "",
+  primary_color: DEFAULT_ORGANIZATION_COLORS.PRIMARY,
+  secondary_color: DEFAULT_ORGANIZATION_COLORS.SECONDARY,
   // image fields
   logo_url: "",
-  logo_path: "",
   banner_url: "",
-  banner_path: "",
   newsletter_enabled: false,
     
     // Étape 2: Mission, Vision, Valeurs
@@ -94,48 +108,6 @@ const OrganisationOnboardingPage = () => {
   const totalSteps = 6;
 
   // Image uploader import
-  // ...existing code...
-
-  // Options prédéfinies pour les types d'organisations
-  const organisationTypes = [
-  { value: "incubator", label: "Incubateur" },
-  { value: "accelerator", label: "Accélérateur" },
-  { value: "business_school", label: "École de commerce" },
-  { value: "university", label: "Université" },
-  { value: "consulting", label: "Cabinet de conseil" },
-  { value: "other", label: "Autre" }
-  ];
-
-  // Options prédéfinies
-  const sectorOptions = [
-    "Tech", "Fintech", "Healthtech", "Edtech", "Agritech", "Cleantech",
-    "E-commerce", "SaaS", "IoT", "IA/Machine Learning", "Blockchain",
-    "Mobilité", "Immobilier", "Retail", "Manufacturing", "Services",
-    "Entertainment", "Autre"
-  ];
-
-  const stageOptions = [
-    "Idéation", "Pré-seed", "Seed", "Série A", "Série B", "Série C+",
-    "Growth stage", "Scale-up", "Expansion internationale"
-  ];
-
-  const specializationOptions = [
-    "Accompagnement stratégique", "Développement produit", "Marketing digital",
-    "Financement", "Juridique", "RH", "Technologie", "International",
-    "Opérations", "Ventes", "Partenariats", "Pitch training"
-  ];
-
-  const supportTypeOptions = [
-    "Mentoring individuel", "Workshops collectifs", "Formations",
-    "Financement direct", "Mise en relation investisseurs",
-    "Espaces de coworking", "Support technique", "Support juridique",
-    "Développement commercial", "Networking"
-  ];
-
-  const geographicOptions = [
-    "France", "Europe", "Amérique du Nord", "Amérique du Sud",
-    "Afrique", "Asie", "Océanie", "International"
-  ];
 
   // Charger les données de l'organisation ou initialiser une nouvelle organisation
   useEffect(() => {
@@ -160,17 +132,37 @@ const OrganisationOnboardingPage = () => {
           setOrganisation(data);
           setIsNewOrganisation(false);
 
-          // Si l'onboarding est déjà complété, rediriger vers le dashboard
-          if ((data as any).onboarding_completed) {
-            // Ne redirige que si la route actuelle est une route organisation
-            if (!window.location.pathname.startsWith('/individual')) {
+          // CRITICAL FIX: Only check onboarding completion ONCE and only if NOT on /setup-organization
+          // This prevents the redirect loop completely
+          if (hasCheckedRedirectRef.current) {
+            console.log('[OrganisationOnboarding] Already checked redirect, skipping');
+            return;
+          }
+          
+          const currentPath = window.location.pathname;
+          const isSetupRoute = currentPath === '/setup-organization';
+          
+          if ((data as any).onboarding_completed && !isSetupRoute) {
+            hasCheckedRedirectRef.current = true;
+            
+            // Only redirect if we're on the onboarding route itself, not setup or dashboard
+            const isOnboardingRoute = currentPath.includes('/onboarding');
+            
+            if (isOnboardingRoute) {
+              console.log('[OrganisationOnboarding] Onboarding completed on onboarding route, redirecting to dashboard');
               toast({
                 title: "Onboarding déjà complété",
                 description: "Redirection vers votre dashboard...",
               });
-              navigate(`/organisation/${organisationId}/dashboard`);
+              navigate(`/organisation/${organisationId}/dashboard`, { replace: true });
               return;
             }
+            
+            console.log('[OrganisationOnboarding] Onboarding completed but not on onboarding route - no redirect');
+          }
+          
+          if (isSetupRoute && (data as any).onboarding_completed) {
+            console.log('[OrganisationOnboarding] On setup route with completed onboarding - SetupOrganization will handle redirect');
           }
 
           // Pré-remplir le formulaire avec les données existantes
@@ -201,7 +193,7 @@ const OrganisationOnboardingPage = () => {
           setFormData({
             name: (data as any).name || "",
             type: (data as any).type || "",
-            customType: (data as any).customType || "",
+            customType: (data as any).custom_type || "",
             description: (data as any).description || "",
             foundedYear: (data as any).founded_year || new Date().getFullYear(),
             website: (data as any).website || "",
@@ -210,12 +202,10 @@ const OrganisationOnboardingPage = () => {
             address: (data as any).address || "",
             teamSize: (data as any).team_size || 0,
             welcome_message: (data as any).welcome_message || "",
-            primary_color: (data as any).primary_color || "",
-            secondary_color: (data as any).secondary_color || "",
+            primary_color: (data as any).primary_color || DEFAULT_ORGANIZATION_COLORS.PRIMARY,
+            secondary_color: (data as any).secondary_color || DEFAULT_ORGANIZATION_COLORS.SECONDARY,
             logo_url: (data as any).logo_url || "",
-            logo_path: (data as any).logo_path || "",
             banner_url: (data as any).banner_url || "",
-            banner_path: (data as any).banner_path || "",
             newsletter_enabled: (data as any).newsletter_enabled || false,
             mission: (data as any).mission || "",
             vision: (data as any).vision || "",
@@ -228,7 +218,7 @@ const OrganisationOnboardingPage = () => {
             successCriteria: (data as any).success_criteria || "",
             supportTypes: safeParseJSON((data as any).support_types),
             geographicFocus: safeParseJSON((data as any).geographic_focus),
-            customGeographic: (data as any).customGeographic || "",
+            customGeographic: (data as any).custom_geographic || "",
             socialMediaLinkedin: safeParseSocialMedia((data as any).social_media).linkedin || "",
             socialMediaTwitter: safeParseSocialMedia((data as any).social_media).twitter || "",
             socialMediaWebsite: safeParseSocialMedia((data as any).social_media).website || "",
@@ -248,11 +238,10 @@ const OrganisationOnboardingPage = () => {
             description: error.message || "Une erreur s'est produite",
             variant: "destructive",
           });
-          navigate('/dashboard');
+          navigate('/individual/dashboard');
         }
       } else {
-        // No organisationId in params - this is a new organization setup
-        // Don't show error immediately if userProfile is still loading
+        // No organisationId - this is a new organization setup
         if (userLoading) return;
 
         if (!userProfile) {
@@ -261,36 +250,13 @@ const OrganisationOnboardingPage = () => {
             if (!userProfile) {
               toast({
                 title: "Erreur",
-                description: "Profil utilisateur manquant. Veuillez vous reconnecter.",
+                description: "Profil utilisateur non trouvé. Veuillez vous reconnecter.",
                 variant: "destructive",
               });
               navigate('/login');
             }
           }, 2000);
           return;
-        }
-
-        // Check if user already has an organization via user_organizations table
-        const { data: userOrg } = await (supabase as any)
-          .from('user_organizations')
-          .select('organization_id, status')
-          .eq('user_id', userProfile.id)
-          .eq('status', 'active')
-          .single();
-        
-        if (userOrg?.organization_id) {
-          // User already has an organization
-          // If we're not already on the onboarding page, redirect to it
-          const currentPath = window.location.pathname;
-          if (!currentPath.includes('/onboarding') && !currentPath.startsWith('/individual')) {
-            navigate(`/organisation/${userOrg.organization_id}/onboarding`);
-            return;
-          }
-          // If already on onboarding page, just set the org ID to load it
-          if (!organisationId) {
-            navigate(`/organisation/${userOrg.organization_id}/onboarding`, { replace: true });
-            return;
-          }
         }
 
         // Initialize for new organization
@@ -374,7 +340,54 @@ const OrganisationOnboardingPage = () => {
         });
         return false;
       }
+      if (!formData.description.trim()) {
+        toast({
+          title: "Champ requis",
+          description: "La description de l'organisation est obligatoire.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (!formData.email.trim()) {
+        toast({
+          title: "Champ requis",
+          description: "L'email de contact est obligatoire.",
+          variant: "destructive",
+        });
+        return false;
+      }
     }
+    
+    if (currentStep === 2) {
+      if (!formData.mission.trim()) {
+        toast({
+          title: "Champ requis",
+          description: "La mission de l'organisation est obligatoire.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (!formData.vision.trim()) {
+        toast({
+          title: "Champ requis",
+          description: "La vision de l'organisation est obligatoire.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+    
+    if (currentStep === 3) {
+      if (formData.sectors.length === 0) {
+        toast({
+          title: "Sélection requise",
+          description: "Veuillez sélectionner au moins un secteur d'activité.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+    
     return true;
   };
 
@@ -442,18 +455,17 @@ const OrganisationOnboardingPage = () => {
         const organizationData = {
           name: formData.name,
           type: formData.type,
+          custom_type: formData.customType,
           description: formData.description,
           website: formData.website,
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
           welcome_message: formData.welcome_message,
-          primary_color: formData.primary_color || null,
-          secondary_color: formData.secondary_color || null,
+          primary_color: formData.primary_color || DEFAULT_ORGANIZATION_COLORS.PRIMARY,
+          secondary_color: formData.secondary_color || DEFAULT_ORGANIZATION_COLORS.SECONDARY,
           logo_url: formData.logo_url || null,
-          logo_path: formData.logo_path || null,
           banner_url: formData.banner_url || null,
-          banner_path: formData.banner_path || null,
           newsletter_enabled: formData.newsletter_enabled,
           created_by: userProfile.id,
           team_size: typeof formData.teamSize === 'number' ? formData.teamSize : 0,
@@ -522,6 +534,7 @@ const OrganisationOnboardingPage = () => {
         const updateData = {
           name: formData.name,
           type: formData.type,
+          custom_type: formData.customType,
           description: formData.description,
           founded_year: formData.foundedYear,
           website: formData.website,
@@ -530,12 +543,10 @@ const OrganisationOnboardingPage = () => {
           address: formData.address,
           team_size: Number(formData.teamSize) || 0,
           welcome_message: formData.welcome_message,
-          primary_color: formData.primary_color || null,
-          secondary_color: formData.secondary_color || null,
+          primary_color: formData.primary_color || DEFAULT_ORGANIZATION_COLORS.PRIMARY,
+          secondary_color: formData.secondary_color || DEFAULT_ORGANIZATION_COLORS.SECONDARY,
           logo_url: formData.logo_url || null,
-          logo_path: formData.logo_path || null,
           banner_url: formData.banner_url || null,
-          banner_path: formData.banner_path || null,
           newsletter_enabled: formData.newsletter_enabled,
           mission: formData.mission,
           vision: formData.vision,
@@ -700,7 +711,7 @@ const OrganisationOnboardingPage = () => {
                         <SelectValue placeholder="Sélectionnez un type d'organisation" />
                       </SelectTrigger>
                       <SelectContent>
-                        {organisationTypes.map(type => (
+                        {ORGANISATION_TYPES.map(type => (
                           <SelectItem key={type.value} value={type.value}>
                             {type.label}
                           </SelectItem>
@@ -725,7 +736,7 @@ const OrganisationOnboardingPage = () => {
                   {/* Description */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description de votre organisation
+                      Description de votre organisation <span className="text-red-500">*</span>
                     </label>
                     <Textarea
                       value={formData.description}
@@ -802,7 +813,7 @@ const OrganisationOnboardingPage = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email de contact
+                      Email de contact <span className="text-red-500">*</span>
                     </label>
                     <Input
                       type="email"
@@ -874,28 +885,28 @@ const OrganisationOnboardingPage = () => {
                   {/* Logo & Banner uploaders */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                      <ImageUploader
+                      <OrganisationImageUploader
                         bucket="organisation-logo"
                         value={formData.logo_url || undefined}
-                        existingPath={formData.logo_path || undefined}
                         folder={`organisations/${organisationId || 'temp'}`}
                         label="Logo de l'organisation"
                         maxSizeMB={STORAGE_BUCKETS['organisation-logo'].maxSizeMB}
-                        onUpload={(publicUrl, path) => setFormData(prev => ({ ...prev, logo_url: publicUrl, logo_path: path }))}
-                        onDelete={() => setFormData(prev => ({ ...prev, logo_url: '', logo_path: '' }))}
+                        aspectRatio="square"
+                        onUpload={(publicUrl) => setFormData(prev => ({ ...prev, logo_url: publicUrl }))}
+                        onDelete={() => setFormData(prev => ({ ...prev, logo_url: '' }))}
                       />
                     </div>
 
                     <div>
-                      <ImageUploader
+                      <OrganisationImageUploader
                         bucket="organisation-banner"
                         value={formData.banner_url || undefined}
-                        existingPath={formData.banner_path || undefined}
                         folder={`organisations/${organisationId || 'temp'}`}
                         label="Bannière"
                         maxSizeMB={STORAGE_BUCKETS['organisation-banner'].maxSizeMB}
-                        onUpload={(publicUrl, path) => setFormData(prev => ({ ...prev, banner_url: publicUrl, banner_path: path }))}
-                        onDelete={() => setFormData(prev => ({ ...prev, banner_url: '', banner_path: '' }))}
+                        aspectRatio="wide"
+                        onUpload={(publicUrl) => setFormData(prev => ({ ...prev, banner_url: publicUrl }))}
+                        onDelete={() => setFormData(prev => ({ ...prev, banner_url: '' }))}
                       />
                     </div>
                   </div>
@@ -914,7 +925,7 @@ const OrganisationOnboardingPage = () => {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mission
+                      Mission <span className="text-red-500">*</span>
                     </label>
                     <Textarea
                       value={formData.mission}
@@ -927,7 +938,7 @@ const OrganisationOnboardingPage = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Vision
+                      Vision <span className="text-red-500">*</span>
                     </label>
                     <Textarea
                       value={formData.vision}
@@ -990,10 +1001,10 @@ const OrganisationOnboardingPage = () => {
                   {/* Secteurs */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Secteurs d'activité
+                      Secteurs d'activité <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {sectorOptions.map(sector => (
+                      {SECTOR_OPTIONS.map(sector => (
                         <Button
                           key={sector}
                           variant={formData.sectors.includes(sector) ? "default" : "outline"}
@@ -1013,7 +1024,7 @@ const OrganisationOnboardingPage = () => {
                       Stades d'investissement
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {stageOptions.map(stage => (
+                      {STAGE_OPTIONS.map(stage => (
                         <Button
                           key={stage}
                           variant={formData.stages.includes(stage) ? "default" : "outline"}
@@ -1033,7 +1044,7 @@ const OrganisationOnboardingPage = () => {
                       Types d'accompagnement
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {specializationOptions.map(spec => (
+                      {SPECIALIZATION_OPTIONS.map(spec => (
                         <Button
                           key={spec}
                           variant={formData.specializations.includes(spec) ? "default" : "outline"}
@@ -1111,7 +1122,7 @@ const OrganisationOnboardingPage = () => {
                       Types de support
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {supportTypeOptions.map(type => (
+                      {SUPPORT_TYPE_OPTIONS.map(type => (
                         <Button
                           key={type}
                           variant={formData.supportTypes.includes(type) ? "default" : "outline"}
@@ -1142,7 +1153,7 @@ const OrganisationOnboardingPage = () => {
                       Zones géographiques d'intervention
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {geographicOptions.map(zone => (
+                      {GEOGRAPHIC_OPTIONS.map(zone => (
                         <Button
                           key={zone}
                           variant={formData.geographicFocus.includes(zone) ? "default" : "outline"}
@@ -1156,20 +1167,20 @@ const OrganisationOnboardingPage = () => {
                     </div>
                     <div className="mt-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Précisez la ville
+                        Ville principale ou région
                       </label>
                       <AddressAutocompleteInput
                         addressType="regions"
                         value={formData.customGeographic}
                         onChange={(value) => setFormData(prev => ({ ...prev, customGeographic: value }))}
-                        placeholder="Commencer à taper une adresse, région ou ville..."
+                        placeholder="Commencer à taper une ville, région ou pays..."
                         className="w-full"
                       />
                     </div>
 
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Adresse exacte de l'organisation
+                        Adresse complète de l'organisation
                       </label>
                       <AddressAutocompleteInput
                         addressType="full"

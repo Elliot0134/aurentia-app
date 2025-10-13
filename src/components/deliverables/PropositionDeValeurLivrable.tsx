@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 const PropositionDeValeurLivrable: React.FC = () => {
   const [data, setData] = useState<any>(null); // Removed '& { avis: string | null }'
@@ -24,6 +25,13 @@ const PropositionDeValeurLivrable: React.FC = () => {
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
     hasContent: true,
     hasDefinition: true
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'other',
+    deliverableTitle: 'Proposition de Valeur',
   });
 
   useEffect(() => {
@@ -229,6 +237,9 @@ const PropositionDeValeurLivrable: React.FC = () => {
         definition={definition}
         importance={importance}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
       />
     </>
   );

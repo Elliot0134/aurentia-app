@@ -5,6 +5,7 @@ import { supabase } from '../../integrations/supabase/client';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 
 const AnalyseDesRessourcesLivrable: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -24,6 +25,13 @@ const AnalyseDesRessourcesLivrable: React.FC = () => {
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
     hasContent: true,
     hasDefinition: true
+  });
+
+  // Initialize deliverable for comments
+  const { deliverableId, organizationId } = useDeliverableWithComments({
+    projectId: projectId || '',
+    deliverableType: 'other',
+    deliverableTitle: 'Analyse des Ressources',
   });
 
   // Fonction utilitaire pour parser les données JSON avec gestion d'erreurs
@@ -339,11 +347,14 @@ const AnalyseDesRessourcesLivrable: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={handlePopupClose}
         title={deliverableTitle}
-        iconSrc="/icones-livrables/ressources-icon.png"
+        iconComponent={<img src="/icones-livrables/ressources-icon.png" alt="Ressources Icon" className="w-full h-full object-contain" />}
         contentComponent={ressourcesContent}
         definition={deliverableDefinition}
         importance={deliverableImportance}
         showContentTab={true}
+        showCommentsTab={true}
+        deliverableId={deliverableId || undefined}
+        organizationId={organizationId || undefined}
         modalWidthClass="md:w-[90%]"
       />
     </>

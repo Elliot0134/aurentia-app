@@ -244,6 +244,20 @@ export const projetsTableConfig: ModularTableConfig<ProjetData> = {
       ),
     },
     {
+      id: "livrables",
+      label: "Livrables",
+      render: (data) => (
+        <div className="space-y-6">
+          <h3 className="font-semibold text-lg">Livrables du projet</h3>
+          <div className="bg-[#F9FAFB] rounded-md px-4 py-8 text-center">
+            <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">Aucun livrable pour le moment</p>
+            <p className="text-sm text-gray-400 mt-1">Les livrables du projet apparaîtront ici.</p>
+          </div>
+        </div>
+      ),
+    },
+    {
       id: "tasks",
       label: "Tâches",
       render: (data) => (

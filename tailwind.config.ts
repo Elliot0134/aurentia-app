@@ -37,11 +37,11 @@ export default {
     			background: '#F4F4F1',
     			foreground: '#151515',
     			primary: {
-    				DEFAULT: '#FF592C',
+    				DEFAULT: 'var(--color-primary)',
     				foreground: '#FFFFFF'
     			},
     			secondary: {
-    				DEFAULT: 'hsl(var(--secondary))',
+    				DEFAULT: 'var(--color-secondary)',
     				foreground: 'hsl(var(--secondary-foreground))'
     			},
     			destructive: {
@@ -65,13 +65,13 @@ export default {
     				foreground: '#151515'
     			},
     			aurentia: {
-    				'orange-aurentia': '#FF592C',
+    				'orange-aurentia': 'var(--color-aurentia-orange)',
     				'orange-light-1': '#FFF4F0',
     				'orange-light-2': '#FFE8E0',
     				'orange-light-3': '#FFDCD0',
     				'orange-light-4': '#FFC4B0',
-    				pink: '#EF4A6D',
-    				orange: '#F67B47',
+    				pink: 'var(--color-aurentia-pink)',
+    				orange: 'var(--color-primary)',
     				yellow: '#E9C46A',
     				blue: '#4361EE',
     				green: '#4CAF50',
@@ -172,9 +172,9 @@ export default {
     			spin: 'spin 1s linear infinite'
     		},
     		backgroundImage: {
-    			'gradient-primary': 'linear-gradient(90deg, #FF592C, #FF592C)',
-    			'gradient-concept': 'linear-gradient(90deg, #FF592C, #FF592C)',
-    			'gradient-recommendations': 'linear-gradient(90deg, #FF592C, #FF592C)'
+    			'gradient-primary': 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))',
+    			'gradient-concept': 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))',
+    			'gradient-recommendations': 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))'
     		}
     	}
     },
