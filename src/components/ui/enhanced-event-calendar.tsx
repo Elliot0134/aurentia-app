@@ -12,6 +12,7 @@ import { EVENT_TYPE_OPTIONS } from "@/lib/eventConstants";
 import { Calendar as CalendarIcon, Settings } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useUserRole } from "@/hooks/useUserRole";
+import { normalizeFullCalendarDate } from "@/utils/dateTimeUtils";
 import './enhanced-event-calendar.css';
 
 interface EnhancedEventCalendarProps {
@@ -167,7 +168,58 @@ export function EnhancedEventCalendar({
             }}
             selectable={true}
             selectMirror={true}
-            select={onSelect}
+            select={(selectInfo) => {
+              // Fix date selection issues:
+              // FullCalendar gives us dates with potential timezone offsets
+              // We need to ensure proper date handling for all-day events
+
+              const isAllDay = selectInfo.allDay;
+
+              if (isAllDay) {
+                // All-day selection: FullCalendar gives us midnight to midnight (exclusive end)
+                // For single day: start = day at 00:00, end = next day at 00:00
+                // For multi-day: start = first day at 00:00, end = day after last day at 00:00
+
+                // Create dates in local timezone without any offset issues
+                const startDate = new Date(selectInfo.startStr); // Use the string to avoid timezone issues
+                const endDate = new Date(selectInfo.endStr);
+
+                // Set start to 00:01 AM of the selected day
+                const adjustedStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 1, 0, 0);
+
+                // FullCalendar's end is exclusive (next day at 00:00), so we need to go back one day
+                // and set to 23:59 PM of the actual last selected day
+                const actualEndDate = new Date(endDate);
+                actualEndDate.setDate(actualEndDate.getDate() - 1);
+                const adjustedEnd = new Date(actualEndDate.getFullYear(), actualEndDate.getMonth(), actualEndDate.getDate(), 23, 59, 0, 0);
+
+                onSelect({
+                  ...selectInfo,
+                  start: adjustedStart,
+                  end: adjustedEnd
+                });
+              } else {
+                // Time-specific selection (drag in week/day view)
+                // Normalize dates to ensure they're in local timezone without conversion
+                const normalizedStart = normalizeFullCalendarDate(selectInfo.start);
+                const normalizedEnd = normalizeFullCalendarDate(selectInfo.end);
+
+                console.log('Calendar selection - Raw:', {
+                  start: selectInfo.start,
+                  end: selectInfo.end
+                });
+                console.log('Calendar selection - Normalized:', {
+                  start: normalizedStart,
+                  end: normalizedEnd
+                });
+
+                onSelect({
+                  ...selectInfo,
+                  start: normalizedStart,
+                  end: normalizedEnd
+                });
+              }
+            }}
             editable={true}
             eventAllow={(dropInfo, draggedEvent) => {
               if (!draggedEvent) return true;

@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Event, EventFormData } from "@/hooks/useEvents";
 import { useOrganisationMembers } from "@/hooks/useOrganisationMembers";
+import { useMentors } from "@/hooks/useOrganisationData";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { EVENT_TYPE_OPTIONS } from "@/lib/eventConstants";
-import { Loader2, Users, Crown, Shield, User } from "lucide-react";
+import { Loader2, Users, Crown, Shield, User, Search, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatDateForDatetimeLocal, convertDatetimeLocalToISO } from "@/utils/dateTimeUtils";
 
 interface EventCreationModalProps {
   open: boolean;
@@ -27,33 +31,61 @@ export function EventCreationModal({
   onCreateEvent
 }: EventCreationModalProps) {
   const { members, loading: membersLoading, getRoleLabel, getRoleColor } = useOrganisationMembers();
+  const { mentors, loading: mentorsLoading } = useMentors();
+  const { userProfile } = useUserProfile();
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [willAttend, setWillAttend] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedSections, setExpandedSections] = useState({
     owners: true,
     staff: true,
-    members: true
+    members: true,
+    mentors: true
   });
 
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
-    start_date: selectedRange ? selectedRange.start.toISOString().slice(0, 16) : '',
-    end_date: selectedRange ? selectedRange.end.toISOString().slice(0, 16) : '',
+    start_date: '',
+    end_date: '',
     type: 'other',
     location: '',
+    meet_link: '',
     organizer_id: '',
     is_recurring: false,
     max_participants: undefined,
     organization_id: organisationId
   });
 
+  // Update form dates when selectedRange changes (calendar drag)
+  useEffect(() => {
+    if (selectedRange && open) {
+      // Use formatDateForDatetimeLocal to preserve local timezone
+      // This prevents the bug where dragging 10:30 AM shows as 8:30 AM
+      setFormData(prev => ({
+        ...prev,
+        start_date: formatDateForDatetimeLocal(selectedRange.start),
+        end_date: formatDateForDatetimeLocal(selectedRange.end)
+      }));
+    }
+  }, [selectedRange, open]);
+
   const handleCreateEvent = async () => {
     if (!formData.title.trim() || !formData.start_date || !formData.end_date) return;
 
     // Ajouter les participants sélectionnés aux données de l'événement
+    // Si willAttend est true et que l'utilisateur n'est pas déjà dans la liste, l'ajouter
+    const participants = [...selectedMembers];
+    if (willAttend && userProfile?.id && !participants.includes(userProfile.id)) {
+      participants.push(userProfile.id);
+    }
+
+    // Convert datetime-local strings to ISO format for database storage
     const eventDataWithParticipants = {
       ...formData,
-      participants: selectedMembers
+      participants,
+      start_date: convertDatetimeLocalToISO(formData.start_date),
+      end_date: convertDatetimeLocalToISO(formData.end_date)
     };
 
     const success = await onCreateEvent(eventDataWithParticipants);
@@ -72,13 +104,43 @@ export function EventCreationModal({
       end_date: '',
       type: 'other',
       location: '',
+      meet_link: '',
       organizer_id: '',
       is_recurring: false,
       max_participants: undefined,
       organization_id: organisationId
     });
     setSelectedMembers([]);
+    setWillAttend(false);
+    setSearchQuery('');
   };
+
+  // Filter function for search
+  const filterBySearch = (item: { first_name?: string; last_name?: string; email: string; id: string }) => {
+    if (!searchQuery.trim()) return true;
+
+    const query = searchQuery.toLowerCase();
+    const firstName = (item.first_name || '').toLowerCase();
+    const lastName = (item.last_name || '').toLowerCase();
+    const email = (item.email || '').toLowerCase();
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    return (
+      firstName.includes(query) ||
+      lastName.includes(query) ||
+      fullName.includes(query) ||
+      email.includes(query)
+    );
+  };
+
+  // Apply search filter to members and mentors
+  const filteredMembers = members.filter(m => m.id !== userProfile?.id && filterBySearch(m));
+  const filteredMentors = mentors.filter(m => m.user_id !== userProfile?.id && filterBySearch({ ...m, id: m.user_id }));
+
+  // Filter by role
+  const filteredOwners = filteredMembers.filter(m => m.user_role === 'organisation');
+  const filteredStaff = filteredMembers.filter(m => m.user_role === 'staff');
+  const filteredAdherents = filteredMembers.filter(m => m.user_role === 'member');
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -169,6 +231,17 @@ export function EventCreationModal({
           </div>
 
           <div>
+            <Label htmlFor="meet_link">Lien de réunion</Label>
+            <Input
+              id="meet_link"
+              type="url"
+              placeholder="Ex: https://meet.google.com/abc-defg-hij"
+              value={formData.meet_link}
+              onChange={(e) => setFormData(prev => ({ ...prev, meet_link: e.target.value }))}
+            />
+          </div>
+
+          <div>
             <Label htmlFor="max_participants">Participants max</Label>
             <Input
               id="max_participants"
@@ -177,10 +250,26 @@ export function EventCreationModal({
               placeholder="Ex: 50"
               value={formData.max_participants || ''}
               onChange={(e) => {
-                const value = e.target.value ? parseInt(e.target.value) : undefined;
-                // Empêcher les valeurs négatives
-                if (value === undefined || value >= 0) {
-                  setFormData(prev => ({ ...prev, max_participants: value }));
+                const value = e.target.value;
+                // Only allow numbers (including empty string for clearing)
+                if (value === '' || /^\d+$/.test(value)) {
+                  const numValue = value ? parseInt(value) : undefined;
+                  if (numValue === undefined || numValue >= 0) {
+                    setFormData(prev => ({ ...prev, max_participants: numValue }));
+                  }
+                }
+              }}
+              onKeyDown={(e) => {
+                // Prevent non-numeric characters (except backspace, delete, arrow keys, etc.)
+                if (
+                  e.key !== 'Backspace' &&
+                  e.key !== 'Delete' &&
+                  e.key !== 'ArrowLeft' &&
+                  e.key !== 'ArrowRight' &&
+                  e.key !== 'Tab' &&
+                  !/^\d$/.test(e.key)
+                ) {
+                  e.preventDefault();
                 }
               }}
             />
@@ -192,18 +281,50 @@ export function EventCreationModal({
               <Users className="w-4 h-4" />
               Inviter les participants
             </Label>
+
+            {/* Checkbox pour auto-participation */}
+            <div className="flex items-center space-x-2 mt-2 mb-3 p-3 bg-gray-50 rounded-md">
+              <Checkbox
+                id="will-attend"
+                checked={willAttend}
+                onCheckedChange={(checked) => setWillAttend(checked === true)}
+              />
+              <label
+                htmlFor="will-attend"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Je ferais partie de l'événement
+              </label>
+            </div>
+
+            {/* Search bar */}
+            <div className="relative mt-2 mb-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Rechercher par nom ou email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
             <div className="mt-2 border rounded-md">
-              {membersLoading ? (
+              {membersLoading || mentorsLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
                   <span className="ml-2 text-sm text-gray-500">Chargement des membres...</span>
                 </div>
-              ) : members.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-8">Aucun membre trouvé</p>
+              ) : members.length === 0 && mentors.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">Aucun membre à inviter</p>
+              ) : filteredOwners.length === 0 && filteredStaff.length === 0 && filteredAdherents.length === 0 && filteredMentors.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">
+                  {searchQuery.trim() ? `Aucun résultat pour "${searchQuery}"` : 'Aucun membre à inviter'}
+                </p>
               ) : (
                 <div className="max-h-60 overflow-y-auto">
                   {/* Propriétaires */}
-                  {members.filter(m => m.user_role === 'organisation').length > 0 && (
+                  {filteredOwners.length > 0 && (
                     <div className="border-b">
                       <button
                         type="button"
@@ -214,7 +335,7 @@ export function EventCreationModal({
                           <Crown className="w-4 h-4 text-purple-500" />
                           <span className="font-medium text-sm">Propriétaires</span>
                           <Badge variant="secondary" className="text-xs">
-                            {members.filter(m => m.user_role === 'organisation').length}
+                            {filteredOwners.length}
                           </Badge>
                         </div>
                         <div className={`transform transition-transform ${expandedSections.owners ? 'rotate-90' : ''}`}>
@@ -223,7 +344,7 @@ export function EventCreationModal({
                       </button>
                       {expandedSections.owners && (
                         <div className="px-3 pb-2">
-                          {members.filter(m => m.user_role === 'organisation').map((member) => (
+                          {filteredOwners.map((member) => (
                             <div key={member.id} className="flex items-center space-x-3 py-2">
                               <input
                                 type="checkbox"
@@ -252,7 +373,7 @@ export function EventCreationModal({
                   )}
 
                   {/* Staff */}
-                  {members.filter(m => m.user_role === 'staff').length > 0 && (
+                  {filteredStaff.length > 0 && (
                     <div className="border-b">
                       <button
                         type="button"
@@ -263,7 +384,7 @@ export function EventCreationModal({
                           <Shield className="w-4 h-4 text-blue-500" />
                           <span className="font-medium text-sm">Staff</span>
                           <Badge variant="secondary" className="text-xs">
-                            {members.filter(m => m.user_role === 'staff').length}
+                            {filteredStaff.length}
                           </Badge>
                         </div>
                         <div className={`transform transition-transform ${expandedSections.staff ? 'rotate-90' : ''}`}>
@@ -272,7 +393,7 @@ export function EventCreationModal({
                       </button>
                       {expandedSections.staff && (
                         <div className="px-3 pb-2">
-                          {members.filter(m => m.user_role === 'staff').map((member) => (
+                          {filteredStaff.map((member) => (
                             <div key={member.id} className="flex items-center space-x-3 py-2">
                               <input
                                 type="checkbox"
@@ -301,8 +422,8 @@ export function EventCreationModal({
                   )}
 
                   {/* Adhérents */}
-                  {members.filter(m => m.user_role === 'member').length > 0 && (
-                    <div>
+                  {filteredAdherents.length > 0 && (
+                    <div className="border-b">
                       <button
                         type="button"
                         onClick={() => setExpandedSections(prev => ({ ...prev, members: !prev.members }))}
@@ -312,7 +433,7 @@ export function EventCreationModal({
                           <User className="w-4 h-4 text-green-500" />
                           <span className="font-medium text-sm">Adhérents</span>
                           <Badge variant="secondary" className="text-xs">
-                            {members.filter(m => m.user_role === 'member').length}
+                            {filteredAdherents.length}
                           </Badge>
                         </div>
                         <div className={`transform transition-transform ${expandedSections.members ? 'rotate-90' : ''}`}>
@@ -321,7 +442,7 @@ export function EventCreationModal({
                       </button>
                       {expandedSections.members && (
                         <div className="px-3 pb-2">
-                          {members.filter(m => m.user_role === 'member').map((member) => (
+                          {filteredAdherents.map((member) => (
                             <div key={member.id} className="flex items-center space-x-3 py-2">
                               <input
                                 type="checkbox"
@@ -340,6 +461,55 @@ export function EventCreationModal({
                                 <span>{member.first_name} {member.last_name}</span>
                                 <Badge className={getRoleColor(member.user_role)} variant="secondary">
                                   {getRoleLabel(member.user_role)}
+                                </Badge>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Mentors */}
+                  {filteredMentors.length > 0 && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedSections(prev => ({ ...prev, mentors: !prev.mentors }))}
+                        className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-orange-500" />
+                          <span className="font-medium text-sm">Mentors</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {filteredMentors.length}
+                          </Badge>
+                        </div>
+                        <div className={`transform transition-transform ${expandedSections.mentors ? 'rotate-90' : ''}`}>
+                          ▶
+                        </div>
+                      </button>
+                      {expandedSections.mentors && (
+                        <div className="px-3 pb-2">
+                          {filteredMentors.map((mentor) => (
+                            <div key={mentor.user_id} className="flex items-center space-x-3 py-2">
+                              <input
+                                type="checkbox"
+                                id={`mentor-${mentor.user_id}`}
+                                checked={selectedMembers.includes(mentor.user_id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedMembers(prev => [...prev, mentor.user_id]);
+                                  } else {
+                                    setSelectedMembers(prev => prev.filter(id => id !== mentor.user_id));
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                              <label htmlFor={`mentor-${mentor.user_id}`} className="flex-1 text-sm cursor-pointer flex items-center justify-between">
+                                <span>{mentor.first_name} {mentor.last_name}</span>
+                                <Badge className="bg-orange-100 text-orange-800" variant="secondary">
+                                  Mentor
                                 </Badge>
                               </label>
                             </div>

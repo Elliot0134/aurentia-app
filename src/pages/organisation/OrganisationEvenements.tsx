@@ -2,11 +2,6 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -17,152 +12,70 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './fullcalendar-custom.css';
 import { useEvents, Event, EventFormData } from "@/hooks/useEvents";
-import { useAdherents } from "@/hooks/useOrganisationData";
 import { useEventTypeColors } from "@/hooks/useEventTypeColors";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { getEventTypeColor, getEventTypeLabel, EVENT_TYPE_OPTIONS } from "@/lib/eventConstants";
 import { EnhancedEventCalendar } from "@/components/ui/enhanced-event-calendar";
 import { EventDetailsModal } from "@/components/ui/event-details-modal";
+import { EventCreationModal } from "@/components/ui/event-creation-modal";
+import { formatDateForDatabase } from "@/utils/dateTimeUtils";
 import {
   Calendar as CalendarIcon,
   Plus,
   Users,
-  MapPin,
   Clock,
-  Tag,
-  Edit,
-  Trash2,
-  Eye,
-  Loader2,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 
 const OrganisationEvenements = () => {
   const { id: organisationId } = useParams();
   const { events, loading, error, addEvent, editEvent, removeEvent } = useEvents(organisationId);
-  const { adherents, loading: adherentsLoading } = useAdherents();
   const { eventTypeColors, loading: colorsLoading } = useEventTypeColors(organisationId);
   const { toast } = useToast();
   const { userProfile } = useUserProfile();
   
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedRange, setSelectedRange] = useState<{ start: Date; end: Date } | null>(null);
   const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  
-  // Formulaire pour ajouter un événement
-  const [formData, setFormData] = useState<EventFormData>({
-    title: '',
-    description: '',
-    start_date: '',
-    end_date: '',
-    type: 'other',
-    location: '',
-    organizer_id: '',
-    is_recurring: false,
-    max_participants: undefined,
-    organization_id: organisationId || ''
-  });
 
-  const handleCreateEvent = async () => {
-    if (!formData.title.trim() || !formData.start_date || !formData.end_date || !organisationId) return;
-    
+  const handleCreateEvent = async (eventData: EventFormData): Promise<boolean> => {
+    if (!organisationId) return false;
+
     const success = await addEvent({
-      title: formData.title,
-      description: formData.description,
-      start_date: formData.start_date,
-      end_date: formData.end_date,
-      type: formData.type,
-      location: formData.location,
+      ...eventData,
       organizer_id: userProfile?.id || null,
-      is_recurring: false,
-      max_participants: formData.max_participants,
       organization_id: organisationId
     });
-    
+
     if (success) {
       toast({
         title: "Événement créé",
         description: "L'événement a été créé avec succès.",
       });
-      setDialogOpen(false);
-      setFormData({
-        title: '',
-        description: '',
-        start_date: '',
-        end_date: '',
-        type: 'other',
-        location: '',
-        organizer_id: '',
-        is_recurring: false,
-        max_participants: undefined,
-        organization_id: organisationId
-      });
+      return true;
     } else {
       toast({
         title: "Erreur",
         description: "Une erreur s'est produite lors de la création de l'événement.",
         variant: "destructive",
       });
+      return false;
     }
   };
 
-  const handleCreateEventFromRange = async () => {
-    if (!selectedRange || !formData.title.trim() || !organisationId) return;
-    
-    const success = await addEvent({
-      title: formData.title,
-      description: formData.description,
-      start_date: format(selectedRange.start, "yyyy-MM-dd'T'HH:mm"),
-      end_date: format(selectedRange.end, "yyyy-MM-dd'T'HH:mm"),
-      type: formData.type,
-      location: formData.location,
-      organizer_id: userProfile?.id || null,
-      is_recurring: false,
-      max_participants: formData.max_participants,
-      organization_id: organisationId
-    });
-    
-    if (success) {
-      toast({
-        title: "Événement créé",
-        description: "L'événement a été créé avec succès.",
-      });
-      setCreateEventModalOpen(false);
-      setSelectedRange(null);
-      setSelectedMembers([]);
-      setFormData({
-        title: '',
-        description: '',
-        start_date: '',
-        end_date: '',
-        type: 'other',
-        location: '',
-        organizer_id: '',
-        is_recurring: false,
-        max_participants: undefined,
-        organization_id: organisationId
-      });
-    } else {
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la création de l'événement.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleEventResize = async (resizeInfo: any) => {
     const eventId = resizeInfo.event.id;
     const newStart = resizeInfo.event.start;
     const newEnd = resizeInfo.event.end;
 
+    // Convert Date objects to ISO format for database
     const success = await editEvent(eventId, {
-      start_date: format(newStart, "yyyy-MM-dd'T'HH:mm"),
-      end_date: format(newEnd, "yyyy-MM-dd'T'HH:mm")
+      start_date: formatDateForDatabase(newStart),
+      end_date: formatDateForDatabase(newEnd)
     });
 
     if (!success) {
@@ -181,9 +94,10 @@ const OrganisationEvenements = () => {
     const newStart = dropInfo.event.start;
     const newEnd = dropInfo.event.end;
 
+    // Convert Date objects to ISO format for database
     const success = await editEvent(eventId, {
-      start_date: format(newStart, "yyyy-MM-dd'T'HH:mm"),
-      end_date: format(newEnd, "yyyy-MM-dd'T'HH:mm")
+      start_date: formatDateForDatabase(newStart),
+      end_date: formatDateForDatabase(newEnd)
     });
 
     if (!success) {
@@ -247,262 +161,28 @@ const OrganisationEvenements = () => {
               Planifiez et gérez vos événements d'organisation.
             </p>
           </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouvel événement
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Créer un nouvel événement</DialogTitle>
-                  <DialogDescription>
-                    Planifiez un événement pour votre organisation.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="title">Titre de l'événement *</Label>
-                    <Input
-                      id="title"
-                      placeholder="Ex: Workshop Business Model"
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="type">Type d'événement</Label>
-                    <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as Event['type'] }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EVENT_TYPE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Description de l'événement"
-                      rows={3}
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="start_date">Date et heure de début *</Label>
-                    <Input
-                      id="start_date"
-                      type="datetime-local"
-                      value={formData.start_date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="end_date">Date et heure de fin *</Label>
-                    <Input
-                      id="end_date"
-                      type="datetime-local"
-                      value={formData.end_date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="location">Lieu</Label>
-                    <Input
-                      id="location"
-                      placeholder="Ex: Salle de conférence A"
-                      value={formData.location}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="max_participants">Participants max</Label>
-                    <Input
-                      id="max_participants"
-                      type="number"
-                      min="0"
-                      placeholder="Ex: 50"
-                      value={formData.max_participants || ''}
-                      onChange={(e) => {
-                        const value = e.target.value ? parseInt(e.target.value) : undefined;
-                        // Empêcher les valeurs négatives
-                        if (value === undefined || value >= 0) {
-                          setFormData(prev => ({ ...prev, max_participants: value }));
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                    Annuler
-                  </Button>
-                  <Button 
-                    style={{ backgroundColor: '#ff5932' }} 
-                    className="hover:opacity-90 text-white"
-                    onClick={handleCreateEvent}
-                    disabled={!formData.title.trim() || !formData.start_date || !formData.end_date}
-                  >
-                    Créer l'événement
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button
+              style={{ backgroundColor: '#ff5932' }}
+              className="hover:opacity-90 text-white"
+              onClick={() => {
+                setSelectedRange(null);
+                setCreateEventModalOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvel événement
+            </Button>
           </div>
         </div>
 
-        {/* Modal de création d'événement avec drag-and-drop */}
-        <Dialog open={createEventModalOpen} onOpenChange={setCreateEventModalOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Créer un événement</DialogTitle>
-              <DialogDescription>
-                Créez un événement pour la période sélectionnée: {selectedRange && format(selectedRange.start, 'dd/MM/yyyy HH:mm', { locale: fr })} - {selectedRange && format(selectedRange.end, 'dd/MM/yyyy HH:mm', { locale: fr })}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="drag-title">Titre de l'événement *</Label>
-                <Input
-                  id="drag-title"
-                  placeholder="Ex: Workshop Business Model"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="drag-type">Type d'événement</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as Event['type'] }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EVENT_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="drag-description">Description</Label>
-                <Textarea
-                  id="drag-description"
-                  placeholder="Description de l'événement"
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="drag-location">Lieu</Label>
-                <Input
-                  id="drag-location"
-                  placeholder="Ex: Salle de conférence A"
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="drag-max_participants">Participants max</Label>
-                <Input
-                  id="drag-max_participants"
-                  type="number"
-                  min="0"
-                  placeholder="Ex: 50"
-                  value={formData.max_participants || ''}
-                  onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : undefined;
-                    // Empêcher les valeurs négatives
-                    if (value === undefined || value >= 0) {
-                      setFormData(prev => ({ ...prev, max_participants: value }));
-                    }
-                  }}
-                />
-              </div>
-
-              {/* Sélection des membres */}
-              <div className="md:col-span-2">
-                <Label>Sélectionner les participants</Label>
-                <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                  {adherentsLoading ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
-                  ) : adherents.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">Aucun membre trouvé</p>
-                  ) : (
-                    adherents.map((adherent) => (
-                      <div key={adherent.id} className="flex items-center space-x-2 py-1">
-                        <input
-                          type="checkbox"
-                          id={`member-${adherent.id}`}
-                          checked={selectedMembers.includes(adherent.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedMembers(prev => [...prev, adherent.id]);
-                            } else {
-                              setSelectedMembers(prev => prev.filter(id => id !== adherent.id));
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <label htmlFor={`member-${adherent.id}`} className="text-sm cursor-pointer">
-                          {adherent.first_name} {adherent.last_name}
-                        </label>
-                      </div>
-                    ))
-                  )}
-                </div>
-                {selectedMembers.length > 0 && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    {selectedMembers.length} membre{selectedMembers.length > 1 ? 's' : ''} sélectionné{selectedMembers.length > 1 ? 's' : ''}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {
-                setCreateEventModalOpen(false);
-                setSelectedRange(null);
-                setSelectedMembers([]);
-              }}>
-                Annuler
-              </Button>
-              <Button 
-                style={{ backgroundColor: '#ff5932' }} 
-                className="hover:opacity-90 text-white"
-                onClick={handleCreateEventFromRange}
-                disabled={!formData.title.trim()}
-              >
-                Créer l'événement
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Modal unifiée de création d'événement */}
+        <EventCreationModal
+          open={createEventModalOpen}
+          onOpenChange={setCreateEventModalOpen}
+          organisationId={organisationId || ''}
+          selectedRange={selectedRange}
+          onCreateEvent={handleCreateEvent}
+        />
 
         {/* Message d'erreur */}
         {error && (
@@ -625,7 +305,7 @@ const OrganisationEvenements = () => {
                   <Button 
                     style={{ backgroundColor: '#ff5932' }} 
                     className="hover:opacity-90 text-white"
-                    onClick={() => setDialogOpen(true)}
+                    onClick={() => setCreateEventModalOpen(true)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Créer un événement

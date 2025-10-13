@@ -15,6 +15,7 @@ export interface EventFormData {
   end_date: string;
   type: Event['type'];
   location?: string;
+  meet_link?: string;
   organizer_id?: string;
   is_recurring: boolean;
   max_participants?: number;

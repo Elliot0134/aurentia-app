@@ -14,6 +14,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useOrganisationMembers } from "@/hooks/useOrganisationMembers";
 import { updateEvent } from "@/services/organisationService";
 import { useToast } from "@/hooks/use-toast";
+import { convertISOToDatetimeLocal, convertDatetimeLocalToISO } from "@/utils/dateTimeUtils";
 import {
   Calendar,
   Clock,
@@ -29,7 +30,8 @@ import {
   Crown,
   Shield,
   UserCheck,
-  Loader2
+  Loader2,
+  ExternalLink
 } from "lucide-react";
 
 interface EventDetailsModalProps {
@@ -71,8 +73,11 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
       description: event.description,
       type: event.type,
       location: event.location,
+      meet_link: event.meet_link,
       max_participants: event.max_participants,
-      status: event.status
+      status: event.status,
+      start_date: event.start_date,
+      end_date: event.end_date
     });
     setSelectedParticipants(event.participants || []);
     setIsEditing(true);
@@ -89,23 +94,28 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
 
     setSaving(true);
     try {
+      // Convert datetime-local strings to ISO format for database storage
       const updatedEventData = {
         ...editedEvent,
-        participants: selectedParticipants
+        participants: selectedParticipants,
+        // Only convert if the fields are datetime-local format (no Z at the end)
+        start_date: editedEvent.start_date && !editedEvent.start_date.includes('Z')
+          ? convertDatetimeLocalToISO(editedEvent.start_date)
+          : editedEvent.start_date,
+        end_date: editedEvent.end_date && !editedEvent.end_date.includes('Z')
+          ? convertDatetimeLocalToISO(editedEvent.end_date)
+          : editedEvent.end_date
       };
 
-      let updatedEvent: Event;
+      let updatedEvent: Event | null;
 
       if (editEvent) {
         // Utiliser la fonction du hook si elle est fournie
-        const updatedEvent = await editEvent(event.id, updatedEventData);
+        updatedEvent = await editEvent(event.id, updatedEventData);
         if (!updatedEvent) throw new Error('Failed to update event');
-        // L'événement mis à jour est retourné par editEvent
-        onEventUpdate?.(updatedEvent);
       } else {
         // Fallback vers l'appel direct du service
         updatedEvent = await updateEvent(event.id, updatedEventData);
-        onEventUpdate?.(updatedEvent);
       }
 
       toast({
@@ -223,6 +233,26 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
                 </Select>
               </div>
 
+              {/* Date et heure de début */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date et heure de début</label>
+                <Input
+                  type="datetime-local"
+                  value={editedEvent.start_date ? convertISOToDatetimeLocal(editedEvent.start_date) : ''}
+                  onChange={(e) => setEditedEvent(prev => ({ ...prev, start_date: e.target.value }))}
+                />
+              </div>
+
+              {/* Date et heure de fin */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date et heure de fin</label>
+                <Input
+                  type="datetime-local"
+                  value={editedEvent.end_date ? convertISOToDatetimeLocal(editedEvent.end_date) : ''}
+                  onChange={(e) => setEditedEvent(prev => ({ ...prev, end_date: e.target.value }))}
+                />
+              </div>
+
               {/* Lieu */}
               <div>
                 <label className="text-sm font-medium mb-1 block">Lieu</label>
@@ -230,6 +260,17 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
                   value={editedEvent.location || ''}
                   onChange={(e) => setEditedEvent(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="Lieu de l'événement"
+                />
+              </div>
+
+              {/* Lien de réunion */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Lien de réunion</label>
+                <Input
+                  type="url"
+                  value={editedEvent.meet_link || ''}
+                  onChange={(e) => setEditedEvent(prev => ({ ...prev, meet_link: e.target.value }))}
+                  placeholder="https://meet.google.com/abc-defg-hij"
                 />
               </div>
 
@@ -481,6 +522,22 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-gray-500" />
                   <span className="text-sm">{event.location}</span>
+                </div>
+              )}
+
+              {/* Lien de réunion */}
+              {event.meet_link && (
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="w-4 h-4 text-gray-500" />
+                  <a
+                    href={event.meet_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                  >
+                    Rejoindre la réunion
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               )}
 

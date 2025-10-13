@@ -123,6 +123,7 @@ export interface Event {
   end_date: string;
   type: 'workshop' | 'meeting' | 'webinar' | 'networking' | 'presentation' | 'training' | 'other';
   location?: string;
+  meet_link?: string;
   organizer_id?: string;
   is_recurring: boolean;
   max_participants?: number;
@@ -899,6 +900,7 @@ export const getOrganisationEvents = async (organizationId: string): Promise<Eve
       end_date: event.end_date,
       type: event.type,
       location: event.location,
+      meet_link: event.meet_link,
       organizer_id: event.organizer_id,
       is_recurring: event.is_recurring || false,
       max_participants: event.max_participants,
@@ -1010,6 +1012,7 @@ export const createEvent = async (eventData: Partial<Event>): Promise<Event> => 
       end_date: eventData.end_date,
       type: eventData.type || 'other',
       location: eventData.location || null,
+      meet_link: eventData.meet_link || null,
       organizer_id: eventData.organizer_id || null,
       is_recurring: eventData.is_recurring || false,
       max_participants: eventData.max_participants || null,
@@ -1044,6 +1047,7 @@ export const createEvent = async (eventData: Partial<Event>): Promise<Event> => 
       end_date: data.end_date,
       type: data.type,
       location: data.location,
+      meet_link: data.meet_link,
       organizer_id: data.organizer_id,
       is_recurring: data.is_recurring || false,
       max_participants: data.max_participants,
@@ -1095,6 +1099,7 @@ export const updateEvent = async (id: string, updates: Partial<Event>): Promise<
       end_date: data.end_date,
       type: data.type,
       location: data.location,
+      meet_link: data.meet_link,
       organizer_id: data.organizer_id,
       is_recurring: data.is_recurring || false,
       max_participants: data.max_participants,
