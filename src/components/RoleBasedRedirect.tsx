@@ -34,6 +34,7 @@ const RoleBasedRedirect = () => {
   if (currentPath.startsWith('/login') ||
       currentPath.startsWith('/signup') ||
       currentPath.startsWith('/update-password') ||
+      currentPath.startsWith('/onboarding') ||
       currentPath.startsWith('/organisation') ||
       currentPath.startsWith('/individual') ||
       currentPath.startsWith('/super-admin') ||

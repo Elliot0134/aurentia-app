@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter+Display:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import './styles/ai-tools-animations.css';
 
 @font-face {
@@ -80,6 +81,32 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes fadeInBlur {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0);
   }
 }
 
@@ -310,7 +337,7 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
-    
+
     /* White label color variables - defaults to Aurentia colors */
     --color-primary: #FF592C;
     --color-secondary: #FF592C;
@@ -322,6 +349,8 @@
     --org-secondary-color: #1a1a1a;
     --org-primary-rgb: 255, 89, 44;
     --org-secondary-rgb: 26, 26, 26;
+    /* Custom text colors */
+    --text-gris-profond: #2e333d;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -357,9 +386,14 @@
   * {
     @apply border-border;
   }
-  
+
 body {
-  @apply bg-[#F4F4F1] text-[#151515] font-inter text-[15px];
+  @apply bg-[#F4F4F1] text-[#151515] font-inter text-base;
+}
+
+/* Fix pour empêcher le zoom sur les inputs mobiles */
+input, textarea, select {
+  font-size: 16px !important;
 }
 
   h1, h2, h3, h4, h5, h6 {

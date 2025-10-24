@@ -109,6 +109,10 @@ export default {
     			gordita: [
     				'Gordita',
     				'sans-serif'
+    			],
+    			poppins: [
+    				'Poppins',
+    				'sans-serif'
     			]
     		},
     		keyframes: {
@@ -142,6 +146,30 @@ export default {
     				},
     				to: {
     					opacity: '0'
+    				}
+    			},
+    			'fadeInUp': {
+    				from: {
+    					opacity: '0',
+    					transform: 'translateY(20px)',
+    					filter: 'blur(10px)'
+    				},
+    				to: {
+    					opacity: '1',
+    					transform: 'translateY(0)',
+    					filter: 'blur(0px)'
+    				}
+    			},
+    			'fadeInBlur': {
+    				from: {
+    					opacity: '0',
+    					filter: 'blur(8px)',
+    					transform: 'translateY(10px)'
+    				},
+    				to: {
+    					opacity: '1',
+    					filter: 'blur(0px)',
+    					transform: 'translateY(0)'
     				}
     			},
     			'slide-up': {

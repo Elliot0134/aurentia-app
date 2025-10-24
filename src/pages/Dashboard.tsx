@@ -8,6 +8,18 @@ import { ActionPlanTimelineWidget } from "@/components/dashboard/ActionPlanTimel
 import { IndividualActivityFeed } from "@/components/dashboard/IndividualActivityFeed";
 import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
 import { Activity, Plus } from "lucide-react";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 
 declare global {
@@ -21,7 +33,37 @@ declare global {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { userProfile } = useUser();
-  const { userProjects } = useProject();
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+
+  // Use Project Context instead of local state
+  const { userProjects, userProjectsLoading, deleteProject } = useProject();
+  const { onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
+
+  // Redirect to onboarding if user has no projects and hasn't completed onboarding
+  useEffect(() => {
+    if (!userProjectsLoading && !onboardingLoading) {
+      if (userProjects.length === 0 && !onboardingCompleted) {
+        navigate('/onboarding', { replace: true });
+      }
+    }
+  }, [userProjects, userProjectsLoading, onboardingCompleted, onboardingLoading, navigate]);
+
+  // Format projects for display
+  const formattedProjects = userProjects.map(project => ({
+    id: project.project_id,
+    title: project.nom_projet || "Projet sans nom",
+    status: "En cours", // You can enhance this with actual status from project data
+    createdAt: new Date(project.created_at).toLocaleDateString('fr-FR')
+  }));
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+    
+    const success = await deleteProject(projectToDelete);
+    if (success) {
+      setProjectToDelete(null);
+    }
+  };
 
   useEffect(() => {
     const script = document.createElement('script');

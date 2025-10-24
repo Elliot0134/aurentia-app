@@ -866,13 +866,15 @@ const ToolDetailPage = () => {
         style={{ width: '90%', maxWidth: '1400px' }}
       >
         {/* Bouton retour */}
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={handleBackClick}
-          className="mb-6 p-2 hover:bg-gray-200"
+          className="mb-6 p-2 hover:bg-transparent group text-gray-900 hover:text-gray-900"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux outils
+          <ArrowLeft className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:-translate-x-1" />
+          <span className="transition-transform duration-200 group-hover:-translate-x-0.5 inline-block">
+            Retour aux outils
+          </span>
         </Button>
 
         {/* Container principal transparent */}
@@ -887,7 +889,7 @@ const ToolDetailPage = () => {
                     ? "border-b-2 text-gray-900"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
-                style={activeTab === 'informations' ? { borderBottomColor: '#ff5932', color: '#ff5932' } : {}}
+                style={activeTab === 'informations' ? { borderBottomColor: '#ff5932' } : {}}
               >
                 <FileText className="h-4 w-4" />
                 Informations
@@ -896,10 +898,10 @@ const ToolDetailPage = () => {
                 onClick={() => handleTabChange('parametres')}
                 className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'parametres'
-                    ? "border-b-2 text-gray-900" 
+                    ? "border-b-2 text-gray-900"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
-                style={activeTab === 'parametres' ? { borderBottomColor: '#ff5932', color: '#ff5932' } : {}}
+                style={activeTab === 'parametres' ? { borderBottomColor: '#ff5932' } : {}}
               >
                 <Settings className="h-4 w-4" />
                 Paramètres généraux
@@ -908,10 +910,10 @@ const ToolDetailPage = () => {
                 onClick={() => handleTabChange('utilisation')}
                 className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'utilisation'
-                    ? "border-b-2 text-gray-900" 
+                    ? "border-b-2 text-gray-900"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
-                style={activeTab === 'utilisation' ? { borderBottomColor: '#ff5932', color: '#ff5932' } : {}}
+                style={activeTab === 'utilisation' ? { borderBottomColor: '#ff5932' } : {}}
               >
                 <Zap className="h-4 w-4" />
                 Utilisation
@@ -923,7 +925,7 @@ const ToolDetailPage = () => {
                     ? "border-b-2 text-gray-900"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
-                style={activeTab === 'historique' ? { borderBottomColor: '#ff5932', color: '#ff5932' } : {}}
+                style={activeTab === 'historique' ? { borderBottomColor: '#ff5932' } : {}}
               >
                 <History className="h-4 w-4" />
                 Historique
@@ -932,7 +934,7 @@ const ToolDetailPage = () => {
           </div>
 
           {/* Contenu des onglets */}
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden mt-2.5">
             <div
               ref={contentRef}
               className={`transition-all duration-300 ${
@@ -999,16 +1001,50 @@ const ToolDetailPage = () => {
                   {/* Données d'entrée */}
                   <div>
                     <h4 className="font-medium mb-2">Données d'entrée</h4>
-                    <div className="bg-gray-50 p-3 rounded border text-sm">
-                      <pre className="whitespace-pre-wrap">
-                        {selectedHistory.input_data ? 
-                          (typeof selectedHistory.input_data === 'string' ? 
-                            selectedHistory.input_data : 
-                            JSON.stringify(selectedHistory.input_data, null, 2)
-                          ) : 
-                          'Aucune donnée d\'entrée'
-                        }
-                      </pre>
+                    <div className="bg-white border rounded-lg p-4 space-y-3">
+                      {selectedHistory.input_data ? (
+                        typeof selectedHistory.input_data === 'object' ? (
+                          <>
+                            {selectedHistory.input_data.theme && (
+                              <div>
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Thème de l'article</p>
+                                <p className="text-sm text-gray-900">{selectedHistory.input_data.theme}</p>
+                              </div>
+                            )}
+                            {selectedHistory.input_data.clientType && (
+                              <div>
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Type de client</p>
+                                <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm capitalize">
+                                  {selectedHistory.input_data.clientType}
+                                </span>
+                              </div>
+                            )}
+                            {selectedHistory.input_data.additionalInfo && (
+                              <div>
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Informations supplémentaires</p>
+                                <p className="text-sm text-gray-900">{selectedHistory.input_data.additionalInfo}</p>
+                              </div>
+                            )}
+                            {selectedHistory.input_data.referenceArticle && (
+                              <div>
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Article de référence</p>
+                                <a
+                                  href={selectedHistory.input_data.referenceArticle}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:text-blue-800 underline break-all"
+                                >
+                                  {selectedHistory.input_data.referenceArticle}
+                                </a>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-900">{selectedHistory.input_data}</p>
+                        )
+                      ) : (
+                        <p className="text-sm text-gray-500">Aucune donnée d'entrée</p>
+                      )}
                     </div>
                   </div>
 
