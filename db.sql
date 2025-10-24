@@ -294,6 +294,7 @@ CREATE TABLE public.events (
   status text DEFAULT 'planned'::text CHECK (status = ANY (ARRAY['planned'::text, 'ongoing'::text, 'completed'::text, 'cancelled'::text])),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  meet_link text,
   CONSTRAINT events_pkey PRIMARY KEY (id),
   CONSTRAINT events_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
   CONSTRAINT events_organizer_id_fkey FOREIGN KEY (organizer_id) REFERENCES public.profiles(id)

@@ -24,7 +24,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 
 const ChatbotPage = () => {
-  const { projectId } = useParams();
+  const { projectId, conversationId } = useParams();
   const navigate = useNavigate(); // Initialize useNavigate
   const { userRole } = useUserRole(); // Get user role
   const [inputMessage, setInputMessage] = useState('');
@@ -265,6 +265,29 @@ const ChatbotPage = () => {
 
   const messages = currentConversation?.messages || [];
 
+  // Wrapper function to load conversation and update URL
+  const handleLoadConversation = (convId: string) => {
+    loadConversation(convId);
+    // Update URL with conversation ID
+    const basePath = projectId ? `/individual/chatbot/${projectId}` : '/individual/chatbot';
+    navigate(`${basePath}/${convId}`, { replace: true });
+  };
+
+  // Override newChat to update URL
+  const handleNewChat = () => {
+    newChat();
+    // Reset URL to base chatbot path
+    const basePath = projectId ? `/individual/chatbot/${projectId}` : '/individual/chatbot';
+    navigate(basePath, { replace: true });
+  };
+
+  // Load conversation from URL parameter if present
+  useEffect(() => {
+    if (conversationId && conversationId !== currentConversation?.id) {
+      loadConversation(conversationId);
+    }
+  }, [conversationId]);
+
   // Afficher le popup "Que l'aventure commence !" si aucun projet n'est sélectionné
   if (userProjectsLoading) {
     return <LoadingSpinner message="Chargement..." fullScreen />;
@@ -298,8 +321,8 @@ const ChatbotPage = () => {
             conversationHistory={conversationHistory}
             isConversationLoading={isConversationLoading}
             isHistoryLoading={isHistoryLoading}
-            onLoadConversation={loadConversation}
-            onNewChat={newChat}
+            onLoadConversation={handleLoadConversation}
+            onNewChat={handleNewChat}
             onRenameConversation={handleRenameConversation}
             onDeleteConversation={handleDeleteConversation}
             onToggleHistoryMobile={() => {
@@ -328,7 +351,7 @@ const ChatbotPage = () => {
                 <div className="flex flex-col gap-1">
                   {conversationHistory.map((conv) => (
                     <div key={conv.id} onClick={() => {
-                      loadConversation(conv.id);
+                      handleLoadConversation(conv.id);
                       setIsDropdownExiting(true); // Start exit animation
                       setTimeout(() => {
                         setIsHistoryOpenMobile(false); // Close history after animation

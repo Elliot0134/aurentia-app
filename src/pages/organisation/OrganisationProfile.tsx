@@ -210,7 +210,7 @@ const OrganisationProfile = () => {
     
     stats: {
       totalStartups: stats?.totalAdherents || 0,
-      activePrograms: 3, // TODO: Calculer depuis les données
+      activePrograms: 0, // Removed mock data
       totalInvestment: 0, // TODO: Ajouter tracking investissements
       successRate: stats?.successRate || 0,
       teamSize: (organisation as any).team_size || stats?.totalMentors || 0,
@@ -654,11 +654,10 @@ const OrganisationProfile = () => {
                     <Button variant="outline" onClick={handleCancel}>
                       Annuler
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleSave}
                       disabled={saveStatus === 'saving'}
-                      style={{ backgroundColor: '#ff5932' }} 
-                      className="hover:opacity-90 text-white"
+                      className="btn-white-label hover:opacity-90"
                     >
                       {saveStatus === 'saving' ? (
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -672,10 +671,9 @@ const OrganisationProfile = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={handleEdit}
-                    style={{ backgroundColor: '#ff5932' }} 
-                    className="hover:opacity-90 text-white"
+                    className="btn-white-label hover:opacity-90"
                   >
                     <Edit className="w-4 h-4 mr-2" />
                     Modifier le profil

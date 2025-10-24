@@ -146,11 +146,7 @@ const OrganisationMentors = () => {
     statut: (mentor.status === 'active' ? 'Actif' : mentor.status === 'pending' ? 'En attente' : 'Inactif') as "Actif" | "En attente" | "Inactif",
     nombreMentores: mentor.total_entrepreneurs || 0,
     dateInscription: mentor.joined_at ? new Date(mentor.joined_at).toLocaleDateString('fr-FR') : 'N/A',
-    progressValue: mentor.success_rate || 0,
-    relatedLinks: [
-      { label: "Voir le profil", href: `/organisation/${organisationId}/mentors/${mentor.id}` },
-      { label: "Entrepreneurs", href: `/organisation/${organisationId}/mentors/${mentor.id}/entrepreneurs` },
-    ],
+    is_also_staff: mentor.is_also_staff || false,
     // Store the user_id for permission checks
     user_id: mentor.user_id
   }));
@@ -171,8 +167,9 @@ const OrganisationMentors = () => {
             }
             
             // Owner cannot kick themselves
-            if ((data as any).user_id === currentUserId) {
-              toast.error("Vous ne pouvez pas vous retirer vous-même");
+            const mentor = mentors.find(m => m.id === data.id);
+            if (mentor && mentor.user_id === organizationOwnerId) {
+              toast.error("Le propriétaire de l'organisation ne peut pas être retiré");
               return;
             }
             
@@ -190,7 +187,7 @@ const OrganisationMentors = () => {
       <div className="space-y-6 p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-orange mx-auto mb-4"></div>
             <p className="text-gray-500">Chargement des mentors...</p>
           </div>
         </div>
@@ -223,8 +220,7 @@ const OrganisationMentors = () => {
             )}
             
             <Button 
-              style={{ backgroundColor: '#ff5932' }} 
-              className="hover:opacity-90 text-white w-full sm:w-auto h-9 sm:h-10"
+              className="btn-white-label hover:opacity-90 w-full sm:w-auto h-9 sm:h-10"
             >
               <Plus className="w-4 h-4 mr-2" />
               Ajouter

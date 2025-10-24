@@ -816,6 +816,151 @@ export const getOrganisationMentorsWithStats = async (organizationId: string) =>
   }
 };
 
+// Service pour obtenir le staff d'une organisation
+export const getOrganisationStaff = async (organizationId: string) => {
+  try {
+    console.log('🔍 Fetching staff for organization:', organizationId);
+
+    // Get user_organizations for staff
+    const { data: userOrgs, error: userOrgsError } = await (supabase as any)
+      .from('user_organizations')
+      .select('user_id, user_role, joined_at, status')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active')
+      .eq('user_role', 'staff');
+
+    if (userOrgsError) {
+      console.error('Error fetching user organizations:', userOrgsError);
+      return [];
+    }
+
+    if (!userOrgs || userOrgs.length === 0) {
+      return [];
+    }
+
+    const userIds = userOrgs.map((org: any) => org.user_id);
+
+    // Fetch profiles
+    const { data: profiles, error: profilesError } = await (supabase as any)
+      .from('profiles')
+      .select(`
+        id, email, first_name, last_name, phone, avatar_url, linkedin_url,
+        website, bio, location, company, job_title
+      `)
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return [];
+    }
+
+    // Fetch staff data
+    const { data: staff, error: staffError } = await (supabase as any)
+      .from('staff')
+      .select(`
+        id, user_id, job_role, manager_id, bio, linkedin_url, status,
+        joined_at, created_at, updated_at
+      `)
+      .eq('organization_id', organizationId)
+      .in('user_id', userIds)
+      .eq('status', 'active');
+
+    if (staffError) {
+      console.error('Error fetching staff:', staffError);
+    }
+
+    // Fetch manager names for staff with managers
+    const managerIds = (staff || [])
+      .map((s: any) => s.manager_id)
+      .filter((id: any) => id !== null);
+
+    let managersMap: Record<string, string> = {};
+
+    if (managerIds.length > 0) {
+      const { data: managers, error: managersError } = await (supabase as any)
+        .from('staff')
+        .select('id, user_id')
+        .in('id', managerIds);
+
+      if (!managersError && managers) {
+        const managerUserIds = managers.map((m: any) => m.user_id);
+
+        const { data: managerProfiles, error: managerProfilesError } = await (supabase as any)
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', managerUserIds);
+
+        if (!managerProfilesError && managerProfiles) {
+          managers.forEach((manager: any) => {
+            const profile = managerProfiles.find((p: any) => p.id === manager.user_id);
+            if (profile) {
+              managersMap[manager.id] = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+            }
+          });
+        }
+      }
+    }
+
+    // Check if staff members are also mentors
+    const { data: mentors, error: mentorsError } = await (supabase as any)
+      .from('mentors')
+      .select('user_id')
+      .eq('organization_id', organizationId)
+      .in('user_id', userIds)
+      .eq('status', 'active');
+
+    if (mentorsError) {
+      console.error('Error checking mentor status:', mentorsError);
+    }
+
+    const mentorUserIds = new Set((mentors || []).map((m: any) => m.user_id));
+
+    // Map staff data by user_id
+    const staffDataMap: Record<string, any> = {};
+    (staff || []).forEach((s: any) => {
+      staffDataMap[s.user_id] = s;
+    });
+
+    // Combine all data
+    const staffList = userOrgs.map((userOrg: any) => {
+      const profile = profiles?.find((p: any) => p.id === userOrg.user_id);
+      const staffData = staffDataMap[userOrg.user_id];
+      const isAlsoMentor = mentorUserIds.has(userOrg.user_id);
+      const managerName = staffData?.manager_id ? managersMap[staffData.manager_id] : undefined;
+
+      return {
+        id: staffData?.id || userOrg.user_id,
+        user_id: userOrg.user_id,
+        organisation_id: organizationId,
+        email: profile?.email || 'N/A',
+        first_name: profile?.first_name || profile?.email?.split('@')[0] || '',
+        last_name: profile?.last_name || '',
+        phone: profile?.phone || '',
+        avatar_url: profile?.avatar_url,
+        linkedin_url: staffData?.linkedin_url || profile?.linkedin_url,
+        website: profile?.website,
+        bio: staffData?.bio || profile?.bio || '',
+        location: profile?.location,
+        company: profile?.company,
+        job_role: staffData?.job_role || 'Non défini',
+        manager_id: staffData?.manager_id,
+        manager_name: managerName,
+        status: staffData?.status || 'active',
+        joined_at: staffData?.joined_at || userOrg.joined_at,
+        created_at: staffData?.created_at || userOrg.joined_at,
+        updated_at: staffData?.updated_at || userOrg.joined_at,
+        is_also_mentor: isAlsoMentor
+      };
+    });
+
+    console.log('✅ Successfully fetched', staffList.length, 'staff members using direct table queries');
+    return staffList;
+  } catch (error) {
+    console.error('Error fetching organization staff:', error);
+    return [];
+  }
+};
+
 // Service pour créer un code d'invitation
 export const createInvitationCode = async (codeData: InvitationCodeData) => {
   const { data, error } = await (supabase as any)
@@ -1332,6 +1477,20 @@ export const getOrganisationMentors = async (organizationId: string) => {
       }
     });
 
+    // Check if mentors are also staff members
+    const { data: staffMembers, error: staffError } = await (supabase as any)
+      .from('staff')
+      .select('user_id')
+      .eq('organization_id', organizationId)
+      .in('user_id', userIds)
+      .eq('status', 'active');
+
+    if (staffError) {
+      console.error('Error checking staff status:', staffError);
+    }
+
+    const staffUserIds = new Set((staffMembers || []).map((s: any) => s.user_id));
+
     // Map mentor data by user_id
     const mentorDataMap: Record<string, any> = {};
     (mentors || []).forEach((mentor: any) => {
@@ -1343,6 +1502,7 @@ export const getOrganisationMentors = async (organizationId: string) => {
       const profile = profiles?.find((p: any) => p.id === userOrg.user_id);
       const mentorData = mentorDataMap[userOrg.user_id];
       const assignmentStats = mentorData ? assignmentsMap[mentorData.id] || { total: 0, active: 0, completed: 0, recent: 0 } : { total: 0, active: 0, completed: 0, recent: 0 };
+      const isAlsoStaff = staffUserIds.has(userOrg.user_id);
 
       return {
         id: mentorData?.id || userOrg.user_id,
@@ -1377,7 +1537,8 @@ export const getOrganisationMentors = async (organizationId: string) => {
         website: profile?.website,
         location: profile?.location,
         company: profile?.company,
-        job_title: profile?.job_title
+        job_title: profile?.job_title,
+        is_also_staff: isAlsoStaff
       };
     });
 

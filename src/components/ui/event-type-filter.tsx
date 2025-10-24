@@ -19,6 +19,7 @@ interface EventTypeFilterProps {
   eventTypeColors: Record<Event['type'], string>;
   visibleTypes: Set<Event['type']>;
   onVisibilityChange: (type: Event['type'], visible: boolean) => void;
+  onToggleAll?: (visible: boolean) => void;
   onColorChange?: (type: Event['type'], color: string) => void;
   showColorPicker?: boolean;
 }
@@ -27,15 +28,21 @@ export function EventTypeFilter({
   eventTypeColors, 
   visibleTypes, 
   onVisibilityChange,
+  onToggleAll,
   onColorChange,
   showColorPicker = false
 }: EventTypeFilterProps) {
   const [open, setOpen] = useState(false);
 
   const handleToggleAll = (visible: boolean) => {
-    EVENT_TYPE_OPTIONS.forEach(option => {
-      onVisibilityChange(option.value as Event['type'], visible);
-    });
+    if (onToggleAll) {
+      onToggleAll(visible);
+    } else {
+      // Fallback si onToggleAll n'est pas fourni
+      EVENT_TYPE_OPTIONS.forEach(option => {
+        onVisibilityChange(option.value as Event['type'], visible);
+      });
+    }
   };
 
   return (

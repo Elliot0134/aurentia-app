@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, Plus, ThumbsUp, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -13,6 +14,7 @@ interface Review {
     firstName: string;
     lastName: string;
     email: string;
+    avatarUrl?: string;
   };
   rating: number;
   comment: string;
@@ -40,11 +42,12 @@ const ReviewCard: React.FC<{ review: Review }> = ({ review }) => {
     <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#F86E19]/10 rounded-full flex items-center justify-center">
-            <span className="text-[#F86E19] font-semibold text-sm">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={review.user.avatarUrl} />
+            <AvatarFallback className="bg-[#F86E19]/10 text-[#F86E19] font-semibold text-sm">
               {getInitials(review.user.firstName, review.user.lastName)}
-            </span>
-          </div>
+            </AvatarFallback>
+          </Avatar>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-medium text-gray-900">

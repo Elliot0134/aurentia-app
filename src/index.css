@@ -20,19 +20,56 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
   }
-  
+
   .line-clamp-2 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
-  
+
   .line-clamp-3 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+  }
+
+  /* Custom Scrollbar Styles */
+  .scrollbar-thin {
+    scroll-behavior: smooth;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+    background-color: rgb(209 213 219);
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(156 163 175);
+  }
+
+  /* Firefox scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(209 213 219) transparent;
+  }
+
+  .scrollbar-thin:hover {
+    scrollbar-color: rgb(156 163 175) transparent;
   }
 }
 
@@ -279,6 +316,12 @@
     --color-secondary: #FF592C;
     --color-aurentia-pink: #EF4A6D;
     --color-aurentia-orange: #FF592C;
+
+    /* Organization branding colors - will be overridden by RoleBasedLayout */
+    --org-primary-color: #FF592C;
+    --org-secondary-color: #1a1a1a;
+    --org-primary-rgb: 255, 89, 44;
+    --org-secondary-rgb: 26, 26, 26;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -670,6 +713,141 @@ body {
 }
 
 
+
+/* Organization branding overrides - applies organization colors when white-label is enabled */
+@layer components {
+  /* Override Aurentia pink/orange with organization primary color */
+  .org-bg-primary {
+    background-color: var(--org-primary-color) !important;
+  }
+
+  .org-text-primary {
+    color: var(--org-primary-color) !important;
+  }
+
+  .org-border-primary {
+    border-color: var(--org-primary-color) !important;
+  }
+
+  /* Gradient overrides for organization */
+  .org-gradient-primary {
+    background: linear-gradient(to right, var(--org-primary-color), var(--org-secondary-color));
+  }
+
+  /* Button overrides - primary button with white-label support */
+  button[style*="--org-primary-color"],
+  .btn-org-primary,
+  .btn-white-label {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+  }
+
+  .btn-org-primary:hover,
+  .btn-white-label:hover {
+    background-color: var(--color-primary) !important;
+    opacity: 0.9;
+  }
+
+  /* Override Radix/ShadCN button hover states for white-label buttons in dialogs */
+  [style*="--org-primary-color"] .btn-white-label:hover {
+    background-color: var(--org-primary-color) !important;
+    opacity: 0.9;
+  }
+
+  /* Checkbox accent color support for white-label */
+  .checkbox-white-label {
+    accent-color: var(--color-primary);
+  }
+
+  input[type="checkbox"].checkbox-white-label:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+
+/* Apply organization colors to ALL Aurentia elements when white-label is enabled */
+/* This works because RoleBasedLayout overrides --color-primary and --color-aurentia-orange variables */
+@layer utilities {
+  /* When white-label is enabled (detected by --org-primary-color presence in styles) */
+
+  /* Apply primary color to all checkboxes globally */
+  [style*="--org-primary-color"] input[type="checkbox"] {
+    accent-color: var(--org-primary-color);
+  }
+
+  /* Background colors - Pink variants */
+  [style*="--org-primary-color"] .bg-aurentia-pink,
+  [style*="--org-primary-color"] .from-aurentia-pink,
+  [style*="--org-primary-color"] .to-aurentia-pink,
+  [style*="--org-primary-color"] .via-aurentia-pink {
+    background-color: var(--org-primary-color) !important;
+  }
+
+  /* Background colors - Orange variants */
+  [style*="--org-primary-color"] .bg-aurentia-orange,
+  [style*="--org-primary-color"] .bg-aurentia-orange-aurentia,
+  [style*="--org-primary-color"] .from-aurentia-orange,
+  [style*="--org-primary-color"] .to-aurentia-orange,
+  [style*="--org-primary-color"] .via-aurentia-orange,
+  [style*="--org-primary-color"] .from-aurentia-orange-aurentia,
+  [style*="--org-primary-color"] .to-aurentia-orange-aurentia {
+    background-color: var(--org-primary-color) !important;
+  }
+
+  /* Text colors - Pink variants */
+  [style*="--org-primary-color"] .text-aurentia-pink {
+    color: var(--org-primary-color) !important;
+  }
+
+  /* Text colors - Orange variants */
+  [style*="--org-primary-color"] .text-aurentia-orange,
+  [style*="--org-primary-color"] .text-aurentia-orange-aurentia {
+    color: var(--org-primary-color) !important;
+  }
+
+  /* Border colors - Pink variants */
+  [style*="--org-primary-color"] .border-aurentia-pink {
+    border-color: var(--org-primary-color) !important;
+  }
+
+  /* Border colors - Orange variants */
+  [style*="--org-primary-color"] .border-aurentia-orange,
+  [style*="--org-primary-color"] .border-aurentia-orange-aurentia {
+    border-color: var(--org-primary-color) !important;
+  }
+
+  /* Gradient replacements - all combinations */
+  [style*="--org-primary-color"] .bg-gradient-to-r.from-aurentia-pink.to-aurentia-orange,
+  [style*="--org-primary-color"] .bg-gradient-to-r.from-aurentia-orange.to-aurentia-pink,
+  [style*="--org-primary-color"] .bg-gradient-to-br.from-aurentia-pink,
+  [style*="--org-primary-color"] .bg-gradient-to-br.from-aurentia-orange,
+  [style*="--org-primary-color"] .bg-gradient-to-tr.from-aurentia-pink,
+  [style*="--org-primary-color"] .bg-gradient-to-tr.from-aurentia-orange {
+    background: linear-gradient(to right, var(--org-primary-color), var(--org-secondary-color)) !important;
+  }
+
+  /* Hover states for backgrounds */
+  [style*="--org-primary-color"] .hover\:bg-aurentia-pink:hover,
+  [style*="--org-primary-color"] .hover\:bg-aurentia-orange:hover,
+  [style*="--org-primary-color"] .hover\:bg-aurentia-orange-aurentia:hover {
+    background-color: var(--org-primary-color) !important;
+  }
+
+  /* Hover states for text */
+  [style*="--org-primary-color"] .hover\:text-aurentia-pink:hover,
+  [style*="--org-primary-color"] .hover\:text-aurentia-orange:hover,
+  [style*="--org-primary-color"] .hover\:text-aurentia-orange-aurentia:hover {
+    color: var(--org-primary-color) !important;
+  }
+
+  /* Ring colors (focus states) */
+  [style*="--org-primary-color"] .ring-aurentia-pink,
+  [style*="--org-primary-color"] .ring-aurentia-orange,
+  [style*="--org-primary-color"] .focus\:ring-aurentia-pink:focus,
+  [style*="--org-primary-color"] .focus\:ring-aurentia-orange:focus {
+    --tw-ring-color: var(--org-primary-color) !important;
+  }
+}
 
 @layer base {
   * {

@@ -31,7 +31,7 @@ const RoleBasedRedirect = () => {
 
   // Whitelist: Never redirect from these paths
   // This prevents infinite loops
-  if (currentPath.startsWith('/login') || 
+  if (currentPath.startsWith('/login') ||
       currentPath.startsWith('/signup') ||
       currentPath.startsWith('/update-password') ||
       currentPath.startsWith('/organisation') ||
@@ -41,6 +41,7 @@ const RoleBasedRedirect = () => {
       currentPath.startsWith('/verify-email') ||
       currentPath.startsWith('/confirm-email') ||
       currentPath.startsWith('/accept-invitation') ||
+      currentPath.startsWith('/messages') ||
       currentPath.startsWith('/auth/callback')) {
     console.log('[RoleBasedRedirect] Path whitelisted, no redirect');
     return null;

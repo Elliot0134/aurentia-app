@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate, useSearchParams } from 'react-router-dom'; // Import useSearchParams
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ComingSoonDialog from '@/components/ui/ComingSoonDialog';
 import {
@@ -194,13 +194,49 @@ const Partenaires = () => {
   const [domain, setDomain] = useState('');
   const [user, setUser] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // États pour les filtres et la recherche
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 5000]);
-  const [selectedAvailability, setSelectedAvailability] = useState('all');
-  const [sortBy, setSortBy] = useState('rating');
+
+  // Get filters from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('search') || '';
+  const validDomains = ['all', 'Design Graphique', 'Développement Web', 'Marketing Digital', 'Développement Mobile', 'Création de Contenu', 'Data Science'];
+  const domainFromUrl = searchParams.get('domain') || 'all';
+  const selectedDomain = validDomains.includes(domainFromUrl) ? domainFromUrl : 'all';
+  const validAvailability = ['all', 'Disponible', 'Partiellement disponible', 'Occupé'];
+  const availabilityFromUrl = searchParams.get('availability') || 'all';
+  const selectedAvailability = validAvailability.includes(availabilityFromUrl) ? availabilityFromUrl : 'all';
+  const validSorts = ['rating', 'price-low', 'price-high', 'experience', 'projects'];
+  const sortFromUrl = searchParams.get('sort') || 'rating';
+  const sortBy = validSorts.includes(sortFromUrl) ? sortFromUrl : 'rating';
+  const priceMin = parseInt(searchParams.get('priceMin') || '0');
+  const priceMax = parseInt(searchParams.get('priceMax') || '5000');
+  const priceRange = [priceMin, priceMax];
+
+  // Functions to update URL params
+  const updateUrlParams = (updates: Record<string, string | number>) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      const stringValue = String(value);
+      if (key === 'priceMin' && value === 0) {
+        newParams.delete(key);
+      } else if (key === 'priceMax' && value === 5000) {
+        newParams.delete(key);
+      } else if (key === 'search' && value === '') {
+        newParams.delete(key);
+      } else if (value && value !== 'all' && value !== 'rating') {
+        newParams.set(key, stringValue);
+      } else {
+        newParams.delete(key);
+      }
+    });
+    setSearchParams(newParams);
+  };
+
+  const setSearchTerm = (search: string) => updateUrlParams({ search });
+  const setSelectedDomain = (domain: string) => updateUrlParams({ domain });
+  const setSelectedAvailability = (availability: string) => updateUrlParams({ availability });
+  const setSortBy = (sort: string) => updateUrlParams({ sort });
+  const setPriceRange = (range: number[]) => updateUrlParams({ priceMin: range[0], priceMax: range[1] });
+
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
 
   useEffect(() => {

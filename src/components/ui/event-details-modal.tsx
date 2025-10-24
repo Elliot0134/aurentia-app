@@ -14,7 +14,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useOrganisationMembers } from "@/hooks/useOrganisationMembers";
 import { updateEvent } from "@/services/organisationService";
 import { useToast } from "@/hooks/use-toast";
-import { convertISOToDatetimeLocal, convertDatetimeLocalToISO } from "@/utils/dateTimeUtils";
+import { convertISOToDatetimeLocal, convertDatetimeLocalToISO, extractDateFromDatetimeLocal, extractTimeFromDatetimeLocal, combineDateAndTime } from "@/utils/dateTimeUtils";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Calendar,
   Clock,
@@ -59,6 +60,14 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
     members: true
   });
 
+  // Split date/time state for better UX with French format
+  const [splitDateTime, setSplitDateTime] = useState({
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: ''
+  });
+
   if (!event) return null;
 
   const isCreator = userProfile && event.organizer_id === userProfile.id;
@@ -68,6 +77,9 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
   const eventTypeColor = getEventTypeColor(event.type);
 
   const handleEdit = () => {
+    const startDatetimeLocal = convertISOToDatetimeLocal(event.start_date);
+    const endDatetimeLocal = convertISOToDatetimeLocal(event.end_date);
+
     setEditedEvent({
       title: event.title,
       description: event.description,
@@ -79,6 +91,15 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
       start_date: event.start_date,
       end_date: event.end_date
     });
+
+    // Populate split date/time for the UI
+    setSplitDateTime({
+      startDate: extractDateFromDatetimeLocal(startDatetimeLocal),
+      startTime: extractTimeFromDatetimeLocal(startDatetimeLocal),
+      endDate: extractDateFromDatetimeLocal(endDatetimeLocal),
+      endTime: extractTimeFromDatetimeLocal(endDatetimeLocal)
+    });
+
     setSelectedParticipants(event.participants || []);
     setIsEditing(true);
   };
@@ -86,11 +107,21 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
   const handleCancel = () => {
     setIsEditing(false);
     setEditedEvent({});
+    setSplitDateTime({
+      startDate: '',
+      startTime: '',
+      endDate: '',
+      endTime: ''
+    });
     setSelectedParticipants([]);
   };
 
   const handleSave = async () => {
     if (!event) return;
+
+    // Combine split date/time inputs
+    const combinedStartDate = combineDateAndTime(splitDateTime.startDate, splitDateTime.startTime);
+    const combinedEndDate = combineDateAndTime(splitDateTime.endDate, splitDateTime.endTime);
 
     setSaving(true);
     try {
@@ -98,13 +129,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
       const updatedEventData = {
         ...editedEvent,
         participants: selectedParticipants,
-        // Only convert if the fields are datetime-local format (no Z at the end)
-        start_date: editedEvent.start_date && !editedEvent.start_date.includes('Z')
-          ? convertDatetimeLocalToISO(editedEvent.start_date)
-          : editedEvent.start_date,
-        end_date: editedEvent.end_date && !editedEvent.end_date.includes('Z')
-          ? convertDatetimeLocalToISO(editedEvent.end_date)
-          : editedEvent.end_date
+        start_date: combinedStartDate ? convertDatetimeLocalToISO(combinedStartDate) : editedEvent.start_date,
+        end_date: combinedEndDate ? convertDatetimeLocalToISO(combinedEndDate) : editedEvent.end_date
       };
 
       let updatedEvent: Event | null;
@@ -124,6 +150,12 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
       });
       setIsEditing(false);
       setEditedEvent({});
+      setSplitDateTime({
+        startDate: '',
+        startTime: '',
+        endDate: '',
+        endTime: ''
+      });
       setSelectedParticipants([]);
       onEventUpdate?.(updatedEvent);
     } catch (error) {
@@ -233,23 +265,47 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
                 </Select>
               </div>
 
-              {/* Date et heure de début */}
+              {/* Date de début */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Date et heure de début</label>
+                <label className="text-sm font-medium mb-1 block">Date de début (JJ/MM/AAAA)</label>
                 <Input
-                  type="datetime-local"
-                  value={editedEvent.start_date ? convertISOToDatetimeLocal(editedEvent.start_date) : ''}
-                  onChange={(e) => setEditedEvent(prev => ({ ...prev, start_date: e.target.value }))}
+                  type="date"
+                  value={splitDateTime.startDate}
+                  onChange={(e) => setSplitDateTime(prev => ({ ...prev, startDate: e.target.value }))}
+                  placeholder="13/10/2025"
+                  lang="fr-FR"
                 />
               </div>
 
-              {/* Date et heure de fin */}
+              {/* Heure de début */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Date et heure de fin</label>
+                <label className="text-sm font-medium mb-1 block">Heure de début (24h)</label>
+                <TimePicker
+                  value={splitDateTime.startTime}
+                  onChange={(time) => setSplitDateTime(prev => ({ ...prev, startTime: time }))}
+                  placeholder="Sélectionner l'heure"
+                />
+              </div>
+
+              {/* Date de fin */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date de fin (JJ/MM/AAAA)</label>
                 <Input
-                  type="datetime-local"
-                  value={editedEvent.end_date ? convertISOToDatetimeLocal(editedEvent.end_date) : ''}
-                  onChange={(e) => setEditedEvent(prev => ({ ...prev, end_date: e.target.value }))}
+                  type="date"
+                  value={splitDateTime.endDate}
+                  onChange={(e) => setSplitDateTime(prev => ({ ...prev, endDate: e.target.value }))}
+                  placeholder="13/10/2025"
+                  lang="fr-FR"
+                />
+              </div>
+
+              {/* Heure de fin */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Heure de fin (24h)</label>
+                <TimePicker
+                  value={splitDateTime.endTime}
+                  onChange={(time) => setSplitDateTime(prev => ({ ...prev, endTime: time }))}
+                  placeholder="Sélectionner l'heure"
                 />
               </div>
 
@@ -615,7 +671,7 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdate, on
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="gap-2"
+              className="btn-white-label hover:opacity-90 gap-2"
             >
               <Save className="w-4 h-4" />
               {saving ? 'Sauvegarde...' : 'Sauvegarder'}

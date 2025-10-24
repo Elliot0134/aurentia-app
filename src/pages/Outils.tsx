@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,11 +19,37 @@ import { cn } from '@/lib/utils';
 const Outils: React.FC = () => {
   const navigate = useNavigate();
   const { tools, loading, favorites, toggleFavorite } = useAIToolsList();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('popularity');
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
+
+  // Get filters from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('search') || '';
+  const validCategories = ['all', 'text', 'image', 'video', 'audio', 'code', 'data', 'business', 'education'];
+  const categoryFromUrl = searchParams.get('category') || 'all';
+  const selectedCategory = validCategories.includes(categoryFromUrl) ? categoryFromUrl : 'all';
+  const validSorts = ['popularity', 'name', 'date', 'category'];
+  const sortFromUrl = searchParams.get('sort') || 'popularity';
+  const sortBy = validSorts.includes(sortFromUrl) ? sortFromUrl : 'popularity';
+  const favoritesOnly = searchParams.get('favorites') === 'true';
+
+  // Functions to update URL params
+  const updateUrlParams = (updates: Record<string, string | boolean>) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      const stringValue = String(value);
+      if (value && value !== 'all' && value !== 'false' && value !== 'popularity' && value !== '') {
+        newParams.set(key, stringValue);
+      } else {
+        newParams.delete(key);
+      }
+    });
+    setSearchParams(newParams);
+  };
+
+  const setSearchTerm = (search: string) => updateUrlParams({ search });
+  const setSelectedCategory = (category: string) => updateUrlParams({ category });
+  const setSortBy = (sort: string) => updateUrlParams({ sort });
+  const setFavoritesOnly = (favorites: boolean) => updateUrlParams({ favorites });
+
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({

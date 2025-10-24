@@ -174,16 +174,21 @@ Each deliverable has a dedicated Supabase table linked to `project_id` and `user
 Custom commands available in `.claude/commands/`:
 - `/feature`: Add new feature with proper structure
 - `/fix`: Debug and resolve issues
+- `/enhance`: Enhance existing features
 - `/ui-polish`: UI/UX improvements
 - `/doc`: Documentation tasks
 - `/plan-flow`: Plan multi-step workflows
 - `/review`: Code review
 - `/refactor`: Code refactoring
+- `/test`: Testing tasks
+- `/migrate`: Database migration tasks
 
 ## Important Notes
 
 - Email confirmation required for new users (see `EmailConfirmationGuard`)
-- Project selector persists to localStorage
+- Project selector persists to localStorage as `currentProjectId`
 - Auth state managed via singleton Supabase client to prevent multiple GoTrueClient instances
 - Organization routes require active organization membership
-- White-label support via organization settings (custom colors, logo)
+- White-label support: Only applies when (1) in `/organisation/*` routes, (2) white-label enabled in org settings, (3) org has logo and name
+- Deliverables are loaded on-demand when `currentProjectId` changes
+- Development server runs on port 8080 by default

@@ -44,11 +44,13 @@ interface Comment {
 interface DeliverableCommentsProps {
   deliverableId: string;
   organizationId: string | null; // Nullable for individual users
+  itemType?: 'deliverable' | 'resource'; // Type of item being commented on
 }
 
-const DeliverableComments: React.FC<DeliverableCommentsProps> = ({ 
-  deliverableId, 
-  organizationId 
+const DeliverableComments: React.FC<DeliverableCommentsProps> = ({
+  deliverableId,
+  organizationId,
+  itemType = 'deliverable' // Default to 'deliverable' for backward compatibility
 }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -74,14 +76,14 @@ const DeliverableComments: React.FC<DeliverableCommentsProps> = ({
     
     // Subscribe to real-time updates
     const channel = supabase
-      .channel(`deliverable_comments_${deliverableId}`)
+      .channel(`${itemType}_comments_${deliverableId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'deliverable_comments',
-          filter: `deliverable_id=eq.${deliverableId}`,
+          filter: `deliverable_id=eq.${deliverableId},item_type=eq.${itemType}`,
         },
         (payload) => {
           console.log('🔔 Real-time comment update:', payload);
@@ -94,7 +96,7 @@ const DeliverableComments: React.FC<DeliverableCommentsProps> = ({
       console.log('🧹 Cleaning up comments subscription');
       supabase.removeChannel(channel);
     };
-  }, [deliverableId, organizationId]);
+  }, [deliverableId, organizationId, itemType]);
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -110,7 +112,7 @@ const DeliverableComments: React.FC<DeliverableCommentsProps> = ({
       console.log('🏢 Organization ID (optional):', organizationId || 'none');
       
       // Fetch comments with user profile information
-      // NOTE: We query ONLY by deliverable_id - RLS policies handle access control
+      // NOTE: We query by deliverable_id AND item_type - RLS policies handle access control
       const { data: commentsData, error: commentsError } = await (supabase as any)
         .from('deliverable_comments')
         .select(`
@@ -124,6 +126,7 @@ const DeliverableComments: React.FC<DeliverableCommentsProps> = ({
           )
         `)
         .eq('deliverable_id', deliverableId)
+        .eq('item_type', itemType)
         .order('created_at', { ascending: true });
 
       if (commentsError) {
@@ -215,6 +218,7 @@ const DeliverableComments: React.FC<DeliverableCommentsProps> = ({
         deliverable_id: deliverableId,
         organization_id: organizationId || null,
         user_id: currentUserId,
+        item_type: itemType,
         content_length: newComment.trim().length
       });
 
@@ -225,6 +229,7 @@ const DeliverableComments: React.FC<DeliverableCommentsProps> = ({
           deliverable_id: deliverableId,
           organization_id: organizationId || null, // Explicitly set to null if undefined
           user_id: currentUserId,
+          item_type: itemType,
           content: newComment.trim(),
         });
 

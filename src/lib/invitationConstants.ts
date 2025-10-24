@@ -23,14 +23,17 @@ export const INVITATION_STATUS_LABELS: Record<string, string> = {
 // Labels français des rôles d'invitation
 export const INVITATION_ROLE_LABELS: Record<string, string> = {
   member: 'Membre (Adhérent)',
-  staff: 'Staff (Mentor)',
-  organisation: 'Organisation (Propriétaire)'
+  staff: 'Staff (Administrateur)',
+  organisation: 'Organisation (Propriétaire)',
+  mentor: 'Mentor', // Legacy support
+  entrepreneur: 'Entrepreneur' // Legacy support
 };
 
 // Options pour les selects de rôle d'invitation
 export const INVITATION_ROLE_OPTIONS = [
   { value: 'member', label: 'Membre (Adhérent)' },
-  { value: 'staff', label: 'Staff (Mentor)' },
+  { value: 'staff', label: 'Staff (Administrateur)' },
+  { value: 'mentor', label: 'Mentor' },
   { value: 'organisation', label: 'Organisation (Propriétaire)' }
 ] as const;
 

@@ -30,18 +30,25 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
               <button
                 key={tab.key}
                 onClick={() => onTabChange(tab.key)}
+                style={activeTab === tab.key ? {
+                  // Only apply background color on mobile (desktop uses transparent bg with bottom border)
+                  backgroundColor: 'var(--color-primary)',
+                  // On desktop, apply border color to bottom border via CSS variable
+                  ['--tw-border-opacity' as string]: '1',
+                  borderBottomColor: 'var(--color-primary)'
+                } : {}}
                 className={`
                   py-2 px-4 font-medium text-base text-center rounded-md
                   ${
                     activeTab === tab.key
-                      ? 'bg-aurentia-orange-aurentia text-white'
+                      ? 'text-white'
                       : 'bg-white border border-gray-200 text-gray-700'
                   }
-                  md:whitespace-nowrap md:py-3 md:px-2 md:border-b-2 md:rounded-none md:bg-transparent md:text-center
+                  md:whitespace-nowrap md:py-3 md:px-2 md:border-b-2 md:rounded-none md:!bg-transparent md:text-center
                   ${
                     activeTab === tab.key
-                      ? 'md:border-aurentia-orange-aurentia md:text-aurentia-orange-aurentia'
-                      : 'md:border-transparent md:text-gray-500 md:hover:text-gray-700 md:hover:border-transparent'
+                      ? 'md:text-gray-700 md:hover:text-gray-700'
+                      : 'md:border-transparent md:text-gray-500 md:hover:text-gray-700 md:hover:border-gray-400'
                   }
                 `}
               >

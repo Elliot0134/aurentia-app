@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  getOrganisationDeliverables, 
-  createDeliverable, 
-  updateDeliverable, 
+import {
+  getOrganisationDeliverables,
+  createDeliverable,
+  updateDeliverable,
   deleteDeliverable,
   Deliverable
 } from '@/services/organisationService';
+import type { ResourceContent, ResourceType, ResourceVisibility } from '@/types/resourceTypes';
 
 export type { Deliverable };
 
@@ -15,10 +16,15 @@ export interface DeliverableFormData {
   entrepreneur_id?: string;
   title: string;
   description?: string;
-  type: 'business-model' | 'market-analysis' | 'pitch' | 'legal' | 'financial' | 'other';
-  status: 'pending' | 'in-progress' | 'completed' | 'reviewed';
+  type: 'business-model' | 'market-analysis' | 'pitch' | 'legal' | 'financial' | 'prototype' | 'presentation' | 'other';
+  status: 'pending' | 'in-progress' | 'completed' | 'reviewed' | 'approved';
   quality_score?: number;
   due_date?: string;
+  // New resource fields
+  content?: ResourceContent;
+  resource_type?: ResourceType;
+  visibility?: ResourceVisibility;
+  assigned_to?: string[];
 }
 
 export interface DeliverableStats {
@@ -140,6 +146,22 @@ export const useDeliverables = (organizationId?: string) => {
     }
   }, [organizationId]);
 
+  const updateResourceContent = async (id: string, content: ResourceContent): Promise<boolean> => {
+    try {
+      setError(null);
+      const updated = await updateDeliverable(id, { content });
+      if (updated) {
+        setDeliverables(prev => prev.map(d => d.id === id ? { ...d, content } : d));
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour du contenu:', err);
+      setError('Erreur lors de la mise à jour du contenu');
+      return false;
+    }
+  };
+
   return {
     deliverables,
     loading,
@@ -147,6 +169,7 @@ export const useDeliverables = (organizationId?: string) => {
     addDeliverable,
     editDeliverable,
     removeDeliverable,
+    updateResourceContent,
     refetch: fetchDeliverables,
     stats: getStats()
   };

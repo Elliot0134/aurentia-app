@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProjects } from '@/hooks/useOrganisationData';
 import { ModularDataTable } from "@/components/ui/modular-data-table";
@@ -11,7 +11,17 @@ import { FolderKanban, Settings } from "lucide-react";
 
 const OrganisationProjets = () => {
   const { id: organisationId } = useParams();
-  const [activeTab, setActiveTab] = useState("overview");
+
+  // Get tab from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ['overview', 'management'];
+  const tabFromUrl = searchParams.get('tab') || 'overview';
+  const activeTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'overview';
+
+  // Function to update tab and URL
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
 
   const { projects, loading } = useProjects();
 

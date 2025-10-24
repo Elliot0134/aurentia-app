@@ -5,6 +5,8 @@ export interface Organisation {
   name: string;
   description?: string;
   logo?: string;
+  logo_url?: string;
+  banner_url?: string;
   website?: string;
   email?: string;
   phone?: string;
@@ -117,6 +119,33 @@ export interface Mentor {
   completed_assignments?: number;
   recent_assignments?: number;
   activity_status?: string;
+  // Dual role indicator
+  is_also_staff?: boolean; // True if this mentor is also a staff member
+}
+
+export interface Staff {
+  id: string;
+  user_id: string;
+  organisation_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  avatar_url?: string;
+  linkedin_url?: string;
+  website?: string;
+  bio?: string;
+  location?: string;
+  company?: string;
+  job_role: string; // HR, Commerce, Marketing, etc.
+  manager_id?: string;
+  manager_name?: string; // Populated via join
+  status: 'active' | 'inactive' | 'pending';
+  joined_at: string;
+  created_at: string;
+  updated_at: string;
+  // Dual role indicator
+  is_also_mentor?: boolean; // True if this staff member is also a mentor
 }
 
 export interface Project {
@@ -192,7 +221,7 @@ export interface InvitationCode {
   id: string;
   code: string;
   organisation_id: string;
-  role: 'entrepreneur' | 'mentor';
+  role: 'member' | 'staff' | 'organisation' | 'mentor' | 'entrepreneur'; // member/staff/organisation are primary, mentor/entrepreneur for legacy
   created_by: string;
   created_at: string;
   expires_at?: string;

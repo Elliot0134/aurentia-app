@@ -32,6 +32,8 @@ import ToolTemplatePage from "./pages/ToolTemplatePage";
 import ComponentsTemplate from "./pages/individual/ComponentsTemplate";
 import ChatbotPage from "./pages/ChatbotPage";
 import PlanActionPage from "./pages/PlanActionPage";
+import KnowledgeBase from "./pages/individual/KnowledgeBase";
+import Integrations from "./pages/individual/Integrations";
 import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
 import MyOrganization from "./pages/MyOrganization";
@@ -42,20 +44,29 @@ import {
   OrganisationChatbot,
   OrganisationEvenements,
   OrganisationMentors,
+  OrganisationStaff,
   OrganisationProjets,
-  OrganisationLivrables,
+  OrganisationRessources,
+  OrganisationRessourcesCreate,
+  OrganisationRessourcesDetail,
   OrganisationAdherents,
   OrganisationInvitations,
   OrganisationForms,
   OrganisationSettings,
   OrganisationPartenaires,
   OrganisationProfile,
-  OrganisationFormCreate
+  OrganisationFormCreate,
+  OrganisationIntegrations
 } from "./pages/organisation";
 import OrganisationMentorProfile from "./pages/organisation/OrganisationMentorProfile";
 import OrganisationOnboarding from "./pages/organisation/OrganisationOnboarding";
+import OrganisationNewsletters from "./pages/organisation/OrganisationNewsletters";
+import NewsletterEditor from "./pages/organisation/NewsletterEditor";
+import NewsletterDetail from "./pages/organisation/NewsletterDetail";
+import OrganisationKnowledgeBase from "./pages/organisation/OrganisationKnowledgeBase";
 import SetupOrganization from "./pages/SetupOrganization";
 import AuthCallback from "./pages/AuthCallback";
+import Messages from "./pages/Messages";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
 import { UserProvider } from "./contexts/UserContext";
@@ -319,8 +330,10 @@ const App = () => {
                     <Route path="/individual/project-business" element={<ProjectBusiness />} />
                     <Route path="/individual/chatbot" element={<ChatbotPage />} />
                     <Route path="/individual/chatbot/:projectId" element={<ChatbotPage />} />
+                    <Route path="/individual/chatbot/:projectId/:conversationId" element={<ChatbotPage />} />
                     <Route path="/individual/outils" element={<Outils />} />
                     <Route path="/individual/outils/:slug/:id" element={<ToolDetailPage />} />
+                    <Route path="/individual/integrations" element={<Integrations />} />
                     <Route path="/individual/ressources" element={<Ressources />} />
                     <Route path="/individual/collaborateurs" element={<Collaborateurs />} />
                     <Route path="/individual/template" element={<TemplatePage />} />
@@ -335,7 +348,10 @@ const App = () => {
                     <Route path="/individual/knowledge" element={<Knowledge />} />
                     <Route path="/individual/partenaires" element={<Partenaires />} />
                     <Route path="/individual/my-organization" element={<MyOrganization />} />
-                    
+                    <Route path="/individual/knowledge-base" element={<KnowledgeBase />} />
+                    <Route path="/individual/knowledge-base/:projectId" element={<KnowledgeBase />} />
+                    <Route path="/messages" element={<Messages />} />
+
                     {/* Organisation routes */}
                     <Route path="/organisation/:id/dashboard" element={
                       <OrganisationRouteGuard>
@@ -367,6 +383,11 @@ const App = () => {
                         <OrganisationForms />
                       </OrganisationRouteGuard>
                     } />
+                    <Route path="/organisation/:id/integrations" element={
+                      <OrganisationRouteGuard>
+                        <OrganisationIntegrations />
+                      </OrganisationRouteGuard>
+                    } />
                     <Route path="/organisation/:id/settings" element={
                       <OrganisationRouteGuard>
                         <OrganisationSettings />
@@ -382,6 +403,11 @@ const App = () => {
                         <OrganisationMentors />
                       </OrganisationRouteGuard>
                     } />
+                    <Route path="/organisation/:id/staff" element={
+                      <OrganisationRouteGuard>
+                        <OrganisationStaff />
+                      </OrganisationRouteGuard>
+                    } />
                     <Route path="/organisation/:id/my-profile" element={
                       <OrganisationRouteGuard>
                         <OrganisationMentorProfile />
@@ -392,14 +418,54 @@ const App = () => {
                         <OrganisationPartenaires />
                       </OrganisationRouteGuard>
                     } />
-                    <Route path="/organisation/:id/livrables" element={
+                    <Route path="/organisation/:id/ressources" element={
                       <OrganisationRouteGuard>
-                        <OrganisationLivrables />
+                        <OrganisationRessources />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/ressources/create" element={
+                      <OrganisationRouteGuard>
+                        <OrganisationRessourcesCreate />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/ressources/:resourceId" element={
+                      <OrganisationRouteGuard>
+                        <OrganisationRessourcesDetail />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/knowledge-base" element={
+                      <OrganisationRouteGuard>
+                        <OrganisationKnowledgeBase />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/chatbot" element={
                       <OrganisationRouteGuard>
                         <OrganisationChatbot />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/chatbot/:conversationId" element={
+                      <OrganisationRouteGuard>
+                        <OrganisationChatbot />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/newsletters" element={
+                      <OrganisationRouteGuard>
+                        <OrganisationNewsletters />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/newsletters/create" element={
+                      <OrganisationRouteGuard>
+                        <NewsletterEditor />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/newsletters/:newsletterId" element={
+                      <OrganisationRouteGuard>
+                        <NewsletterDetail />
+                      </OrganisationRouteGuard>
+                    } />
+                    <Route path="/organisation/:id/newsletters/:newsletterId/edit" element={
+                      <OrganisationRouteGuard>
+                        <NewsletterEditor />
                       </OrganisationRouteGuard>
                     } />
                     <Route path="/organisation/:id/informations" element={

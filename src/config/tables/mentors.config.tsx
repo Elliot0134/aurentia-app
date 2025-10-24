@@ -1,6 +1,7 @@
-import { Check, Loader, X, Mail, Phone, Trash2, Edit, Users, Award } from "lucide-react";
+import { Check, Loader, X, Mail, Phone, Trash2, Edit, Users, Award, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { ModularTableConfig, BaseRowData } from "@/components/ui/modular-data-table";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * Interface pour les données de mentor
@@ -24,6 +25,7 @@ export interface MentorData extends BaseRowData {
   progressValue?: number;
   relatedLinks?: { label: string; href: string; target?: string }[];
   user_id?: string; // For permission checks
+  is_also_staff?: boolean; // True if this mentor is also a staff member
 }
 
 /**
@@ -200,13 +202,37 @@ export const mentorsTableConfig: ModularTableConfig<MentorData> = {
         iconColor: "text-white",
       },
     },
+    // Custom rendering to add "Staff" badge for dual roles
+    customRender: (data: MentorData) => {
+      const defaultLabel = (
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-100">
+          {data.statut === "Actif" && <Check className="w-3.5 h-3.5 rounded-full bg-green-500 text-white p-0.5" />}
+          {data.statut === "En attente" && <Loader className="w-3.5 h-3.5 text-gray-500" />}
+          {data.statut === "Inactif" && <X className="w-3.5 h-3.5 rounded-full bg-red-500 text-white p-0.5" />}
+        </div>
+      );
+
+      if (data.is_also_staff) {
+        return (
+          <div className="flex items-center gap-2">
+            {defaultLabel}
+            <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 flex items-center gap-1">
+              <Briefcase className="w-3 h-3" />
+              Staff
+            </Badge>
+          </div>
+        );
+      }
+
+      return defaultLabel;
+    }
   },
 
   // Colonne de progression
-  hasProgressColumn: true,
+  hasProgressColumn: false,
 
   // Colonne des liens
-  hasLinksColumn: true,
+  hasLinksColumn: false,
 
   // Actions de ligne
   rowActions: [

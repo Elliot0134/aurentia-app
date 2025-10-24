@@ -9,13 +9,18 @@ import { useProject } from '@/contexts/ProjectContext';
 import { Label } from "@/components/ui/label";
 import { Edit2, Save, X } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
+import ImageUploader from '@/components/ui/ImageUploader';
 import { toast } from "@/hooks/use-toast";
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { userInitializationService } from '@/services/userInitializationService';
 import { profileService, ProfileData } from '@/services/profileService';
 import { AddressAutocompleteInput } from "@/components/ui/address-autocomplete-input";
 
 const Profile = () => {
+  const navigate = useNavigate();
+  const { currentProjectId } = useProject();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [newEmail, setNewEmail] = useState('');
   const [user, setUser] = useState<ProfileData>({
     id: "",
@@ -25,9 +30,10 @@ const Profile = () => {
     company: "",
     phone: "",
     location: "",
+    avatar_url: "",
     created_at: ""
   });
-  
+
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editableFields, setEditableFields] = useState({
@@ -39,9 +45,19 @@ const Profile = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [emailLoading, setEmailLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("Informations");
+
+  // Get activeTab from URL params, default to "Informations"
+  const validTabs = ["Informations", "Facturation", "Sécurité"];
+  const tabFromUrl = searchParams.get('tab') || "Informations";
+  const activeTab = validTabs.includes(tabFromUrl) ? tabFromUrl : "Informations";
+
   const { subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
-  const { currentProjectId, userProjectsLoading } = useProject();
+  const { userProjectsLoading } = useProject();
+
+  // Function to update tab and URL
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -77,6 +93,7 @@ const Profile = () => {
               company: session.user.user_metadata?.company || "",
               phone: session.user.user_metadata?.phone || "",
               location: session.user.user_metadata?.location || "",
+              avatar_url: session.user.user_metadata?.avatar_url || "",
               created_at: session.user.created_at
             };
 
@@ -182,6 +199,66 @@ const Profile = () => {
     }));
   };
 
+  const handleAvatarUpload = async (publicUrl: string) => {
+    setIsLoading(true);
+    try {
+      const success = await profileService.updateProfile(user.id, { avatar_url: publicUrl });
+
+      if (!success) {
+        throw new Error('Failed to update avatar');
+      }
+
+      setUser(prev => ({
+        ...prev,
+        avatar_url: publicUrl
+      }));
+
+      toast({
+        title: "Photo de profil mise à jour",
+        description: "Votre photo de profil a été mise à jour avec succès.",
+      });
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour votre photo de profil.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    setIsLoading(true);
+    try {
+      const success = await profileService.updateProfile(user.id, { avatar_url: '' });
+
+      if (!success) {
+        throw new Error('Failed to delete avatar');
+      }
+
+      setUser(prev => ({
+        ...prev,
+        avatar_url: ''
+      }));
+
+      toast({
+        title: "Photo de profil supprimée",
+        description: "Votre photo de profil a été supprimée.",
+      });
+    } catch (error) {
+      console.error('Error deleting avatar:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer votre photo de profil.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleChangeEmail = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -250,7 +327,7 @@ const Profile = () => {
 
         <div className="md:border-b md:border-gray-200">
           <nav className="grid grid-cols-2 gap-2 md:flex md:flex-row md:-mb-px md:space-x-8" aria-label="Tabs">
-            {["Informations", "Facturation", "Documents", "Sécurité", "Intégrations"].map((tab) => (
+            {validTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -286,12 +363,35 @@ const Profile = () => {
                 <div>
                   <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mb-6">
                     <h2 className="text-2xl font-bold text-slate-800">Informations du profil</h2>
-                {!isEditing ? (
-                  <Button onClick={handleEdit} variant="outline" className="flex items-center gap-2">
-                    <Edit2 size={16} />
-                    Modifier
-                  </Button>
-                ) : (
+                    {!isEditing && (
+                      <Button onClick={handleEdit} variant="outline" className="flex items-center gap-2 mt-4 md:mt-0">
+                        <Edit2 size={16} />
+                        Modifier
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Profile Picture Section */}
+                  <div className="mb-8 flex justify-center">
+                    <div className="text-center">
+                      <ImageUploader
+                        bucket="avatars"
+                        folder={user.id}
+                        value={user.avatar_url}
+                        onUpload={handleAvatarUpload}
+                        onDelete={handleAvatarDelete}
+                        mode="logo"
+                        disabled={!isEditing}
+                        fallbackText={user.first_name || user.email}
+                        maxSizeMB={2}
+                      />
+                      <p className="text-sm text-gray-500 mt-2">Photo de profil</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-start md:flex-row md:justify-between md:items-center mb-6">
+                    <h3 className="text-xl font-semibold text-slate-700">Informations</h3>
+                {isEditing && (
                   <div className="flex gap-2">
                     <Button
                       onClick={handleSave}
@@ -495,20 +595,6 @@ const Profile = () => {
                 </form>
               </div>
             </div>
-          )}
-          {activeTab === "Intégrations" && (
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold">Intégrations</h2>
-              <p className="mt-4">Contenu des intégrations à venir.</p>
-            </Card>
-          )}
-          {activeTab === "Documents" && (
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold">Fonctionnalité à venir</h2>
-              <p className="mt-4">
-                Prochainement, vous pourrez ajouter des documents concernant votre projet d'entreprise, afin de personnalisé en plus les réponses de l'agent IA, recommandations etc.
-              </p>
-            </Card>
           )}
           </>
         )}

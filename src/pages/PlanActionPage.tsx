@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
 import { Button } from "@/components/ui/button";
@@ -40,19 +40,19 @@ const PlanActionPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false); // Initialisé à false, sera géré par useEffect
   const [showWarning, setShowWarning] = useState(false);
-  
+
   // États pour le plan d'action
   const [selectedElement, setSelectedElement] = useState<HierarchicalElement | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // État local pour les mises à jour optimistes de statut
   const [localStatusUpdates, setLocalStatusUpdates] = useState<Record<string, string>>({});
-  
+
   // Hook pour récupérer les données du plan d'action
   const { data: actionPlanData, isLoading: actionPlanLoading, error: actionPlanError, refetch: refetchActionPlan } = useActionPlanData(
     statusActionPlan === 'Terminé' ? activeProjectId : null
   );
-  
+
   // Fusionner les données du serveur avec les mises à jour locales
   const mergedActionPlanData = actionPlanData ? {
     ...actionPlanData,
@@ -61,9 +61,24 @@ const PlanActionPage = () => {
       statut: (localStatusUpdates[element.element_id] as 'À faire' | 'En cours' | 'Terminé') || element.statut
     }))
   } : null;
-  
+
+  // Get current step from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stepFromUrl = parseInt(searchParams.get('step') || '1');
+  const currentStep = stepFromUrl >= 1 && stepFromUrl <= 5 ? stepFromUrl : 1;
+
+  // Function to update step in URL
+  const updateCurrentStep = (step: number) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (step && step !== 1) {
+      newParams.set('step', String(step));
+    } else {
+      newParams.delete('step');
+    }
+    setSearchParams(newParams);
+  };
+
   // Navigation states
-  const [currentStep, setCurrentStep] = useState(1);
   const [slideDirection, setSlideDirection] = useState('next');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousStep, setPreviousStep] = useState(currentStep);
@@ -118,11 +133,11 @@ const PlanActionPage = () => {
       setSlideDirection('next');
       setIsTransitioning(true);
       setPreviousStep(currentStep);
-      
+
       setTimeout(() => {
-        setCurrentStep(currentStep + 1);
+        updateCurrentStep(currentStep + 1);
       }, 50);
-      
+
       setTimeout(() => {
         setIsTransitioning(false);
       }, 350);
@@ -134,11 +149,11 @@ const PlanActionPage = () => {
       setSlideDirection('prev');
       setIsTransitioning(true);
       setPreviousStep(currentStep);
-      
+
       setTimeout(() => {
-        setCurrentStep(currentStep - 1);
+        updateCurrentStep(currentStep - 1);
       }, 50);
-      
+
       setTimeout(() => {
         setIsTransitioning(false);
       }, 350);
@@ -802,7 +817,7 @@ const PlanActionPage = () => {
           {statusActionPlan === 'En cours' && (
             <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg p-6 text-center shadow-sm border border-gray-200">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Création de votre plan d'action personnalisé en cours...</h2>
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aurentia-orange"></div>
             </div>
           )}
           
@@ -811,7 +826,7 @@ const PlanActionPage = () => {
             <div className="space-y-6">
               {actionPlanLoading && (
                 <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-orange"></div>
                   <span className="ml-3 text-gray-600">Chargement du plan d'action...</span>
                 </div>
               )}

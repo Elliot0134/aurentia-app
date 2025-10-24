@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { useOrganisationData } from '@/hooks/useOrganisationData';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { updateOrganisationSettings } from '@/services/organisationService';
 import CustomTabs from "@/components/ui/CustomTabs";
 import {
   Settings,
@@ -21,16 +25,100 @@ import {
   AlertCircle,
   CheckCircle,
   Info,
-  Lock
+  Lock,
+  Mail,
+  Send
 } from "lucide-react";
 
 const OrganisationSettings = () => {
   const { id: organisationId } = useParams();
   const { organisation, loading, refetch } = useOrganisationData();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('notifications');
+  const queryClient = useQueryClient();
+
+  // Get tab from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ['notifications', 'branding', 'permissions', 'integrations'];
+  const tabFromUrl = searchParams.get('tab') || 'notifications';
+  const activeTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'notifications';
+
+  // Function to update tab and URL
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
+
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [settingsChanged, setSettingsChanged] = useState(false);
+
+  // Fetch staff members for permissions management
+  const { data: staffMembers, isLoading: staffLoading } = useQuery({
+    queryKey: ["organization-staff", organisationId],
+    queryFn: async () => {
+      if (!organisationId) return [];
+
+      const { data, error } = await supabase
+        .from("user_organizations")
+        .select(`
+          id,
+          user_id,
+          user_role,
+          can_manage_newsletters,
+          can_manage_org_messages,
+          profiles:user_id (
+            id,
+            email,
+            first_name,
+            last_name
+          )
+        `)
+        .eq("organization_id", organisationId)
+        .eq("user_role", "staff")
+        .eq("status", "active");
+
+      if (error) {
+        console.error("Error fetching staff:", error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!organisationId,
+  });
+
+  // Mutation to update staff permissions
+  const updatePermissionMutation = useMutation({
+    mutationFn: async ({
+      userOrgId,
+      field,
+      value,
+    }: {
+      userOrgId: string;
+      field: "can_manage_newsletters" | "can_manage_org_messages";
+      value: boolean;
+    }) => {
+      const { error } = await supabase
+        .from("user_organizations")
+        .update({ [field]: value })
+        .eq("id", userOrgId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organization-staff", organisationId] });
+      toast({
+        title: "Permission mise à jour",
+        description: "Les permissions du staff ont été modifiées avec succès.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating permission:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour les permissions.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // État local pour les paramètres éditables
   const [localSettings, setLocalSettings] = useState({
@@ -77,9 +165,6 @@ const OrganisationSettings = () => {
     setSettingsChanged(false);
 
     try {
-      // Importer la fonction de mise à jour
-      const { updateOrganisationSettings } = await import('@/services/organisationService');
-      
       // Préparer les données de mise à jour
       const updateData: any = {};
       
@@ -105,15 +190,17 @@ const OrganisationSettings = () => {
       
       // Rafraîchir les données de l'organisation
       await refetch();
-      
+
       setSaveStatus('saved');
       toast({
         title: "Paramètres sauvegardés",
-        description: "Les modifications ont été appliquées avec succès.",
+        description: "Les modifications ont été appliquées avec succès. La page va se rafraîchir...",
       });
-      
-      // Reset status after 3 seconds
-      setTimeout(() => setSaveStatus('idle'), 3000);
+
+      // Reload page after 1 second to apply new branding
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       setSaveStatus('error');
       toast({
@@ -196,6 +283,7 @@ const OrganisationSettings = () => {
         tabs={[
           { key: "notifications", label: "Notifications", icon: Bell },
           { key: "branding", label: "Branding", icon: Palette },
+          { key: "permissions", label: "Permissions Staff", icon: Shield },
           { key: "integrations", label: "Intégrations", icon: Globe }
         ]}
         activeTab={activeTab}
@@ -342,6 +430,106 @@ const OrganisationSettings = () => {
                   onCheckedChange={(checked) => updateLocalSettings('branding', 'publicProfile', checked)}
                 />
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Onglet Permissions Staff */}
+        {activeTab === "permissions" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Permissions du Staff
+              </CardTitle>
+              <CardDescription>
+                Gérez les permissions d'accès aux fonctionnalités pour les membres du staff
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {staffLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : !staffMembers || staffMembers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p>Aucun membre du staff trouvé</p>
+                  <p className="text-sm mt-1">Invitez des membres du staff pour gérer leurs permissions</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Activez ou désactivez les permissions pour chaque membre du staff. Les propriétaires de l'organisation ont toutes les permissions par défaut.
+                  </div>
+
+                  {staffMembers.map((staff: any) => (
+                    <Card key={staff.id} className="bg-muted/30">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between gap-4 mb-4">
+                          <div>
+                            <div className="font-medium">
+                              {staff.profiles?.first_name && staff.profiles?.last_name
+                                ? `${staff.profiles.first_name} ${staff.profiles.last_name}`
+                                : staff.profiles?.email || "Utilisateur"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">{staff.profiles?.email}</div>
+                            <Badge variant="outline" className="mt-2">Staff</Badge>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 border-t pt-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Send className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <h4 className="font-medium text-sm">Gestion des Newsletters</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Créer, modifier et envoyer des newsletters
+                                </p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={staff.can_manage_newsletters ?? false}
+                              onCheckedChange={(checked) =>
+                                updatePermissionMutation.mutate({
+                                  userOrgId: staff.id,
+                                  field: "can_manage_newsletters",
+                                  value: checked,
+                                })
+                              }
+                              disabled={updatePermissionMutation.isPending}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <h4 className="font-medium text-sm">Messagerie Organisation</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Accéder et gérer les messages de l'organisation
+                                </p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={staff.can_manage_org_messages ?? false}
+                              onCheckedChange={(checked) =>
+                                updatePermissionMutation.mutate({
+                                  userOrgId: staff.id,
+                                  field: "can_manage_org_messages",
+                                  value: checked,
+                                })
+                              }
+                              disabled={updatePermissionMutation.isPending}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

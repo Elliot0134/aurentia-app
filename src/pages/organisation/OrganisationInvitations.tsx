@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useInvitationCodes } from '@/hooks/useOrganisationData';
 import { OrganisationPageLayout } from '@/components/organisation/OrganisationLayout';
 import { Button } from "@/components/ui/button";
@@ -50,8 +51,36 @@ interface Invitation {
 const OrganisationInvitations = () => {
   const { codes, loading, generateCode } = useInvitationCodes();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('pending');
-  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Get tab from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ['all', 'pending', 'accepted', 'expired'];
+  const tabFromUrl = searchParams.get('tab') || 'pending';
+  const activeTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'pending';
+
+  // Function to update tab and URL
+  const setActiveTab = (tab: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (tab && tab !== 'pending') {
+      newParams.set('tab', tab);
+    } else {
+      newParams.delete('tab');
+    }
+    setSearchParams(newParams);
+  };
+
+  // Modal state from URL params
+  const dialogOpen = searchParams.get('modal') === 'create';
+  const setDialogOpen = (open: boolean) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (open) {
+      newParams.set('modal', 'create');
+    } else {
+      newParams.delete('modal');
+    }
+    setSearchParams(newParams);
+  };
+
   const [createdCode, setCreatedCode] = useState<string>('');
   const [createdEmail, setCreatedEmail] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
@@ -125,7 +154,7 @@ const OrganisationInvitations = () => {
       <div className="space-y-6 p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-orange mx-auto mb-4"></div>
             <p className="text-gray-500">Chargement des invitations...</p>
           </div>
         </div>
@@ -178,7 +207,7 @@ const OrganisationInvitations = () => {
           </div>
             <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
               <DialogTrigger asChild>
-                <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+                <Button className="btn-white-label hover:opacity-90">
                   <Plus className="w-4 h-4 mr-2" />
                   Créer une invitation
                 </Button>
@@ -251,8 +280,7 @@ const OrganisationInvitations = () => {
                 <DialogFooter>
                   {createdCode ? (
                     <Button 
-                      style={{ backgroundColor: '#ff5932' }} 
-                      className="hover:opacity-90 text-white"
+                      className="btn-white-label hover:opacity-90"
                       onClick={() => {
                         setDialogOpen(false);
                         setCreatedCode('');
@@ -267,8 +295,7 @@ const OrganisationInvitations = () => {
                         Annuler
                       </Button>
                       <Button 
-                        style={{ backgroundColor: '#ff5932' }} 
-                        className="hover:opacity-90 text-white"
+                        className="btn-white-label hover:opacity-90"
                         onClick={() => handleCreateInvitation(formData)}
                         disabled={isCreating}
                       >

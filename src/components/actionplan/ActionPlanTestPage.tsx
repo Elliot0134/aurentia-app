@@ -26,7 +26,7 @@ const ActionPlanTestPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-orange"></div>
           <span className="ml-3 text-gray-600">Chargement du plan d'action...</span>
         </div>
       </div>

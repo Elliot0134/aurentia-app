@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { FileText, Download, Settings, DollarSign, Briefcase, Lightbulb, Package, Shield, TrendingUp, Book, ListChecks, BarChart, Globe, HelpCircle, UserPlus, Mail, Eye, Edit, FolderSearch } from "lucide-react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { Download, Settings, UserPlus, Eye, Edit, FolderSearch } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,7 +29,6 @@ import { supabase } from "@/integrations/supabase/client"; // Import Supabase cl
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
 import ComingSoonDialog from "@/components/ui/ComingSoonDialog"; // Import ComingSoonDialog
-// import { useStripePayment } from "@/hooks/useStripePayment"; // Plus nécessaire avec les crédits
 import { useProject } from "@/contexts/ProjectContext";
 import { useDeliverableProgress } from "@/hooks/useDeliverableProgress"; // Import the new hook
 import ProjectScoreCards from "@/components/project/ProjectScoreCards"; // Import ProjectScoreCards
@@ -46,7 +43,27 @@ const ProjectBusiness = () => {
   const { userRole } = useUserRole(); // Get user role
   const { openCreditsDialog } = useCreditsDialog(); // Utiliser le contexte des crédits
   const { purchasedRemaining, monthlyRemaining, refresh: fetchCredits } = useCreditsSimple(); // Utiliser le hook des crédits
-  const [selectedPersonaExpress, setSelectedPersonaExpress] = useState<'Particulier' | 'Entreprise' | 'Organismes'>('Particulier');
+
+  // Get persona from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validPersonas = ['particulier', 'entreprise', 'organismes'];
+  const personaFromUrl = searchParams.get('persona') || 'particulier';
+  const selectedPersonaExpress = (validPersonas.includes(personaFromUrl.toLowerCase())
+    ? (personaFromUrl.charAt(0).toUpperCase() + personaFromUrl.slice(1))
+    : 'Particulier') as 'Particulier' | 'Entreprise' | 'Organismes';
+
+  // Function to update persona in URL
+  const setSelectedPersonaExpress = (persona: 'Particulier' | 'Entreprise' | 'Organismes') => {
+    const newParams = new URLSearchParams(searchParams);
+    const lowerPersona = persona.toLowerCase();
+    if (lowerPersona !== 'particulier') {
+      newParams.set('persona', lowerPersona);
+    } else {
+      newParams.delete('persona');
+    }
+    setSearchParams(newParams);
+  };
+
   const [loading, setLoading] = useState(true); // Set loading to true initially
   const [project, setProject] = useState<{ nom_projet?: string; description_projet?: string } | null>(null); // State for project data
   const [userSubscriptionStatus, setUserSubscriptionStatus] = useState<string | null>(null); // New state for user subscription status

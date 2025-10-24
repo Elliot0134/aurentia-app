@@ -5,6 +5,7 @@ import {
   Organisation,
   Adherent,
   Mentor,
+  Staff,
   OrganisationStats,
   Event,
   Partner,
@@ -19,6 +20,7 @@ import {
   getOrganisationInvitationCodes,
   createInvitationCode,
   getOrganisationMentors,
+  getOrganisationStaff,
   getOrganisationEvents,
   createEvent,
   updateEvent as updateEventService,
@@ -67,10 +69,12 @@ export const useOrganisationData = () => {
           id: data.id,
           name: data.name,
           description: data.description || 'Aucune description disponible',
-          logo: data.logo || '',
+          logo: data.logo_url || data.logo || '',
+          logo_url: data.logo_url || data.logo || '',
+          banner_url: data.banner_url || '',
           website: data.website || '',
           email: data.email || '',
-          phone: data.phone || '',  
+          phone: data.phone || '',
           address: data.address || '',
           primary_color: data.primary_color,
           secondary_color: data.secondary_color,
@@ -348,7 +352,8 @@ export const useMentors = () => {
           current_entrepreneurs: mentor.current_entrepreneurs || 0,
           total_assignments: mentor.total_assignments || 0,
           completed_assignments: mentor.completed_assignments || 0,
-          recent_assignments: mentor.recent_assignments || 0
+          recent_assignments: mentor.recent_assignments || 0,
+          is_also_staff: mentor.is_also_staff || false
         }));
 
         // Check if the owner is already in the mentor list
@@ -409,6 +414,65 @@ export const useMentors = () => {
   }, [organisationId]);
 
   return { mentors, loading };
+};
+
+// Hook pour le staff
+export const useStaff = () => {
+  const { id: organisationId } = useParams();
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStaff = async () => {
+      if (!organisationId) return;
+
+      try {
+        setLoading(true);
+
+        // Use the optimized service function
+        const staffData = await getOrganisationStaff(organisationId);
+
+        console.log('🔄 Raw staff from optimized service:', staffData.length, staffData);
+
+        // Adapter les données aux types Staff
+        const adaptedStaff: Staff[] = staffData.map((member: any) => ({
+          id: member.id,
+          user_id: member.user_id,
+          organisation_id: organisationId,
+          first_name: member.first_name || member.email?.split('@')[0] || '',
+          last_name: member.last_name || '',
+          email: member.email || '',
+          phone: member.phone,
+          avatar_url: member.avatar_url,
+          linkedin_url: member.linkedin_url,
+          website: member.website,
+          bio: member.bio,
+          location: member.location,
+          company: member.company,
+          job_role: member.job_role || 'Non défini',
+          manager_id: member.manager_id,
+          manager_name: member.manager_name,
+          status: member.status as 'active' | 'inactive' | 'pending',
+          joined_at: member.joined_at,
+          created_at: member.created_at,
+          updated_at: member.updated_at,
+          is_also_mentor: member.is_also_mentor || false
+        }));
+
+        console.log('🎯 Final adapted staff:', adaptedStaff.length, adaptedStaff);
+        setStaff(adaptedStaff);
+      } catch (err) {
+        console.error('Erreur lors du chargement du staff:', err);
+        setStaff([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStaff();
+  }, [organisationId]);
+
+  return { staff, loading };
 };
 
 // Hook pour les événements

@@ -288,7 +288,7 @@ const OrganisationDashboard = () => {
                   </CardTitle>
                   <Dialog open={invitationDialogOpen} onOpenChange={setInvitationDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button size="sm" style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+                      <Button size="sm" className="btn-white-label hover:opacity-90">
                         <Plus className="w-3 h-3 mr-1" />
                         Créer
                       </Button>
@@ -332,9 +332,8 @@ const OrganisationDashboard = () => {
                         <Button variant="outline" onClick={() => setInvitationDialogOpen(false)}>
                           Annuler
                         </Button>
-                        <Button 
-                          style={{ backgroundColor: '#ff5932' }} 
-                          className="hover:opacity-90 text-white"
+                        <Button
+                          className="btn-white-label hover:opacity-90"
                           onClick={handleCreateInvitation}
                         >
                           Créer l'invitation

@@ -1,22 +1,51 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from "sonner";
 import { useProject } from '@/contexts/ProjectContext';
 import { useChatConversation } from '@/hooks/useChatConversation';
 import { useProjects } from '@/hooks/useOrganisationData';
-import { 
-  ChatHeader, 
-  MessageList, 
-  ChatInput, 
-  SuggestedPrompts, 
-  ChatDialogs 
+import { useUserProfile } from '@/hooks/useUserProfile';
+import {
+  ChatHeader,
+  MessageList,
+  ChatInput,
+  SuggestedPrompts,
+  ChatDialogs
 } from '@/components/chat';
 import { Sparkles, Building2, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const OrganisationChatbot = () => {
-  const { id: organisationId } = useParams();
+  const { id: organisationId, conversationId } = useParams();
+  const navigate = useNavigate();
+
+  // Get filters from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedProject = searchParams.get('project') || 'all';
+  const communicationStyle = searchParams.get('style') || 'normal';
+
+  // Function to update URL params
+  const setSelectedProject = (project: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (project && project !== 'all') {
+      newParams.set('project', project);
+    } else {
+      newParams.delete('project');
+    }
+    setSearchParams(newParams);
+  };
+
+  const setCommunicationStyle = (style: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (style && style !== 'normal') {
+      newParams.set('style', style);
+    } else {
+      newParams.delete('style');
+    }
+    setSearchParams(newParams);
+  };
+
   const [inputMessage, setInputMessage] = useState('');
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [tempConversationName, setTempConversationName] = useState('');
@@ -24,18 +53,17 @@ const OrganisationChatbot = () => {
   const [isReformulating, setIsReformulating] = useState(false);
   const [isHistoryOpenMobile, setIsHistoryOpenMobile] = useState(false);
   const [isDropdownExiting, setIsDropdownExiting] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<string>('all');
-
-  // State for communication style and search mode
-  const [communicationStyle, setCommunicationStyle] = useState('normal');
   const [selectedDeliverables, setSelectedDeliverables] = useState<string[]>([]);
   const [selectedSearchModes, setSelectedSearchModes] = useState<string[]>([]);
 
   // Hook pour gérer le projet et les livrables (adapté pour l'organisation)
   const { deliverableNames, deliverablesLoading, userProjects, currentProjectId } = useProject();
-  
+
   // Hook pour récupérer les projets de l'organisation
   const { projects, loading: projectsLoading } = useProjects();
+
+  // Hook pour récupérer le logo de l'organisation
+  const { userProfile } = useUserProfile();
   
   // Hook pour gérer la conversation (adapté au contexte organisationnel)
   const {
@@ -175,6 +203,27 @@ const OrganisationChatbot = () => {
 
   const messages = currentConversation?.messages || [];
 
+  // Wrapper function to load conversation and update URL
+  const handleLoadConversation = (convId: string) => {
+    loadConversation(convId);
+    // Update URL with conversation ID
+    navigate(`/organisation/${organisationId}/chatbot/${convId}`, { replace: true });
+  };
+
+  // Override newChat to update URL
+  const handleNewChat = () => {
+    newChat();
+    // Reset URL to base chatbot path
+    navigate(`/organisation/${organisationId}/chatbot`, { replace: true });
+  };
+
+  // Load conversation from URL parameter if present
+  useEffect(() => {
+    if (conversationId && conversationId !== currentConversation?.id) {
+      loadConversation(conversationId);
+    }
+  }, [conversationId]);
+
   return (
     <div className="flex flex-col h-screen bg-[#F8F6F1] overflow-hidden overflow-x-hidden">
       {/* Interface de chat adaptée au contexte organisationnel */}
@@ -216,10 +265,11 @@ const OrganisationChatbot = () => {
           conversationHistory={conversationHistory}
           isConversationLoading={isConversationLoading}
           isHistoryLoading={isHistoryLoading}
-          onLoadConversation={loadConversation}
-          onNewChat={newChat}
+          onLoadConversation={handleLoadConversation}
+          onNewChat={handleNewChat}
           onRenameConversation={handleRenameConversation}
           onDeleteConversation={handleDeleteConversation}
+          organizationLogoUrl={userProfile?.organization?.logo_url}
           onToggleHistoryMobile={() => {
             if (isHistoryOpenMobile) {
               setIsDropdownExiting(true);
@@ -246,7 +296,7 @@ const OrganisationChatbot = () => {
               <div className="flex flex-col gap-1">
                 {conversationHistory.map((conv) => (
                   <div key={conv.id} onClick={() => {
-                    loadConversation(conv.id);
+                    handleLoadConversation(conv.id);
                     setIsDropdownExiting(true);
                     setTimeout(() => {
                       setIsHistoryOpenMobile(false);
@@ -279,6 +329,7 @@ const OrganisationChatbot = () => {
                 onCopyMessage={copyMessage}
                 onRegenerateResponse={handleRegenerateResponse}
                 isStreaming={Boolean(streamingMessageId)}
+                organizationLogoUrl={userProfile?.organization?.logo_url}
               />
             </div>
             
@@ -314,14 +365,22 @@ const OrganisationChatbot = () => {
             <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-1 sm:py-8 pb-[160px] md:pb-[200px]">
               {/* AI Icon and Welcome Message */}
               <div className="flex flex-col items-center mb-8">
-                <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4">
-                  <Sparkles className="w-12 h-12 text-white" />
+                <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4 overflow-hidden">
+                  {userProfile?.organization?.logo_url ? (
+                    <img
+                      src={userProfile.organization.logo_url}
+                      alt="Organisation logo"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Sparkles className="w-12 h-12 text-white" />
+                  )}
                 </div>
                 <h2 className="text-2xl font-semibold text-gray-800 text-center">
                   Assistant IA pour votre organisation
                 </h2>
                 <p className="text-gray-600 text-center mt-2">
-                  {selectedProject === 'all' 
+                  {selectedProject === 'all'
                     ? 'Analysez tous vos projets et obtenez des insights globaux'
                     : `Focus sur le projet: ${organisationProjects.find(p => p.id === selectedProject)?.name}`
                   }

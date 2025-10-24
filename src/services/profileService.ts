@@ -8,6 +8,7 @@ export interface ProfileData {
   phone: string;
   location: string;
   company: string;
+  avatar_url?: string;
   created_at: string;
 }
 
@@ -19,7 +20,7 @@ class ProfileService {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name, phone, location, company, created_at')
+        .select('id, email, first_name, last_name, phone, location, company, avatar_url, created_at')
         .eq('id', userId)
         .single();
 
@@ -37,6 +38,7 @@ class ProfileService {
         phone: (data as any).phone ?? '',
         location: (data as any).location ?? '',
         company: (data as any).company ?? '',
+        avatar_url: (data as any).avatar_url ?? '',
         created_at: (data as any).created_at ?? ''
       } as ProfileData;
 
@@ -59,6 +61,7 @@ class ProfileService {
       if (updates.phone !== undefined) updateData.phone = updates.phone;
       if (updates.location !== undefined) updateData.location = updates.location;
       if (updates.company !== undefined) updateData.company = updates.company;
+      if (updates.avatar_url !== undefined) updateData.avatar_url = updates.avatar_url;
 
       const { error } = await supabase
         .from('profiles')
@@ -131,6 +134,28 @@ class ProfileService {
       return true;
     } catch (error) {
       console.error('Error in syncAuthToProfile:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Update user avatar URL
+   */
+  async updateAvatarUrl(userId: string, avatarUrl: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating avatar URL:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in updateAvatarUrl:', error);
       return false;
     }
   }

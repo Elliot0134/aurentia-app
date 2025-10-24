@@ -162,8 +162,7 @@ const OrganisationEvenements = () => {
             </p>
           </div>
             <Button
-              style={{ backgroundColor: '#ff5932' }}
-              className="hover:opacity-90 text-white"
+              className="btn-white-label hover:opacity-90"
               onClick={() => {
                 setSelectedRange(null);
                 setCreateEventModalOpen(true);
@@ -303,8 +302,7 @@ const OrganisationEvenements = () => {
                     Commencez par créer votre premier événement.
                   </p>
                   <Button 
-                    style={{ backgroundColor: '#ff5932' }} 
-                    className="hover:opacity-90 text-white"
+                    className="btn-white-label hover:opacity-90"
                     onClick={() => setCreateEventModalOpen(true)}
                   >
                     <Plus className="w-4 h-4 mr-2" />

@@ -27,7 +27,6 @@ export interface AdherentData extends BaseRowData {
   dateInscription: string;
   progressValue?: number;
   relatedLinks?: { label: string; href: string; target?: string }[];
-  isLuthaneActive?: boolean;
 }
 
 /**
@@ -248,16 +247,6 @@ export const adherentsTableConfig: ModularTableConfig<AdherentData> = {
 
   // Colonne des liens
   hasLinksColumn: true,
-
-  // Colonne Switch (Luthane)
-  hasSwitchColumn: {
-    header: "Luthane",
-    accessorKey: "isLuthaneActive",
-    onChange: (data, value) => {
-      toast.success(`Luthane pour ${data.nom} ${data.prenom} ${value ? "activé" : "désactivé"}`);
-      // Ici, vous pouvez ajouter un appel API pour mettre à jour l'état
-    },
-  },
 
   // Actions de ligne
   rowActions: [

@@ -4,8 +4,11 @@ export { default as OrganisationAnalytics } from './OrganisationAnalyticsAdvance
 export { default as OrganisationChatbot } from './OrganisationChatbot';
 export { default as OrganisationEvenements } from './OrganisationEvenements';
 export { default as OrganisationMentors } from './OrganisationMentors';
+export { default as OrganisationStaff } from './OrganisationStaff';
 export { default as OrganisationProjets } from './OrganisationProjets';
-export { default as OrganisationLivrables } from './OrganisationLivrables';
+export { default as OrganisationRessources } from './OrganisationRessources';
+export { default as OrganisationRessourcesCreate } from './OrganisationRessourcesCreate';
+export { default as OrganisationRessourcesDetail } from './OrganisationRessourcesDetail';
 export { default as OrganisationAdherents } from './OrganisationAdherents';
 export { default as OrganisationInvitations } from './OrganisationInvitations';
 export { default as OrganisationForms } from './OrganisationForms';
@@ -13,3 +16,4 @@ export { default as OrganisationSettings } from './OrganisationSettings';
 export { default as OrganisationPartenaires } from './OrganisationPartenaires';
 export { default as OrganisationProfile } from './OrganisationProfile';
 export { default as OrganisationFormCreate } from './OrganisationFormCreate';
+export { default as OrganisationIntegrations } from './OrganisationIntegrations';

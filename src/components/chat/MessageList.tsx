@@ -20,6 +20,11 @@ interface MessageListProps {
    * behind the fixed ChatInput bar.
    */
   isStreaming?: boolean;
+  /**
+   * Organization logo URL for white label mode
+   * When provided, replaces the Sparkles icon with the organization logo
+   */
+  organizationLogoUrl?: string;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -30,6 +35,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   onCopyMessage,
   onRegenerateResponse,
   isStreaming = false,
+  organizationLogoUrl,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +59,21 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   const bottomPaddingClass = isStreaming ? "pb-44" : "pb-20"; // pb-44 = 11rem (≈176px)
 
+  // Bot avatar component
+  const BotAvatar = ({ className = "" }: { className?: string }) => (
+    <div className={`flex-shrink-0 rounded-full bg-gradient-primary flex items-center justify-center overflow-hidden ${className}`}>
+      {organizationLogoUrl ? (
+        <img
+          src={organizationLogoUrl}
+          alt="Organisation logo"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+      )}
+    </div>
+  );
+
   return (
     <div className={`mx-auto px-3 sm:px-4 py-4 sm:py-6 ${bottomPaddingClass} space-y-6 sm:space-y-8 w-full`}>
         {messages.map((message) => (
@@ -61,17 +82,13 @@ export const MessageList: React.FC<MessageListProps> = ({
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div className={`${message.sender === 'user' ? 'flex flex-row-reverse items-start space-x-2 sm:space-x-3' : 'flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-3'}`}>
-              <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
-                message.sender === 'user'
-                  ? 'bg-gray-700 ml-2 sm:ml-3'
-                  : 'bg-gradient-primary mb-0.5 sm:mb-0 sm:mr-3'
-              }`}>
-                {message.sender === 'user' ? (
+              {message.sender === 'user' ? (
+                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gray-700 ml-2 sm:ml-3">
                   <span className="text-white text-xs sm:text-sm font-medium">U</span>
-                ) : (
-                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                )}
-              </div>
+                </div>
+              ) : (
+                <BotAvatar className="w-7 h-7 sm:w-8 sm:h-8 mb-0.5 sm:mb-0 sm:mr-3" />
+              )}
               <div className={`group relative ${
                 message.sender === 'user'
                   ? 'bg-[#f0efe6] text-gray-900'
@@ -122,9 +139,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         {isLoading && !streamingMessageId && (
           <div className="flex justify-start">
             <div className="flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-3 max-w-[95%] sm:max-w-[80%]">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-primary flex items-center justify-center mb-0.5 sm:mb-0 sm:mr-3">
-                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-              </div>
+              <BotAvatar className="w-7 h-7 sm:w-8 sm:h-8 mb-0.5 sm:mb-0 sm:mr-3" />
               <div className="bg-white border border-gray-200 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm w-full overflow-hidden max-w-[90vw] sm:max-w-full">
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">

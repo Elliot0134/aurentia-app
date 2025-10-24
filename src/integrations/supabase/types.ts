@@ -1999,6 +1999,159 @@ export type Database = {
           },
         ];
       };
+      organization_resources: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          description: string | null;
+          slug: string | null;
+          cover_image_url: string | null;
+          resource_type: string;
+          category: string | null;
+          tags: string[] | null;
+          content: Json;
+          status: string;
+          visibility: string;
+          assigned_to: string[] | null;
+          view_count: number;
+          favorite_count: number;
+          created_by: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+          published_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          title: string;
+          description?: string | null;
+          slug?: string | null;
+          cover_image_url?: string | null;
+          resource_type?: string;
+          category?: string | null;
+          tags?: string[] | null;
+          content?: Json;
+          status?: string;
+          visibility?: string;
+          assigned_to?: string[] | null;
+          view_count?: number;
+          favorite_count?: number;
+          created_by?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          published_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          title?: string;
+          description?: string | null;
+          slug?: string | null;
+          cover_image_url?: string | null;
+          resource_type?: string;
+          category?: string | null;
+          tags?: string[] | null;
+          content?: Json;
+          status?: string;
+          visibility?: string;
+          assigned_to?: string[] | null;
+          view_count?: number;
+          favorite_count?: number;
+          created_by?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          published_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_resources_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "organization_resources_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      resource_favorites: {
+        Row: {
+          id: string;
+          resource_id: string;
+          user_id: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          resource_id: string;
+          user_id: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          resource_id?: string;
+          user_id?: string;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "resource_favorites_resource_id_fkey";
+            columns: ["resource_id"];
+            isOneToOne: false;
+            referencedRelation: "organization_resources";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_favorites_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      resource_views: {
+        Row: {
+          id: string;
+          resource_id: string;
+          user_id: string;
+          viewed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          resource_id: string;
+          user_id: string;
+          viewed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          resource_id?: string;
+          user_id?: string;
+          viewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "resource_views_resource_id_fkey";
+            columns: ["resource_id"];
+            isOneToOne: false;
+            referencedRelation: "organization_resources";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_views_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     }
     Views: {
       [_ in never]: never

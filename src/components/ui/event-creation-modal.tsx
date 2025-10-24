@@ -13,7 +13,8 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { EVENT_TYPE_OPTIONS } from "@/lib/eventConstants";
 import { Loader2, Users, Crown, Shield, User, Search, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatDateForDatetimeLocal, convertDatetimeLocalToISO } from "@/utils/dateTimeUtils";
+import { TimePicker } from "@/components/ui/time-picker";
+import { formatDateForDatetimeLocal, convertDatetimeLocalToISO, extractDateFromDatetimeLocal, extractTimeFromDatetimeLocal, combineDateAndTime } from "@/utils/dateTimeUtils";
 
 interface EventCreationModalProps {
   open: boolean;
@@ -57,21 +58,44 @@ export function EventCreationModal({
     organization_id: organisationId
   });
 
+  // Split date/time state for better UX with French format
+  const [splitDateTime, setSplitDateTime] = useState({
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: ''
+  });
+
   // Update form dates when selectedRange changes (calendar drag)
   useEffect(() => {
     if (selectedRange && open) {
       // Use formatDateForDatetimeLocal to preserve local timezone
       // This prevents the bug where dragging 10:30 AM shows as 8:30 AM
+      const startDatetimeLocal = formatDateForDatetimeLocal(selectedRange.start);
+      const endDatetimeLocal = formatDateForDatetimeLocal(selectedRange.end);
+
       setFormData(prev => ({
         ...prev,
-        start_date: formatDateForDatetimeLocal(selectedRange.start),
-        end_date: formatDateForDatetimeLocal(selectedRange.end)
+        start_date: startDatetimeLocal,
+        end_date: endDatetimeLocal
       }));
+
+      // Also populate split date/time for the UI
+      setSplitDateTime({
+        startDate: extractDateFromDatetimeLocal(startDatetimeLocal),
+        startTime: extractTimeFromDatetimeLocal(startDatetimeLocal),
+        endDate: extractDateFromDatetimeLocal(endDatetimeLocal),
+        endTime: extractTimeFromDatetimeLocal(endDatetimeLocal)
+      });
     }
   }, [selectedRange, open]);
 
   const handleCreateEvent = async () => {
-    if (!formData.title.trim() || !formData.start_date || !formData.end_date) return;
+    // Combine split date/time inputs before validation
+    const combinedStartDate = combineDateAndTime(splitDateTime.startDate, splitDateTime.startTime);
+    const combinedEndDate = combineDateAndTime(splitDateTime.endDate, splitDateTime.endTime);
+
+    if (!formData.title.trim() || !combinedStartDate || !combinedEndDate) return;
 
     // Ajouter les participants sélectionnés aux données de l'événement
     // Si willAttend est true et que l'utilisateur n'est pas déjà dans la liste, l'ajouter
@@ -84,8 +108,8 @@ export function EventCreationModal({
     const eventDataWithParticipants = {
       ...formData,
       participants,
-      start_date: convertDatetimeLocalToISO(formData.start_date),
-      end_date: convertDatetimeLocalToISO(formData.end_date)
+      start_date: convertDatetimeLocalToISO(combinedStartDate),
+      end_date: convertDatetimeLocalToISO(combinedEndDate)
     };
 
     const success = await onCreateEvent(eventDataWithParticipants);
@@ -109,6 +133,12 @@ export function EventCreationModal({
       is_recurring: false,
       max_participants: undefined,
       organization_id: organisationId
+    });
+    setSplitDateTime({
+      startDate: '',
+      startTime: '',
+      endDate: '',
+      endTime: ''
     });
     setSelectedMembers([]);
     setWillAttend(false);
@@ -201,22 +231,44 @@ export function EventCreationModal({
           </div>
 
           <div>
-            <Label htmlFor="start_date">Date et heure de début *</Label>
+            <Label htmlFor="start_date">Date de début (JJ/MM/AAAA) *</Label>
             <Input
               id="start_date"
-              type="datetime-local"
-              value={formData.start_date}
-              onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+              type="date"
+              value={splitDateTime.startDate}
+              onChange={(e) => setSplitDateTime(prev => ({ ...prev, startDate: e.target.value }))}
+              placeholder="13/10/2025"
+              lang="fr-FR"
             />
           </div>
 
           <div>
-            <Label htmlFor="end_date">Date et heure de fin *</Label>
+            <Label htmlFor="start_time">Heure de début (24h) *</Label>
+            <TimePicker
+              value={splitDateTime.startTime}
+              onChange={(time) => setSplitDateTime(prev => ({ ...prev, startTime: time }))}
+              placeholder="Sélectionner l'heure"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="end_date">Date de fin (JJ/MM/AAAA) *</Label>
             <Input
               id="end_date"
-              type="datetime-local"
-              value={formData.end_date}
-              onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+              type="date"
+              value={splitDateTime.endDate}
+              onChange={(e) => setSplitDateTime(prev => ({ ...prev, endDate: e.target.value }))}
+              placeholder="13/10/2025"
+              lang="fr-FR"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="end_time">Heure de fin (24h) *</Label>
+            <TimePicker
+              value={splitDateTime.endTime}
+              onChange={(time) => setSplitDateTime(prev => ({ ...prev, endTime: time }))}
+              placeholder="Sélectionner l'heure"
             />
           </div>
 
@@ -537,10 +589,9 @@ export function EventCreationModal({
             Annuler
           </Button>
           <Button
-            style={{ backgroundColor: '#ff5932' }}
-            className="hover:opacity-90 text-white"
+            className="btn-white-label hover:opacity-90"
             onClick={handleCreateEvent}
-            disabled={!formData.title.trim() || !formData.start_date || !formData.end_date}
+            disabled={!formData.title.trim() || !splitDateTime.startDate || !splitDateTime.startTime || !splitDateTime.endDate || !splitDateTime.endTime}
           >
             Créer l'événement
           </Button>

@@ -1,6 +1,6 @@
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, useRef, useMemo } from "react";
 import { UserProfile } from '@/types/userTypes';
-import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot, Plus, Info } from 'lucide-react';
+import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot, Plus, Info, Mail, Send, Database, ChevronDown, ChevronRight, Plug } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AurentiaLogo from './AurentiaLogo';
@@ -21,16 +21,31 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import PublicOrganizationsModal from "./PublicOrganizationsModal";
 import OrganizationSetupGuideModal from "./OrganizationSetupGuideModal";
+import { useUnreadCount } from "@/hooks/messages/useUnreadCount";
+import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getSidebarContext, setSidebarContext, detectSidebarContextFromPath } from "@/hooks/useSidebarContext";
+
+interface MenuItem {
+  name?: string;
+  path?: string;
+  icon?: React.ReactNode;
+  isDivider?: boolean;
+  isCustomAction?: boolean;
+  isCreateOrg?: boolean;
+}
+
+interface MenuCategory {
+  name: string;
+  icon: React.ReactNode;
+  items: MenuItem[];
+}
 
 interface SidebarConfig {
-  menuItems: Array<{
-    name?: string;
-    path?: string;
-    icon?: React.ReactNode;
-    isDivider?: boolean;
-    isCustomAction?: boolean; // New property for custom actions
-    isCreateOrg?: boolean; // New property to identify "Create Organization" button
-  }>;
+  standaloneItems?: MenuItem[]; // Items shown at top, not in categories
+  categories?: MenuCategory[]; // Categorized menu items
+  bottomItems?: MenuItem[]; // Items shown at bottom
+  menuItems?: MenuItem[]; // Legacy support for non-categorized configs
   branding: {
     name: string;
     logo?: string;
@@ -46,6 +61,250 @@ interface RoleBasedSidebarProps {
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
+// SidebarCategory Component - handles collapsible categories
+interface SidebarCategoryProps {
+  category: MenuCategory;
+  isCollapsed: boolean;
+  location: ReturnType<typeof useLocation>;
+  userRole: string;
+}
+
+const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarCategoryProps) => {
+  const navigate = useNavigate();
+  const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
+  const { loading: organizationLoading } = useUserOrganization();
+
+  const storageKey = `sidebar-category-${userRole}-${category.name}-expanded`;
+  const [isExpanded, setIsExpanded] = useState(() => {
+    const stored = localStorage.getItem(storageKey);
+    return stored === 'true';
+  });
+
+  // Save expanded state to localStorage
+  useEffect(() => {
+    localStorage.setItem(storageKey, String(isExpanded));
+  }, [isExpanded, storageKey]);
+
+  // Check if any item in this category is active
+  const hasActiveItem = category.items.some(item => {
+    if (!item.path) return false;
+    return (
+      location.pathname === item.path ||
+      (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
+      (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
+      (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
+      (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
+      (item.name === "Plan d'action" && location.pathname.includes("/plan-action")) ||
+      (item.name === "Messages" && (location.pathname.includes("/messages") || location.pathname === "/messages"))
+    );
+  });
+
+  // Helper function to check if an item is active
+  const isItemActive = (item: MenuItem) => {
+    if (!item.path) return false;
+    return (
+      (location.pathname === item.path && location.pathname !== "/warning") ||
+      (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
+      (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
+      (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
+      (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
+      (item.name === "Plan d'action" && location.pathname.includes("/plan-action")) ||
+      (item.name === "Messages" && (location.pathname.includes("/messages") || location.pathname === "/messages"))
+    );
+  };
+
+  // Render an item in collapsed mode (icon only with tooltip)
+  const renderCollapsedItem = (item: MenuItem, index: number) => {
+    if (item.isDivider) {
+      return <div key={`divider-${index}`} className="my-2 border-t border-gray-200 mx-3"></div>;
+    }
+
+    const isActive = isItemActive(item);
+    const baseClasses = "relative group flex items-center justify-center py-2 px-3 rounded-md transition-colors";
+
+    if (item.isCustomAction && item.isCreateOrg) {
+      return (
+        <div key={`${item.path}-${item.name}-${index}`} className="relative group">
+          <button
+            onClick={() => navigate('/join-organization')}
+            disabled={organizationLoading}
+            className={cn(
+              baseClasses,
+              organizationLoading ? "opacity-50 cursor-not-allowed" : "text-aurentia-pink hover:bg-aurentia-pink/10"
+            )}
+          >
+            {item.icon}
+          </button>
+          <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+            {organizationLoading ? "Chargement..." : item.name}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={`${item.path}-${item.name}-${index}`} className="relative group">
+        <Link
+          to={item.path || '#'}
+          className={cn(
+            baseClasses,
+            getActiveMenuClass(isActive)
+          )}
+        >
+          {item.icon}
+        </Link>
+        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+          {item.name}
+        </div>
+      </div>
+    );
+  };
+
+  // Render an item in normal mode (icon + text)
+  const renderNormalItem = (item: MenuItem, index: number) => {
+    if (item.isDivider) {
+      return <div key={`divider-${index}`} className="my-2 border-t border-gray-200"></div>;
+    }
+
+    if (item.isCustomAction && item.isCreateOrg) {
+      return (
+        <button
+          key={`${item.path}-${item.name}-${index}`}
+          onClick={() => navigate('/join-organization')}
+          disabled={organizationLoading}
+          className={cn(
+            "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+            organizationLoading ? "opacity-50 cursor-not-allowed" : "text-aurentia-pink hover:bg-aurentia-pink/10 font-medium"
+          )}
+        >
+          {item.icon}
+          <span>{organizationLoading ? "Chargement..." : item.name}</span>
+        </button>
+      );
+    }
+
+    if (item.isCustomAction) {
+      return (
+        <Link
+          key={`${item.path}-${item.name}-${index}`}
+          to={item.path || '#'}
+          className={cn(
+            "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+            getActiveMenuClass(location.pathname === item.path)
+          )}
+        >
+          {item.icon}
+          <span>{item.name}</span>
+        </Link>
+      );
+    }
+
+    return (
+      <Link
+        key={`${item.path}-${item.name}-${index}`}
+        to={item.path || '#'}
+        className={cn(
+          "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+          getActiveMenuClass(isItemActive(item))
+        )}
+      >
+        {item.icon}
+        <span>{item.name}</span>
+      </Link>
+    );
+  };
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+      <CollapsibleTrigger className="w-full">
+        {isCollapsed ? (
+          // Collapsed mode: icon + small chevron
+          <div className="relative group">
+            <div
+              className={cn(
+                "flex flex-col items-center gap-1 py-2 px-3 rounded-md cursor-pointer transition-colors",
+                hasActiveItem ? "bg-aurentia-pink/10 text-aurentia-pink" : "text-gray-700 hover:bg-gray-100"
+              )}
+            >
+              {category.icon}
+              {isExpanded ? <ChevronDown size={12} className="opacity-70" /> : <ChevronRight size={12} className="opacity-70" />}
+            </div>
+            {/* Tooltip for category name */}
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+              {category.name}
+            </div>
+          </div>
+        ) : (
+          // Normal mode: icon + text + chevron
+          <div
+            className={cn(
+              "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors cursor-pointer",
+              hasActiveItem ? "bg-aurentia-pink/10 text-aurentia-pink font-medium" : "text-gray-700 hover:bg-gray-100"
+            )}
+          >
+            {category.icon}
+            <span className="flex-1 text-left">{category.name}</span>
+            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </div>
+        )}
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className={cn(
+        "mt-1 space-y-1",
+        isCollapsed ? "" : "ml-6"
+      )}>
+        {category.items.map((item, index) => (
+          isCollapsed ? renderCollapsedItem(item, index) : renderNormalItem(item, index)
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+// Module-level helper functions
+const getActiveMenuClass = (isActive: boolean) => {
+  if (!isActive) return "text-gray-700 hover:bg-gray-100";
+  return "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white font-medium";
+};
+
+const getUserDisplayName = (user: any) => {
+  if (!user) return "";
+
+  // Use first name from metadata (from signup or profile update)
+  const firstName = user.user_metadata?.first_name;
+  if (firstName && firstName.trim()) {
+    return firstName.trim();
+  }
+
+  // Fallback to username from email (part before @)
+  const email = user.email;
+  if (email) {
+    const username = email.split('@')[0];
+    return username;
+  }
+
+  return "Utilisateur";
+};
+
+const getUserInitial = (user: any) => {
+  if (!user) return 'U';
+
+  const displayName = getUserDisplayName(user);
+  return displayName.charAt(0).toUpperCase();
+};
+
+const isStaffWithMultipleOrgs = (userProfile: UserProfile | null, userOrganizations: any[]) => {
+  return userProfile?.user_role === 'staff' && userOrganizations.length > 1;
+};
+
+const getCurrentOrgName = (userProfile: UserProfile | null, userOrganizations: any[]) => {
+  if (userProfile?.user_role === 'staff' && userOrganizations.length > 0) {
+    const currentOrg = userOrganizations.find(org => org.is_primary) || userOrganizations[0];
+    return currentOrg?.organization?.name || 'Organisation';
+  }
+  return userProfile?.organization?.name || 'Organisation';
+};
+
 const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: RoleBasedSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,6 +318,10 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const { userOrganizations, loading: userOrganizationsLoading, switchToOrganization } = useUserOrganizations();
   const { organizationId } = useUserRole(); // Get organizationId from useUserRole hook
   const isUserProfileLoading = !userProfile;
+  const { data: unreadCount } = useUnreadCount();
+
+  // Ref for preserving sidebar scroll position
+  const navScrollRef = useRef<HTMLDivElement>(null);
 
   // Modal state for joining organization
   const [joinOrgModalOpen, setJoinOrgModalOpen] = useState(false);
@@ -125,6 +388,33 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
       window.removeEventListener("resize", checkIfMobile);
     };
   }, []);
+
+  // Save sidebar scroll position on scroll
+  useEffect(() => {
+    const navElement = navScrollRef.current;
+    if (!navElement) return;
+
+    const handleScroll = () => {
+      sessionStorage.setItem('sidebar-scroll-position', String(navElement.scrollTop));
+    };
+
+    navElement.addEventListener('scroll', handleScroll, { passive: true });
+    return () => navElement.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Restore sidebar scroll position after navigation
+  useEffect(() => {
+    const navElement = navScrollRef.current;
+    if (!navElement) return;
+
+    const savedPosition = sessionStorage.getItem('sidebar-scroll-position');
+    if (savedPosition) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        navElement.scrollTop = parseInt(savedPosition, 10);
+      });
+    }
+  }, [location.pathname]);
 
   // Use currentProjectId from context, fallback to projectId from URL, or first available project
   const activeProjectId = currentProjectId || projectId || (userProjects.length > 0 ? userProjects[0].project_id : null);
@@ -262,6 +552,87 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   const getSidebarConfig = (): SidebarConfig => {
     if (!userProfile) return getIndividualConfig();
 
+    // Si l'utilisateur est sur /messages, utiliser le contexte stocké pour déterminer quelle sidebar afficher
+    if (location.pathname === '/messages') {
+      const storedContext = getSidebarContext();
+
+      // Si le contexte est 'organisation' et que l'utilisateur a le rôle approprié
+      if (storedContext === 'organisation' && (userProfile.user_role === 'organisation' || userProfile.user_role === 'staff')) {
+        const orgId = organizationId;
+        if (orgId) {
+          // Retourner la config organisation (même logique que ci-dessous)
+          return {
+            standaloneItems: [
+              { name: "Tableau de bord", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+              { name: "Messages", path: `/messages`, icon: <Mail size={20} /> },
+              { name: "Mon Profil Mentor", path: `/organisation/${orgId}/my-profile`, icon: <UserCheck size={20} /> },
+            ],
+            categories: [
+              {
+                name: "Gestion",
+                icon: <Users size={20} />,
+                items: [
+                  { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
+                  { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
+                  { name: "Mentors", path: `/organisation/${orgId}/mentors`, icon: <GraduationCap size={20} /> },
+                  { name: "Staff", path: `/organisation/${orgId}/staff`, icon: <Briefcase size={20} /> },
+                  { name: "Partenaires", path: `/organisation/${orgId}/partenaires`, icon: <Handshake size={20} /> },
+                ]
+              },
+              {
+                name: "Administration",
+                icon: <Settings size={20} />,
+                items: [
+                  { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
+                  { name: "Formulaires", path: `/organisation/${orgId}/forms`, icon: <FormInput size={20} /> },
+                  { name: "Intégrations", path: `/organisation/${orgId}/integrations`, icon: <Plug size={20} /> },
+                  { name: "Informations", path: `/organisation/${orgId}/informations`, icon: <Info size={20} /> },
+                  { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> },
+                ]
+              },
+              {
+                name: "Événements & Analytics",
+                icon: <Calendar size={20} />,
+                items: [
+                  { name: "Événements", path: `/organisation/${orgId}/evenements`, icon: <Calendar size={20} /> },
+                  { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
+                ]
+              },
+              {
+                name: "Communication",
+                icon: <MessageSquare size={20} />,
+                items: [
+                  { name: "Newsletters", path: `/organisation/${orgId}/newsletters`, icon: <Send size={20} /> },
+                ]
+              },
+              {
+                name: "Ressources",
+                icon: <Library size={20} />,
+                items: [
+                  { name: "Ressources", path: `/organisation/${orgId}/ressources`, icon: <Library size={20} /> },
+                  { name: "Base de connaissance", path: `/organisation/${orgId}/knowledge-base`, icon: <Database size={20} /> },
+                  { name: "Chatbot", path: `/organisation/${orgId}/chatbot`, icon: <Bot size={20} /> },
+                ]
+              },
+            ],
+            bottomItems: [
+              { name: "Retour à l'espace Adhérent", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true },
+            ],
+            branding: {
+              name: userProfile.organization?.name || "Mon Incubateur",
+              logo: userProfile.organization?.logo_url,
+              primaryColor: userProfile.organization?.primary_color || "#F04F6A"
+            },
+            showProjectSelector: false,
+            showCredits: false
+          };
+        }
+      }
+
+      // Par défaut (ou si context est 'individual'), utiliser la config individual/member
+      return getIndividualConfig();
+    }
+
     // Si l'utilisateur est sur une route /individual/*, afficher la sidebar individual même s'il a un rôle organisation
     if (location.pathname.startsWith('/individual/')) {
       return getIndividualConfig();
@@ -278,22 +649,60 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           return getIndividualConfig();
         }
         return {
-          menuItems: [
+          standaloneItems: [
             { name: "Tableau de bord", path: `/organisation/${orgId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+            { name: "Messages", path: `/messages`, icon: <Mail size={20} /> },
             { name: "Mon Profil Mentor", path: `/organisation/${orgId}/my-profile`, icon: <UserCheck size={20} /> },
-            { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
-            { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
-            { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
-            { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
-            { name: "Formulaires", path: `/organisation/${orgId}/forms`, icon: <FormInput size={20} /> },
-            { name: "Événements", path: `/organisation/${orgId}/evenements`, icon: <Calendar size={20} /> },
-            { name: "Mentors", path: `/organisation/${orgId}/mentors`, icon: <GraduationCap size={20} /> },
-            { name: "Partenaires", path: `/organisation/${orgId}/partenaires`, icon: <Handshake size={20} /> },
-            { name: "Livrables", path: `/organisation/${orgId}/livrables`, icon: <FileText size={20} /> },
-            { name: "Chatbot", path: `/organisation/${orgId}/chatbot`, icon: <Bot size={20} /> },
-            { name: "Informations", path: `/organisation/${orgId}/informations`, icon: <Info size={20} /> },
-            { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> },
-            { isDivider: true },
+          ],
+          categories: [
+            {
+              name: "Gestion",
+              icon: <Users size={20} />,
+              items: [
+                { name: "Adhérents", path: `/organisation/${orgId}/adherents`, icon: <Users size={20} /> },
+                { name: "Projets", path: `/organisation/${orgId}/projets`, icon: <FileText size={20} /> },
+                { name: "Mentors", path: `/organisation/${orgId}/mentors`, icon: <GraduationCap size={20} /> },
+                { name: "Staff", path: `/organisation/${orgId}/staff`, icon: <Briefcase size={20} /> },
+                { name: "Partenaires", path: `/organisation/${orgId}/partenaires`, icon: <Handshake size={20} /> },
+              ]
+            },
+            {
+              name: "Administration",
+              icon: <Settings size={20} />,
+              items: [
+                { name: "Codes d'invitation", path: `/organisation/${orgId}/invitations`, icon: <Code size={20} /> },
+                { name: "Formulaires", path: `/organisation/${orgId}/forms`, icon: <FormInput size={20} /> },
+                { name: "Intégrations", path: `/organisation/${orgId}/integrations`, icon: <Plug size={20} /> },
+                { name: "Informations", path: `/organisation/${orgId}/informations`, icon: <Info size={20} /> },
+                { name: "Paramètres", path: `/organisation/${orgId}/settings`, icon: <Settings size={20} /> },
+              ]
+            },
+            {
+              name: "Événements & Analytics",
+              icon: <Calendar size={20} />,
+              items: [
+                { name: "Événements", path: `/organisation/${orgId}/evenements`, icon: <Calendar size={20} /> },
+                { name: "Analytics", path: `/organisation/${orgId}/analytics`, icon: <BarChart3 size={20} /> },
+              ]
+            },
+            {
+              name: "Communication",
+              icon: <MessageSquare size={20} />,
+              items: [
+                { name: "Newsletters", path: `/organisation/${orgId}/newsletters`, icon: <Send size={20} /> },
+              ]
+            },
+            {
+              name: "Ressources",
+              icon: <Library size={20} />,
+              items: [
+                { name: "Ressources", path: `/organisation/${orgId}/ressources`, icon: <Library size={20} /> },
+                { name: "Base de connaissance", path: `/organisation/${orgId}/knowledge-base`, icon: <Database size={20} /> },
+                { name: "Chatbot", path: `/organisation/${orgId}/chatbot`, icon: <Bot size={20} /> },
+              ]
+            },
+          ],
+          bottomItems: [
             { name: "Retour à l'espace Adhérent", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isCustomAction: true },
           ],
           branding: {
@@ -307,19 +716,46 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         
       case 'member':
         return {
-          menuItems: [
+          standaloneItems: [
             { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
-            { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
-            { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
-            { isDivider: true },
-            { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
-            { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
-            { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
-            { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
-            { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
-            { name: "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> },
-            { isDivider: true },
-            { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
+            { name: "Messages", path: "/messages", icon: <Mail size={20} /> },
+          ],
+          categories: [
+            {
+              name: "Mon Projet",
+              icon: <Briefcase size={20} />,
+              items: [
+                { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+                { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
+                { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
+              ]
+            },
+            {
+              name: "Outils",
+              icon: <Zap size={20} />,
+              items: [
+                { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
+                { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
+                { name: "Intégrations", path: "/individual/integrations", icon: <Plug size={20} /> },
+              ]
+            },
+            {
+              name: "Collaboration",
+              icon: <Users size={20} />,
+              items: [
+                { name: "Mon Organisation", path: "/individual/my-organization", icon: <Building size={20} /> },
+                { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> },
+              ]
+            },
+            {
+              name: "Ressources",
+              icon: <Library size={20} />,
+              items: [
+                { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
+                { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
+                { name: "Base de connaissance", path: activeProjectId ? `/individual/knowledge-base/${activeProjectId}` : "/individual/knowledge-base", icon: <Database size={20} /> },
+              ]
+            },
           ],
           branding: {
             name: userProfile.organization?.name || "Mon Organisation",
@@ -357,20 +793,47 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     }
 
     return {
-      menuItems: [
+      standaloneItems: [
         { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
-        { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
-        { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
-        { isDivider: true },
-        { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
-        { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
-        { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
-        { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
-        { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
-        { name: "Template", path: "/individual/template", icon: <FileText size={20} /> },
-        { isDivider: true },
-        orgItem,
-        { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> }
+        { name: "Messages", path: "/messages", icon: <Mail size={20} /> },
+      ],
+      categories: [
+        {
+          name: "Mon Projet",
+          icon: <Briefcase size={20} />,
+          items: [
+            { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
+            { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
+            { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
+            { name: "Template", path: "/individual/template", icon: <FileText size={20} /> },
+          ]
+        },
+        {
+          name: "Outils",
+          icon: <Zap size={20} />,
+          items: [
+            { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
+            { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
+            { name: "Intégrations", path: "/individual/integrations", icon: <Plug size={20} /> },
+          ]
+        },
+        {
+          name: "Collaboration",
+          icon: <Users size={20} />,
+          items: [
+            orgItem,
+            { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> },
+          ]
+        },
+        {
+          name: "Ressources",
+          icon: <Library size={20} />,
+          items: [
+            { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
+            { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
+            { name: "Base de connaissance", path: activeProjectId ? `/individual/knowledge-base/${activeProjectId}` : "/individual/knowledge-base", icon: <Database size={20} /> },
+          ]
+        },
       ],
       branding: { name: "Aurentia", primaryColor: "#F04F6A" },
       showProjectSelector: true,
@@ -378,125 +841,88 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     };
   };
 
-  // Helper function to check if user is staff with multiple organizations
-  const isStaffWithMultipleOrgs = () => {
-    return userProfile?.user_role === 'staff' && userOrganizations.length > 1;
-  };
-
-  // Helper function to get current organization name for staff
-  const getCurrentOrgName = () => {
-    if (userProfile?.user_role === 'staff' && userOrganizations.length > 0) {
-      const currentOrg = userOrganizations.find(org => org.is_primary) || userOrganizations[0];
-      return currentOrg?.organization?.name || 'Organisation';
-    }
-    return userProfile?.organization?.name || 'Organisation';
-  };
-
-  // Helper function to get user display name
-  const getUserDisplayName = () => {
-    if (!user) return "";
-    
-    // Use first name from metadata (from signup or profile update)
-    const firstName = user.user_metadata?.first_name;
-    if (firstName && firstName.trim()) {
-      return firstName.trim();
-    }
-    
-    // Fallback to username from email (part before @)
-    const email = user.email;
-    if (email) {
-      const username = email.split('@')[0];
-      return username;
-    }
-    
-    return "Utilisateur";
-  };
-
-  // Helper function to get user initial for avatar
-  const getUserInitial = () => {
-    if (!user) return 'U';
-    
-    const displayName = getUserDisplayName();
-    return displayName.charAt(0).toUpperCase();
-  };
-
   const config = getSidebarConfig();
-  
+
   // Check if white label mode is enabled
   const whiteLabelEnabled = userProfile?.organization?.settings?.branding?.whiteLabel || false;
   const orgLogo = userProfile?.organization?.logo_url;
   const orgName = userProfile?.organization?.name;
-  
+
   // Determine if we should show organization branding:
-  // 1. Must be in organization pages (/org/*)
+  // 1. Must be in organization pages (/organisation/*)
   // 2. White label must be enabled
   // 3. Organization must have logo and name
-  const isInOrgPages = location.pathname.startsWith('/org/');
+  const isInOrgPages = location.pathname.startsWith('/organisation/');
   const showOrgBranding = isInOrgPages && whiteLabelEnabled && orgLogo && orgName;
 
-  // Helper to get active menu item class
-  const getActiveMenuClass = (isActive: boolean) => {
-    if (!isActive) return "text-gray-700 hover:bg-gray-100";
-    return "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white font-medium";
+  // Handle logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    // navigate("/login"); // Removed as per new requirement
   };
 
-  // Desktop sidebar
-  const DesktopSidebar = () => (
+  // Desktop sidebar (memoized to prevent remounting on navigation)
+  const desktopSidebarJSX = useMemo(() => (
     <div className={cn("hidden md:block h-screen fixed top-0 left-0 z-10 transition-all duration-300", isCollapsed ? "w-20" : "w-64")}>
-      <div className="bg-white/80 backdrop-blur-sm h-full rounded-r-xl shadow-sm border-r border-gray-100 relative">
-        <div className="flex items-center p-4 gap-2 relative">
-          {showOrgBranding ? (
-            // Show organization branding
-            isCollapsed ? (
-              <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
-                <img src={orgLogo} alt={orgName} className="h-full w-full object-cover" />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="bg-white/80 backdrop-blur-sm h-full rounded-r-xl shadow-sm border-r border-gray-100 flex flex-col">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0">
+          <div className="flex items-center p-4 gap-2 relative">
+            {showOrgBranding ? (
+              // Show organization branding
+              isCollapsed ? (
                 <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
                   <img src={orgLogo} alt={orgName} className="h-full w-full object-cover" />
                 </div>
-                <span className="font-bold truncate text-gray-900">
-                  {orgName}
-                </span>
-              </div>
-            )
-          ) : (
-            // Default: Show Aurentia branding
-            isCollapsed ? (
-              <div className="h-8 w-8">
-                <img src="/picto-aurentia.svg" alt="Aurentia Picto" className="h-full w-full" />
-              </div>
+              ) : (
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+                    <img src={orgLogo} alt={orgName} className="h-full w-full object-cover" />
+                  </div>
+                  <span className="font-bold truncate text-gray-900">
+                    {orgName}
+                  </span>
+                </div>
+              )
             ) : (
-              <div className="h-8 w-auto">
-                <img src="/Aurentia-logo-long.svg" alt="Aurentia Logo" className="h-full w-auto" />
-              </div>
-            )
-          )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute right-[-12px] top-1/2 -translate-y-1/2 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:bg-gray-100 transition-all duration-300"
-          >
-            <ChevronLeft size={16} className={cn("transition-transform duration-300", isCollapsed ? "rotate-180" : "")} />
-          </button>
-        </div>
-        <div className="border-b border-gray-200 mx-4 mb-4"></div>
-
-        {/* Project Selector */}
-        {config.showProjectSelector && (
-          <div className={cn("mb-6 px-3")}>
-            <ProjectSelector isCollapsed={isCollapsed} userRole={userProfile?.user_role || 'individual'} />
+              // Default: Show Aurentia branding
+              isCollapsed ? (
+                <div className="h-8 w-8">
+                  <img src="/picto-aurentia.svg" alt="Aurentia Picto" className="h-full w-full" />
+                </div>
+              ) : (
+                <div className="h-8 w-auto">
+                  <img src="/Aurentia-logo-long.svg" alt="Aurentia Logo" className="h-full w-auto" />
+                </div>
+              )
+            )}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="absolute right-[-12px] top-1/2 -translate-y-1/2 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:bg-gray-100 transition-all duration-300"
+            >
+              <ChevronLeft size={16} className={cn("transition-transform duration-300", isCollapsed ? "rotate-180" : "")} />
+            </button>
           </div>
-        )}
+          <div className="border-b border-gray-200 mx-4 mb-4"></div>
 
-        <nav className="space-y-1 flex-1 px-3">
-          {config.menuItems.map((item, index) => (
+          {/* Project Selector */}
+          {config.showProjectSelector && (
+            <div className={cn("mb-4 px-3")}>
+              <ProjectSelector isCollapsed={isCollapsed} userRole={userProfile?.user_role || 'individual'} />
+            </div>
+          )}
+        </div>
+
+        {/* Scrollable Navigation Content */}
+        <nav ref={navScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+          {/* Render standalone items (always visible) */}
+          {config.standaloneItems?.map((item, index) => (
             item.isDivider ? (
               <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
             ) : item.isCustomAction && item.path === "/organisation" ? (
               <button
                 key={`${item.path}-${item.name}-${index}`}
-                onClick={isStaffWithMultipleOrgs() ? () => setSwitchOrgModalOpen(true) : navigateToOrganisation}
+                onClick={isStaffWithMultipleOrgs(userProfile, userOrganizations) ? () => setSwitchOrgModalOpen(true) : navigateToOrganisation}
                 disabled={orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading}
                 className={cn(
                   "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
@@ -506,10 +932,10 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 {item.icon}
                 {!isCollapsed && (
                   <span>
-                    {orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading 
-                      ? "Chargement..." 
-                      : isStaffWithMultipleOrgs() 
-                        ? `${getCurrentOrgName()} ▼` 
+                    {orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading
+                      ? "Chargement..."
+                      : isStaffWithMultipleOrgs(userProfile, userOrganizations)
+                        ? `${getCurrentOrgName(userProfile, userOrganizations)} ▼`
                         : (item.name || "Organisation")
                     }
                   </span>
@@ -530,31 +956,67 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 {item.icon}
                 {!isCollapsed && <span>{organizationLoading ? "Chargement..." : item.name}</span>}
               </button>
-              ) : item.isCustomAction && item.name === "Retour à l'espace Entrepreneur" ? (
-                <button
-                    key={`${item.path}-${item.name}-${index}`}
-                    onClick={() => navigate('/individual/dashboard')}
-                    className={cn(
-                      "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
-                    )}
-                  >
-                    {item.icon}
-                    {!isCollapsed && <span>{item.name}</span>}
-                  </button>
             ) : (
               <Link
                 key={`${item.path}-${item.name}-${index}`}
-                to={item.path}
+                to={item.path || '#'}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors relative",
                   getActiveMenuClass(
                     (location.pathname === item.path && location.pathname !== "/warning") ||
                     (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
                     (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
                     (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
                     (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
-                    (item.name === "Plan d'action" && location.pathname.includes("/plan-action"))
+                    (item.name === "Plan d'action" && location.pathname.includes("/plan-action")) ||
+                    (item.name === "Messages" && (location.pathname.includes("/messages") || location.pathname === "/messages"))
                   )
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{item.name}</span>}
+                {item.name === "Messages" && unreadCount && unreadCount.total > 0 && (
+                  <Badge className="ml-auto h-5 min-w-[20px] rounded-full flex items-center justify-center px-1.5 text-xs">
+                    {unreadCount.total > 99 ? "99+" : unreadCount.total}
+                  </Badge>
+                )}
+              </Link>
+            )
+          ))}
+
+          {/* Render categories */}
+          {config.categories?.map((category, index) => (
+            <SidebarCategory
+              key={`category-${category.name}-${index}`}
+              category={category}
+              isCollapsed={isCollapsed}
+              location={location}
+              userRole={userProfile?.user_role || 'individual'}
+            />
+          ))}
+
+          {/* Render bottom items */}
+          {config.bottomItems?.map((item, index) => (
+            item.isDivider ? (
+              <div key={`bottom-divider-${index}`} className="my-4 border-t border-gray-200"></div>
+            ) : item.isCustomAction && item.name === "Retour à l'espace Adhérent" ? (
+              <button
+                key={`${item.path}-${item.name}-${index}`}
+                onClick={() => navigate('/individual/dashboard')}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{item.name}</span>}
+              </button>
+            ) : (
+              <Link
+                key={`${item.path}-${item.name}-${index}`}
+                to={item.path || '#'}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+                  getActiveMenuClass(location.pathname === item.path)
                 )}
               >
                 {item.icon}
@@ -562,10 +1024,90 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
               </Link>
             )
           ))}
+
+          {/* Legacy support for menuItems array */}
+          {config.menuItems?.map((item, index) => (
+            item.isDivider ? (
+              <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
+            ) : item.isCustomAction && item.path === "/organisation" ? (
+              <button
+                key={`${item.path}-${item.name}-${index}`}
+                onClick={isStaffWithMultipleOrgs(userProfile, userOrganizations) ? () => setSwitchOrgModalOpen(true) : navigateToOrganisation}
+                disabled={orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+                  (orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && (
+                  <span>
+                    {orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading
+                      ? "Chargement..."
+                      : isStaffWithMultipleOrgs(userProfile, userOrganizations)
+                        ? `${getCurrentOrgName(userProfile, userOrganizations)} ▼`
+                        : (item.name || "Organisation")
+                    }
+                  </span>
+                )}
+              </button>
+            ) : item.isCustomAction && item.isCreateOrg ? (
+              <button
+                key={`${item.path}-${item.name}-${index}`}
+                onClick={() => {
+                  setPublicOrgsModalOpen(true);
+                }}
+                disabled={organizationLoading}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+                  organizationLoading ? "opacity-50 cursor-not-allowed" : "text-aurentia-pink hover:bg-aurentia-pink/10 font-medium"
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{organizationLoading ? "Chargement..." : item.name}</span>}
+              </button>
+            ) : item.isCustomAction && item.name === "Retour à l'espace Entrepreneur" ? (
+              <button
+                key={`${item.path}-${item.name}-${index}`}
+                onClick={() => navigate('/individual/dashboard')}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{item.name}</span>}
+              </button>
+            ) : (
+              <Link
+                key={`${item.path}-${item.name}-${index}`}
+                to={item.path || '#'}
+                className={cn(
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors relative",
+                  getActiveMenuClass(
+                    (location.pathname === item.path && location.pathname !== "/warning") ||
+                    (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
+                    (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
+                    (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
+                    (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
+                    (item.name === "Plan d'action" && location.pathname.includes("/plan-action")) ||
+                    (item.name === "Messages" && (location.pathname.includes("/messages") || location.pathname === "/messages"))
+                  )
+                )}
+              >
+                {item.icon}
+                {!isCollapsed && <span>{item.name}</span>}
+                {item.name === "Messages" && unreadCount && unreadCount.total > 0 && (
+                  <Badge className="ml-auto h-5 min-w-[20px] rounded-full flex items-center justify-center px-1.5 text-xs">
+                    {unreadCount.total > 99 ? "99+" : unreadCount.total}
+                  </Badge>
+                )}
+              </Link>
+            )
+          ))}
         </nav>
 
-        {/* Profile section for desktop */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-3">
+        {/* Profile section - Fixed at bottom */}
+        <div className="flex-shrink-0 border-t border-gray-200 p-3 bg-white/80 backdrop-blur-sm">
           {user && config.showCredits && (
             <div className={cn("px-3 mb-3", isCollapsed && "flex flex-col items-center")}>
               <CreditInfo isCollapsed={isCollapsed} {...credits} />
@@ -578,11 +1120,11 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100")}
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-medium">
-                  {getUserInitial()}
+                  {getUserInitial(user)}
                 </div>
                 {!isCollapsed && (
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{getUserDisplayName()}</p>
+                    <p className="font-medium truncate">{getUserDisplayName(user)}</p>
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
                 )}
@@ -601,7 +1143,29 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         </div>
       </div>
     </div>
-  );
+  ), [
+    isCollapsed,
+    setIsCollapsed,
+    showOrgBranding,
+    orgLogo,
+    orgName,
+    config,
+    userProfile,
+    location,
+    unreadCount,
+    setSwitchOrgModalOpen,
+    navigateToOrganisation,
+    orgNavigationLoading,
+    isUserProfileLoading,
+    userOrganizationsLoading,
+    setPublicOrgsModalOpen,
+    organizationLoading,
+    navigate,
+    user,
+    credits,
+    handleLogout,
+    userOrganizations
+  ]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -619,11 +1183,6 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    // navigate("/login"); // Removed as per new requirement
-  };
 
   useEffect(() => {
     if (userProfile?.organization?.settings?.branding?.whiteLabel !== undefined) {
@@ -644,9 +1203,24 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
     }
   }, [userProfile?.organization?.settings?.branding?.whiteLabel]);
 
+  // Track sidebar context based on current route
+  useEffect(() => {
+    // Ne pas mettre à jour le contexte si on est sur /messages (pour préserver le contexte actuel)
+    if (location.pathname === '/messages') {
+      return;
+    }
+
+    // Détecter le contexte basé sur le pathname
+    const detectedContext = detectSidebarContextFromPath(location.pathname);
+
+    if (detectedContext) {
+      setSidebarContext(detectedContext);
+    }
+  }, [location.pathname]);
+
   return (
     <>
-      {isMobile ? <RoleBasedMobileNavbar 
+      {isMobile ? <RoleBasedMobileNavbar
         userProfile={userProfile}
         organizationId={organizationId}
         joinOrgModalOpen={joinOrgModalOpen}
@@ -659,7 +1233,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         handleJoinOrganization={handleJoinOrganization}
         publicOrgsModalOpen={publicOrgsModalOpen}
         setPublicOrgsModalOpen={setPublicOrgsModalOpen}
-      /> : <DesktopSidebar />}
+      /> : desktopSidebarJSX}
       
       {/* Join Organization Modal */}
       <Dialog open={joinOrgModalOpen} onOpenChange={setJoinOrgModalOpen}>
@@ -877,6 +1451,7 @@ const RoleBasedMobileNavbar = ({
         }
         return [
           { name: "Tableau de bord", path: `/organisation/${organizationId}/dashboard`, icon: <LayoutDashboard size={20} /> },
+          { name: "Messages", path: `/messages`, icon: <Mail size={20} /> },
           { name: "Adhérents", path: `/organisation/${organizationId}/adherents`, icon: <Users size={20} /> },
           { name: "Projets", path: `/organisation/${organizationId}/projets`, icon: <FileText size={20} /> },
           { name: "Codes d'invitation", path: `/organisation/${organizationId}/invitations`, icon: <Code size={20} /> },
@@ -887,6 +1462,7 @@ const RoleBasedMobileNavbar = ({
       case 'member':
         return [
           { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
+          { name: "Messages", path: "/messages", icon: <Mail size={20} /> },
           { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
           { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
           { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
@@ -926,6 +1502,7 @@ const RoleBasedMobileNavbar = ({
 
     return [
       { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
+      { name: "Messages", path: "/messages", icon: <Mail size={20} /> },
       { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
       { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
       { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },

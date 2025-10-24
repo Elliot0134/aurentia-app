@@ -50,6 +50,16 @@ export function EnhancedEventCalendar({
     setVisibleTypes(newVisibleTypes);
   };
 
+  const handleToggleAll = (visible: boolean) => {
+    if (visible) {
+      // Afficher tous les types
+      setVisibleTypes(new Set(EVENT_TYPE_OPTIONS.map(option => option.value as Event['type'])));
+    } else {
+      // Masquer tous les types
+      setVisibleTypes(new Set());
+    }
+  };
+
   // Vérifier si l'utilisateur peut modifier un événement
   const canEditEvent = (event: Event) => {
     const isCreator = userProfile && event.organizer_id === userProfile.id;
@@ -144,6 +154,7 @@ export function EnhancedEventCalendar({
             eventTypeColors={eventTypeColors}
             visibleTypes={visibleTypes}
             onVisibilityChange={handleVisibilityChange}
+            onToggleAll={handleToggleAll}
           />
         </div>
       </CardHeader>

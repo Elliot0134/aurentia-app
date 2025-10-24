@@ -10,6 +10,7 @@
 *.njsproj
 *.sln
 *.sw?
+.mcp.json
 
 .cursor
 node_modules

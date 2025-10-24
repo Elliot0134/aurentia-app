@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -41,12 +41,53 @@ import {
 const OrganisationPartenaires = () => {
   const { id: organisationId } = useParams();
   const { partners, loading, error, addPartner, editPartner, removePartner } = usePartners(organisationId);
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
+
+  // Get tab and filters from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Tab params
+  const validTabs = ['all', 'active', 'prospect', 'inactive'];
+  const tabFromUrl = searchParams.get('tab') || 'all';
+  const activeTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'all';
+
+  // Filter params
+  const searchTerm = searchParams.get('search') || '';
+  const validTypes = ['all', 'investor', 'accelerator', 'incubator', 'corporate', 'government', 'university', 'other'];
+  const typeFromUrl = searchParams.get('type') || 'all';
+  const selectedType = validTypes.includes(typeFromUrl) ? typeFromUrl : 'all';
+  const validStatuses = ['all', 'prospect', 'active', 'inactive'];
+  const statusFromUrl = searchParams.get('status') || 'all';
+  const selectedStatus = validStatuses.includes(statusFromUrl) ? statusFromUrl : 'all';
+
+  // Functions to update params and URL (preserving other params)
+  const updateUrlParams = (updates: Record<string, string>) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== 'all') {
+        newParams.set(key, value);
+      } else {
+        newParams.delete(key);
+      }
+    });
+    setSearchParams(newParams);
+  };
+
+  const setActiveTab = (tab: string) => updateUrlParams({ tab });
+  const setSearchTerm = (search: string) => updateUrlParams({ search });
+  const setSelectedType = (type: string) => updateUrlParams({ type });
+  const setSelectedStatus = (status: string) => updateUrlParams({ status });
+
+  // Modal state from URL params
+  const dialogOpen = searchParams.get('modal') === 'create';
+  const setDialogOpen = (open: boolean) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (open) {
+      newParams.set('modal', 'create');
+    } else {
+      newParams.delete('modal');
+    }
+    setSearchParams(newParams);
+  };
   
   // Formulaire pour ajouter un partenaire
   const [formData, setFormData] = useState<PartnerFormData>({
@@ -191,7 +232,7 @@ const OrganisationPartenaires = () => {
           </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+                <Button className="btn-white-label hover:opacity-90">
                   <Plus className="w-4 h-4 mr-2" />
                   Ajouter un partenaire
                 </Button>
@@ -276,8 +317,7 @@ const OrganisationPartenaires = () => {
                     Annuler
                   </Button>
                   <Button 
-                    style={{ backgroundColor: '#ff5932' }} 
-                    className="hover:opacity-90 text-white"
+                    className="btn-white-label hover:opacity-90"
                     onClick={handleCreatePartner}
                     disabled={!formData.name.trim()}
                   >

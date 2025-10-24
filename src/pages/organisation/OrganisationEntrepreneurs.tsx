@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -26,8 +26,35 @@ import type { Entrepreneur } from '@/types/organisationTypes';
 
 const OrganisationEntrepreneurs = () => {
   const { id: organisationId } = useParams();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+
+  // Get filters from URL params (source of truth)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('search') || '';
+  const validStatuses = ['all', 'active', 'inactive', 'pending'];
+  const statusFromUrl = searchParams.get('status') || 'all';
+  const selectedStatus = validStatuses.includes(statusFromUrl) ? statusFromUrl : 'all';
+
+  // Functions to update filters and URL
+  const setSearchTerm = (search: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (search) {
+      newParams.set('search', search);
+    } else {
+      newParams.delete('search');
+    }
+    setSearchParams(newParams);
+  };
+
+  const setSelectedStatus = (status: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (status && status !== 'all') {
+      newParams.set('status', status);
+    } else {
+      newParams.delete('status');
+    }
+    setSearchParams(newParams);
+  };
+
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Utiliser les données Supabase
@@ -75,7 +102,7 @@ const OrganisationEntrepreneurs = () => {
       <div className="space-y-6 p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aurentia-orange mx-auto mb-4"></div>
             <p className="text-gray-500">Chargement des entrepreneurs...</p>
           </div>
         </div>
@@ -100,7 +127,7 @@ const OrganisationEntrepreneurs = () => {
                 <Mail className="w-4 h-4 mr-2" />
                 Inviter
               </Button>
-              <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+              <Button className="btn-white-label hover:opacity-90">
                 <Plus className="w-4 h-4 mr-2" />
                 Ajouter
               </Button>

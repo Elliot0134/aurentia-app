@@ -95,3 +95,41 @@ export const normalizeFullCalendarDate = (date: Date): Date => {
     date.getMilliseconds()
   );
 };
+
+/**
+ * Extracts date part from datetime-local string (YYYY-MM-DD)
+ * Used for split date/time inputs
+ *
+ * @param datetimeLocal - String in format "YYYY-MM-DDTHH:mm"
+ * @returns Date string in format "YYYY-MM-DD"
+ */
+export const extractDateFromDatetimeLocal = (datetimeLocal: string): string => {
+  if (!datetimeLocal) return '';
+  return datetimeLocal.split('T')[0];
+};
+
+/**
+ * Extracts time part from datetime-local string (HH:mm)
+ * Used for split date/time inputs
+ *
+ * @param datetimeLocal - String in format "YYYY-MM-DDTHH:mm"
+ * @returns Time string in format "HH:mm"
+ */
+export const extractTimeFromDatetimeLocal = (datetimeLocal: string): string => {
+  if (!datetimeLocal) return '';
+  const parts = datetimeLocal.split('T');
+  return parts.length > 1 ? parts[1] : '';
+};
+
+/**
+ * Combines separate date and time inputs into datetime-local format
+ * Used for combining split date/time inputs
+ *
+ * @param date - Date string in format "YYYY-MM-DD"
+ * @param time - Time string in format "HH:mm"
+ * @returns Datetime-local string in format "YYYY-MM-DDTHH:mm"
+ */
+export const combineDateAndTime = (date: string, time: string): string => {
+  if (!date || !time) return '';
+  return `${date}T${time}`;
+};

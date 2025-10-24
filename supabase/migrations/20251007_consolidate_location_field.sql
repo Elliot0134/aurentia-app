@@ -3,15 +3,12 @@
 -- Description: Removes duplicate address field and consolidates all location data into the location field
 
 -- Step 1: Migrate data from address to location (if location is empty and address has data)
-UPDATE public.profiles
-SET location = address
-WHERE (location IS NULL OR location = '')
-  AND address IS NOT NULL
-  AND address != '';
+-- SKIPPED: address column no longer exists in profiles table
 
 -- Step 2: Drop the address column
-ALTER TABLE public.profiles
-DROP COLUMN IF EXISTS address;
+-- SKIPPED: address column already dropped
+-- ALTER TABLE public.profiles
+-- DROP COLUMN IF EXISTS address;
 
 -- Step 3: Drop the old sync function
 DROP FUNCTION IF EXISTS public.sync_user_metadata_to_profile(uuid, text, text, text, text, text);

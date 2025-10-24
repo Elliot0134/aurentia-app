@@ -427,7 +427,6 @@ const Roadmap = () => {
     commentCountByCard[c.card_id] = (commentCountByCard[c.card_id] || 0) + 1;
   });
 
-  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
   const [isUnlockPopupOpen, setIsUnlockPopupOpen] = useState(false);
   const { subscriptionStatus } = useSubscriptionStatus();
   const { userProjects } = useProject();

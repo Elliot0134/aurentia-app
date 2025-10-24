@@ -14,6 +14,7 @@ interface ChatHeaderProps {
   onRenameConversation: () => void;
   onDeleteConversation: () => void;
   onToggleHistoryMobile: () => void; // New prop for toggling history on mobile
+  organizationLogoUrl?: string; // Organization logo URL for white label mode
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -26,6 +27,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onRenameConversation,
   onDeleteConversation,
   onToggleHistoryMobile, // Destructure new prop
+  organizationLogoUrl,
 }) => {
   return (
     <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_8px_-2px_rgba(0,0,0,0.15)] sticky top-0 z-10 mx-4"> {/* Added mx-4 */}
@@ -33,8 +35,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         {/* Layout en une seule ligne avec tout aligné */}
         <div className="flex items-center gap-3 w-full">
           {/* Logo */}
-          <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {organizationLogoUrl ? (
+              <img
+                src={organizationLogoUrl}
+                alt="Organisation logo"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Sparkles className="w-4 h-4 text-white" />
+            )}
           </div>
           
           {/* Titre/Select de conversation - Hidden on mobile */}

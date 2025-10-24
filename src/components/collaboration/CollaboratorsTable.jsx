@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import StatusBadge from './StatusBadge';
 import ProjectSelector from './ProjectSelector';
 import {
@@ -239,6 +239,7 @@ const CollaboratorsTable = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
+                    <AvatarImage src={collaborator?.user?.avatar_url} />
                     <AvatarFallback className="text-sm bg-blue-100 text-blue-600">
                       {getInitials(getCollaboratorEmail(collaborator))}
                     </AvatarFallback>
@@ -355,6 +356,7 @@ const CollaboratorsTable = ({
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
+                        <AvatarImage src={collaborator?.user?.avatar_url} />
                         <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
                           {getInitials(getCollaboratorEmail(collaborator))}
                         </AvatarFallback>

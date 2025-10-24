@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useProject } from '@/contexts/ProjectContext';

@@ -1,19 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { FileText, Plus, Zap, Book, X } from "lucide-react";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Button } from "@/components/ui/button";
+import { useUser } from "@/contexts/UserContext";
 import { useProject } from "@/contexts/ProjectContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { DashboardMetricsCards } from "@/components/dashboard/DashboardMetricsCards";
+import { ActionPlanTimelineWidget } from "@/components/dashboard/ActionPlanTimelineWidget";
+import { IndividualActivityFeed } from "@/components/dashboard/IndividualActivityFeed";
+import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
+import { Activity, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 
 declare global {
@@ -26,27 +20,8 @@ declare global {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-  
-  // Use Project Context instead of local state
-  const { userProjects, userProjectsLoading, deleteProject } = useProject();
-
-  // Format projects for display
-  const formattedProjects = userProjects.map(project => ({
-    id: project.project_id,
-    title: project.nom_projet || "Projet sans nom",
-    status: "En cours", // You can enhance this with actual status from project data
-    createdAt: new Date(project.created_at).toLocaleDateString('fr-FR')
-  }));
-
-  const handleDeleteProject = async () => {
-    if (!projectToDelete) return;
-    
-    const success = await deleteProject(projectToDelete);
-    if (success) {
-      setProjectToDelete(null);
-    }
-  };
+  const { userProfile } = useUser();
+  const { userProjects } = useProject();
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -64,155 +39,104 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Get user's first name for greeting
+  const firstName = userProfile?.first_name || 'Entrepreneur';
+
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Tableau de bord</h1>
-          <p className="text-gray-600">Bienvenue sur votre espace de gestion de projets entrepreneuriaux</p>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Hero Section */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">
+            Bonjour, {firstName}! 👋
+          </h1>
+          <p className="text-gray-600">
+            Voici un aperçu de votre parcours entrepreneurial
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-5 animate-slide-up">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Projets totaux</p>
-                <p className="text-2xl font-bold text-gray-900">{userProjects.length}</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <FileText className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
+        {/* Metrics Cards */}
+        <DashboardMetricsCards />
 
-          <div className="bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.1s"}}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Livrables générés</p>
-                <p className="text-2xl font-bold text-gray-900">{userProjects.length * 4}</p>
-              </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <Zap className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Quick Actions Panel */}
+        <QuickActionsPanel />
 
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-3 flex justify-end mb-4">
-            <Button onClick={() => navigate("/individual/warning")} className="flex items-center gap-2">
-              <Plus size={16} />
-              Créer un nouveau projet
-            </Button>
+          {/* Action Plan Timeline - Full width on mobile, 2 cols on desktop */}
+          <div className="lg:col-span-2">
+            <ActionPlanTimelineWidget />
           </div>
-          <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-5 animate-slide-up" style={{animationDelay: "0.1s"}}>
-            <h2 className="text-base font-semibold mb-4">Vos projets</h2>
-            {userProjectsLoading ? (
-              <div className="flex justify-center py-6">
-                <LoadingSpinner size="sm" />
-              </div>
-            ) : formattedProjects.length > 0 ? (
-              <div className="space-y-3">
-                {formattedProjects.map(project => (
-                  <div
-                    key={project.id}
-                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition"
-                  >
-                    <div 
-                      className="flex-1 cursor-pointer"
-                      onClick={() => navigate(`/individual/project-business/${project.id}`)}
+
+          {/* Create Project Card - 1 col */}
+          <div className="lg:col-span-1">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Nouveau Projet</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center justify-center py-6">
+                {userProjects.length === 0 ? (
+                  <>
+                    <p className="text-gray-600 text-center mb-4">
+                      Vous n'avez pas encore de projets
+                    </p>
+                    <Button
+                      onClick={() => navigate("/individual/warning")}
+                      className="bg-aurentia-pink hover:bg-aurentia-pink/90 flex items-center gap-2"
                     >
-                      <h3 className="font-medium text-sm">{project.title}</h3>
-                    </div>
-                    <div className="flex items-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        project.status === "Complété" ? "bg-green-100 text-green-800" :
-                        project.status === "En analyse" ? "bg-blue-100 text-blue-800" :
-                        "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {project.status}
-                      </span>
-                      <button 
-                        className="ml-3 p-1.5 text-gray-500 hover:text-gray-700"
-                        onClick={() => navigate(`/individual/project-business/${project.id}`)}
-                      >
-                        <FileText size={16} />
-                      </button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <button 
-                            className="ml-2 p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setProjectToDelete(project.id);
-                            }}
-                          >
-                            <X size={16} />
-                          </button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Cette action ne peut pas être annulée. Cela supprimera définitivement le projet "{project.title}" et toutes ses données associées.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>
-                              Non
-                            </AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={handleDeleteProject}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Oui
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">Vous n'avez pas encore de projets</p>
-                <button
-                  onClick={() => navigate("/individual/warning")}
-                  className="btn-primary"
-                >
-                  Créer votre premier projet
-                </button>
-              </div>
-            )}
+                      <Plus size={16} />
+                      Créer votre premier projet
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-gray-600 text-center mb-4">
+                      {userProjects.length} {userProjects.length === 1 ? 'projet actif' : 'projets actifs'}
+                    </p>
+                    <Button
+                      onClick={() => navigate("/individual/warning")}
+                      variant="outline"
+                      className="flex items-center gap-2 hover:border-aurentia-pink hover:text-aurentia-pink"
+                    >
+                      <Plus size={16} />
+                      Créer un nouveau projet
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
-          
-          {/* Tally Form Embed */}
-          <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-5 animate-slide-up mt-6">
-            <iframe 
-              data-tally-src="https://tally.so/embed/3qq1e8?alignLeft=1&transparentBackground=1&dynamicHeight=1" 
-              loading="lazy" 
-              width="100%" 
-              height="552" 
-              frameBorder="0" 
-              marginHeight={0} 
-              marginWidth={0} 
-              allow="microphone; camera; geolocation; autoplay" 
+        </div>
+
+        {/* Activity Feed */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-aurentia-pink" />
+              Activité Récente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <IndividualActivityFeed limit={15} showLoadMore={true} />
+          </CardContent>
+        </Card>
+
+        {/* Tally Form Embed - Keep at the bottom */}
+        <Card>
+          <CardContent className="p-6">
+            <iframe
+              data-tally-src="https://tally.so/embed/3qq1e8?alignLeft=1&transparentBackground=1&dynamicHeight=1"
+              loading="lazy"
+              width="100%"
+              height="552"
+              frameBorder="0"
+              marginHeight={0}
+              marginWidth={0}
+              allow="microphone; camera; geolocation; autoplay"
               title="Votre avis nous aide à grandir !"
             ></iframe>
-          </div>
-
-          {/* Bouton créer un projet - visible uniquement en mobile */}
-          <div className="md:hidden mt-6">
-            <button
-              onClick={() => navigate("/individual/warning")}
-              className="btn-primary w-full flex items-center justify-center gap-2 px-4 py-3"
-            >
-              <Plus size={20} />
-              Créer un nouveau projet
-            </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
