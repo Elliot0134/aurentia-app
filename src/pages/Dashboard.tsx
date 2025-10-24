@@ -3,6 +3,7 @@ import { FileText, Plus, Zap, Book, X } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/contexts/ProjectContext";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,9 +28,19 @@ declare global {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-  
+
   // Use Project Context instead of local state
   const { userProjects, userProjectsLoading, deleteProject } = useProject();
+  const { onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
+
+  // Redirect to onboarding if user has no projects and hasn't completed onboarding
+  useEffect(() => {
+    if (!userProjectsLoading && !onboardingLoading) {
+      if (userProjects.length === 0 && !onboardingCompleted) {
+        navigate('/onboarding', { replace: true });
+      }
+    }
+  }, [userProjects, userProjectsLoading, onboardingCompleted, onboardingLoading, navigate]);
 
   // Format projects for display
   const formattedProjects = userProjects.map(project => ({

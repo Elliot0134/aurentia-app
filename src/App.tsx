@@ -32,6 +32,7 @@ import ToolTemplatePage from "./pages/ToolTemplatePage";
 import ComponentsTemplate from "./pages/individual/ComponentsTemplate";
 import ChatbotPage from "./pages/ChatbotPage";
 import PlanActionPage from "./pages/PlanActionPage";
+import Onboarding from "./pages/Onboarding";
 import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
 import MyOrganization from "./pages/MyOrganization";
@@ -307,9 +308,12 @@ const App = () => {
                 
                 {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
+                  {/* Onboarding - For first-time users without projects */}
+                  <Route path="/onboarding" element={<Onboarding />} />
+
                   {/* Organization Setup - For users without an organization */}
                   <Route path="/setup-organization" element={<SetupOrganization />} />
-                
+
                   <Route path="/organisation" element={<OrganisationRedirect />} />
                   
                   <Route element={<RoleBasedLayout />}>

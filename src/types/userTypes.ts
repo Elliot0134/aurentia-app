@@ -1,12 +1,13 @@
-export type UserRole = 'individual' | 'member' | 'staff' | 'organisation' | 'super_admin';
+export type UserRole = 'individual' | 'member' | 'staff' | 'organisation' | 'super_admin' | 'admin';
 export type InvitationRole = 'member' | 'staff' | 'organisation';
 
 // Organization roles breakdown:
 // - 'individual': Standalone users (current individual)
-// - 'member': Entrepreneurs/clients within an organization (current member) 
+// - 'member': Entrepreneurs/clients within an organization (current member)
 // - 'staff': Organization employees with admin privileges (current admin)
 // - 'organisation': Organization owners/main admins (renamed from admin)
-// - 'super_admin': Platform administrators
+// - 'super_admin': Platform administrators (deprecated, use 'admin' instead)
+// - 'admin': Platform administrators with full access to all data and features
 
 export interface Organization {
   id: string;

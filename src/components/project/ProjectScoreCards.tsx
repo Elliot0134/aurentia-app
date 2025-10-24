@@ -169,27 +169,91 @@ const ScoreDetailPopup: React.FC<ScoreDetailPopupProps> = ({ isOpen, onClose, ti
                 {activeTab === 'content' && (
                   <>
                     {sections.filter(section => section.title !== "Recommandations Prioritaires").length > 0 ? (
-                      <Accordion type="single" collapsible className="w-full">
+                      <Accordion type="multiple" defaultValue={["section-0", "section-1"]} className="w-full">
                         {sections.filter(section => section.title !== "Recommandations Prioritaires").map((section, sectionIndex) => (
                           <AccordionItem value={`section-${sectionIndex}`} key={sectionIndex}>
                             <AccordionTrigger className="text-lg">{section.title}</AccordionTrigger>
                             <AccordionContent>
-                              {section.items.map((item, itemIndex) => (
-                                <div key={itemIndex} className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                                  <h4 className="text-sm font-semibold mb-2">{item.title}</h4>
-                                  <div className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>
-                                    {Array.isArray(item.content) ? (
-                                      <ul>
-                                        {item.content.map((line, lineIndex) => (
-                                          <li key={lineIndex}><ReactMarkdown>{String(line)}</ReactMarkdown></li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <ReactMarkdown>{String(item.content)}</ReactMarkdown>
-                                    )}
+                              {section.items.map((item, itemIndex) => {
+                                // Handle special grid layout for Synthèse du Projet
+                                if (item.title === "_SPECIAL_SYNTHESE_GRID_") {
+                                  const data = JSON.parse(String(item.content));
+                                  return (
+                                    <div key={itemIndex} className="space-y-4">
+                                      {/* First row: Opportunité principale (left) and Facteur limitant (right) */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-green-50 border border-green-100 rounded-md px-4 pb-4 pt-4">
+                                          <h4 className="text-sm font-semibold mb-2 text-green-900">Opportunité principale</h4>
+                                          <div className="text-green-800" style={{ whiteSpace: 'pre-wrap' }}>
+                                            <ReactMarkdown>{String(data.opportunite)}</ReactMarkdown>
+                                          </div>
+                                        </div>
+                                        <div className="bg-red-50 border border-red-100 rounded-md px-4 pb-4 pt-4">
+                                          <h4 className="text-sm font-semibold mb-2 text-red-900">Facteur limitant</h4>
+                                          <div className="text-red-800" style={{ whiteSpace: 'pre-wrap' }}>
+                                            <ReactMarkdown>{String(data.facteur_limitant)}</ReactMarkdown>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Second row: Points forts (left) and Points faibles (right) */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-green-50 border border-green-100 rounded-md px-4 pb-4 pt-4">
+                                          <h4 className="text-sm font-semibold mb-2 text-green-900">Points forts</h4>
+                                          <div className="text-green-800">
+                                            {Array.isArray(data.points_forts) ? (
+                                              <ul className="list-disc pl-5 space-y-1">
+                                                {data.points_forts.map((line: string, lineIndex: number) => (
+                                                  <li key={lineIndex}><ReactMarkdown>{String(line)}</ReactMarkdown></li>
+                                                ))}
+                                              </ul>
+                                            ) : (
+                                              <ReactMarkdown>{String(data.points_forts)}</ReactMarkdown>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="bg-red-50 border border-red-100 rounded-md px-4 pb-4 pt-4">
+                                          <h4 className="text-sm font-semibold mb-2 text-red-900">Points faibles</h4>
+                                          <div className="text-red-800">
+                                            {Array.isArray(data.faiblesses) ? (
+                                              <ul className="list-disc pl-5 space-y-1">
+                                                {data.faiblesses.map((line: string, lineIndex: number) => (
+                                                  <li key={lineIndex}><ReactMarkdown>{String(line)}</ReactMarkdown></li>
+                                                ))}
+                                              </ul>
+                                            ) : (
+                                              <ReactMarkdown>{String(data.faiblesses)}</ReactMarkdown>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                // Default rendering for other items
+                                return (
+                                  <div key={itemIndex} className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                                    <h4 className="text-sm font-semibold mb-2">{item.title}</h4>
+                                    <div className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>
+                                      {Array.isArray(item.content) ? (
+                                        <ul className={item.title === "Prochaines étapes" ? "space-y-2" : ""}>
+                                          {item.content.map((line, lineIndex) => (
+                                            <li key={lineIndex} className={item.title === "Prochaines étapes" ? "flex items-start gap-2" : ""}>
+                                              {item.title === "Prochaines étapes" && (
+                                                <span className="text-orange-500 mt-1 flex-shrink-0">→</span>
+                                              )}
+                                              <span className="flex-1"><ReactMarkdown>{String(line)}</ReactMarkdown></span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      ) : (
+                                        <ReactMarkdown>{String(item.content)}</ReactMarkdown>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </AccordionContent>
                           </AccordionItem>
                         ))}
@@ -276,22 +340,100 @@ const ScoreDetailPopup: React.FC<ScoreDetailPopupProps> = ({ isOpen, onClose, ti
                       <AccordionItem value={`section-${sectionIndex}`} key={sectionIndex}>
                         <AccordionTrigger className="text-lg">{section.title}</AccordionTrigger>
                         <AccordionContent>
-                          {section.items.map((item, itemIndex) => (
-                            <div key={itemIndex} className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                              <h4 className="text-sm font-semibold mb-2">{item.title}</h4>
-                              <div className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>
-                                {Array.isArray(item.content) ? (
-                                  <ul>
-                                    {item.content.map((line, lineIndex) => (
-                                      <li key={lineIndex}><ReactMarkdown>{String(line)}</ReactMarkdown></li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <ReactMarkdown>{String(item.content)}</ReactMarkdown>
-                                )}
+                          {section.items.map((item, itemIndex) => {
+                            // Handle special table layout for Recommandations Juridiques
+                            if (item.title === "_SPECIAL_JURIDIQUE_TABLE_") {
+                              const recommendations = JSON.parse(String(item.content));
+                              return (
+                                <div key={itemIndex} className="w-full">
+                                  {recommendations && recommendations.length > 0 ? (
+                                    <>
+                                      {/* Version Desktop - Tableau */}
+                                      <div className="hidden md:block">
+                                        <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                                          <thead>
+                                            <tr className="bg-gray-100">
+                                              <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Action</th>
+                                              <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Délai</th>
+                                              <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Priorité</th>
+                                              <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Coût estimé</th>
+                                              <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Impact lancement</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {recommendations.map((rec: any, recIndex: number) => (
+                                              <tr key={recIndex} className="hover:bg-gray-50">
+                                                <td className="border border-gray-300 px-4 py-3 text-gray-800">{rec.action || 'N/A'}</td>
+                                                <td className="border border-gray-300 px-4 py-3 text-gray-800">{rec.delai || 'N/A'}</td>
+                                                <td className="border border-gray-300 px-4 py-3">
+                                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                    rec.priorite === 'Critique' || rec.priorite === 'Élevée' ? 'bg-red-100 text-red-800' :
+                                                    rec.priorite === 'Moyenne' || rec.priorite === 'Modérée' ? 'bg-yellow-100 text-yellow-800' :
+                                                    rec.priorite === 'Faible' || rec.priorite === 'Basse' ? 'bg-green-100 text-green-800' :
+                                                    'bg-gray-100 text-gray-800'
+                                                  }`}>
+                                                    {rec.priorite || 'N/A'}
+                                                  </span>
+                                                </td>
+                                                <td className="border border-gray-300 px-4 py-3 text-gray-800">{rec.cout_estime || 'N/A'}</td>
+                                                <td className="border border-gray-300 px-4 py-3 text-gray-800">{rec.impact_lancement || 'N/A'}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+
+                                      {/* Version Mobile - Cartes */}
+                                      <div className="md:hidden space-y-4">
+                                        {recommendations.map((rec: any, recIndex: number) => (
+                                          <div key={recIndex} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                            <div className="flex items-start justify-between mb-3">
+                                              <h5 className="font-semibold text-gray-900 text-sm flex-1 pr-2">{rec.action || 'N/A'}</h5>
+                                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                                                rec.priorite === 'Critique' || rec.priorite === 'Élevée' ? 'bg-red-100 text-red-800' :
+                                                rec.priorite === 'Moyenne' || rec.priorite === 'Modérée' ? 'bg-yellow-100 text-yellow-800' :
+                                                rec.priorite === 'Faible' || rec.priorite === 'Basse' ? 'bg-green-100 text-green-800' :
+                                                'bg-gray-100 text-gray-800'
+                                              }`}>
+                                                {rec.priorite || 'N/A'}
+                                              </span>
+                                            </div>
+                                            <div className="space-y-2 text-sm text-gray-600">
+                                              <div><span className="font-medium">Délai:</span> {rec.delai || 'N/A'}</div>
+                                              <div><span className="font-medium">Coût estimé:</span> {rec.cout_estime || 'N/A'}</div>
+                                              <div><span className="font-medium">Impact lancement:</span> {rec.impact_lancement || 'N/A'}</div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="prose max-w-none">
+                                      <p className="text-gray-500">Aucune recommandation juridique disponible pour le moment.</p>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+
+                            // Default rendering for other items
+                            return (
+                              <div key={itemIndex} className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
+                                <h4 className="text-sm font-semibold mb-2">{item.title}</h4>
+                                <div className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>
+                                  {Array.isArray(item.content) ? (
+                                    <ul>
+                                      {item.content.map((line, lineIndex) => (
+                                        <li key={lineIndex}><ReactMarkdown>{String(line)}</ReactMarkdown></li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <ReactMarkdown>{String(item.content)}</ReactMarkdown>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </AccordionContent>
                       </AccordionItem>
                     ))}
@@ -550,18 +692,21 @@ const ProjectScoreCards: React.FC<ProjectScoreCardsProps> = ({ className }) => {
         {
           title: "Synthèse du Projet",
           items: [
-            { title: "Opportunité principale", content: getJsonbValue(data, "evaluation_finale->synthese->>opportunite_principale", "N/A") },
-            { title: "Facteur limitant", content: getJsonbValue(data, "evaluation_finale->synthese->>facteur_limitant_principal", "N/A") },
-            { title: "Points forts majeurs", content: getJsonbValue(data, "evaluation_finale->synthese->points_forts_majeurs", []) },
-            { title: "Faiblesses critiques", content: getJsonbValue(data, "evaluation_finale->synthese->faiblesses_critiques", []) },
+            {
+              title: "_SPECIAL_SYNTHESE_GRID_",
+              content: JSON.stringify({
+                opportunite: getJsonbValue(data, "evaluation_finale->synthese->>opportunite_principale", "N/A"),
+                facteur_limitant: getJsonbValue(data, "evaluation_finale->synthese->>facteur_limitant_principal", "N/A"),
+                points_forts: getJsonbValue(data, "evaluation_finale->synthese->points_forts_majeurs", []),
+                faiblesses: getJsonbValue(data, "evaluation_finale->synthese->faiblesses_critiques", [])
+              })
+            }
           ],
         },
         {
           title: "Conclusion & Décision",
           items: [
             { title: "Résumé exécutif", content: getJsonbValue(data, "evaluation_finale->conclusion->>resume_executif", "N/A") },
-            { title: "Décision recommandée", content: getJsonbValue(data, "evaluation_finale->score_global->>decision_recommandee", "N/A") },
-            { title: "Niveau de confiance", content: getJsonbValue(data, "evaluation_finale->conclusion->>niveau_confiance", "N/A") },
             { title: "Prochaines étapes", content: getJsonbValue(data, "evaluation_finale->conclusion->next_steps", []) },
           ],
         },
@@ -611,10 +756,10 @@ const ProjectScoreCards: React.FC<ProjectScoreCardsProps> = ({ className }) => {
         },
         {
           title: "Recommandations Juridiques",
-          items: getJsonbValue(data, "analyse_juridique->recommandations_prioritaires", []).map((rec: any) => ({
-            title: rec.action,
-            content: `Délai: ${rec.delai}\nPriorité: ${rec.priorite}\nCoût estimé: ${rec.cout_estime}\nImpact lancement: ${rec.impact_lancement}`,
-          })),
+          items: [{
+            title: "_SPECIAL_JURIDIQUE_TABLE_",
+            content: JSON.stringify(getJsonbValue(data, "analyse_juridique->recommandations_prioritaires", []))
+          }],
         },
       ],
     },
