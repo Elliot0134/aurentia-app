@@ -7,10 +7,18 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 const PropositionDeValeurLivrable: React.FC = () => {
   const [data, setData] = useState<any>(null); // Removed '& { avis: string | null }'
   const [loading, setLoading] = useState(true);
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('proposition-valeur');
+  }, [registerDeliverable]);
   const [selectedSegment, setSelectedSegment] = useState<string>('B2C');
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +47,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
       if (!projectId) {
         setError("Project ID is missing.");
         setLoading(false);
+        setDeliverableLoaded('proposition-valeur');
         return;
       }
 
@@ -57,6 +66,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
         setData(data);
       }
       setLoading(false);
+        setDeliverableLoaded('proposition-valeur');
     };
 
     fetchData();

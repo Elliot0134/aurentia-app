@@ -54,7 +54,7 @@ const RoleBasedLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F4F4F1]" style={customStyles}>
+    <div className="flex min-h-screen bg-white" style={customStyles}>
       <RoleBasedSidebar
         userProfile={userProfile}
         isCollapsed={isCollapsed}

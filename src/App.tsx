@@ -71,8 +71,13 @@ import Messages from "./pages/Messages";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
 import { UserProvider } from "./contexts/UserContext";
+import { VoiceQuotaProvider } from "./contexts/VoiceQuotaContext";
+import { DeliverablesLoadingProvider } from "./contexts/DeliverablesLoadingContext";
 import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
 import PendingInvitationsProvider from "./components/collaboration/PendingInvitationsProvider";
+import StyleguidePage from "./pages/StyleguidePage";
+import StyleguideGuard from "./components/styleguide/StyleguideGuard";
+import CreateProjectForm from "./pages/individual/CreateProjectForm";
 
 import { useState, useEffect, ErrorInfo, Component, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -303,10 +308,12 @@ const App = () => {
           <BrowserRouter>
             <UserProvider>
               <ProjectProvider>
-                <CreditsDialogProvider>
-                  <BuyCreditsDialog />
-                  <PendingInvitationsProvider />
-                  <Routes>
+                <VoiceQuotaProvider>
+                  <CreditsDialogProvider>
+                    <BuyCreditsDialog />
+                    <PendingInvitationsProvider>
+                      <DeliverablesLoadingProvider>
+                        <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -347,6 +354,7 @@ const App = () => {
                     <Route path="/individual/roadmap/:id" element={<Roadmap />} />
                     <Route path="/individual/project/:projectId" element={<Project />} />
                     <Route path="/individual/form-business-idea" element={<FormBusinessIdea />} />
+                    <Route path="/individual/create-project-form" element={<CreateProjectForm />} />
                     <Route path="/individual/warning" element={<WarningPage />} />
                     <Route path="/individual/automatisations" element={<Automatisations />} />
                     <Route path="/individual/knowledge" element={<Knowledge />} />
@@ -355,6 +363,13 @@ const App = () => {
                     <Route path="/individual/knowledge-base" element={<KnowledgeBase />} />
                     <Route path="/individual/knowledge-base/:projectId" element={<KnowledgeBase />} />
                     <Route path="/messages" element={<Messages />} />
+
+                    {/* Styleguide - Restricted Access */}
+                    <Route path="/individual/styleguide" element={
+                      <StyleguideGuard>
+                        <StyleguidePage />
+                      </StyleguideGuard>
+                    } />
 
                     {/* Organisation routes */}
                     <Route path="/organisation/:id/dashboard" element={
@@ -503,9 +518,12 @@ const App = () => {
                 <Route path="/member/incubator" element={<Navigate to="/individual/my-organization" replace />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<NotFound />} />
-              </Routes>
-              </CreditsDialogProvider>
-            </ProjectProvider>
+                        </Routes>
+                      </DeliverablesLoadingProvider>
+                    </PendingInvitationsProvider>
+                  </CreditsDialogProvider>
+                </VoiceQuotaProvider>
+              </ProjectProvider>
             </UserProvider>
           </BrowserRouter>
         </TooltipProvider>

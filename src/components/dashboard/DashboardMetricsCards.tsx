@@ -1,7 +1,7 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { useProject } from '@/contexts/ProjectContext';
 import { useActionPlanTimeline } from '@/hooks/useActionPlanTimeline';
-import { FolderOpen, Coins, CheckCircle2, TrendingUp } from 'lucide-react';
+import { useCreditStats } from '@/hooks/useCreditStats';
+import { FolderOpen, Coins, CheckCircle2, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MetricCardProps {
@@ -9,48 +9,59 @@ interface MetricCardProps {
   label: string;
   value: string | number;
   subtext?: string;
-  iconBgColor?: string;
-  iconColor?: string;
+  subtextColor?: string;
+  trend?: 'up' | 'down' | 'neutral';
 }
 
-const MetricCard = ({ icon, label, value, subtext, iconBgColor = 'bg-aurentia-pink/10', iconColor = 'text-aurentia-pink' }: MetricCardProps) => {
+const MetricCard = ({ icon, label, value, subtext, subtextColor, trend }: MetricCardProps) => {
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-4">
-          <div className={cn("p-3 rounded-lg", iconBgColor)}>
-            <div className={cn("w-6 h-6", iconColor)}>
-              {icon}
-            </div>
+    <div className="bg-white border border-[#f2f2f1] rounded-xl p-4 hover:border-aurentia-pink/20 transition-all duration-200">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[15px] text-text-muted font-normal">{label}</p>
+        {trend && (
+          <div className={cn(
+            "flex items-center gap-1 text-xs font-medium",
+            trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'
+          )}>
+            {trend === 'up' && <TrendingUp className="h-3 w-3" />}
+            {trend === 'down' && <TrendingDown className="h-3 w-3" />}
           </div>
-          <div className="flex-1">
-            <p className="text-sm text-gray-600 font-medium">{label}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-            {subtext && (
-              <p className="text-xs text-gray-500 mt-1">{subtext}</p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+      <p className="text-3xl font-bold text-text-primary mb-1">{value}</p>
+      {subtext && (
+        <p className={cn("text-xs", subtextColor || "text-text-muted")}>
+          {subtext}
+        </p>
+      )}
+    </div>
   );
 };
 
 export const DashboardMetricsCards = () => {
-  const { userProjects, userCredits, deliverableNames, currentProjectId } = useProject();
+  const { userProjects, deliverableNames, currentProjectId } = useProject();
   const { timelineData, hasActionPlan } = useActionPlanTimeline(currentProjectId);
+  const { stats: creditStats } = useCreditStats();
 
-  // Calculer les livrables complétés (estimation basée sur les projets)
-  const totalDeliverables = deliverableNames.length;
-  const estimatedCompleted = Math.floor(userProjects.length * 0.4); // Estimation: 40% complétés en moyenne
+  // Calculer les livrables complétés (vraies données)
+  const totalDeliverablesCount = 10; // Nombre total de livrables disponibles
+  const completedDeliverables = deliverableNames.length;
+  const deliverablePercent = Math.round((completedDeliverables / totalDeliverablesCount) * 100);
 
-  // Calculer les crédits disponibles
-  const totalCredits = (userCredits.purchasedCredits || 0) + (userCredits.monthlyCredits || 0);
-
-  // Formater les crédits avec séparateur de milliers
-  const formatCredits = (num: number) => {
+  // Formater les nombres avec séparateur de milliers
+  const formatNumber = (num: number) => {
     return new Intl.NumberFormat('fr-FR').format(num);
   };
+
+  // Déterminer le statut des crédits
+  const getCreditStatus = () => {
+    if (!creditStats) return { text: 'Chargement...', color: 'text-text-muted' };
+    if (creditStats.isCriticalCredits) return { text: 'Niveau critique', color: 'text-red-600 font-semibold' };
+    if (creditStats.isLowCredits) return { text: 'Niveau bas', color: 'text-orange-600 font-semibold' };
+    return { text: 'Niveau suffisant', color: 'text-green-600' };
+  };
+
+  const creditStatus = getCreditStatus();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -58,40 +69,36 @@ export const DashboardMetricsCards = () => {
         icon={<FolderOpen className="w-full h-full" />}
         label="Projets Actifs"
         value={userProjects.length}
-        subtext={userProjects.length === 1 ? '1 projet' : `${userProjects.length} projets`}
-        iconBgColor="bg-blue-100"
-        iconColor="text-blue-600"
+        subtext={userProjects.length === 1 ? '1 projet créé' : `${userProjects.length} projets créés`}
       />
 
       <MetricCard
         icon={<Coins className="w-full h-full" />}
         label="Crédits Disponibles"
-        value={formatCredits(totalCredits)}
-        subtext={totalCredits < 600 ? 'Niveau bas' : 'Suffisant'}
-        iconBgColor="bg-yellow-100"
-        iconColor="text-yellow-600"
+        value={creditStats ? formatNumber(creditStats.totalRemaining) : '...'}
+        subtext={creditStatus.text}
+        subtextColor={creditStatus.color}
+        trend={creditStats && creditStats.averageDailyUsage > 0 ? 'down' : 'neutral'}
       />
 
       <MetricCard
         icon={<CheckCircle2 className="w-full h-full" />}
-        label="Livrables"
-        value={`${estimatedCompleted}/${totalDeliverables}`}
-        subtext={`${Math.round((estimatedCompleted / totalDeliverables) * 100)}% complétés`}
-        iconBgColor="bg-green-100"
-        iconColor="text-green-600"
+        label="Livrables Créés"
+        value={currentProjectId ? `${completedDeliverables}/${totalDeliverablesCount}` : '0'}
+        subtext={currentProjectId ? `${deliverablePercent}% complétés` : 'Sélectionnez un projet'}
+        trend={completedDeliverables > 5 ? 'up' : completedDeliverables > 0 ? 'neutral' : undefined}
       />
 
       <MetricCard
         icon={<TrendingUp className="w-full h-full" />}
         label="Plan d'Action"
-        value={hasActionPlan ? `${timelineData.progressPercentage}%` : 'N/A'}
+        value={hasActionPlan ? `${timelineData.completionPercentage}%` : 'N/A'}
         subtext={
           hasActionPlan
-            ? `Semaine ${timelineData.currentWeek}/${timelineData.totalWeeks}`
+            ? `${timelineData.completedTasks + timelineData.completedMilestones}/${timelineData.totalTasks + timelineData.totalMilestones} terminés`
             : 'Pas encore créé'
         }
-        iconBgColor="bg-aurentia-pink/10"
-        iconColor="text-aurentia-pink"
+        trend={hasActionPlan && timelineData.completionPercentage > 50 ? 'up' : undefined}
       />
     </div>
   );

@@ -7,6 +7,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface SuccessStoryData {
   projections_un_an_titre: string;
@@ -23,8 +25,14 @@ const MaSuccessStoryLivrable: React.FC = () => {
   const [successStoryData, setSuccessStoryData] = useState<SuccessStoryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
 
   const { projectId } = useParams<{ projectId: string }>();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('success-story');
+  }, [registerDeliverable]);
 
   const deliverableTitle = "Ma Success Story";
   const deliverableDescription = "Visualisez vos projections d'évolution entrepreneuriale";
@@ -88,6 +96,7 @@ const MaSuccessStoryLivrable: React.FC = () => {
       if (!projectId) {
         setError("Project ID not found in URL");
         setLoading(false);
+        setDeliverableLoaded('success-story');
         return;
       }
 
@@ -104,12 +113,11 @@ const MaSuccessStoryLivrable: React.FC = () => {
         setSuccessStoryData(data);
       }
       setLoading(false);
+      setDeliverableLoaded('success-story');
     };
 
-    if (isPopupOpen) {
-      fetchSuccessStoryData();
-    }
-  }, [isPopupOpen, projectId]);
+    fetchSuccessStoryData();
+  }, [projectId, setDeliverableLoaded]);
 
   // Content component for the modal
   const successStoryContent = (
@@ -131,6 +139,11 @@ const MaSuccessStoryLivrable: React.FC = () => {
       )}
     </>
   );
+
+  // Show skeleton while global loading OR individual loading
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   return (
     <>

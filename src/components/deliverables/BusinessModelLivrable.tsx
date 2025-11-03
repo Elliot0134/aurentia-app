@@ -5,6 +5,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface LivrableProps {
   title?: string;
@@ -23,11 +25,13 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
 }) => {
   const definition = "Le Business Model Canvas est un outil stratégique qui permet de visualiser et structurer les éléments clés d'un modèle d'affaires, incluant la proposition de valeur, les segments clients, les ressources et la structure financière.";
   const importance = "Essentiel pour définir comment l'entreprise crée, délivre et capture de la valeur. Il fournit une vision globale et cohérente du modèle économique et identifie les leviers de croissance.";
-  
+
   const [businessModelData, setBusinessModelData] = useState<any & { avis: string | null }>(null);
+  const [loading, setLoading] = useState(true);
   const [showStructureCoutsAnalyse, setShowStructureCoutsAnalyse] = useState(true);
   const [showSourcesRevenusAnalyse, setShowSourcesRevenusAnalyse] = useState(true);
   const { projectId } = useParams<{ projectId: string }>();
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -42,9 +46,18 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
     deliverableTitle: 'Business Model Canvas',
   });
 
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('business-model');
+  }, [registerDeliverable]);
+
   useEffect(() => {
     const fetchData = async () => {
-      if (!projectId) return;
+      if (!projectId) {
+        setLoading(false);
+        setDeliverableLoaded('business-model');
+        return;
+      }
 
       const { data, error } = await supabase
         .from('business_model')
@@ -59,10 +72,12 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         console.log("Fetched business_model data:", data);
         setBusinessModelData(data);
       }
+      setLoading(false);
+      setDeliverableLoaded('business-model');
     };
 
     fetchData();
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
 
   // Listen for deliverables refresh event
   useEffect(() => {
@@ -70,9 +85,14 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
       const { projectId: refreshProjectId } = event.detail;
       if (refreshProjectId === projectId) {
         console.log('🔄 Refreshing BusinessModelLivrable data...');
+        setLoading(true);
         // Refetch data
         const fetchData = async () => {
-          if (!projectId) return;
+          if (!projectId) {
+            setLoading(false);
+            setDeliverableLoaded('business-model');
+            return;
+          }
 
           const { data, error } = await supabase
             .from('business_model')
@@ -87,17 +107,19 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
             console.log("Refreshed business_model data:", data);
             setBusinessModelData(data);
           }
+          setLoading(false);
+          setDeliverableLoaded('business-model');
         };
         fetchData();
       }
     };
 
     window.addEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
-    
+
     return () => {
       window.removeEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
     };
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
 
   // Contenu spécifique du Business Model Canvas
   const businessModelContent = (
@@ -107,7 +129,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         {/* Row 1 */}
         <div className="col-span-1 md:col-span-1 md:row-span-2 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/partenaires-icon.png" alt="Partenaires Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Partenaires clés</h4>
           </div>
           <ul className="list-disc list-inside">
@@ -121,7 +143,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         </div>
         <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/reglage-icon.png" alt="Reglage Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Activités clés</h4>
           </div>
           <ul className="list-disc list-inside">
@@ -135,7 +157,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         </div>
         <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/proposition-valeur-icon.png" alt="Proposition de Valeur Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Proposition de valeur</h4>
           </div>
           {businessModelData?.proposition_valeur?.split('\n').map((line: string, index: number) => {
@@ -147,7 +169,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         </div>
         <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/persona-icon.png" alt="Persona Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Relations clients</h4>
           </div>
           {businessModelData?.relations_clients?.split('\n').map((line: string, index: number) => (
@@ -156,7 +178,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         </div>
         <div className="col-span-1 md:col-span-1 md:row-span-2 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/persona-icon.png" alt="Persona Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Segments de clients</h4>
           </div>
           <ul className="list-disc list-inside">
@@ -172,7 +194,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         {/* Row 2 */}
         <div className="col-span-1 md:col-span-2 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/ressources-icon.png" alt="Ressources Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Ressources clés</h4>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
@@ -232,7 +254,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         </div>
         <div className="col-span-1 md:col-span-1 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/distribution-icon.png" alt="Distribution Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Canaux de distribution</h4>
           </div>
           <ul className="list-disc list-inside">
@@ -250,7 +272,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div className="col-span-1 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/couts-icon.png" alt="Couts Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Structure des coûts</h4>
           </div>
           <button
@@ -280,7 +302,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         </div>
         <div className="col-span-1 bg-gray-100 p-2 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-6 h-6 object-cover" />
+            <img src="/icones-livrables/revenus-icon.png" alt="Revenus Icon" className="w-6 h-6 object-cover" />
             <h4 className="text-base font-black">Sources de revenus</h4>
           </div>
           <button
@@ -311,6 +333,10 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
       </div>
     </>
   );
+
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   return (
     <>

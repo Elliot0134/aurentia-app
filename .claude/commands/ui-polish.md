@@ -4,6 +4,8 @@ Enhance and refine user interface for consistency, accessibility, aesthetic poli
 
 ### Your Task
 
+ALWAYS read src/styles/theme.css to find the css rules
+
 When the user requests UI polish:
 
 1. **Assess current UI**:

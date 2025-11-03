@@ -90,12 +90,25 @@ export default {
     				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
     				border: 'hsl(var(--sidebar-border))',
     				ring: 'hsl(var(--sidebar-ring))'
-    			}
+    			},
+    			// Aurentia Design System Colors
+    			'page-bg': '#fafaf8',
+    			'card-clickable': '#f2f2f1',
+    			'card-static': '#ffffff',
+    			'text-primary': '#2e333d',
+    			'text-secondary': '#f8f8f6',
+    			'text-muted': '#6b7280',
+    			'border-default': '#e6e6e9',
+    			'border-hover': '#d3d3d8'
     		},
     		borderRadius: {
     			lg: 'var(--radius)',
     			md: 'calc(var(--radius) - 2px)',
-    			sm: 'calc(var(--radius) - 4px)'
+    			sm: 'calc(var(--radius) - 4px)',
+    			// Aurentia Design System Border Radius
+    			'card': '12px',
+    			'modal': '16px',
+    			'button': '8px'
     		},
     		fontFamily: {
     			inter: [
@@ -113,7 +126,10 @@ export default {
     			poppins: [
     				'Poppins',
     				'sans-serif'
-    			]
+    			],
+    			// Aurentia Design System Fonts
+    			'sans': ['Inter', 'sans-serif'],
+    			'heading': ['BIZUD Mincho', 'serif']
     		},
     		keyframes: {
     			'accordion-down': {
@@ -197,7 +213,11 @@ export default {
     			'fade-in': 'fade-in 0.3s ease-out',
     			'fade-out': 'fade-out 0.3s ease-out forwards',
     			'slide-up': 'slide-up 0.3s ease-out',
-    			spin: 'spin 1s linear infinite'
+    			'slide-down': 'slideDown 0.2s ease-out',
+    			'fade-in-blur': 'fadeInBlur 0.5s ease-out',
+    			'fade-in-up': 'fadeInUp 0.5s ease-out',
+    			spin: 'spin 1s linear infinite',
+    			pulse: 'pulse 1.5s ease-in-out infinite'
     		},
     		backgroundImage: {
     			'gradient-primary': 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))',

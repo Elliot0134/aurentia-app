@@ -49,6 +49,7 @@ export interface OnboardingData {
     month: string;
     year: string;
   };
+  country?: string;
   preferredLanguage?: string;
   marketingOptIn?: boolean;
 

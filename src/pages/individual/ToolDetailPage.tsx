@@ -293,7 +293,7 @@ const ToolDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
           <div className="h-12 w-12 bg-gray-200 rounded-full mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-48 mb-2"></div>
@@ -305,10 +305,10 @@ const ToolDetailPage = () => {
 
   if (!tool) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Outil non trouvé</h1>
-          <p className="text-gray-600 mb-6">L'outil que vous recherchez n'existe pas ou n'est plus disponible.</p>
+          <h1 style={{ fontFamily: 'var(--h1-font)', fontSize: 'var(--h1-size)', fontWeight: 'var(--h1-weight)', color: 'var(--h1-color)' }}>Outil non trouvé</h1>
+          <p className="text-[var(--text-muted)] mb-6">L'outil que vous recherchez n'existe pas ou n'est plus disponible.</p>
           <Button onClick={handleBackClick}>
             Retour aux outils
           </Button>
@@ -324,7 +324,7 @@ const ToolDetailPage = () => {
       case 'parametres':
         return (
           <div className="w-full">
-            <div className="bg-white rounded-lg shadow-lg border-0">
+            <div className="card-static">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -349,11 +349,12 @@ const ToolDetailPage = () => {
                           description: ''
                         };
                         const currentLinks = paramSettings.internalLinks || [];
-                        updateParamSettings({ 
-                          ...paramSettings, 
-                          internalLinks: [...currentLinks, newLink] 
+                        updateParamSettings({
+                          ...paramSettings,
+                          internalLinks: [...currentLinks, newLink]
                         });
                       }}
+                      className="bg-white !border-gray-300 text-gray-700 hover:bg-gray-50 hover:!border-gray-400 transition-all duration-200"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Ajouter un lien
@@ -386,11 +387,12 @@ const ToolDetailPage = () => {
                                   onChange={(e) => {
                                     const updatedLinks = [...(paramSettings.internalLinks || [])];
                                     updatedLinks[index] = { ...link, url: e.target.value };
-                                    updateParamSettings({ 
-                                      ...paramSettings, 
-                                      internalLinks: updatedLinks 
+                                    updateParamSettings({
+                                      ...paramSettings,
+                                      internalLinks: updatedLinks
                                     });
                                   }}
+                                  className="bg-white border-gray-300 text-gray-700 placeholder:text-gray-400 focus:border-gray-500 focus:ring-2 focus:ring-gray-400/50 transition-all duration-300"
                                 />
                               </TableCell>
                               <TableCell>
@@ -400,11 +402,12 @@ const ToolDetailPage = () => {
                                   onChange={(e) => {
                                     const updatedLinks = [...(paramSettings.internalLinks || [])];
                                     updatedLinks[index] = { ...link, description: e.target.value };
-                                    updateParamSettings({ 
-                                      ...paramSettings, 
-                                      internalLinks: updatedLinks 
+                                    updateParamSettings({
+                                      ...paramSettings,
+                                      internalLinks: updatedLinks
                                     });
                                   }}
+                                  className="bg-white border-gray-300 text-gray-700 placeholder:text-gray-400 focus:border-gray-500 focus:ring-2 focus:ring-gray-400/50 transition-all duration-300"
                                 />
                               </TableCell>
                               <TableCell>
@@ -413,11 +416,12 @@ const ToolDetailPage = () => {
                                   size="sm"
                                   onClick={() => {
                                     const updatedLinks = (paramSettings.internalLinks || []).filter((_: any, i: number) => i !== index);
-                                    updateParamSettings({ 
-                                      ...paramSettings, 
-                                      internalLinks: updatedLinks 
+                                    updateParamSettings({
+                                      ...paramSettings,
+                                      internalLinks: updatedLinks
                                     });
                                   }}
+                                  className="bg-white !border-gray-300 text-gray-700 hover:bg-gray-50 hover:!border-gray-400 transition-all duration-200"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -431,8 +435,7 @@ const ToolDetailPage = () => {
                   {/* Phrase d'aide supprimée */}
                 </div>
 
-                <Button 
-                  variant="outline" 
+                <Button
                   onClick={async () => {
                     try {
                       await saveSettings(paramSettings);
@@ -441,7 +444,7 @@ const ToolDetailPage = () => {
                       toast.error("Erreur lors de la sauvegarde des paramètres");
                     }
                   }}
-                  className="w-full"
+                  className="btn-secondary w-full"
                   disabled={executing}
                 >
                   {executing ? (
@@ -464,7 +467,7 @@ const ToolDetailPage = () => {
             {/* Zone principale - Layout vertical */}
             <div className="flex flex-col gap-6">
               {/* Container Zone d'entrée - EN HAUT */}
-              <div className="bg-white rounded-lg shadow-lg border-0 w-full">
+              <div className="card-static w-full">
                 <CardHeader>
                   <CardTitle>Zone d'entrée</CardTitle>
                   <CardDescription>Configurez votre article de blog SEO</CardDescription>
@@ -549,8 +552,7 @@ const ToolDetailPage = () => {
                       <Button
                         type="submit"
                         disabled={executing || !formData.theme?.trim() || !formData.clientType}
-                        className="text-white"
-                        style={{ backgroundColor: '#ff5932' }}
+                        className="btn-primary"
                       >
                         {executing ? (
                           <>
@@ -567,23 +569,23 @@ const ToolDetailPage = () => {
               </div>
 
               {/* Container Résultat - EN BAS */}
-              <div className="bg-white rounded-lg shadow-lg border-0 w-full">
+              <div className="card-static w-full">
                 <CardHeader>
                   <CardTitle>Résultat</CardTitle>
                   <CardDescription>Le résultat généré apparaîtra ici</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!result ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-[var(--text-muted)]">
                       <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                       <p>Le résultat s'affichera ici</p>
                       <p className="text-sm">Remplissez le formulaire et cliquez sur "Générer"</p>
                     </div>
                   ) : result === "Génération en cours..." ? (
                     <div className="text-center py-12">
-                      <Loader2 className="h-12 w-12 mx-auto mb-3 text-orange-500 animate-spin" />
-                      <p className="text-gray-600">Génération en cours</p>
-                      <p className="text-sm text-gray-500">Veuillez patienter...</p>
+                      <Loader2 className="h-12 w-12 mx-auto mb-3 animate-spin" style={{ color: 'var(--btn-primary-bg)' }} />
+                      <p className="text-[var(--text-primary)]">Génération en cours</p>
+                      <p className="text-sm text-[var(--text-muted)]">Veuillez patienter...</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -615,18 +617,16 @@ const ToolDetailPage = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
                           onClick={copyToClipboard}
-                          className="flex-1"
+                          className="btn-secondary flex-1"
                         >
                           <Copy className="h-4 w-4 mr-2" />
                           Copier
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
                           onClick={downloadResult}
-                          className="flex-1"
+                          className="btn-secondary flex-1"
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Télécharger
@@ -643,33 +643,130 @@ const ToolDetailPage = () => {
       case 'informations':
         return (
           <div className="w-full">
-            {/* En-tête avec informations de l'outil */}
-            <div className="bg-white rounded-lg shadow-lg border-0">
-              <div className="p-8">
-                {/* Première ligne - Image et Titre/Description */}
-                <div className="flex items-start gap-5 mb-6">
-                  {/* Image */}
-                  <div className="flex-shrink-0">
-                    {tool.image_url ? (
-                      <img 
-                        src={tool.image_url} 
-                        alt={tool.title}
-                        className="w-32 h-32 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-lg">
-                        <div className="text-4xl">🔧</div>
-                      </div>
-                    )}
+            {/* VERSION MOBILE - Image, Titre et Description hors du container */}
+            <div className="block md:hidden mb-6">
+              {/* Image à gauche + Titre à droite */}
+              <div className="flex items-start gap-4 mb-4">
+                {/* Image */}
+                <div className="flex-shrink-0">
+                  {tool.image_url ? (
+                    <img
+                      src={tool.image_url}
+                      alt={tool.title}
+                      className="w-20 h-20 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded-lg">
+                      <div className="text-2xl">🔧</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Titre */}
+                <div className="flex-1">
+                  <h1 style={{ fontFamily: 'var(--font-base)', fontSize: 'var(--h1-size)', fontWeight: 'var(--h1-weight)', color: 'var(--h1-color)', marginBottom: '0' }}>{tool.title}</h1>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mb-6">
+                <p className="text-[var(--text-muted)] leading-relaxed text-justify">{tool.description}</p>
+              </div>
+
+              {/* Tags */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Tags</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {tool.tags && tool.tags.length > 0 ? tool.tags.map((tag, index) => (
+                    <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                      {tag}
+                    </span>
+                  )) : (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                      Outil SEO
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Trois containers en colonnes */}
+              <div className="grid grid-cols-1 gap-4 mb-6">
+                {/* Container Temps estimé */}
+                <div className="bg-gray-100 rounded-lg p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Clock className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-600">Temps estimé</span>
                   </div>
-                  
-                  {/* Titre et description - 20px à droite de l'image */}
-                  <div style={{ marginLeft: '20px' }} className="flex-1">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">{tool.title}</h1>
-                    <p className="text-gray-600 leading-relaxed">{tool.description}</p>
+                  <div className="text-lg font-bold text-gray-900">
+                    {tool.estimated_time || '5-10 minutes'}
                   </div>
                 </div>
 
+                {/* Container Crédits */}
+                <div className="bg-white border-2 border-gray-200 rounded-lg p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <img src="/credit-3D.png" alt="Crédit" className="w-5 h-5" />
+                    <span className="text-sm font-medium text-gray-600">Coût</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {tool.credits_cost} crédits
+                  </div>
+                </div>
+
+                {/* Container Catégorie */}
+                <div
+                  className="rounded-lg p-4 text-center"
+                  style={{
+                    backgroundColor: getCategoryColor(tool.category),
+                    color: tool.category === 'Finance' ? '#000000' : '#ffffff'
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                    </svg>
+                    <span className="text-sm font-medium">Catégorie</span>
+                  </div>
+                  <div className="text-lg font-bold">
+                    {tool.category}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* VERSION DESKTOP et contenu commun */}
+            <div className="card-static">
+              <div className="p-8">
+                {/* VERSION DESKTOP - Image, Titre et Description dans le container */}
+                <div className="hidden md:block mb-6">
+                  <div className="flex items-start gap-5 mb-6">
+                    {/* Image */}
+                    <div className="flex-shrink-0">
+                      {tool.image_url ? (
+                        <img
+                          src={tool.image_url}
+                          alt={tool.title}
+                          className="w-32 h-32 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-lg">
+                          <div className="text-4xl">🔧</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Titre et description */}
+                    <div className="flex-1 text-left ml-5">
+                      <h1 style={{ fontFamily: 'var(--font-base)', fontSize: 'var(--h1-size)', fontWeight: 'var(--h1-weight)', color: 'var(--h1-color)', marginBottom: '1rem' }}>{tool.title}</h1>
+                      <p className="text-[var(--text-muted)] leading-relaxed text-justify">{tool.description}</p>
+                    </div>
+                  </div>
+                </div>
                 {/* Tags avec icône étiquette */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
@@ -716,9 +813,9 @@ const ToolDetailPage = () => {
                   </div>
 
                   {/* Container Catégorie */}
-                  <div 
-                    className="rounded-lg p-4 text-center" 
-                    style={{ 
+                  <div
+                    className="rounded-lg p-4 text-center"
+                    style={{
                       backgroundColor: getCategoryColor(tool.category),
                       color: tool.category === 'Finance' ? '#000000' : '#ffffff' // Texte noir pour Finance (gris clair)
                     }}
@@ -737,43 +834,101 @@ const ToolDetailPage = () => {
               </div>
             </div>
 
-            {/* NOUVEAU: Container transparent avec Fonctionnalités (gauche) + Vidéo (droite) */}
+            {/* Container combiné Fonctionnalités + Vidéo */}
             <div className="mt-6 mb-6">
-              <div className="bg-transparent grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* GAUCHE: Fonctionnalités */}
-                <div className="bg-white rounded-lg shadow-lg border-0">
-                  <div className="p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">Fonctionnalités</h2>
-                    <ul className="space-y-3">
-                      {tool.features && tool.features.length > 0 ? tool.features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: '#ff5932' }}></div>
-                          <span className="text-gray-700">{feature}</span>
-                        </li>
-                      )) : (
-                        <li className="flex items-start gap-3">
-                          <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: '#ff5932' }}></div>
-                          <span className="text-gray-700">Génération de contenu optimisé</span>
-                        </li>
-                      )}
-                    </ul>
+              {/* Version Mobile - Empilé verticalement */}
+              <div className="block md:hidden space-y-6">
+                {/* Fonctionnalités */}
+                <div>
+                  <h2 style={{ fontFamily: 'var(--h2-font)', fontSize: 'var(--h2-size)', fontWeight: 'var(--h2-weight)', color: 'var(--h2-color)', marginBottom: '1rem' }}>Fonctionnalités</h2>
+                  <div className="flex flex-col gap-2">
+                    {tool.features && tool.features.length > 0 ? tool.features.map((feature, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm shadow-sm border border-gray-100 w-full"
+                      >
+                        <CheckCircle className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <span className="text-[var(--text-primary)] font-medium">{feature}</span>
+                      </div>
+                    )) : (
+                      <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm shadow-sm border border-gray-100 w-full">
+                        <CheckCircle className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <span className="text-[var(--text-primary)] font-medium">Génération de contenu optimisé</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                
-                {/* DROITE: Vidéo */}
-                <div className="flex justify-center items-start">
-                  <div className="relative bg-transparent rounded-xl overflow-hidden shadow-2xl" style={{ width: '100%', maxWidth: '600px', aspectRatio: '16/9' }}>
+
+                {/* Vidéo */}
+                <div>
+                  <h2 style={{ fontFamily: 'var(--h2-font)', fontSize: 'var(--h2-size)', fontWeight: 'var(--h2-weight)', color: 'var(--h2-color)', marginBottom: '1rem' }}>Tutoriel vidéo</h2>
+                  <div className="flex justify-center items-start">
+                    <div className="relative bg-transparent rounded-xl overflow-hidden shadow-2xl" style={{ width: '100%', maxWidth: '600px', aspectRatio: '16/9' }}>
+                      {tool.video_url ? (
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          src={tool.video_url.includes('youtube.com') || tool.video_url.includes('youtu.be')
+                            ? tool.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
+                            : tool.video_url
+                          }
+                          title="Vidéo de démonstration"
+                          style={{ border: 0 }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full rounded-xl"
+                        ></iframe>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-xl">
+                          <div className="text-center">
+                            <Play className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                            <p className="text-gray-600">Vidéo de démonstration</p>
+                            <p className="text-sm text-gray-500">Aucune vidéo disponible</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Version Desktop - Côte à côte */}
+              <div className="hidden md:grid md:grid-cols-2 gap-8">
+                {/* Fonctionnalités à gauche */}
+                <div className="flex flex-col">
+                  <h2 style={{ fontFamily: 'var(--h2-font)', fontSize: 'var(--h2-size)', fontWeight: 'var(--h2-weight)', color: 'var(--h2-color)', marginBottom: '1rem' }}>Fonctionnalités</h2>
+                  <div className="flex flex-col gap-2">
+                    {tool.features && tool.features.length > 0 ? tool.features.map((feature, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm shadow-sm border border-gray-100 w-full"
+                      >
+                        <CheckCircle className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <span className="text-[var(--text-primary)] font-medium">{feature}</span>
+                      </div>
+                    )) : (
+                      <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm shadow-sm border border-gray-100 w-full">
+                        <CheckCircle className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <span className="text-[var(--text-primary)] font-medium">Génération de contenu optimisé</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Vidéo à droite */}
+                <div className="flex flex-col">
+                  <h2 style={{ fontFamily: 'var(--h2-font)', fontSize: 'var(--h2-size)', fontWeight: 'var(--h2-weight)', color: 'var(--h2-color)', marginBottom: '1rem' }}>Tutoriel vidéo</h2>
+                  <div className="relative bg-transparent rounded-xl overflow-hidden shadow-2xl w-full" style={{ aspectRatio: '16/9' }}>
                     {tool.video_url ? (
                       <iframe
                         width="100%"
                         height="100%"
-                        src={tool.video_url.includes('youtube.com') || tool.video_url.includes('youtu.be') 
+                        src={tool.video_url.includes('youtube.com') || tool.video_url.includes('youtu.be')
                           ? tool.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
                           : tool.video_url
                         }
                         title="Vidéo de démonstration"
-                        frameBorder="0"
+                        style={{ border: 0 }}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         className="w-full h-full rounded-xl"
@@ -801,15 +956,15 @@ const ToolDetailPage = () => {
             {history.length === 0 ? (
               <div className="text-center py-12">
                 <History className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune utilisation pour le moment</h3>
-                <p className="text-gray-500">Votre historique d'utilisation apparaîtra ici après avoir utilisé l'outil.</p>
+                <h3 style={{ fontFamily: 'var(--h3-font)', fontSize: 'var(--h3-size)', fontWeight: 'var(--h3-weight)', color: 'var(--h3-color)', marginBottom: '0.5rem' }}>Aucune utilisation pour le moment</h3>
+                <p className="text-[var(--text-muted)]">Votre historique d'utilisation apparaîtra ici après avoir utilisé l'outil.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {history.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer border-0"
+                  <div
+                    key={item.id}
+                    className="card-clickable"
                     onClick={() => openHistoryModal(item)}
                   >
                     <div className="p-4">
@@ -841,7 +996,7 @@ const ToolDetailPage = () => {
                              item.status === 'failed' ? 'Échoué' :
                              item.status === 'processing' ? 'En cours' : 'En attente'}
                           </Badge>
-                          <Button variant="outline" size="sm">
+                          <Button size="sm" className="btn-secondary">
                             Voir le résultat
                           </Button>
                         </div>
@@ -860,8 +1015,8 @@ const ToolDetailPage = () => {
   };
 
   return (
-  <div className="min-h-screen" style={{ background: '#f4f4f1' }}>
-      <div 
+  <div className="min-h-screen bg-[var(--bg-page)]">
+      <div
         className="max-w-7xl mx-auto px-4 py-8"
         style={{ width: '90%', maxWidth: '1400px' }}
       >
@@ -869,7 +1024,7 @@ const ToolDetailPage = () => {
         <Button
           variant="ghost"
           onClick={handleBackClick}
-          className="mb-6 p-2 hover:bg-transparent group text-gray-900 hover:text-gray-900"
+          className="mb-6 p-2 hover:bg-transparent group text-[var(--text-primary)] hover:text-[var(--text-primary)]"
         >
           <ArrowLeft className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:-translate-x-1" />
           <span className="transition-transform duration-200 group-hover:-translate-x-0.5 inline-block">
@@ -880,16 +1035,16 @@ const ToolDetailPage = () => {
         {/* Container principal transparent */}
         <Card className="bg-transparent shadow-none border-0 rounded-lg overflow-hidden">
           {/* Barre d'onglets style popup livrable */}
-          <div className="border-b border-gray-200 bg-white rounded-lg">
+          <div className="border-b border-[var(--border-default)] bg-white rounded-lg">
             <div className="flex overflow-x-auto">
               <button
                 onClick={() => handleTabChange('informations')}
                 className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'informations'
-                    ? "border-b-2 text-gray-900"
-                    : "text-gray-600 hover:text-gray-800"
+                    ? "border-b-2 text-[var(--text-primary)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
-                style={activeTab === 'informations' ? { borderBottomColor: '#ff5932' } : {}}
+                style={activeTab === 'informations' ? { borderBottomColor: 'var(--btn-primary-bg)' } : {}}
               >
                 <FileText className="h-4 w-4" />
                 Informations
@@ -898,10 +1053,10 @@ const ToolDetailPage = () => {
                 onClick={() => handleTabChange('parametres')}
                 className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'parametres'
-                    ? "border-b-2 text-gray-900"
-                    : "text-gray-600 hover:text-gray-800"
+                    ? "border-b-2 text-[var(--text-primary)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
-                style={activeTab === 'parametres' ? { borderBottomColor: '#ff5932' } : {}}
+                style={activeTab === 'parametres' ? { borderBottomColor: 'var(--btn-primary-bg)' } : {}}
               >
                 <Settings className="h-4 w-4" />
                 Paramètres généraux
@@ -910,10 +1065,10 @@ const ToolDetailPage = () => {
                 onClick={() => handleTabChange('utilisation')}
                 className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'utilisation'
-                    ? "border-b-2 text-gray-900"
-                    : "text-gray-600 hover:text-gray-800"
+                    ? "border-b-2 text-[var(--text-primary)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
-                style={activeTab === 'utilisation' ? { borderBottomColor: '#ff5932' } : {}}
+                style={activeTab === 'utilisation' ? { borderBottomColor: 'var(--btn-primary-bg)' } : {}}
               >
                 <Zap className="h-4 w-4" />
                 Utilisation
@@ -922,10 +1077,10 @@ const ToolDetailPage = () => {
                 onClick={() => handleTabChange('historique')}
                 className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'historique'
-                    ? "border-b-2 text-gray-900"
-                    : "text-gray-600 hover:text-gray-800"
+                    ? "border-b-2 text-[var(--text-primary)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
-                style={activeTab === 'historique' ? { borderBottomColor: '#ff5932' } : {}}
+                style={activeTab === 'historique' ? { borderBottomColor: 'var(--btn-primary-bg)' } : {}}
               >
                 <History className="h-4 w-4" />
                 Historique

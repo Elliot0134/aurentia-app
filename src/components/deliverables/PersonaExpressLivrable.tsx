@@ -7,6 +7,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface PersonaData {
   identite: string;
@@ -56,6 +58,12 @@ const PersonaExpressLivrable: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('Particulier');
 
   const { projectId } = useParams<{ projectId: string }>();
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('persona-express');
+  }, [registerDeliverable]);
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -87,6 +95,7 @@ const PersonaExpressLivrable: React.FC = () => {
       if (!projectId) {
         setError("Project ID not found in URL.");
         setLoading(false);
+        setDeliverableLoaded('persona-express');
         return;
       }
 
@@ -118,10 +127,11 @@ const PersonaExpressLivrable: React.FC = () => {
       }
 
       setLoading(false);
+      setDeliverableLoaded('persona-express');
     };
 
     fetchAllPersonaData();
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
 
   useEffect(() => {
     console.log("Persona Data (Particulier):", personaData);
@@ -447,6 +457,11 @@ const PersonaExpressLivrable: React.FC = () => {
       )}
     </>
   );
+
+  // Show skeleton while global loading OR individual loading
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   return (
     <>

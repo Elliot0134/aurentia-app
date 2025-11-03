@@ -11,6 +11,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface AnalyseDeLaConcurrenceData {
   free_direct_definition: string;
@@ -82,9 +84,11 @@ interface AnalyseDeLaConcurrenceLivrableProps {
 
 const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrableProps> = ({ projectStatus }) => {
   const [concurrenceData, setConcurrenceData] = useState<AnalyseDeLaConcurrenceData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeDefinition, setActiveDefinition] = useState<'direct' | 'indirect' | 'potentiel'>('direct');
   const [activeCompetitor, setActiveCompetitor] = useState<'principal' | 'secondaire' | 'concurrent3' | 'concurrent4' | 'concurrent5' | 'concurrent6' | 'concurrent7' | 'concurrent8'>('principal');
   const { projectId } = useParams<{ projectId: string }>();
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
 
   const deliverableColor = "#6191e2";
   const title = "Concurrence";
@@ -107,25 +111,36 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
     deliverableTitle: 'Analyse de la Concurrence',
   });
 
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('analyse-concurrence');
+  }, [registerDeliverable]);
+
   useEffect(() => {
     const fetchData = async () => {
-      if (projectId) {
-        const { data, error } = await supabase
-          .from('concurrence')
-          .select('*')
-          .eq('project_id', projectId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching concurrence data:', error);
-        } else {
-          setConcurrenceData(data);
-        }
+      if (!projectId) {
+        setLoading(false);
+        setDeliverableLoaded('analyse-concurrence');
+        return;
       }
+
+      const { data, error } = await supabase
+        .from('concurrence')
+        .select('*')
+        .eq('project_id', projectId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching concurrence data:', error);
+      } else {
+        setConcurrenceData(data);
+      }
+      setLoading(false);
+      setDeliverableLoaded('analyse-concurrence');
     };
 
     fetchData();
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
 
   // Listen for deliverables refresh event
   useEffect(() => {
@@ -133,31 +148,38 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
       const { projectId: refreshProjectId } = event.detail;
       if (refreshProjectId === projectId) {
         console.log('🔄 Refreshing AnalyseDeLaConcurrenceLivrable data...');
+        setLoading(true);
         const fetchData = async () => {
-          if (projectId) {
-            const { data, error } = await supabase
-              .from('concurrence')
-              .select('*')
-              .eq('project_id', projectId)
-              .single();
-
-            if (error) {
-              console.error('Error fetching concurrence data:', error);
-            } else {
-              setConcurrenceData(data);
-            }
+          if (!projectId) {
+            setLoading(false);
+            setDeliverableLoaded('analyse-concurrence');
+            return;
           }
+
+          const { data, error } = await supabase
+            .from('concurrence')
+            .select('*')
+            .eq('project_id', projectId)
+            .single();
+
+          if (error) {
+            console.error('Error fetching concurrence data:', error);
+          } else {
+            setConcurrenceData(data);
+          }
+          setLoading(false);
+          setDeliverableLoaded('analyse-concurrence');
         };
         fetchData();
       }
     };
 
     window.addEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
-    
+
     return () => {
       window.removeEventListener('refreshDeliverables', handleRefreshDeliverables as EventListener);
     };
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
 
   const formatRecommendationText = (text: string | null | undefined): JSX.Element | null => {
     if (!text) return null;
@@ -354,6 +376,10 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
       </Accordion>
     </>
   );
+
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   return (
     <>

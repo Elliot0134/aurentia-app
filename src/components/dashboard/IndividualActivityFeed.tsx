@@ -20,26 +20,28 @@ export const IndividualActivityFeed = ({
 
   if (loading) {
     return (
-      <div className={cn("flex items-center justify-center py-8", className)}>
-        <Loader2 className="h-6 w-6 animate-spin text-aurentia-pink" />
+      <div className={cn("spinner-container", className)}>
+        <div className="spinner"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={cn("text-center py-8", className)}>
-        <p className="text-red-600">Erreur: {error}</p>
+      <div className={cn("error-state", className)}>
+        <Activity className="error-state-icon" />
+        <h3 className="error-state-title">Erreur de chargement</h3>
+        <p className="error-state-message">{error}</p>
       </div>
     );
   }
 
   if (activities.length === 0) {
     return (
-      <div className={cn("text-center py-8", className)}>
-        <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600 font-medium">Aucune activité récente</p>
-        <p className="text-sm text-gray-500 mt-1">
+      <div className={cn("empty-state", className)}>
+        <Activity className="empty-state-icon" />
+        <h3 className="empty-state-title">Aucune activité récente</h3>
+        <p className="empty-state-description">
           Commencez à travailler sur vos projets pour voir votre activité ici
         </p>
       </div>
@@ -84,24 +86,24 @@ export const IndividualActivityFeed = ({
 
         return (
           <div key={group}>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2 px-2">{group}</h3>
+            <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-2">{group}</h3>
             <div className="space-y-2">
               {groupedActivities[group].map((activity: any) => (
                 <div
                   key={activity.id}
-                  className="flex items-start gap-3 p-3 bg-white border rounded-lg hover:border-aurentia-pink/30 hover:shadow-sm transition-all cursor-pointer"
+                  className="flex items-start gap-3 p-4 bg-[#f4f4f5] rounded-lg hover:bg-[#e8e8e9] transition-all duration-200 cursor-pointer group"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-aurentia-pink/10 flex items-center justify-center text-lg">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#ff592b]/10 flex items-center justify-center text-lg transition-transform duration-200 group-hover:scale-110">
                     {activity.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-semibold text-text-primary">
                       {activity.title}
                     </p>
-                    <p className="text-sm text-gray-600 mt-0.5">
+                    <p className="text-sm text-text-muted mt-0.5">
                       {activity.description}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-text-muted mt-1">
                       {formatDistanceToNow(new Date(activity.created_at), {
                         addSuffix: true,
                         locale: fr
@@ -118,10 +120,9 @@ export const IndividualActivityFeed = ({
       {showLoadMore && hasMore && (
         <div className="text-center pt-4">
           <Button
-            variant="outline"
             onClick={loadMore}
             disabled={loadingMore}
-            className="w-full"
+            className="btn-secondary w-full"
           >
             {loadingMore ? (
               <>

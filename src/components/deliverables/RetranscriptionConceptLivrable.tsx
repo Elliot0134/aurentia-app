@@ -6,6 +6,8 @@ import { useParams } from 'react-router-dom';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import RetranscriptionConceptModal from './RetranscriptionConceptModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface ConceptContent {
   projectName: string;
@@ -66,9 +68,16 @@ type ProjectSummary = {
 
 const RetranscriptionConceptLivrable: React.FC = () => {
   const [projectSummary, setProjectSummary] = useState<ProjectSummary | null>(null);
+  const [loading, setLoading] = useState(true);
   const { projectId } = useParams<{ projectId: string }>();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('retranscription-concept');
+  }, [registerDeliverable]);
 
   // Initialize deliverable for comments
   const { deliverableId, organizationId } = useDeliverableWithComments({
@@ -145,6 +154,7 @@ const RetranscriptionConceptLivrable: React.FC = () => {
   useEffect(() => {
     const fetchProjectSummary = async () => {
       if (projectId) {
+        setLoading(true);
         const { data, error } = await supabase
           .from('project_summary')
           .select('*')
@@ -156,11 +166,18 @@ const RetranscriptionConceptLivrable: React.FC = () => {
         } else {
           setProjectSummary(data as unknown as ProjectSummary);
         }
+        setLoading(false);
+        setDeliverableLoaded('retranscription-concept');
       }
     };
 
     fetchProjectSummary();
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
+
+  // Show skeleton while global loading OR individual loading
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   const title = projectSummary?.nom_projet || "Retranscription du concept";
   const description = projectSummary?.description_synthetique || "Synthèse complète de votre projet d'entreprise";

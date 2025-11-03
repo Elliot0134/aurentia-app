@@ -30,7 +30,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   organizationLogoUrl,
 }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_8px_-2px_rgba(0,0,0,0.15)] sticky top-0 z-10 mx-4"> {/* Added mx-4 */}
+    <div className="bg-[var(--bg-card-static)] border border-gray-200 rounded-2xl shadow-sm hover:shadow-md sticky top-0 z-10 mx-4 transition-shadow"
+         style={{
+           transitionDuration: 'var(--transition-base)',
+           transitionTimingFunction: 'var(--ease-default)'
+         }}> {/* Contour gris clair ajouté */}
       <div className="mx-auto px-3 sm:px-4 py-3 sm:py-4">
         {/* Layout en une seule ligne avec tout aligné */}
         <div className="flex items-center gap-3 w-full">
@@ -52,12 +56,12 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             {isHistoryLoading ? (
               // Chargement en cours
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-500">Chargement des conversations...</span>
+                <div className="spinner" style={{ width: '1rem', height: '1rem' }}></div>
+                <span className="text-sm text-[var(--text-muted)]">Chargement des conversations...</span>
               </div>
             ) : conversationHistory.length === 0 ? (
               // Aucun historique -> Titre simple
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Nouvelle conversation</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-[var(--text-primary)] truncate font-sans">Nouvelle conversation</h2>
             ) : (
               // Il y a de l'historique -> Select pour navigation
               <Select
@@ -66,17 +70,18 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               >
                 <SelectTrigger className="w-full max-w-xs sm:max-w-sm h-9 border-0 focus:ring-0 focus:ring-offset-0 focus:outline-none">
                   <SelectValue>
-                    <span className="truncate">
+                    <span className="truncate text-[var(--text-primary)]">
                       {currentConversation ? currentConversation.title : 'Sélectionner une conversation'}
                     </span>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="min-w-[400px]">
                   {conversationHistory.map((conv) => (
-                    <SelectItem key={conv.id} value={conv.id} className="hover:bg-[#F3F4F6]">
+                    <SelectItem key={conv.id} value={conv.id} className="hover:bg-[var(--btn-secondary-bg-hover)] transition-colors"
+                                style={{ transitionDuration: 'var(--transition-fast)' }}>
                       <div className="flex items-center w-full">
-                        <span className="truncate flex-1 min-w-0">{conv.title}</span>
-                        <span className="text-xs text-gray-500 flex-shrink-0 ml-auto pl-4">
+                        <span className="truncate flex-1 min-w-0 text-[var(--text-primary)]">{conv.title}</span>
+                        <span className="text-xs text-[var(--text-muted)] flex-shrink-0 ml-auto pl-4">
                           {new Date(conv.updatedAt).toLocaleDateString('fr-FR')}
                         </span>
                       </div>
@@ -106,12 +111,13 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               variant="ghost"
               size="sm"
               onClick={onNewChat}
-              className="text-gray-500 hover:text-white px-2 sm:px-3"
+              className="text-[var(--text-muted)] hover:text-white hover:bg-[var(--btn-primary-bg)] px-2 sm:px-3 transition-all"
+              style={{ transitionDuration: 'var(--transition-fast)' }}
             >
               <Plus size={16} className="mr-0 sm:mr-1" />
               <span className="hidden sm:inline text-sm">Nouveau</span>
             </Button>
-            
+
             {/* Boutons d'édition - uniquement si conversation active */}
             {currentConversation && (
               <>
@@ -119,7 +125,9 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onRenameConversation}
-                  className="text-gray-500 hover:text-white p-2"
+                  className="text-[var(--text-muted)] hover:text-white hover:bg-[var(--btn-primary-bg)] p-2 transition-all"
+                  style={{ transitionDuration: 'var(--transition-fast)' }}
+                  aria-label="Renommer la conversation"
                 >
                   <Pencil size={14} />
                 </Button>
@@ -127,7 +135,9 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onDeleteConversation}
-                  className="text-gray-500 hover:text-white p-2"
+                  className="text-[var(--text-muted)] hover:text-white hover:bg-[var(--btn-danger-bg)] p-2 transition-all"
+                  style={{ transitionDuration: 'var(--transition-fast)' }}
+                  aria-label="Supprimer la conversation"
                 >
                   <Trash2 size={14} />
                 </Button>

@@ -110,7 +110,8 @@ const OnboardingFlow = () => {
           !!data.firstName &&
           !!data.birthDate?.day &&
           !!data.birthDate?.month &&
-          !!data.birthDate?.year
+          !!data.birthDate?.year &&
+          !!data.country
         );
       case 2:
         return !!data.discoverySource;
@@ -266,9 +267,9 @@ const OnboardingFlow = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between py-12 px-4 pb-24 md:pb-12">
+    <div className="min-h-screen flex flex-col items-center justify-between py-12 px-4 pb-32 md:pb-12">
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center w-full">
+      <div className="flex-1 flex items-center justify-center w-full pb-8 md:pb-0">
         {renderSlide()}
       </div>
 

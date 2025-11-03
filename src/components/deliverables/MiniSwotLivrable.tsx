@@ -5,6 +5,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface MiniSwotData {
   economique_opportunite_1: string | null;
@@ -32,8 +34,14 @@ const MiniSwotLivrable: React.FC = () => {
   const [swotData, setSwotData] = useState<MiniSwotData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
 
   const { projectId } = useParams<{ projectId: string }>();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('mini-swot');
+  }, [registerDeliverable]);
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -54,6 +62,7 @@ const MiniSwotLivrable: React.FC = () => {
       if (!projectId) {
         setError("Project ID not found in URL.");
         setLoading(false);
+        setDeliverableLoaded('mini-swot');
         return;
       }
 
@@ -70,10 +79,11 @@ const MiniSwotLivrable: React.FC = () => {
         setSwotData(data);
       }
       setLoading(false);
+      setDeliverableLoaded('mini-swot');
     };
 
     fetchData();
-  }, [projectId, supabase]);
+  }, [projectId, setDeliverableLoaded]);
 
   const title = "Mini SWOT";
   const description = "Analyse stratégique simplifiée des forces, faiblesses, opportunités et menaces";
@@ -169,6 +179,11 @@ const MiniSwotLivrable: React.FC = () => {
       )}
     </>
   );
+
+  // Show skeleton while global loading OR individual loading
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   return (
     <>

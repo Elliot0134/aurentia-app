@@ -19,29 +19,34 @@ const HarmonizedDeliverableCard: React.FC<HarmonizedDeliverableCardProps> = ({
 }) => {
   return (
     <div
-      className={`border border-gray-200 rounded-xl p-4 mb-4 text-white cursor-pointer flex justify-between h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${className}`}
+      className={`bg-[#f4f4f5] rounded-xl px-4 py-2 cursor-pointer transition-all duration-200 ease-in-out hover:bg-[#e8e8e9] h-full mb-4 ${className}`}
       onClick={onClick}
-      style={{ backgroundColor: 'white' }}
     >
-      <div className="flex-grow flex flex-col">
-        <h2 className="text-xl font-bold mb-2 text-black">{title}</h2>
-        {description && <p className="text-gray-700 mb-4 line-clamp-3">{description}</p>}
-        <div className="flex-grow">
-          {/* Content will be dynamically generated */}
+      <div className="flex gap-4 h-full items-center">
+        {/* Left side: Icon centered vertically */}
+        <div className="flex-shrink-0">
+          <img src={iconSrc} alt="Deliverable Icon" className="w-12 h-12 object-contain" />
         </div>
-        {avis && (
-          <div className="flex-shrink-0 mt-auto">
-            <button
-              className="text-xs px-2 py-1 rounded-full cursor-default pointer-events-none"
-              style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}
-            >
-              {avis}
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="flex-shrink-0">
-        <img src={iconSrc} alt="Deliverable Icon" className="w-8 h-8 object-cover self-start" />
+
+        {/* Right side: Content */}
+        <div className="flex-grow flex flex-col min-w-0">
+          <h2 className="text-base font-sans font-semibold mb-1.5 text-text-primary">{title}</h2>
+          {description && (
+            <p className="text-xs font-sans text-text-muted mb-2 line-clamp-2 flex-grow">
+              {description}
+            </p>
+          )}
+          {avis && (
+            <div className="flex-shrink-0 mt-auto">
+              <span
+                className="inline-block text-xs font-sans px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: '#FEF2ED', color: '#FF5932', border: '1px solid #FFBDA4' }}
+              >
+                {avis}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

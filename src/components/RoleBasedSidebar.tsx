@@ -1,6 +1,6 @@
 import { useState, useEffect, memo, useRef, useMemo } from "react";
 import { UserProfile } from '@/types/userTypes';
-import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot, Plus, Info, Mail, Send, Database, ChevronDown, ChevronRight, Plug } from 'lucide-react';
+import { LayoutDashboard, FileText, MessageSquare, Users, Settings, Building, BarChart3, UserCheck, Code, Briefcase, Handshake, LandPlot, ChevronLeft, Library, Coins, LogOut, Zap, Menu, X, FormInput, Calendar, GraduationCap, Bot, Plus, Info, Mail, Send, Database, Plug } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AurentiaLogo from './AurentiaLogo';
@@ -23,7 +23,6 @@ import PublicOrganizationsModal from "./PublicOrganizationsModal";
 import OrganizationSetupGuideModal from "./OrganizationSetupGuideModal";
 import { useUnreadCount } from "@/hooks/messages/useUnreadCount";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { getSidebarContext, setSidebarContext, detectSidebarContextFromPath } from "@/hooks/useSidebarContext";
 
 interface MenuItem {
@@ -61,43 +60,16 @@ interface RoleBasedSidebarProps {
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
-// SidebarCategory Component - handles collapsible categories
-interface SidebarCategoryProps {
+// SidebarSection Component - ElevenLabs-style sections without dropdowns
+interface SidebarSectionProps {
   category: MenuCategory;
   isCollapsed: boolean;
   location: ReturnType<typeof useLocation>;
-  userRole: string;
 }
 
-const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarCategoryProps) => {
+const SidebarSection = ({ category, isCollapsed, location }: SidebarSectionProps) => {
   const navigate = useNavigate();
-  const { navigateToOrganisation, loading: orgNavigationLoading } = useOrganisationNavigation();
   const { loading: organizationLoading } = useUserOrganization();
-
-  const storageKey = `sidebar-category-${userRole}-${category.name}-expanded`;
-  const [isExpanded, setIsExpanded] = useState(() => {
-    const stored = localStorage.getItem(storageKey);
-    return stored === 'true';
-  });
-
-  // Save expanded state to localStorage
-  useEffect(() => {
-    localStorage.setItem(storageKey, String(isExpanded));
-  }, [isExpanded, storageKey]);
-
-  // Check if any item in this category is active
-  const hasActiveItem = category.items.some(item => {
-    if (!item.path) return false;
-    return (
-      location.pathname === item.path ||
-      (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
-      (item.name === "Assistant IA" && location.pathname.includes("/chatbot/")) ||
-      (item.name === "Automatisations" && location.pathname.startsWith("/automatisations")) ||
-      (item.name === "Partenaires" && location.pathname.startsWith("/partenaires")) ||
-      (item.name === "Plan d'action" && location.pathname.includes("/plan-action")) ||
-      (item.name === "Messages" && (location.pathname.includes("/messages") || location.pathname === "/messages"))
-    );
-  });
 
   // Helper function to check if an item is active
   const isItemActive = (item: MenuItem) => {
@@ -116,11 +88,11 @@ const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarC
   // Render an item in collapsed mode (icon only with tooltip)
   const renderCollapsedItem = (item: MenuItem, index: number) => {
     if (item.isDivider) {
-      return <div key={`divider-${index}`} className="my-2 border-t border-gray-200 mx-3"></div>;
+      return <div key={`divider-${index}`} className="my-1 border-t border-gray-200"></div>;
     }
 
     const isActive = isItemActive(item);
-    const baseClasses = "relative group flex items-center justify-center py-2 px-3 rounded-md transition-colors";
+    const baseClasses = "relative group flex items-center justify-center py-2 px-2 rounded-md transition-all duration-200";
 
     if (item.isCustomAction && item.isCreateOrg) {
       return (
@@ -163,7 +135,7 @@ const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarC
   // Render an item in normal mode (icon + text)
   const renderNormalItem = (item: MenuItem, index: number) => {
     if (item.isDivider) {
-      return <div key={`divider-${index}`} className="my-2 border-t border-gray-200"></div>;
+      return <div key={`divider-${index}`} className="my-1 border-t border-gray-200"></div>;
     }
 
     if (item.isCustomAction && item.isCreateOrg) {
@@ -173,7 +145,7 @@ const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarC
           onClick={() => navigate('/join-organization')}
           disabled={organizationLoading}
           className={cn(
-            "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+            "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 w-full text-left",
             organizationLoading ? "opacity-50 cursor-not-allowed" : "text-aurentia-pink hover:bg-aurentia-pink/10 font-medium"
           )}
         >
@@ -189,7 +161,7 @@ const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarC
           key={`${item.path}-${item.name}-${index}`}
           to={item.path || '#'}
           className={cn(
-            "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+            "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200",
             getActiveMenuClass(location.pathname === item.path)
           )}
         >
@@ -204,7 +176,7 @@ const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarC
         key={`${item.path}-${item.name}-${index}`}
         to={item.path || '#'}
         className={cn(
-          "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+          "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200",
           getActiveMenuClass(isItemActive(item))
         )}
       >
@@ -214,56 +186,39 @@ const SidebarCategory = ({ category, isCollapsed, location, userRole }: SidebarC
     );
   };
 
-  return (
-    <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <CollapsibleTrigger className="w-full">
-        {isCollapsed ? (
-          // Collapsed mode: icon + small chevron
-          <div className="relative group">
-            <div
-              className={cn(
-                "flex flex-col items-center gap-1 py-2 px-3 rounded-md cursor-pointer transition-colors",
-                hasActiveItem ? "bg-aurentia-pink/10 text-aurentia-pink" : "text-gray-700 hover:bg-gray-100"
-              )}
-            >
-              {category.icon}
-              {isExpanded ? <ChevronDown size={12} className="opacity-70" /> : <ChevronRight size={12} className="opacity-70" />}
-            </div>
-            {/* Tooltip for category name */}
-            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
-              {category.name}
-            </div>
-          </div>
-        ) : (
-          // Normal mode: icon + text + chevron
-          <div
-            className={cn(
-              "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors cursor-pointer",
-              hasActiveItem ? "bg-aurentia-pink/10 text-aurentia-pink font-medium" : "text-gray-700 hover:bg-gray-100"
-            )}
-          >
-            {category.icon}
-            <span className="flex-1 text-left">{category.name}</span>
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </div>
-        )}
-      </CollapsibleTrigger>
+  if (isCollapsed) {
+    // Collapsed mode: keep invisible spacer with same height as label for perfect alignment
+    return (
+      <div className="space-y-0.5">
+        {/* Invisible spacer to match expanded mode label height */}
+        <div className="px-3 pt-3 pb-1">
+          <span className="text-sm font-normal opacity-0 pointer-events-none select-none">
+            {category.name}
+          </span>
+        </div>
+        {category.items.map((item, index) => renderCollapsedItem(item, index))}
+      </div>
+    );
+  }
 
-      <CollapsibleContent className={cn(
-        "mt-1 space-y-1",
-        isCollapsed ? "" : "ml-6"
-      )}>
-        {category.items.map((item, index) => (
-          isCollapsed ? renderCollapsedItem(item, index) : renderNormalItem(item, index)
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
+  // Normal mode: ElevenLabs-style section with label
+  return (
+    <div className="space-y-0.5">
+      {/* Section label - slightly larger, lowercase, muted, not bold */}
+      <div className="px-3 pt-3 pb-1">
+        <span className="text-sm font-normal text-gray-400">
+          {category.name}
+        </span>
+      </div>
+      {/* Section items */}
+      {category.items.map((item, index) => renderNormalItem(item, index))}
+    </div>
   );
 };
 
 // Module-level helper functions
 const getActiveMenuClass = (isActive: boolean) => {
-  if (!isActive) return "text-gray-700 hover:bg-gray-100";
+  if (!isActive) return "text-gray-500 hover:bg-gray-100 hover:text-gray-700";
   return "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white font-medium";
 };
 
@@ -908,25 +863,29 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           {/* Project Selector */}
           {config.showProjectSelector && (
             <div className={cn("mb-4 px-3")}>
-              <ProjectSelector isCollapsed={isCollapsed} userRole={userProfile?.user_role || 'individual'} />
+              <ProjectSelector
+                isCollapsed={isCollapsed}
+                userRole={userProfile?.user_role || 'individual'}
+                onExpandRequest={() => setIsCollapsed(false)}
+              />
             </div>
           )}
         </div>
 
         {/* Scrollable Navigation Content */}
-        <nav ref={navScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+        <nav ref={navScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-1 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
           {/* Render standalone items (always visible) */}
           {config.standaloneItems?.map((item, index) => (
             item.isDivider ? (
-              <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
+              <div key={`divider-${index}`} className="my-2 border-t border-gray-200"></div>
             ) : item.isCustomAction && item.path === "/organisation" ? (
               <button
                 key={`${item.path}-${item.name}-${index}`}
                 onClick={isStaffWithMultipleOrgs(userProfile, userOrganizations) ? () => setSwitchOrgModalOpen(true) : navigateToOrganisation}
                 disabled={orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
-                  (orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 w-full text-left",
+                  (orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                 )}
               >
                 {item.icon}
@@ -949,7 +908,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 }}
                 disabled={organizationLoading}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 w-full text-left",
                   organizationLoading ? "opacity-50 cursor-not-allowed" : "text-aurentia-pink hover:bg-aurentia-pink/10 font-medium"
                 )}
               >
@@ -961,7 +920,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 key={`${item.path}-${item.name}-${index}`}
                 to={item.path || '#'}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors relative",
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 relative",
                   getActiveMenuClass(
                     (location.pathname === item.path && location.pathname !== "/warning") ||
                     (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
@@ -986,25 +945,24 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
 
           {/* Render categories */}
           {config.categories?.map((category, index) => (
-            <SidebarCategory
+            <SidebarSection
               key={`category-${category.name}-${index}`}
               category={category}
               isCollapsed={isCollapsed}
               location={location}
-              userRole={userProfile?.user_role || 'individual'}
             />
           ))}
 
           {/* Render bottom items */}
           {config.bottomItems?.map((item, index) => (
             item.isDivider ? (
-              <div key={`bottom-divider-${index}`} className="my-4 border-t border-gray-200"></div>
+              <div key={`bottom-divider-${index}`} className="my-2 border-t border-gray-200"></div>
             ) : item.isCustomAction && item.name === "Retour à l'espace Adhérent" ? (
               <button
                 key={`${item.path}-${item.name}-${index}`}
                 onClick={() => navigate('/individual/dashboard')}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 w-full text-left text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                 )}
               >
                 {item.icon}
@@ -1015,7 +973,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 key={`${item.path}-${item.name}-${index}`}
                 to={item.path || '#'}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors",
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200",
                   getActiveMenuClass(location.pathname === item.path)
                 )}
               >
@@ -1028,15 +986,15 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           {/* Legacy support for menuItems array */}
           {config.menuItems?.map((item, index) => (
             item.isDivider ? (
-              <div key={`divider-${index}`} className="my-4 border-t border-gray-200"></div>
+              <div key={`divider-${index}`} className="my-2 border-t border-gray-200"></div>
             ) : item.isCustomAction && item.path === "/organisation" ? (
               <button
                 key={`${item.path}-${item.name}-${index}`}
                 onClick={isStaffWithMultipleOrgs(userProfile, userOrganizations) ? () => setSwitchOrgModalOpen(true) : navigateToOrganisation}
                 disabled={orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
-                  (orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 w-full text-left",
+                  (orgNavigationLoading || isUserProfileLoading || userOrganizationsLoading) ? "opacity-50 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                 )}
               >
                 {item.icon}
@@ -1059,7 +1017,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 }}
                 disabled={organizationLoading}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left",
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 w-full text-left",
                   organizationLoading ? "opacity-50 cursor-not-allowed" : "text-aurentia-pink hover:bg-aurentia-pink/10 font-medium"
                 )}
               >
@@ -1071,7 +1029,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 key={`${item.path}-${item.name}-${index}`}
                 onClick={() => navigate('/individual/dashboard')}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors w-full text-left text-gray-700 hover:bg-gray-100"
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 w-full text-left text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                 )}
               >
                 {item.icon}
@@ -1082,7 +1040,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 key={`${item.path}-${item.name}-${index}`}
                 to={item.path || '#'}
                 className={cn(
-                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-colors relative",
+                  "flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 relative",
                   getActiveMenuClass(
                     (location.pathname === item.path && location.pathname !== "/warning") ||
                     (item.name === "Livrables" && location.pathname.includes("/project-business/")) ||
@@ -1117,7 +1075,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
             <>
               <Link
                 to="/individual/profile"
-                className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100")}
+                className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700")}
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-medium">
                   {getUserInitial(user)}
@@ -1129,13 +1087,13 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                   </div>
                 )}
               </Link>
-              <button onClick={handleLogout} className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100 w-full mt-2")}>
+              <button onClick={handleLogout} className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 w-full mt-2")}>
                 <LogOut size={18} />
                 {!isCollapsed && <span>Déconnexion</span>}
               </button>
             </>
           ) : (
-            <Link to="/login" className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-700 hover:bg-gray-100 w-full")}>
+            <Link to="/login" className={cn("flex items-center gap-3 py-2 px-3 rounded-md text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 w-full")}>
               <LogOut size={18} />
               {!isCollapsed && <span>Connexion</span>}
             </Link>

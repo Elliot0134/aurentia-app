@@ -18,6 +18,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface VisionData {
   vision_globale: string;
@@ -71,6 +73,12 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
   const [visionMissionValeursData, setVisionMissionValeursData] = useState<VisionMissionValeursData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'vision' | 'mission' | 'valeurs' | 'coherence_strategique'>('vision');
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('vision-mission-valeurs');
+  }, [registerDeliverable]);
 
   const livrableTitle = "Vision & Missions";
   const livrableDescription = "Définition de l'identité stratégique du projet";
@@ -95,6 +103,7 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
     const fetchVisionMissionValeurs = async () => {
       if (!projectId) {
         setLoading(false);
+        setDeliverableLoaded('vision-mission-valeurs');
         return;
       }
       
@@ -124,14 +133,16 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
         setVisionMissionValeursData(null);
       } finally {
         setLoading(false);
+        setDeliverableLoaded('vision-mission-valeurs');
       }
     };
 
     fetchVisionMissionValeurs();
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
 
-  if (loading) {
-    return <div>Loading...</div>;
+  // Show skeleton while global loading OR individual loading
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
   }
 
   // Contenu spécifique avec les sections Vision/Mission/Valeurs/Cohérence

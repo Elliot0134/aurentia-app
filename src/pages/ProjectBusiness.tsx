@@ -20,7 +20,6 @@ import AnalyseDeMarcheLivrable from "@/components/deliverables/AnalyseDeMarcheLi
 import AnalyseDesRessourcesLivrable from "@/components/deliverables/AnalyseDesRessourcesLivrable";
 import VisionMissionValeursLivrable from "@/components/deliverables/VisionMissionValeursLivrable"; // Import the new deliverable
 import CadreJuridiqueLivrable from "@/components/deliverables/CadreJuridiqueLivrable"; // Import CadreJuridiqueLivrable
-import TemplateLivrable from "@/components/deliverables/TemplateLivrable"; // Import TemplateLivrable
 import BlurredDeliverableWrapper from "@/components/deliverables/BlurredDeliverableWrapper"; // Import the new wrapper
 import DeliverableProgressContainer from "@/components/deliverables/DeliverableProgressContainer"; // Import the new progress container
 import * as DialogPrimitive from "@radix-ui/react-dialog"; // Import DialogPrimitive
@@ -36,6 +35,7 @@ import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 import { useCreditsDialog } from '@/contexts/CreditsDialogContext'; // Import useCreditsDialog
 import { useCreditsSimple } from '@/hooks/useCreditsSimple'; // Import useCreditsSimple
+import { DeliverablesLoadingProvider } from '@/contexts/DeliverablesLoadingContext'; // Import DeliverablesLoadingProvider
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
@@ -246,10 +246,10 @@ const ProjectBusiness = () => {
       "Générer les livrabels premium pour :",
       <>
         <div className="bg-gray-100 p-2 rounded-md flex items-center justify-center text-center mb-4 font-bold w-fit mx-auto">
-          <img src="/credit-3D.png" alt="Crédits" className="h-8 w-8 inline-block mr-2" /> <span className="text-2xl">600</span>
+          <img src="/credit-3D.png" alt="Crédits" className="h-8 w-8 inline-block mr-2" /> <span className="text-2xl font-sans">600</span>
         </div>
-        <DialogDescription className="text-center">
-          <span className="font-bold text-[#2D2D2D]">JeFaisQuoi</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
+        <DialogDescription className="text-center text-base font-sans text-text-muted">
+          <span className="font-bold text-text-primary">JeFaisQuoi</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
         </DialogDescription>
         <DialogFooter className="flex justify-center gap-4 mt-8">
           <Button variant="outline" onClick={closePopup} className="flex-1">
@@ -440,10 +440,10 @@ const ProjectBusiness = () => {
 
   if (!project) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] animate-popup-appear"> {/* Ajusté pour centrer verticalement et ajouter une animation de popup */}
-        <div className="container mx-auto px-4 py-8 text-center bg-white p-8 rounded-lg shadow-lg max-w-lg w-[90vw]"> {/* Ajout de fond blanc, padding, ombre et largeur maximale, avec une largeur de 90vw pour mobile */}
-          <h2 className="text-3xl font-bold mb-4 text-gray-800">Que l'aventure commence !</h2> {/* Nouveau titre */}
-          <p className="text-gray-600 mb-6 text-lg">Créez un nouveau projet pour découvrir tout le potentiel de votre idée.</p> {/* Nouveau sous-titre */}
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] animate-popup-appear">
+        <div className="container mx-auto px-4 py-8 text-center bg-white p-8 rounded-lg shadow-lg max-w-lg w-[90vw]">
+          <h2 className="text-3xl font-heading text-text-primary mb-4">Que l'aventure commence !</h2>
+          <p className="text-base font-sans text-text-muted mb-6">Créez un nouveau projet pour découvrir tout le potentiel de votre idée.</p>
           <Button 
             onClick={() => navigate("/individual/warning")} 
             className="mt-4 px-4 py-2 rounded-lg bg-gradient-primary hover:from-blue-600 hover:to-purple-700 text-white text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
@@ -457,15 +457,16 @@ const ProjectBusiness = () => {
 
   return (
     <ProjectRequiredGuard>
-      <div className="mx-auto py-8 animate-fade-in">
-        <div className="w-[95vw] md:w-11/12 mx-auto px-4">
+      <DeliverablesLoadingProvider>
+        <div className="container-aurentia py-8 animate-fade-in">
+        <div>
           <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
             <div className="flex flex-col w-full md:w-1/2 md:order-first">
-              <h1 className="text-3xl font-semibold">Mes livrables</h1>
+              <h1 className="text-4xl font-heading text-text-primary">Mes livrables</h1>
             </div>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
-              <div className="flex items-center gap-3 w-full">
-                <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
+              <div className="flex items-center gap-3 w-full justify-end">
+                <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
                   if (projectStatus === 'free') {
                     handleUnlockClick();
                   } else {
@@ -477,10 +478,9 @@ const ProjectBusiness = () => {
                     });
                   }
                 }}>
-                  <Settings size={16} />
-                  Modifier
+                  <Settings size={18} />
                 </Button>
-                <Button variant="outline" className="flex items-center gap-2 text-sm w-1/2" onClick={() => {
+                <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
                   if (projectStatus === 'free') {
                     handleUnlockClick();
                   } else {
@@ -492,31 +492,32 @@ const ProjectBusiness = () => {
                     });
                   }
                 }}>
-                  <Download size={16} />
-                  Exporter
+                  <Download size={18} />
+                </Button>
+                <Button
+                  onClick={() => setIsComingSoonOpen(true)}
+                  className="h-10 w-10 p-0 bg-gradient-primary hover:opacity-90 transition-opacity"
+                >
+                  <UserPlus size={18} />
                 </Button>
               </div>
-              <Button
-                onClick={() => setIsComingSoonOpen(true)}
-                className="flex items-center gap-2 bg-gradient-primary hover:opacity-90 transition-opacity w-full"
-                size="sm"
-              >
-                <UserPlus size={16} />
-                Inviter un collaborateur
-              </Button>
             </div>
           </div>
 
           {/* Project Score Cards */}
-          <ProjectScoreCards className="mb-8" /> {/* Ajout de la classe mb-8 pour la marge */}
+          <div className="mb-8">
+            <h2 className="text-xl font-sans font-semibold text-text-primary mb-4">Note du projet</h2>
+            <ProjectScoreCards />
+          </div>
 
           {/* Retranscription du concept Deliverable */}
-          <div className="col-span-full">
+          <div className="col-span-full mb-8">
+            <h2 className="text-xl font-sans font-semibold text-text-primary mb-4">Mes livrables</h2>
             <RetranscriptionConceptLivrable />
           </div>
 
           {/* Level 1 Deliverables (rest of them in a grid) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 items-stretch auto-rows-fr min-h-[200px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-stretch auto-rows-fr min-h-[200px]">
             <div className="md:h-full">
               <PersonaExpressLivrable />
             </div>
@@ -531,30 +532,6 @@ const ProjectBusiness = () => {
             </div>
             <div className="md:h-full">
               <VisionMissionValeursLivrable projectId={projectId} />
-            </div>
-            <div className="md:h-full">
-              <TemplateLivrable
-                title="Livrable Template"
-                description="Ceci est un livrable template pour démonstration."
-                avis="Nouveau"
-                justification_avis="Ceci est un livrable template pour démonstration, avec la nouvelle structure."
-                iconSrc="/icones-livrables/market-icon.png"
-                structure={[
-                  {
-                    title: "Section 1: Introduction",
-                    items: [
-                      { title: "Sous-section 1.1", content: "Contenu de la sous-section 1.1." },
-                      { title: "Sous-section 1.2", content: "Contenu de la sous-section 1.2." },
-                    ],
-                  },
-                  {
-                    title: "Section 2: Détails",
-                    items: [
-                      { title: "Sous-section 2.1", content: "Contenu de la sous-section 2.1." },
-                    ],
-                  },
-                ]}
-              />
             </div>
             {/* Cadre Juridique Livrable */}
             <div className="md:h-full">
@@ -578,7 +555,7 @@ const ProjectBusiness = () => {
           </div>
 
           {/* Analyse de la Concurrence, Analyse de Marché, Proposition de Valeur et Business Model Deliverables */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
             {/* Analyse de la Concurrence Deliverable */}
             <div className="md:h-full">
               <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
@@ -611,10 +588,8 @@ const ProjectBusiness = () => {
                 />
               </BlurredDeliverableWrapper>
             </div>
-          </div>
 
-          {/* Level 4 Deliverables */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
+            {/* Analyse des Ressources Deliverable */}
             <div className="md:h-full">
               <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
                 <AnalyseDesRessourcesLivrable />
@@ -627,17 +602,17 @@ const ProjectBusiness = () => {
         <Dialog open={projectStatus === 'premium_en_cours'} onOpenChange={() => {}}>
           <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full" onEscapeKeyDown={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
             <DialogHeader>
-              <DialogTitle className="text-2xl">
+              <DialogTitle className="text-2xl font-heading text-text-primary">
                 {'☕️ Une pause café ?'}
               </DialogTitle>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-base font-sans text-text-muted">
                 <>La génération des livrables premium peut durer jusqu'à 10 minutes, dû à la chaîne de raisonnement et aux modèles IA de réflexion apporfondies utilisés. <br /><br /> En attendant, profitez-en pour vous faire un petit café car la suite de l'aventure ne sera sûrement pas de tout repos !</>
               </div>
             </DialogHeader>
             
             {/* Deliverable Progress Section - Toujours affichée maintenant */}
             <div className="mt-6 space-y-3">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Génération en cours :</h4>
+              <h4 className="text-sm font-sans font-semibold text-text-primary mb-3">Génération en cours :</h4>
               {deliverables
                 .filter(deliverable => deliverable.key !== 'juridique') // Exclure le livrable juridique
                 .map((deliverable) => (
@@ -664,8 +639,8 @@ const ProjectBusiness = () => {
         <Dialog open={isGenerateDeliverablesConfirmOpen} onOpenChange={setIsGenerateDeliverablesConfirmOpen}>
           <DialogContent className="w-[95vw] max-w-[400px] rounded-lg sm:w-full">
             <DialogHeader>
-              <DialogTitle className="text-2xl text-center">Générer les livrables ?</DialogTitle>
-              <DialogDescription className="text-center">
+              <DialogTitle className="text-2xl font-heading text-text-primary text-center">Générer les livrables ?</DialogTitle>
+              <DialogDescription className="text-center text-base font-sans text-text-muted">
                 Êtes-vous sûr de vouloir générer les livrables premium pour ce projet ?
               </DialogDescription>
             </DialogHeader>
@@ -684,7 +659,7 @@ const ProjectBusiness = () => {
         <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
           <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full">
             <DialogHeader>
-              <DialogTitle className="text-2xl text-center">{popupContent?.title}</DialogTitle>
+              <DialogTitle className="text-2xl font-heading text-text-primary text-center">{popupContent?.title}</DialogTitle>
             </DialogHeader>
             {popupContent?.content}
             <div className="absolute right-4 top-4 flex space-x-2">
@@ -716,8 +691,8 @@ const ProjectBusiness = () => {
         <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
           <DialogContent className="rounded-xl w-[90vw] mx-auto my-4 sm:max-w-[425px] sm:w-full">
             <DialogHeader>
-              <DialogTitle>Inviter un nouveau collaborateur</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-heading text-text-primary">Inviter un nouveau collaborateur</DialogTitle>
+              <DialogDescription className="text-base font-sans text-text-muted">
                 Envoyez une invitation par email pour donner accès à votre projet.
               </DialogDescription>
             </DialogHeader>
@@ -790,7 +765,8 @@ const ProjectBusiness = () => {
           onClose={() => setIsComingSoonOpen(false)}
           description="La fonctionnalité d'invitation de collaborateurs sera bientôt disponible. Restez à l'écoute pour les mises à jour !"
         />
-      </div>
+        </div>
+      </DeliverablesLoadingProvider>
     </ProjectRequiredGuard>
   );
 };

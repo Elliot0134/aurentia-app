@@ -60,7 +60,15 @@ QueryClientProvider
          └─ ProjectProvider (projects, deliverables, credits)
             └─ CreditsDialogProvider
                └─ PendingInvitationsProvider
+                  └─ DeliverablesLoadingProvider (progressive loading state)
 ```
+
+**DeliverablesLoadingContext** (`/src/contexts/DeliverablesLoadingContext.tsx`):
+- Manages progressive loading state for deliverable cards
+- `registerDeliverable(id)`: Register a deliverable that needs to load
+- `setDeliverableLoaded(id)`: Mark a deliverable as loaded
+- `isGlobalLoading`: Boolean indicating if any deliverables are still loading
+- Used for element-by-element progressive loading animations with blur effects
 
 **ProjectContext** (`/src/contexts/ProjectContext.tsx`):
 - Manages `currentProjectId` (persisted to localStorage)
@@ -78,18 +86,41 @@ QueryClientProvider
 - Custom hooks in `/src/hooks/` (e.g., `useUserRole`, `useOrganisationData`)
 - Types in `/src/types/` (e.g., `userTypes.ts`, `organisationTypes.ts`)
 
-### UI Components
+### UI Components & Design System
 
 **Component Library**: ShadCN UI components in `/src/components/ui/`
 
-**Styling**: Tailwind CSS with mobile-first responsive design
+**Aurentia Design System**: Centralized design tokens and components
+- **Theme Variables**: `/src/styles/theme.css` defines all design tokens (colors, typography, spacing, animations)
+- **Component Utilities**: `/src/styles/components.css` provides reusable component classes with `@apply` directives
+- **Import Order**: Both files imported in `/src/index.css` and applied via `@layer` directives
+
+**Design Token Usage**:
+- Colors: Use CSS variables like `var(--text-primary)`, `var(--bg-card-clickable)`, `var(--btn-primary-bg)`
+- Typography: H1 uses 'BIZUD Mincho' serif font (page titles only), all other text uses 'Inter' sans-serif
+- Spacing: Use `var(--spacing-4)`, `var(--spacing-8)`, etc.
+- Border Radius: Use `var(--radius-md)`, `var(--radius-lg)`, etc.
+- Transitions: Use `var(--transition-base)` with `var(--ease-default)`
+
+**Component Classes** (from `components.css`):
+- Cards: `.card-clickable`, `.card-static`, `.deliverable-card`, `.project-card`
+- Buttons: `.btn-primary`, `.btn-secondary`, `.btn-tertiary`, `.btn-danger`, `.btn-loading`
+- Forms: `.input`, `.input-error`, `.input-label`
+- Loading: `.spinner`, `.skeleton`, `.spinner-container`
+- Modals: `.modal`, `.modal-overlay`, `.modal-close`
+- Chat: `.chat-bubble-user`, `.chat-bubble-ai`, `.chat-input`
+
+**Styling Best Practices**:
+- Prefer design system classes over custom Tailwind when available
 - Use `cn()` helper from `/src/lib/utils` for conditional classes
+- Mobile-first responsive design with breakpoints
 - Path alias: `@/` maps to `/src/`
 
 **Key UI Patterns**:
 - Toast notifications: `import { toast } from '@/components/ui/use-toast'`
-- Loading states: `<LoadingSpinner message="..." fullScreen />`
+- Loading states: `<LoadingSpinner message="..." fullScreen />` or use skeleton classes
 - Empty states and error handling required in all data-fetching components
+- Progressive loading animations: `fadeInUp`, `fadeInBlur` keyframes available
 
 ### Deliverables System
 
@@ -183,12 +214,27 @@ Custom commands available in `.claude/commands/`:
 - `/test`: Testing tasks
 - `/migrate`: Database migration tasks
 
+## White-Label Branding System
+
+**Organization Color Overrides**: When white-label branding is enabled in organization settings, the platform dynamically applies organization colors:
+- CSS Variables: `--org-primary-color`, `--org-secondary-color`, `--org-primary-rgb`, `--org-secondary-rgb`
+- Tailwind Config: `primary` and `secondary` colors use `var(--color-primary)` and `var(--color-secondary)`
+- Override Classes: `.org-bg-primary`, `.org-text-primary`, `.org-border-primary`, `.org-gradient-primary`
+- Automatic Replacement: Utility selectors in `index.css` replace all Aurentia pink/orange colors with org colors when `[style*="--org-primary-color"]` is detected
+- Checkboxes: Automatically styled with organization colors via `accent-color` CSS property
+
+**White-Label Conditions** (all must be true):
+1. User is in `/organisation/*` routes
+2. White-label setting enabled in organization settings
+3. Organization has custom logo and name configured
+
 ## Important Notes
 
 - Email confirmation required for new users (see `EmailConfirmationGuard`)
 - Project selector persists to localStorage as `currentProjectId`
 - Auth state managed via singleton Supabase client to prevent multiple GoTrueClient instances
 - Organization routes require active organization membership
-- White-label support: Only applies when (1) in `/organisation/*` routes, (2) white-label enabled in org settings, (3) org has logo and name
 - Deliverables are loaded on-demand when `currentProjectId` changes
 - Development server runs on port 8080 by default
+- Design system tokens defined in `/src/styles/theme.css` - always use CSS variables over hardcoded values
+- Progressive loading animations use `DeliverablesLoadingContext` for coordinated element-by-element reveals

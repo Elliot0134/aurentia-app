@@ -15,9 +15,18 @@ export const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
         <button
           key={index}
           onClick={() => onPromptSelect(prompt)}
-          className="p-3 sm:p-4 text-left bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-md transition-all duration-200 group text-sm sm:text-base"
+          className="p-3 sm:p-4 text-left bg-[var(--bg-card-static)] border border-[var(--border-default)]
+                     rounded-xl hover:border-[var(--border-hover)] hover:shadow-md hover:bg-[var(--bg-card-clickable)]
+                     transition-all group text-sm sm:text-base active:scale-[0.98]"
+          style={{
+            transitionDuration: 'var(--transition-base)',
+            transitionTimingFunction: 'var(--ease-default)',
+            animation: `fadeIn var(--transition-slow) var(--ease-out) ${index * 100}ms backwards`
+          }}
+          aria-label={`Suggestion: ${prompt}`}
         >
-          <span className="text-gray-700 group-hover:text-gray-900">
+          <span className="text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors font-sans"
+                style={{ transitionDuration: 'var(--transition-fast)' }}>
             {prompt}
           </span>
         </button>

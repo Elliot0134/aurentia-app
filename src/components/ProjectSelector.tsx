@@ -9,9 +9,10 @@ import { UserRole } from '@/types/userTypes';
 interface ProjectSelectorProps {
   isCollapsed: boolean;
   userRole: UserRole;
+  onExpandRequest?: () => void; // Callback to request sidebar expansion
 }
 
-const ProjectSelector = memo(({ isCollapsed, userRole }: ProjectSelectorProps) => {
+const ProjectSelector = memo(({ isCollapsed, userRole, onExpandRequest }: ProjectSelectorProps) => {
   const navigate = useNavigate();
   const { projectId } = useParams(); // Get project ID from URL
   const location = useLocation(); // Get current location
@@ -90,6 +91,10 @@ const ProjectSelector = memo(({ isCollapsed, userRole }: ProjectSelectorProps) =
   };
 
   const toggleDropdown = () => {
+    // If sidebar is collapsed, expand it first
+    if (isCollapsed && onExpandRequest) {
+      onExpandRequest();
+    }
     setIsOpen(!isOpen);
   };
 

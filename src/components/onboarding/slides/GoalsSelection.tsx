@@ -1,20 +1,6 @@
 import { motion } from 'framer-motion';
 import { UserType, EntrepreneurGoal, StructureGoal } from '@/types/onboarding';
-import {
-  CheckCircle2,
-  Map,
-  Bot,
-  Wand2,
-  Zap,
-  Users,
-  FileText,
-  BookOpen,
-  Building,
-  Target,
-  UserPlus,
-  Shield,
-  Award,
-} from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 interface GoalsSelectionProps {
   userType: UserType;
@@ -31,36 +17,52 @@ const GoalsSelection = ({
     {
       id: 'validate_idea' as EntrepreneurGoal,
       label: 'Valider mon idée',
-      icon: CheckCircle2,
+      iconPath: '/icones/check-icon.png',
     },
     {
       id: 'plan_before_launch' as EntrepreneurGoal,
       label: 'Tout prévoir avant de lancer',
-      icon: Target,
+      iconPath: '/icones/ampoule-icon.png',
     },
-    { id: 'roadmap' as EntrepreneurGoal, label: 'Roadmap', icon: Map },
-    { id: 'ai_assistant' as EntrepreneurGoal, label: 'Assistant IA', icon: Bot },
-    { id: 'ai_tools' as EntrepreneurGoal, label: 'Outils IA', icon: Wand2 },
+    {
+      id: 'roadmap' as EntrepreneurGoal,
+      label: 'Roadmap',
+      iconPath: '/icones/roadmap-icon.png'
+    },
+    {
+      id: 'ai_assistant' as EntrepreneurGoal,
+      label: 'Assistant IA',
+      iconPath: '/icones/chatbot-icon.png'
+    },
+    {
+      id: 'ai_tools' as EntrepreneurGoal,
+      label: 'Outils IA',
+      iconPath: '/icones/ai-tool-icon.png'
+    },
     {
       id: 'automations' as EntrepreneurGoal,
       label: 'Automatisations',
-      icon: Zap,
+      iconPath: '/icones/automation-icon.png',
     },
     {
       id: 'find_providers' as EntrepreneurGoal,
       label: 'Trouver des prestataires',
-      icon: Users,
+      iconPath: '/icones-livrables/partenaires-icon.png',
     },
-    { id: 'templates' as EntrepreneurGoal, label: 'Templates', icon: FileText },
+    {
+      id: 'templates' as EntrepreneurGoal,
+      label: 'Templates',
+      iconPath: '/icones/projet-icon.png'
+    },
     {
       id: 'resources' as EntrepreneurGoal,
       label: 'Ressources',
-      icon: BookOpen,
+      iconPath: '/icones/ressources-icon.png',
     },
     {
       id: 'find_structures' as EntrepreneurGoal,
       label: "Chercher des structures d'accompagnement",
-      icon: Building,
+      iconPath: '/icones/building-icon.png',
     },
   ];
 
@@ -68,22 +70,22 @@ const GoalsSelection = ({
     {
       id: 'receive_applications' as StructureGoal,
       label: 'Recevoir plus de candidatures',
-      icon: UserPlus,
+      iconPath: '/icones-livrables/persona-icon.png',
     },
     {
       id: 'manage_members' as StructureGoal,
       label: 'Gérer mes adhérents',
-      icon: Users,
+      iconPath: '/icones-livrables/persona-icon.png',
     },
     {
       id: 'relieve_team' as StructureGoal,
       label: "Soulager l'équipe",
-      icon: Shield,
+      iconPath: '/icones/chatbot-icon.png',
     },
     {
       id: 'find_mentors' as StructureGoal,
       label: 'Trouver des mentors',
-      icon: Award,
+      iconPath: '/icones-livrables/partenaires-icon.png',
     },
   ];
 
@@ -109,7 +111,6 @@ const GoalsSelection = ({
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {goals.map((goal, index) => {
-          const Icon = goal.icon;
           const isSelected = isGoalSelected(goal.id);
 
           return (
@@ -137,15 +138,21 @@ const GoalsSelection = ({
                 transition={{ duration: 0.15 }}
               >
                 <motion.div
-                  className={`p-3 rounded-xl ${
-                    isSelected ? 'bg-white/20' : 'bg-gray-100'
+                  className={`p-3 rounded-xl overflow-hidden ${
+                    isSelected ? 'bg-black/20' : 'bg-gray-100'
                   }`}
                   animate={{
                     rotate: isSelected ? [0, 10, -10, 0] : 0,
                   }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Icon className={`w-6 h-6 ${isSelected ? 'text-white' : ''}`} />
+                  <motion.img
+                    src={goal.iconPath}
+                    alt={goal.label}
+                    className="w-10 h-10 object-contain"
+                    whileHover={{ scale: 1.3 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                  />
                 </motion.div>
                 <span className="text-sm font-poppins font-semibold">{goal.label}</span>
               </motion.div>

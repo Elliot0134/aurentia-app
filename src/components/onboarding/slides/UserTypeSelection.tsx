@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { UserType } from '@/types/onboarding';
-import { Lightbulb, Rocket, Building2 } from 'lucide-react';
 
 interface UserTypeSelectionProps {
   selectedType?: UserType;
@@ -12,19 +11,19 @@ const UserTypeSelection = ({ selectedType, onSelect }: UserTypeSelectionProps) =
     {
       id: 'dreamer' as UserType,
       label: "J'ai un rêve",
-      icon: Lightbulb,
+      iconPath: '/icones/ampoule-icon.png',
       description: 'Vous avez une idée que vous souhaitez développer',
     },
     {
       id: 'entrepreneur' as UserType,
       label: 'Entrepreneur',
-      icon: Rocket,
+      iconPath: '/icones/fusee-icon.png',
       description: 'Vous avez déjà une entreprise ou un projet en cours',
     },
     {
       id: 'structure' as UserType,
       label: "Structure d'accompagnement",
-      icon: Building2,
+      iconPath: '/icones/building-icon.png',
       description: 'Vous accompagnez des entrepreneurs',
     },
   ];
@@ -42,7 +41,6 @@ const UserTypeSelection = ({ selectedType, onSelect }: UserTypeSelectionProps) =
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
         {userTypes.map((type, index) => {
-          const Icon = type.icon;
           const isSelected = selectedType === type.id;
 
           return (
@@ -70,7 +68,7 @@ const UserTypeSelection = ({ selectedType, onSelect }: UserTypeSelectionProps) =
                 transition={{ duration: 0.15 }}
               >
                 <motion.div
-                  className={`p-5 rounded-xl ${
+                  className={`p-5 rounded-xl overflow-hidden ${
                     isSelected ? 'bg-[#FF6B35]/10' : 'bg-gray-100'
                   }`}
                   animate={{
@@ -79,10 +77,12 @@ const UserTypeSelection = ({ selectedType, onSelect }: UserTypeSelectionProps) =
                   }}
                   transition={{ duration: 0.4, ease: 'easeInOut' }}
                 >
-                  <Icon
-                    className={`w-12 h-12 ${
-                      isSelected ? 'text-[#FF6B35]' : 'text-gray-700'
-                    }`}
+                  <motion.img
+                    src={type.iconPath}
+                    alt={type.label}
+                    className="w-20 h-20 object-contain"
+                    whileHover={{ scale: 1.3 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
                   />
                 </motion.div>
                 <div>

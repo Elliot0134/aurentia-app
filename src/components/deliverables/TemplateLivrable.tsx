@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 import {
   Accordion,
   AccordionContent,
@@ -42,11 +44,19 @@ const TemplateLivrable: React.FC<LivrableProps> = ({
   recommendations,
   importance,
 }) => {
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
     hasContent: !!avis || !!justification_avis || (structure && structure.length > 0),
     hasDefinition: !!definition,
     hasRecommendations: !!recommendations,
   });
+
+  // Register this deliverable on mount and immediately mark as loaded (no async data)
+  useEffect(() => {
+    registerDeliverable('template-livrable');
+    setDeliverableLoaded('template-livrable');
+  }, [registerDeliverable, setDeliverableLoaded]);
 
   const modalContent = (
     <div className="space-y-6">
@@ -69,6 +79,10 @@ const TemplateLivrable: React.FC<LivrableProps> = ({
       )}
     </div>
   );
+
+  if (isGlobalLoading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   return (
     <>

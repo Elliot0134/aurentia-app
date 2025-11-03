@@ -96,7 +96,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div className="w-full pb-safe px-2">
-      <div className="w-full mx-auto bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_8px_-2px_rgba(0,0,0,0.15)]">
+      <div className="w-full mx-auto bg-[var(--bg-card-static)] border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+           style={{
+             transitionDuration: 'var(--transition-base)',
+             transitionTimingFunction: 'var(--ease-default)'
+           }}>
         <div className="relative p-2">
           {isMobile ? (
             <div className="flex items-end gap-2">
@@ -104,13 +108,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsMobileChatOptionsOpen?.(!isMobileChatOptionsOpen)}
-                  className="w-8 h-8 rounded-xl border border-gray-200 bg-white hover:bg-gray-50
-                             flex items-center justify-center transition-all duration-150"
-                  aria-label="Options"
+                  className="w-8 h-8 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-static)] hover:bg-[var(--btn-secondary-bg-hover)]
+                             flex items-center justify-center transition-all"
+                  style={{ transitionDuration: 'var(--transition-fast)' }}
+                  aria-label="Options de chat"
                 >
                   <Plus
-                    className={`w-[18px] h-[18px] text-gray-600 transition-transform duration-200
-                               ${isMobileChatOptionsOpen ? 'rotate-45' : 'rotate-0'}`}
+                    className={`w-[18px] h-[18px] text-[var(--text-muted)] transition-transform`}
+                    style={{
+                      transitionDuration: 'var(--transition-base)',
+                      transform: isMobileChatOptionsOpen ? 'rotate(45deg)' : 'rotate(0deg)'
+                    }}
                   />
                 </button>
               </div>
@@ -121,13 +129,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   value={inputMessage}
                   onChange={onInputChange}
                   onKeyDown={onKeyPress}
-                  className="w-full resize-none border-none bg-transparent focus:outline-none p-0 text-base text-gray-900 placeholder-gray-500"
+                  className="w-full resize-none border-none bg-transparent focus:outline-none p-0 text-base text-[var(--text-primary)] placeholder-[var(--input-placeholder)]"
                   style={{
                     minHeight: '32px',
-                    lineHeight: '1.5',
-                    transition: 'height 0.2s ease-in-out'
+                    lineHeight: 'var(--text-base-line-height)',
+                    transition: 'height var(--transition-base) var(--ease-out)'
                   }}
                   rows={1}
+                  aria-label="Message à envoyer"
                 />
               </div>
               <div className="flex items-end gap-2 flex-shrink-0 self-end mb-1">
@@ -136,19 +145,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   disabled={isInputEmpty || isLoading || isSubmitting}
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-xl bg-white hover:bg-gray-200"
+                  className="h-8 w-8 rounded-xl bg-[var(--bg-card-static)] hover:bg-[var(--btn-secondary-bg-hover)] transition-all"
+                  style={{
+                    transitionDuration: 'var(--transition-fast)',
+                    opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1'
+                  }}
+                  aria-label="Reformuler la question avec IA"
                 >
                   {isLoading || isSubmitting ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
+                    <Loader2 className="h-5 w-5 text-[var(--btn-primary-bg)]" style={{ animation: 'spin 600ms linear infinite' }} />
                   ) : (
-                    <Sparkles className="h-5 w-5 text-orange-500" />
+                    <Sparkles className="h-5 w-5 text-[var(--btn-primary-bg)]" />
                   )}
                   <span className="sr-only">Reformuler la question</span>
                 </Button>
                 <Button
                   onClick={onSendMessage}
                   disabled={isInputEmpty || isLoading || isSubmitting}
-                  className="rounded-xl w-8 h-8 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-xl w-8 h-8 p-0 bg-gradient-primary hover:from-blue-600 hover:to-purple-700 transition-all"
+                  style={{
+                    transitionDuration: 'var(--transition-fast)',
+                    opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1',
+                    cursor: isInputEmpty || isLoading || isSubmitting ? 'not-allowed' : 'pointer'
+                  }}
+                  aria-label="Envoyer le message"
                 >
                   <ArrowUp size={16} className="text-white" />
                 </Button>
@@ -163,8 +183,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   value={inputMessage}
                   onChange={onInputChange}
                   onKeyDown={onKeyPress}
-                  className="w-full resize-none border-none bg-transparent focus:outline-none p-0 pl-2 min-h-[40px] max-h-[360px] text-base text-gray-900 placeholder-gray-500 overflow-y-auto"
+                  className="w-full resize-none border-none bg-transparent focus:outline-none p-0 pl-2 min-h-[40px] max-h-[360px] text-base text-[var(--text-primary)] placeholder-[var(--input-placeholder)] overflow-y-auto"
+                  style={{
+                    lineHeight: 'var(--text-base-line-height)',
+                    transition: 'height var(--transition-base) var(--ease-out)'
+                  }}
                   rows={1}
+                  aria-label="Message à envoyer"
                 />
               </div>
             </div>
@@ -242,13 +267,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     disabled={isInputEmpty || isLoading || isSubmitting}
                     variant="ghost"
                     size="icon"
-                    className="w-8 h-8 rounded-xl border border-gray-200 bg-white hover:bg-gray-50
-                               flex items-center justify-center transition-all duration-150"
+                    className="w-8 h-8 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-static)] hover:bg-[var(--btn-secondary-bg-hover)]
+                               flex items-center justify-center transition-all"
+                    style={{
+                      transitionDuration: 'var(--transition-fast)',
+                      opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1'
+                    }}
+                    aria-label="Reformuler la question avec IA"
                   >
                     {isLoading || isSubmitting ? (
-                      <Loader2 className="w-[18px] h-[18px] animate-spin text-orange-500" />
+                      <Loader2 className="w-[18px] h-[18px] text-[var(--btn-primary-bg)]" style={{ animation: 'spin 600ms linear infinite' }} />
                     ) : (
-                      <Sparkles className="w-[18px] h-[18px] text-orange-500" />
+                      <Sparkles className="w-[18px] h-[18px] text-[var(--btn-primary-bg)]" />
                     )}
                     <span className="sr-only">Reformuler la question</span>
                   </Button>
@@ -257,7 +287,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     disabled={isInputEmpty || isLoading || isSubmitting}
                     variant="ghost"
                     size="icon"
-                    className="w-8 h-8 rounded-xl border border-transparent bg-gradient-primary hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                    className="w-8 h-8 rounded-xl border border-transparent bg-gradient-primary hover:from-blue-600 hover:to-purple-700 flex items-center justify-center transition-all flex-shrink-0"
+                    style={{
+                      transitionDuration: 'var(--transition-fast)',
+                      opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1',
+                      cursor: isInputEmpty || isLoading || isSubmitting ? 'not-allowed' : 'pointer'
+                    }}
+                    aria-label="Envoyer le message"
                   >
                     <ArrowUp className="w-[18px] h-[18px] text-white" />
                   </Button>

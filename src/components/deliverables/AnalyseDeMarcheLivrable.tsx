@@ -18,6 +18,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface AnalyseDeMarcheLivrableProps {
   projectId: string;
@@ -26,6 +28,12 @@ interface AnalyseDeMarcheLivrableProps {
 const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ projectId }) => {
   const [marketData, setMarketData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('analyse-marche');
+  }, [registerDeliverable]);
   const [error, setError] = useState<string | null>(null);
   const [selectedSegment, setSelectedSegment] = useState(1);
 
@@ -68,6 +76,7 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
         setError(err.message);
       } finally {
         setLoading(false);
+        setDeliverableLoaded('analyse-marche');
       }
     };
 

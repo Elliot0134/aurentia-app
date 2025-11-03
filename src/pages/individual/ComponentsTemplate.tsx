@@ -35,9 +35,7 @@ import {
 } from "@/components/ui/popover";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
@@ -70,7 +68,6 @@ import {
   Calendar,
   Tag,
   ToggleLeft,
-  CirclePlus,
   AlignLeft,
   MousePointer,
   Star,
@@ -172,7 +169,7 @@ function DraggableRow<TData extends TemplateRowData>({
       data-state={row.getIsSelected() && "selected"}
       data-dragging={isDragging}
       ref={setNodeRef}
-      className={`group relative z-0 hover:bg-[#F5F5F5] data-[state=selected]:bg-[#F5F5F5] data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 transition-colors duration-200 ${isMobile ? 'cursor-pointer' : ''} ${className || ""}`}
+      className={`group relative z-0 hover:bg-[#f4f4f5] data-[state=selected]:bg-[#f4f4f5] data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 transition-colors duration-200 ${isMobile ? 'cursor-pointer' : ''} ${className || ""}`}
       style={{
         transform: CSS.Transform.toString(transform),
         transition: transition,
@@ -181,13 +178,13 @@ function DraggableRow<TData extends TemplateRowData>({
         // Synchroniser les colonnes sticky quand on survole la ligne
         const stickyCells = e.currentTarget.querySelectorAll('td[style*="position: sticky"]');
         stickyCells.forEach((cell: any) => {
-          cell.style.backgroundColor = '#F5F5F5';
+          cell.style.backgroundColor = '#f4f4f5';
         });
       }}
       onMouseLeave={(e) => {
         // Retirer le hover des colonnes sticky quand on quitte la ligne
         const stickyCells = e.currentTarget.querySelectorAll('td[style*="position: sticky"]');
-        const bgColor = row.getIsSelected() ? '#F5F5F5' : 'white';
+        const bgColor = row.getIsSelected() ? '#f4f4f5' : 'white';
         stickyCells.forEach((cell: any) => {
           cell.style.backgroundColor = bgColor;
         });
@@ -230,7 +227,7 @@ function DraggableRow<TData extends TemplateRowData>({
               isStickyColumn
                 ? `sticky z-10 transition-colors duration-200 ${
                     isFirstColumn 
-                      ? 'relative after:absolute after:top-0 after:right-0 after:h-full after:w-[1px] after:bg-gradient-to-b after:from-gray-200 after:to-gray-300 after:shadow-[1px_0_3px_0px_rgba(0,0,0,0.1)] after:z-10' 
+                      ? 'relative after:absolute after:top-0 after:right-0 after:h-full after:w-[1px] after:bg-[#f2f2f1] after:z-10' 
                       : ''
                   }`
                 : 'transition-colors duration-200'
@@ -238,7 +235,7 @@ function DraggableRow<TData extends TemplateRowData>({
             style={isStickyColumn ? { 
               position: 'sticky', 
               left: isSelectColumn ? '0px' : '40px', // Largeur checkbox ajustée = 40px
-              backgroundColor: row.getIsSelected() ? '#F5F5F5' : 'white',
+              backgroundColor: row.getIsSelected() ? '#f4f4f5' : 'white',
               minWidth: isSelectColumn ? '40px' : undefined, // Largeur minimum ajustée
               maxWidth: isSelectColumn ? '40px' : undefined  // Largeur maximum ajustée
             } : {}}
@@ -248,18 +245,18 @@ function DraggableRow<TData extends TemplateRowData>({
                 // Déclencher le hover sur toute la ligne
                 const tableRow = e.currentTarget.closest('tr');
                 if (tableRow) {
-                  tableRow.style.backgroundColor = '#F5F5F5';
+                  tableRow.style.backgroundColor = '#f4f4f5';
                   // Mettre à jour toutes les colonnes sticky de cette ligne
                   const stickyCells = tableRow.querySelectorAll('td[style*="position: sticky"]');
                   stickyCells.forEach((cell: any) => {
-                    cell.style.backgroundColor = '#F5F5F5';
+                    cell.style.backgroundColor = '#f4f4f5';
                   });
                 }
               }
             }}
             onMouseLeave={(e) => {
               if (isStickyColumn) {
-                const bgColor = row.getIsSelected() ? '#F5F5F5' : 'white';
+                const bgColor = row.getIsSelected() ? '#f4f4f5' : 'white';
                 e.currentTarget.style.backgroundColor = bgColor;
                 // Retirer le hover de toute la ligne
                 const tableRow = e.currentTarget.closest('tr');
@@ -320,7 +317,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0 border-gray-300 hover:border-[#F86E19] bg-transparent"
+                className="h-8 w-8 p-0 border-gray-300 hover:border-[#ff592b] bg-transparent"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleOpenProfile(row.original);
@@ -386,7 +383,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity border-gray-300 hover:border-[#F86E19] flex-shrink-0 bg-transparent"
+                  className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity border-gray-300 hover:border-[#ff592b] flex-shrink-0 bg-transparent"
                   onClick={(e) => {
                     e.stopPropagation(); // Empêche l'événement de se propager à la ligne
                     handleOpenProfile(row.original);
@@ -472,7 +469,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
-              className="text-sm text-gray-900 hover:text-gray-700 hover:bg-[#F3F4F6] h-auto p-1 font-normal"
+              className="text-sm text-gray-900 hover:text-gray-700 hover:bg-[#e8e8e9] h-auto p-1 font-normal"
               onClick={(e) => e.stopPropagation()}
             >
               {date ? date.toLocaleDateString('fr-FR') : 'Sélectionner'}
@@ -544,7 +541,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
               <div className="cursor-pointer">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-white border border-[#E5E5E5] text-[#747474] whitespace-nowrap hover:border-[#F86E19] transition-colors">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-white border border-[#f2f2f1] text-[#6b7280] whitespace-nowrap hover:border-[#ff592b] transition-colors">
                   {iconComponent && (
                     <span className={`flex items-center justify-center mr-1 ${currentLabel === 'En attente' ? '' : `rounded-lg ${iconBgColor}`} ${iconColor} ${currentLabel === 'En attente' ? 'h-3 w-3' : 'h-3 w-3'}`}>
                       {iconComponent}
@@ -568,7 +565,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
                             setIsOpen(false);
                             toast.success(`Étiquette changée vers "${option}" pour ${row.original.col1}`);
                           }}
-                          className="justify-start hover:!bg-[#F3F4F6] hover:!text-black data-[highlighted]:!bg-[#F3F4F6] data-[highlighted]:!text-black !bg-transparent !text-black"
+                          className="justify-start hover:!bg-[#e8e8e9] hover:!text-black data-[highlighted]:!bg-[#e8e8e9] data-[highlighted]:!text-black !bg-transparent !text-black"
                         >
                           <div className="flex items-center gap-2">
                             {optionIcon && (
@@ -601,9 +598,9 @@ const getTemplateColumns = <TData extends TemplateRowData>(
       if (typeof progress === 'number') {
         return (
           <div className="flex items-center space-x-3">
-            <div className="flex-1 bg-gray-100 rounded-full h-2 w-28 shadow-inner">
-              <div 
-                className="h-full rounded-full bg-gradient-to-r from-[#F86E19] to-[#E55A0F] transition-all duration-500 ease-out shadow-sm"
+            <div className="flex-1 bg-[#f4f4f5] rounded-full h-2 w-28">
+              <div
+                className="h-full rounded-full bg-[#ff592b] transition-all duration-500 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -660,7 +657,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
               toast.success(`Luthane pour ${row.original.col1} ${newChecked ? 'activé' : 'désactivé'}`);
             }}
             className={cn(
-              "data-[state=checked]:bg-[#F86E19] data-[state=unchecked]:bg-[#E0E0E0] transition-colors duration-200", // Orange Aurentia quand coché
+              "data-[state=checked]:bg-[#ff592b] data-[state=unchecked]:bg-[#E0E0E0] transition-colors duration-200", // Orange Aurentia quand coché
               (isHovering && !checked) ? "bg-gray-300" : "", // Grille plus claire au survol quand éteint
             )}
           />
@@ -680,7 +677,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
           <Button
             variant="outline"
             size="sm"
-            className="h-7 px-3 text-xs bg-white border-gray-300 hover:bg-[#F3F4F6] hover:border-[#F86E19] hover:text-black transition-colors"
+            className="h-7 px-3 text-xs bg-white border-gray-300 hover:bg-[#e8e8e9] hover:border-[#ff592b] hover:text-black transition-colors"
             onClick={() => {
               toast.success(`Action exécutée pour ${row.original.col1}`);
             }}
@@ -751,7 +748,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
           case 'Suivi':
             return 'bg-blue-100 text-blue-800';
           case 'Archive':
-            return 'bg-gray-100 text-gray-800';
+            return 'bg-[#f4f4f5] text-gray-800';
           default:
             return 'bg-blue-100 text-blue-800';
         }
@@ -788,7 +785,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
                       <CommandItem
                         key={option}
                         onSelect={() => toggleOption(option)}
-                        className="justify-start hover:!bg-[#F3F4F6] hover:!text-black data-[highlighted]:!bg-[#F3F4F6] data-[highlighted]:!text-black !bg-transparent !text-black"
+                        className="justify-start hover:!bg-[#e8e8e9] hover:!text-black data-[highlighted]:!bg-[#e8e8e9] data-[highlighted]:!text-black !bg-transparent !text-black"
                       >
                         <Checkbox
                           checked={selectedOptions.includes(option)}
@@ -855,7 +852,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto p-1 text-xs hover:bg-[#F3F4F6] hover:text-black"
+            className="h-auto p-1 text-xs hover:bg-[#e8e8e9] hover:text-black"
             onClick={handleOpenMaps}
           >
             <div className="flex items-center gap-1">
@@ -878,7 +875,7 @@ const getTemplateColumns = <TData extends TemplateRowData>(
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
-              className="data-[state=open]:bg-muted flex size-8 p-0 hover:bg-gray-100"
+              className="data-[state=open]:bg-muted flex size-8 p-0 hover:bg-[#e8e8e9]"
             >
               <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
               <span className="sr-only">Open menu</span>
@@ -920,15 +917,8 @@ export function TemplateDataTable<TData extends TemplateRowData>({
   
   // État pour la détection mobile
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  
-  // États pour les filtres combobox (desktop)
-  const [openEtiquettes, setOpenEtiquettes] = useState(false);
-  const [openLuthane, setOpenLuthane] = useState(false);
-  
-  // États pour les filtres combobox (mobile)
-  const [openEtiquettesMobile, setOpenEtiquettesMobile] = useState(false);
-  const [openLuthaneMobile, setOpenLuthaneMobile] = useState(false);
-  
+
+  // États pour les filtres
   const [selectedEtiquettes, setSelectedEtiquettes] = useState<string[]>([]);
   const [selectedLuthane, setSelectedLuthane] = useState<string>("");
 
@@ -1033,8 +1023,8 @@ export function TemplateDataTable<TData extends TemplateRowData>({
   return (
     <div className="w-full">
       <CardTitle className="mb-4 mx-4 lg:mx-6">Tableau template</CardTitle>
-      {/* Version desktop : boutons côte à côte */}
-      <div className="hidden md:flex items-center justify-between px-4 lg:px-6 py-4">
+      {/* Version desktop : recherche et actions en haut */}
+      <div className="hidden md:flex items-center justify-between px-4 lg:px-6 py-4 border-b">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1047,121 +1037,25 @@ export function TemplateDataTable<TData extends TemplateRowData>({
               className="max-w-sm pl-8 h-8"
             />
           </div>
-          
-          {/* Filtre par étiquettes */}
-          <Popover open={openEtiquettes} onOpenChange={setOpenEtiquettes}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openEtiquettes}
-                className="h-8 justify-start bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0 border-dashed"
-              >
-                <CirclePlus className="h-4 w-4 text-gray-400 mr-2" />
-                Etiquettes
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0 custom-select-content-bg">
-              <Command>
-                <CommandInput placeholder="Rechercher étiquette..." className="h-9" />
-                <CommandList>
-                  <CommandEmpty>Aucune étiquette trouvée.</CommandEmpty>
-                  <CommandGroup>
-                    {['Actif', 'En attente', 'Inactif'].map((etiquette) => (
-                      <CommandItem
-                        key={etiquette}
-                        value={etiquette}
-                        onSelect={() => {
-                          const newSelected = selectedEtiquettes.includes(etiquette)
-                            ? selectedEtiquettes.filter(e => e !== etiquette)
-                            : [...selectedEtiquettes, etiquette];
-                          setSelectedEtiquettes(newSelected);
-                          table.getColumn('labels')?.setFilterValue(newSelected.length > 0 ? newSelected : undefined);
-                        }}
-                        className="justify-start hover:!bg-[#F3F4F6] hover:!text-black data-[highlighted]:!bg-[#F3F4F6] data-[highlighted]:!text-black aria-selected:!bg-[#F3F4F6] aria-selected:!text-black"
-                      >
-                        <Checkbox
-                          checked={selectedEtiquettes.includes(etiquette)}
-                          className="mr-2"
-                        />
-                        {etiquette}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {/* Filtre Luthane */}
-          {hasLuthaneColumn && (
-            <Popover open={openLuthane} onOpenChange={setOpenLuthane}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openLuthane}
-                  className="h-8 justify-start bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0 border-dashed"
-                >
-                  <CirclePlus className="h-4 w-4 text-gray-400 mr-2" />
-                  Luthane
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0 custom-select-content-bg">
-                <Command>
-                  <CommandInput placeholder="Rechercher état..." className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>Aucun état trouvé.</CommandEmpty>
-                    <CommandGroup>
-                      {[
-                        { value: "true", label: "Activé" },
-                        { value: "false", label: "Désactivé" }
-                      ].map((option) => (
-                        <CommandItem
-                          key={option.value}
-                          value={option.value}
-                          onSelect={(currentValue) => {
-                            const newValue = currentValue === selectedLuthane ? "" : currentValue;
-                            setSelectedLuthane(newValue);
-                            table.getColumn('isLuthaneActive')?.setFilterValue(
-                              newValue ? newValue === "true" : undefined
-                            );
-                            setOpenLuthane(false);
-                          }}
-                          className="justify-start hover:!bg-[#F3F4F6] hover:!text-black data-[highlighted]:!bg-[#F3F4F6] data-[highlighted]:!text-black aria-selected:!bg-[#F3F4F6] aria-selected:!text-black"
-                        >
-                          <Checkbox
-                            checked={selectedLuthane === option.value}
-                            className="mr-2"
-                          />
-                          {option.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          )}
         </div>
-          <div className="flex items-center gap-2">
-            {table.getFilteredSelectedRowModel().rows.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowDeleteConfirmDialog(true)} // Ouvre le dialogue de confirmation
-                className="h-8"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer ({table.getFilteredSelectedRowModel().rows.length})
+        <div className="flex items-center gap-2">
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteConfirmDialog(true)}
+              className="h-8"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Supprimer ({table.getFilteredSelectedRowModel().rows.length})
+            </Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Eye className="h-4 w-4" />
               </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 custom-select-content-bg">
               {table
                 .getAllColumns()
@@ -1236,7 +1130,75 @@ export function TemplateDataTable<TData extends TemplateRowData>({
           </div>
       </div>
 
-      {/* Version mobile : boutons individuels sous la barre de recherche */}
+      {/* Section Filtres desktop - directement visible */}
+      <div className="hidden md:block px-4 lg:px-6 py-4 bg-muted/30">
+        <div className="flex items-start gap-8">
+          <div className="space-y-3 flex-1">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Filtres
+            </h3>
+            <div className="grid grid-cols-2 gap-6">
+              {/* Filtre Étiquettes */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Étiquettes</label>
+                <div className="space-y-1.5">
+                  {['Actif', 'En attente', 'Inactif'].map((etiquette) => (
+                    <div
+                      key={etiquette}
+                      className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
+                      onClick={() => {
+                        const newSelected = selectedEtiquettes.includes(etiquette)
+                          ? selectedEtiquettes.filter(e => e !== etiquette)
+                          : [...selectedEtiquettes, etiquette];
+                        setSelectedEtiquettes(newSelected);
+                        table.getColumn('labels')?.setFilterValue(newSelected.length > 0 ? newSelected : undefined);
+                      }}
+                    >
+                      <Checkbox
+                        checked={selectedEtiquettes.includes(etiquette)}
+                      />
+                      <span className="text-sm">{etiquette}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filtre Luthane */}
+              {hasLuthaneColumn && (
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">État Luthane</label>
+                  <div className="space-y-1.5">
+                    {[
+                      { value: "true", label: "Activé" },
+                      { value: "false", label: "Désactivé" }
+                    ].map((option) => (
+                      <div
+                        key={option.value}
+                        className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
+                        onClick={() => {
+                          const newValue = selectedLuthane === option.value ? "" : option.value;
+                          setSelectedLuthane(newValue);
+                          table.getColumn('isLuthaneActive')?.setFilterValue(
+                            newValue ? newValue === "true" : undefined
+                          );
+                        }}
+                      >
+                        <Checkbox
+                          checked={selectedLuthane === option.value}
+                        />
+                        <span className="text-sm">{option.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Version mobile : filtres et recherche directement visibles */}
       <div className="md:hidden w-[95%] mx-auto py-4 space-y-4">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1249,103 +1211,67 @@ export function TemplateDataTable<TData extends TemplateRowData>({
             className="pl-8"
           />
         </div>
-        
-        {/* Boutons de filtre sous la barre de recherche - VERSION MOBILE */}
-        <div className="flex items-center gap-2 w-full">
-          {/* Filtre par étiquettes - Bouton gauche */}
-          <Popover open={openEtiquettesMobile} onOpenChange={setOpenEtiquettesMobile}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openEtiquettesMobile}
-                className={`h-8 justify-start bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0 border-dashed ${hasLuthaneColumn ? 'flex-1' : 'w-full'}`}
-              >
-                <CirclePlus className="h-4 w-4 text-gray-400 mr-2" />
-                Etiquettes
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0 custom-select-content-bg" align="start" side="bottom" sideOffset={5}>
-              <Command>
-                <CommandInput placeholder="Rechercher étiquette..." className="h-9" />
-                <CommandList>
-                  <CommandEmpty>Aucune étiquette trouvée.</CommandEmpty>
-                  <CommandGroup>
-                    {['Actif', 'En attente', 'Inactif'].map((etiquette) => (
-                      <CommandItem
-                        key={etiquette}
-                        value={etiquette}
-                        onSelect={() => {
-                          const newSelected = selectedEtiquettes.includes(etiquette)
-                            ? selectedEtiquettes.filter(e => e !== etiquette)
-                            : [...selectedEtiquettes, etiquette];
-                          setSelectedEtiquettes(newSelected);
-                          table.getColumn('labels')?.setFilterValue(newSelected.length > 0 ? newSelected : undefined);
-                        }}
-                        className="justify-start hover:!bg-[#F3F4F6] hover:!text-black data-[highlighted]:!bg-[#F3F4F6] data-[highlighted]:!text-black aria-selected:!bg-[#F3F4F6] aria-selected:!text-black"
-                      >
-                        <Checkbox
-                          checked={selectedEtiquettes.includes(etiquette)}
-                          className="mr-2"
-                        />
-                        {etiquette}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
 
-          {/* Filtre Luthane - Bouton droite */}
-          {hasLuthaneColumn && (
-            <Popover open={openLuthaneMobile} onOpenChange={setOpenLuthaneMobile}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openLuthaneMobile}
-                  className="h-8 justify-start bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0 border-dashed flex-1"
+        {/* Section Filtres directement visible */}
+        <div className="space-y-4 border rounded-lg p-4 bg-card">
+          <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filtres
+          </h3>
+
+          {/* Filtre par étiquettes */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Étiquettes</label>
+            <div className="space-y-2">
+              {['Actif', 'En attente', 'Inactif'].map((etiquette) => (
+                <div
+                  key={etiquette}
+                  className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
+                  onClick={() => {
+                    const newSelected = selectedEtiquettes.includes(etiquette)
+                      ? selectedEtiquettes.filter(e => e !== etiquette)
+                      : [...selectedEtiquettes, etiquette];
+                    setSelectedEtiquettes(newSelected);
+                    table.getColumn('labels')?.setFilterValue(newSelected.length > 0 ? newSelected : undefined);
+                  }}
                 >
-                  <CirclePlus className="h-4 w-4 text-gray-400 mr-2" />
-                  Luthane
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0 custom-select-content-bg" align="end" side="bottom" sideOffset={5}>
-                <Command>
-                  <CommandInput placeholder="Rechercher état..." className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>Aucun état trouvé.</CommandEmpty>
-                    <CommandGroup>
-                      {[
-                        { value: "true", label: "Activé" },
-                        { value: "false", label: "Désactivé" }
-                      ].map((option) => (
-                        <CommandItem
-                          key={option.value}
-                          value={option.value}
-                          onSelect={(currentValue) => {
-                            const newValue = currentValue === selectedLuthane ? "" : currentValue;
-                            setSelectedLuthane(newValue);
-                            table.getColumn('isLuthaneActive')?.setFilterValue(
-                              newValue ? newValue === "true" : undefined
-                            );
-                            setOpenLuthaneMobile(false);
-                          }}
-                          className="justify-start hover:!bg-[#F3F4F6] hover:!text-black data-[highlighted]:!bg-[#F3F4F6] data-[highlighted]:!text-black aria-selected:!bg-[#F3F4F6] aria-selected:!text-black"
-                        >
-                          <Checkbox
-                            checked={selectedLuthane === option.value}
-                            className="mr-2"
-                          />
-                          {option.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                  <Checkbox
+                    checked={selectedEtiquettes.includes(etiquette)}
+                  />
+                  <span className="text-sm">{etiquette}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Filtre Luthane */}
+          {hasLuthaneColumn && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">État Luthane</label>
+              <div className="space-y-2">
+                {[
+                  { value: "true", label: "Activé" },
+                  { value: "false", label: "Désactivé" }
+                ].map((option) => (
+                  <div
+                    key={option.value}
+                    className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
+                    onClick={() => {
+                      const newValue = selectedLuthane === option.value ? "" : option.value;
+                      setSelectedLuthane(newValue);
+                      table.getColumn('isLuthaneActive')?.setFilterValue(
+                        newValue ? newValue === "true" : undefined
+                      );
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedLuthane === option.value}
+                    />
+                    <span className="text-sm">{option.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
         
@@ -1353,7 +1279,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
         <div className="flex items-center justify-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full h-8 justify-center bg-white hover:bg-[#F3F4F6] hover:text-black focus:ring-0 focus:ring-offset-0 border-dashed">
+              <Button variant="outline" className="w-full h-8 justify-center">
                 <Eye className="h-4 w-4 mr-2" />
                 Vue des colonnes
               </Button>
@@ -1450,7 +1376,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
         {isMobile ? (
           // En mobile, pas de drag & drop
           <Table className="min-w-full">
-            <TableHeader className="bg-[#F5F5F5] text-black sticky top-0 z-10">
+            <TableHeader className="bg-[#f4f4f5] text-black sticky top-0 z-10">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -1484,7 +1410,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="group relative z-0 hover:bg-[#F5F5F5] data-[state=selected]:bg-[#F5F5F5] transition-colors duration-200 cursor-pointer h-8"
+                    className="group relative z-0 hover:bg-[#f4f4f5] data-[state=selected]:bg-[#f4f4f5] transition-colors duration-200 cursor-pointer h-8"
                     onClick={() => handleOpenProfile(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -1519,7 +1445,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
             id={sortableId}
           >
             <Table className="min-w-full">{/*Assure que le tableau prend toute la largeur*/}
-              <TableHeader className="bg-[#F5F5F5] text-black sticky top-0 z-10">
+              <TableHeader className="bg-[#f4f4f5] text-black sticky top-0 z-10">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
@@ -1535,9 +1461,9 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                           colSpan={header.colSpan} 
                           className={`text-black font-medium whitespace-nowrap ${
                             isStickyColumn
-                              ? `sticky z-20 bg-[#F5F5F5] ${
+                              ? `sticky z-20 bg-[#f4f4f5] ${
                                   isFirstColumn 
-                                    ? 'relative after:absolute after:top-0 after:right-0 after:h-full after:w-[1px] after:bg-gradient-to-b after:from-gray-200 after:to-gray-300 after:shadow-[1px_0_3px_0px_rgba(0,0,0,0.1)] after:z-10' 
+                                    ? 'relative after:absolute after:top-0 after:right-0 after:h-full after:w-[1px] after:bg-[#f2f2f1] after:z-10' 
                                     : ''
                                 }`
                               : ''
@@ -1608,12 +1534,12 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                 table.setPageSize(Number(value))
               }}
             >
-              <SelectTrigger className="h-8 w-[70px] bg-[#F9F9F8] focus:ring-0 focus:ring-offset-0">
+              <SelectTrigger className="h-8 w-[70px] bg-white focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`} className="hover:bg-[#F3F4F6] data-[highlighted]:bg-[#F3F4F6]">
+                  <SelectItem key={pageSize} value={`${pageSize}`} className="hover:bg-[#e8e8e9] data-[highlighted]:bg-[#e8e8e9]">
                     {pageSize}
                   </SelectItem>
                 ))}
@@ -1671,7 +1597,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50" onClick={handleModalClose}>
           <div
             ref={modalRef}
-            className="absolute bg-white text-black rounded-xl shadow-2xl transform scale-95 opacity-0 overflow-hidden flex flex-col"
+            className="absolute bg-white text-black rounded-xl transform scale-95 opacity-0 overflow-hidden flex flex-col border border-[#f2f2f1]"
             onClick={(e) => e.stopPropagation()}
             style={{
               animation: 'scaleIn 0.3s ease-out forwards',
@@ -1720,7 +1646,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
 
             {/* Tabs Content */}
             <div className="flex-1 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/60 via-white/40 via-white/20 to-transparent pointer-events-none z-20" />
+              <div className="absolute top-0 left-0 right-0 h-8 bg-white/40 pointer-events-none z-20" />
 
               <div
                 ref={scrollContainerRef}
@@ -1804,7 +1730,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
                 </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/95 via-white/80 via-white/60 via-white/30 via-white/10 to-transparent pointer-events-none z-20" />
+              <div className="absolute bottom-0 left-0 right-0 h-12 bg-white/40 pointer-events-none z-20" />
             </div>
           </div>
 
@@ -2182,15 +2108,30 @@ const ComponentsTemplate = () => {
   ];
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Components Template</h1>
-      <Card>
-        <CardContent className="p-6">
-          <TemplateDataTable
-            data={fakeData}
-          />
-        </CardContent>
-      </Card>
+    <div className="container-aurentia min-h-screen py-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Page Title */}
+        <h1 className="text-4xl font-heading text-text-primary mb-2">
+          Components Template
+        </h1>
+        <p className="text-base text-text-muted mb-6">
+          Page de démonstration des composants du système de design
+        </p>
+
+        {/* Data Table Section */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-text-primary font-sans">
+            Table de Données
+          </h2>
+          <Card className="card-static">
+            <CardContent className="pt-6">
+              <TemplateDataTable
+                data={fakeData}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

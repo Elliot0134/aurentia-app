@@ -92,92 +92,82 @@ export const ActionPlanTimelineWidget = ({ className }: ActionPlanTimelineWidget
 
   if (isLoading) {
     return (
-      <Card className={cn("w-full", className)}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-aurentia-pink" />
-            Plan d'Action
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-pulse text-gray-500">Chargement...</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className={cn("w-full space-y-4", className)}>
+        <h2 className="text-xl font-semibold text-text-primary font-sans">Plan d'Action</h2>
+        <Card className="card-static">
+          <CardContent className="pt-6">
+            <div className="spinner-container">
+              <div className="spinner"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (!hasActionPlan) {
     return (
-      <Card className={cn("w-full", className)}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-aurentia-pink" />
-            Plan d'Action
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">Aucun plan d'action généré</p>
-            <p className="text-sm text-gray-500">
-              Créez un plan d'action pour suivre votre progression
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className={cn("w-full space-y-4", className)}>
+        <h2 className="text-xl font-semibold text-text-primary font-sans">Plan d'Action</h2>
+        <Card className="card-static">
+          <CardContent className="pt-6">
+            <div className="empty-state">
+              <AlertCircle className="empty-state-icon" />
+              <h3 className="empty-state-title">Aucun plan d'action généré</h3>
+              <p className="empty-state-description">
+                Créez un plan d'action pour suivre votre progression
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <>
-      <Card className={cn("w-full", className)}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-aurentia-pink" />
-              Plan d'Action
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setChangeFocusOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Changer Focus
-            </Button>
-          </div>
-          {userProjects.length > 1 && (
-            <Select value={currentProjectId || ''} onValueChange={setCurrentProjectId}>
-              <SelectTrigger className="w-full mt-2">
-                <SelectValue placeholder="Sélectionner un projet" />
-              </SelectTrigger>
-              <SelectContent>
-                {userProjects.map((project) => (
-                  <SelectItem key={project.project_id} value={project.project_id}>
-                    {project.nom_projet}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className={cn("w-full space-y-4", className)}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-text-primary font-sans">Plan d'Action</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setChangeFocusOpen(true)}
+            className="flex items-center gap-2 btn-secondary"
+          >
+            <Settings className="h-4 w-4" />
+            Changer Focus
+          </Button>
+        </div>
+        {userProjects.length > 1 && (
+          <Select value={currentProjectId || ''} onValueChange={setCurrentProjectId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sélectionner un projet" />
+            </SelectTrigger>
+            <SelectContent>
+              {userProjects.map((project) => (
+                <SelectItem key={project.project_id} value={project.project_id}>
+                  {project.nom_projet}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <Card className="card-static">
+          <CardContent className="pt-6 space-y-4">
           {/* Completion Progress Bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-aurentia-pink" />
-                <span className="font-medium">Progression Globale</span>
+                <TrendingUp className="h-4 w-4 text-[#ff592b]" />
+                <span className="font-semibold text-text-primary">Progression Globale</span>
               </div>
-              <span className="text-lg font-bold text-aurentia-pink">
+              <span className="text-lg font-bold text-[#ff592b]">
                 {timelineData.completionPercentage}%
               </span>
             </div>
-            <Progress value={timelineData.completionPercentage} className="h-3" />
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <Progress value={timelineData.completionPercentage} className="progress h-3" />
+            <div className="flex items-center justify-between text-xs text-text-muted">
               <span>{timelineData.completedTasks + timelineData.completedMilestones} complétés</span>
               <span>{timelineData.totalTasks + timelineData.totalMilestones} total</span>
             </div>
@@ -314,13 +304,14 @@ export const ActionPlanTimelineWidget = ({ className }: ActionPlanTimelineWidget
           {/* View All Tasks Button */}
           <Button
             variant="link"
-            className="w-full text-aurentia-pink hover:text-aurentia-pink/80"
+            className="w-full text-[#ff592b] hover:text-[#ff592b]/80 font-semibold"
             onClick={() => window.location.href = '/individual/plan-action'}
           >
             Voir toutes les tâches →
           </Button>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* Change Focus Dialog */}
       <Dialog open={changeFocusOpen} onOpenChange={setChangeFocusOpen}>
@@ -358,11 +349,11 @@ export const ActionPlanTimelineWidget = ({ className }: ActionPlanTimelineWidget
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setChangeFocusOpen(false)}>
+            <Button className="btn-secondary" onClick={() => setChangeFocusOpen(false)}>
               Annuler
             </Button>
             <Button
-              className="bg-aurentia-pink hover:bg-aurentia-pink/90"
+              className="btn-primary"
               onClick={handleChangeFocus}
             >
               Changer Focus

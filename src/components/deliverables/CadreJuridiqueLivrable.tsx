@@ -11,6 +11,8 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 interface StructureContent {
   title: string;
@@ -44,6 +46,12 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
   const [dbJustificationAvis, setDbJustificationAvis] = useState<string | null>(null); // Justification Avis de la DB
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('cadre-juridique');
+  }, [registerDeliverable]);
 
   // Données statiques du livrable
   const staticDefinition = "Le cadre juridique d'une entreprise constitue l'architecture légale fondamentale qui détermine sa structure, son fonctionnement et ses obligations. Il englobe le choix de la forme juridique (SARL, SAS, etc.) qui définit les modalités de gouvernance, la répartition des pouvoirs, les responsabilités des dirigeants et associés, ainsi que le régime fiscal applicable.\n\nCette analyse comprend également l'identification et la maîtrise des risques juridiques spécifiques au secteur d'activité, incluant les obligations réglementaires, les certifications requises, les licences nécessaires et la conformité aux normes sectorielles. Elle intègre la mise en place de mesures préventives, la souscription d'assurances adaptées et la définition des protocoles de compliance.\n\nLe volet propriété intellectuelle constitue un pilier essentiel, couvrant la protection des marques, des brevets potentiels, des droits d'auteur et des secrets d'affaires. Il établit la stratégie de dépôt, de surveillance et de défense des actifs immatériels qui forment souvent la valeur différenciatrice de l'entreprise.";
@@ -94,13 +102,19 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
         setError("Impossible de charger les données juridiques pour ce projet.");
       } finally {
         setIsLoading(false);
+        setDeliverableLoaded('cadre-juridique');
       }
     };
 
     if (projectId) {
       fetchJuridiqueData();
     }
-  }, [projectId]);
+  }, [projectId, setDeliverableLoaded]);
+
+  // Show skeleton while global loading OR individual loading
+  if (isGlobalLoading || isLoading) {
+    return <DeliverableCardSkeleton />;
+  }
 
   // Fonction pour rendre les listes (arrays)
   const renderList = (items: string[] | undefined): JSX.Element => {

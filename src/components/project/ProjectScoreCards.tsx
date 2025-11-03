@@ -493,8 +493,8 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ title, score, subtitle, resumeExe
     };
 
     return (
-      <div 
-        className={`relative bg-white border border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      <div
+        className={`card-static relative cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         onClick={!isDisabled ? onViewMore : undefined}
         style={{ minHeight: '240px' }}
       >
@@ -517,15 +517,15 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ title, score, subtitle, resumeExe
             >
               {score}/5
             </div>
-            <div className="text-lg font-medium text-gray-900">
+            <div className="text-lg font-sans font-semibold text-text-primary">
               {title}
             </div>
           </div>
-          
+
           {/* Résumé exécutif centré avec largeur limitée */}
           {resumeExecutif && (
-            <div className="w-full lg:w-[70%] mx-auto">
-              <div className="text-sm text-gray-600 text-center">
+            <div className="w-full lg:w-[85%] mx-auto">
+              <div className="text-sm font-sans text-text-muted text-center">
                 {truncateText(resumeExecutif, 200)}
               </div>
             </div>
@@ -542,8 +542,8 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ title, score, subtitle, resumeExe
   }
 
   return (
-    <div 
-      className={`relative bg-white border border-gray-200 rounded-xl p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    <div
+      className={`card-static relative cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       onClick={!isDisabled ? onViewMore : undefined}
       style={{ minHeight: '120px' }}
     >
@@ -555,20 +555,20 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ title, score, subtitle, resumeExe
           <circle cx="12" cy="19" r="2"/>
         </svg>
       </div>
-      
+
       {/* Content */}
       <div className="flex flex-col justify-center h-full">
-        <div 
-          className="text-2xl font-semibold mb-1"
+        <div
+          className="text-2xl font-sans font-semibold mb-1"
           style={{ color: scoreColor }}
         >
           {score}/5
         </div>
-        <div className="text-sm font-medium text-gray-900 mb-1">
+        <div className="text-sm font-sans font-semibold text-text-primary mb-1">
           {title}
         </div>
         {subtitle && (
-          <div className="text-xs italic text-gray-500">
+          <div className="text-xs font-sans italic text-text-muted">
             {subtitle}
           </div>
         )}
@@ -898,9 +898,9 @@ const ProjectScoreCards: React.FC<ProjectScoreCardsProps> = ({ className }) => {
   };
 
   return (
-    <div className={`p-6 border border-gray-200 rounded-xl shadow-sm bg-white ${className}`}>
+    <>
       {/* Layout responsive avec carte principale et grid 2x2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 ${className}`}>
         {/* Carte principale */}
         {mainCard && (
           <ScoreCard
@@ -911,8 +911,8 @@ const ProjectScoreCards: React.FC<ProjectScoreCardsProps> = ({ className }) => {
             resumeExecutif={mainCard.resumeExecutif}
             isMain={true}
             onViewMore={() => openDetailPopup(
-              mainCard.popupTitle, 
-              mainCard.getSections(mainCard.data), 
+              mainCard.popupTitle,
+              mainCard.getSections(mainCard.data),
               mainCard.iconSrc,
               getJsonbValue(mainCard.data, "evaluation_finale->recommandations_prioritaires", [])
             )}
@@ -944,7 +944,7 @@ const ProjectScoreCards: React.FC<ProjectScoreCardsProps> = ({ className }) => {
         iconSrc={popupContent?.iconSrc}
         recommendations={popupContent?.recommendations}
       />
-    </div>
+    </>
   );
 };
 

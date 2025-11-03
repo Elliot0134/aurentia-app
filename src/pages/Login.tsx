@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { CollaboratorsService } from "@/services/collaborators.service";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -14,7 +14,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Users, Eye, EyeOff } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle, XCircle, Users, Eye, EyeOff, Mail } from "lucide-react";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +24,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { getDefaultDashboard } = useUserRole();
@@ -33,6 +37,16 @@ const Login = () => {
   const [invitationLoading, setInvitationLoading] = useState(false);
 
   useEffect(() => {
+    // Vérifier s'il y a un paramètre de confirmation dans l'URL
+    const confirmationParam = searchParams.get('confirmation');
+    const emailParam = searchParams.get('email');
+    if (confirmationParam === 'true' && emailParam) {
+      setConfirmationEmail(emailParam);
+      setShowConfirmationDialog(true);
+      // Nettoyer l'URL après avoir récupéré les paramètres
+      navigate('/login', { replace: true });
+    }
+
     // Vérifier s'il y a un token d'invitation dans l'URL
     const token = searchParams.get('invitation_token');
     if (token) {
@@ -225,7 +239,7 @@ const Login = () => {
         </div>
 
         {/* Main Card */}
-        <div className="rounded-2xl shadow-sm border border-gray-100 p-8 font-poppins bg-white opacity-0 animate-[fadeInUp_0.6s_ease-out_0.2s_forwards]">
+        <div className="rounded-2xl shadow-sm border border-gray-100 p-8 bg-white opacity-0 animate-[fadeInUp_0.6s_ease-out_0.2s_forwards]" style={{ fontFamily: 'var(--font-base)' }}>
           <div className="text-center mb-8 opacity-0 animate-[fadeInBlur_0.8s_ease-out_0.4s_forwards]">
             <h1 className="text-2xl font-semibold mb-2 font-biz-ud-mincho" style={{ color: 'var(--text-gris-profond)' }}>
               Bienvenue
@@ -283,15 +297,14 @@ const Login = () => {
             >
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="email" className="block text-sm font-medium" style={{ color: 'var(--text-gris-profond)' }}>
+                  <Label htmlFor="email">
                     Email
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#FF592C] focus:shadow-[0_0_0_3px_rgba(255,89,44,0.1)] transition-all duration-300 ease-in-out"
                     placeholder="votre@email.com"
                     required
                     disabled={loading}
@@ -300,9 +313,9 @@ const Login = () => {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="block text-sm font-medium" style={{ color: 'var(--text-gris-profond)' }}>
+                    <Label htmlFor="password">
                       Mot de passe
-                    </label>
+                    </Label>
                     <button
                       type="button"
                       className="text-sm hover:text-gray-700 hover:underline underline-offset-2 transition-all duration-200"
@@ -313,12 +326,12 @@ const Login = () => {
                     </button>
                   </div>
                   <div className="relative">
-                    <input
+                    <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-2.5 pr-12 border border-gray-200 rounded-lg focus:outline-none focus:border-[#FF592C] focus:shadow-[0_0_0_3px_rgba(255,89,44,0.1)] transition-all duration-300 ease-in-out"
+                      className="pr-12"
                       required
                       disabled={loading}
                     />
@@ -371,15 +384,14 @@ const Login = () => {
               <div className="space-y-4">
                 <h2 className="text-lg sm:text-xl font-semibold text-left font-biz-ud-mincho" style={{ color: 'var(--text-gris-profond)' }}>Réinitialiser le mot de passe</h2>
                 <div className="space-y-2">
-                  <label htmlFor="forgot-password-email" className="block text-sm font-medium" style={{ color: 'var(--text-gris-profond)' }}>
+                  <Label htmlFor="forgot-password-email">
                     Email
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     id="forgot-password-email"
                     type="email"
                     value={forgotPasswordEmail}
                     onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#FF592C] focus:shadow-[0_0_0_3px_rgba(255,89,44,0.1)] transition-all duration-300 ease-in-out"
                     placeholder="votre@email.com"
                     required
                     disabled={loading}
@@ -437,7 +449,7 @@ const Login = () => {
         </div>
 
         {/* Terms and Privacy Policy */}
-        <div className="mt-6 text-center text-xs text-gray-500 font-poppins opacity-0 animate-[fadeInBlur_0.8s_ease-out_1.4s_forwards]">
+        <div className="mt-6 text-center text-xs text-gray-500 opacity-0 animate-[fadeInBlur_0.8s_ease-out_1.4s_forwards]" style={{ fontFamily: 'var(--font-base)' }}>
           En continuant, vous acceptez nos{" "}
           <a href="#" className="underline underline-offset-4 hover:text-gray-700 transition-colors duration-200">
             Conditions d'utilisation
@@ -449,6 +461,47 @@ const Login = () => {
           .
         </div>
       </div>
+
+      {/* Modal de confirmation d'inscription */}
+      <Dialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="text-emerald-600" size={24} />
+              Email de confirmation envoyé
+            </DialogTitle>
+            <DialogDescription>
+              Vérifiez votre boîte de réception pour confirmer votre compte
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+              <p className="text-emerald-900 text-sm mb-2">
+                Un email de confirmation a été envoyé à :
+              </p>
+              <p className="text-emerald-700 font-semibold break-all">
+                {confirmationEmail}
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              Veuillez cliquer sur le lien dans l'email pour activer votre compte.
+              Si vous ne voyez pas l'email, vérifiez votre dossier spam.
+            </p>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:justify-end">
+            <Button
+              onClick={() => setShowConfirmationDialog(false)}
+              className="bg-gradient-primary text-white"
+            >
+              <CheckCircle size={16} className="mr-2" />
+              Compris
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal d'invitation */}
       <Dialog open={showInvitationModal} onOpenChange={setShowInvitationModal}>

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, RefreshCw, CheckCircle, AlertCircle, LogOut } from 'lucide-react';
+import { Mail, RefreshCw, CheckCircle, AlertCircle, LogOut, Headphones } from 'lucide-react';
 import { useEmailConfirmation } from '@/hooks/useEmailConfirmation';
 import { EmailConfirmationModal } from '@/components/auth/EmailConfirmationModal';
 import { toast } from '@/components/ui/use-toast';
@@ -19,8 +19,6 @@ const VerifyEmail = () => {
   const [showModal, setShowModal] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
-  const [hasShownRedirectToast, setHasShownRedirectToast] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
 
   // Check if user was just confirmed from email link
   const wasConfirmed = searchParams.get('confirmed') === 'true';
@@ -45,27 +43,6 @@ const VerifyEmail = () => {
   }, []);
 
   useEffect(() => {
-    // Only redirect if:
-    // 1. Not loading
-    // 2. User exists
-    // 3. Email is confirmed (isConfirmed = true AND isRequired = false)
-    // 4. Haven't shown redirect toast yet
-    if (!loading && user && !state.isLoading && state.isConfirmed && !state.isRequired && !hasShownRedirectToast) {
-      setHasShownRedirectToast(true);
-      
-      toast({
-        title: "Email confirmé !",
-        description: "Redirection vers votre tableau de bord...",
-      });
-      
-      // Clean up URL and redirect
-      setTimeout(() => {
-        navigate('/individual/dashboard', { replace: true });
-      }, 1500);
-    }
-  }, [loading, user, state.isLoading, state.isConfirmed, state.isRequired, navigate, hasShownRedirectToast]);
-
-  useEffect(() => {
     // Show success message if just confirmed via email link - only once
     if (wasConfirmed && !hasShownWelcomeToast) {
       setHasShownWelcomeToast(true);
@@ -84,20 +61,6 @@ const VerifyEmail = () => {
       }, 1500);
     }
   }, [wasConfirmed, hasShownWelcomeToast, actions]);
-
-  // Retry mechanism: if user arrived with confirmed=true but profile hasn't updated yet, retry a few times
-  useEffect(() => {
-    if (wasConfirmed && !state.isLoading && state.isRequired && retryCount < 3) {
-      // Profile hasn't been updated yet, retry after a delay
-      const retryTimer = setTimeout(() => {
-        console.log(`[VerifyEmail] Retry ${retryCount + 1}/3: Profile not updated yet, refreshing status...`);
-        setRetryCount(prev => prev + 1);
-        actions.refreshStatus();
-      }, 2000); // Wait 2 seconds between retries
-
-      return () => clearTimeout(retryTimer);
-    }
-  }, [wasConfirmed, state.isLoading, state.isRequired, retryCount, actions]);
 
   const handleResendEmail = async () => {
     setIsResending(true);
@@ -123,14 +86,19 @@ const VerifyEmail = () => {
     }
   };
 
-  const handleEmailConfirmed = () => {
+  const handleEmailConfirmed = async () => {
     setShowModal(false);
-    actions.refreshStatus();
-    
+    await actions.refreshStatus();
+
     toast({
       title: "Email confirmé !",
-      description: "Votre compte est maintenant activé.",
+      description: "Redirection vers votre tableau de bord...",
     });
+
+    // Redirect to dashboard after confirmation
+    setTimeout(() => {
+      navigate('/individual/dashboard', { replace: true });
+    }, 1500);
   };
 
   const handleSignOut = async () => {
@@ -159,138 +127,116 @@ const VerifyEmail = () => {
     return null;
   }
 
-  // If confirmed AND no longer required, show success message while redirecting
-  if (state.isConfirmed && !state.isRequired && hasShownRedirectToast) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#F9F6F2]">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </div>
-            <CardTitle className="text-xl">Email confirmé !</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-gray-600 mb-4">
-              Votre compte est maintenant activé. Redirection en cours...
-            </p>
-            <RefreshCw className="h-5 w-5 animate-spin mx-auto text-gray-400" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#F9F6F2] p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
-              <Mail className="h-8 w-8 text-orange-600" />
-            </div>
-          </div>
-          <CardTitle className="text-xl">Confirmez votre email</CardTitle>
-        </CardHeader>
+    <div className="flex items-center justify-center min-h-screen p-4" style={{ backgroundColor: '#f8f8f6' }}>
+      <div className="w-full max-w-[450px]">
+        {/* Logo Aurentia */}
+        <div className="flex items-center justify-center mb-6 opacity-0 animate-[fadeInUp_0.6s_ease-out_0.1s_forwards]">
+          <img
+            src="/Aurentia-logo-long.svg"
+            alt="Aurentia"
+            className="h-10"
+          />
+        </div>
 
-        <CardContent className="space-y-4">
-          <div className="text-center text-gray-600">
-            <p className="mb-4">
-              Pour accéder à votre compte, vous devez confirmer votre adresse email :
-            </p>
-            <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <p className="font-medium text-gray-800">{user.email}</p>
-            </div>
-            <p className="text-sm text-gray-500">
-              Un email de confirmation a été envoyé à cette adresse. Cliquez sur le lien dans l'email pour activer votre compte.
-            </p>
-          </div>
-
-          {/* Statut de confirmation */}
-          {state.confirmationStatus && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="flex items-center gap-2 text-blue-700">
-                <Mail className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  Statut : {state.confirmationStatus.status === 'pending' ? 'En attente' : 'Expiré'}
-                </span>
+        {/* Main Card */}
+        <Card className="rounded-2xl shadow-sm border border-gray-100 p-8 bg-white opacity-0 animate-[fadeInUp_0.6s_ease-out_0.2s_forwards]">
+          <CardHeader className="text-center p-0 mb-6 opacity-0 animate-[fadeInBlur_0.8s_ease-out_0.4s_forwards]">
+            <div className="flex justify-center mb-3">
+              <div className="w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center">
+                <Mail className="h-7 w-7 text-orange-600" />
               </div>
-              {state.confirmationStatus.expires_at && (
-                <p className="text-xs text-blue-600 mt-1">
-                  Expire le : {new Date(state.confirmationStatus.expires_at).toLocaleString('fr-FR')}
-                </p>
-              )}
             </div>
-          )}
-
-          {/* Erreur */}
-          {state.error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{state.error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Actions */}
-          <div className="space-y-3">
-            <Button
-              onClick={handleResendEmail}
-              disabled={!canResend || isResending}
-              className="w-full bg-[#FF592C] hover:bg-[#e04a1f]"
-            >
-              {isResending ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : canResend ? (
-                <>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Renvoyer l'email de confirmation
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Renvoyer dans {resendCooldownSeconds}s
-                </>
-              )}
-            </Button>
-
-            <Button
-              onClick={actions.refreshStatus}
-              variant="outline"
-              className="w-full"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              J'ai confirmé mon email
-            </Button>
-
-            <Button
-              onClick={handleSignOut}
-              variant="ghost"
-              className="w-full text-gray-600 hover:text-gray-800"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Se déconnecter
-            </Button>
-          </div>
-
-          {/* Aide */}
-          <div className="text-center pt-4 border-t">
-            <p className="text-xs text-gray-500">
-              Vous n'avez pas reçu l'email ? Vérifiez vos spams ou contactez-nous à{' '}
-              <a 
-                href="mailto:support@aurentia.fr" 
-                className="text-[#FF592C] hover:text-[#e04a1f] font-medium"
-              >
-                support@aurentia.fr
-              </a>
+            <CardTitle className="text-xl font-semibold text-gray-800 mb-2">Vérifiez votre email</CardTitle>
+            <p className="text-sm text-gray-500">
+              Nous avons envoyé un lien de confirmation à
             </p>
-          </div>
-        </CardContent>
+          </CardHeader>
+
+          <CardContent className="space-y-5 p-0 opacity-0 animate-[fadeInBlur_0.8s_ease-out_0.6s_forwards]">
+            {/* Email display */}
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="font-medium text-gray-800 text-sm">{user.email}</p>
+            </div>
+
+            {/* Erreur */}
+            {state.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{state.error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Actions */}
+            <div className="space-y-2.5 pt-1">
+              <button
+                onClick={async () => {
+                  await actions.refreshStatus();
+                  // Redirect to onboarding after email confirmation
+                  setTimeout(() => {
+                    navigate('/onboarding', { replace: true });
+                  }, 500);
+                }}
+                className="w-full bg-aurentia-orange text-white py-3 rounded-lg hover:bg-aurentia-orange/90 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ease-in-out text-base"
+              >
+                <CheckCircle className="h-4 w-4 mr-2 inline" />
+                J'ai confirmé mon email
+              </button>
+            </div>
+
+            {/* Aide et déconnexion */}
+            <div className="space-y-4 mt-8">
+              <p className="text-sm text-center text-gray-500">
+                Vous ne voyez pas l'email ? Vérifiez vos spams
+              </p>
+
+              {/* Two buttons side by side */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <Button
+                  onClick={handleResendEmail}
+                  disabled={!canResend || isResending}
+                  variant="outline"
+                  className="py-5"
+                >
+                  {isResending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Envoi...
+                    </>
+                  ) : canResend ? (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Renvoyer
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      {resendCooldownSeconds}s
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => window.location.href = 'mailto:support@aurentia.fr'}
+                  variant="outline"
+                  className="py-5"
+                >
+                  <Headphones className="h-4 w-4 mr-2" />
+                  Support
+                </Button>
+              </div>
+
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 py-2 text-sm transition-all duration-200 hover:translate-x-1"
+              >
+                Se déconnecter
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </CardContent>
       </Card>
+      </div>
 
       {/* Modal de confirmation */}
       {showModal && (

@@ -1,0 +1,359 @@
+/**
+ * Aurentia Design System - Theme Variables
+ * Defines the foundational design tokens for colors, typography, spacing, and animations
+ */
+
+@layer base {
+  :root {
+    /* ========================================
+       COLORS - Pages & Layouts
+       ======================================== */
+    --bg-page: #ffffff;
+    --bg-modal: #ffffff;
+
+    /* ========================================
+       COLORS - Cards
+       ======================================== */
+    --bg-card-clickable: #f4f4f5;
+    --bg-card-static: #ffffff;
+    --border-card-static: #f2f2f1;
+
+    /* ========================================
+       COLORS - Typography
+       ======================================== */
+    --text-primary: #2e333d;
+    --text-secondary: #f8f8f6;
+    --text-muted: #6b7280;
+
+    /* ========================================
+       COLORS - Borders & Separators
+       ======================================== */
+    --border-default: #e6e6e9;
+    --border-hover: #d3d3d8;
+    --divider: #e6e6e9;
+
+    /* ========================================
+       COLORS - Buttons
+       ======================================== */
+    --btn-primary-bg: #ff592b;
+    --btn-primary-text: #f8f8f6;
+    --btn-primary-opacity-default: 100%;
+    --btn-primary-opacity-hover: 90%;
+
+    --btn-secondary-bg: transparent;
+    --btn-secondary-border: #e6e6e9;
+    --btn-secondary-text: #2e333d;
+    --btn-secondary-bg-hover: #f4f4f4;
+    --btn-secondary-border-hover: #d3d3d8;
+
+    --btn-tertiary-bg: transparent;
+    --btn-tertiary-text: #2e333d;
+    --btn-tertiary-bg-hover: #f2f2f1;
+
+    --btn-danger-bg: #dc2626;
+    --btn-danger-text: #ffffff;
+    --btn-danger-opacity-default: 100%;
+    --btn-danger-opacity-hover: 90%;
+
+    --btn-disabled-opacity: 40%;
+
+    /* ========================================
+       COLORS - States & Feedback
+       ======================================== */
+    --color-success: #10b981;
+    --color-error: #ef4444;
+    --color-warning: #f59e0b;
+    --color-info: #3b82f6;
+
+    /* ========================================
+       COLORS - Toasts & Notifications
+       ======================================== */
+    --toast-bg: #ffffff;
+    --toast-border: #e6e6e9;
+
+    /* ========================================
+       COLORS - Focus (Accessibility)
+       ======================================== */
+    --focus-ring-color: rgba(255, 89, 43, 0.5);
+    --focus-ring-width: 3px;
+    --focus-ring-offset: 2px;
+
+    /* ========================================
+       COLORS - Links
+       ======================================== */
+    --link-color: #2e333d;
+    --link-weight: 600;
+
+    /* ========================================
+       COLORS - Form Inputs
+       ======================================== */
+    --input-bg: #ffffff;
+    --input-border: #e6e6e9;
+    --input-border-focus: #ff592b;
+    --input-border-error: #ef4444;
+    --input-text: #2e333d;
+    --input-placeholder: rgba(46, 51, 61, 0.5);
+
+    /* ========================================
+       TYPOGRAPHY - Font Families
+       ======================================== */
+    --font-base: 'Inter', sans-serif;
+    --font-heading: 'BIZUD Mincho', serif;
+    --font-mono: 'Monaco', 'Courier New', monospace;
+
+    /* ========================================
+       TYPOGRAPHY - Headings
+       ======================================== */
+    --h1-font: 'BIZUD Mincho', serif;
+    --h1-size: 2.5rem;
+    --h1-weight: 400;
+    --h1-line-height: 1.2;
+    --h1-color: #2e333d;
+
+    --h2-font: 'Inter', sans-serif;
+    --h2-size: 2rem;
+    --h2-weight: 600;
+    --h2-line-height: 1.3;
+    --h2-color: #2e333d;
+
+    --h3-font: 'Inter', sans-serif;
+    --h3-size: 1.5rem;
+    --h3-weight: 600;
+    --h3-line-height: 1.4;
+    --h3-color: #2e333d;
+
+    --h4-font: 'Inter', sans-serif;
+    --h4-size: 1.25rem;
+    --h4-weight: 600;
+    --h4-line-height: 1.4;
+    --h4-color: #2e333d;
+
+    --h5-size: 1.125rem;
+    --h5-weight: 600;
+
+    --h6-size: 1rem;
+    --h6-weight: 600;
+
+    /* ========================================
+       TYPOGRAPHY - Body Text
+       ======================================== */
+    --text-base-size: 1rem;
+    --text-base-weight: 400;
+    --text-base-line-height: 1.5;
+    --text-base-color: #2e333d;
+
+    --text-sm-size: 0.875rem;
+    --text-sm-weight: 400;
+    --text-sm-color: #6b7280;
+
+    --text-xs-size: 0.75rem;
+    --text-xs-weight: 400;
+    --text-xs-color: #9ca3af;
+
+    --text-bold-weight: 600;
+
+    /* ========================================
+       TYPOGRAPHY - Specialized Text
+       ======================================== */
+    --code-size: 0.875rem;
+    --code-bg: #f2f2f1;
+    --code-text: #2e333d;
+    --code-padding: 2px 6px;
+    --code-radius: 4px;
+
+    --label-size: 0.875rem;
+    --label-weight: 600;
+    --label-color: #2e333d;
+
+    /* ========================================
+       SPACING
+       ======================================== */
+    --spacing-0: 0;
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+
+    /* ========================================
+       BORDER RADIUS
+       ======================================== */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    /* ========================================
+       TRANSITIONS & ANIMATIONS
+       ======================================== */
+    --transition-fast: 150ms;
+    --transition-base: 200ms;
+    --transition-slow: 300ms;
+
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ========================================
+     GLOBAL TYPOGRAPHY STYLES
+     ======================================== */
+  body {
+    font-family: var(--font-base);
+    font-size: var(--text-base-size);
+    font-weight: var(--text-base-weight);
+    line-height: var(--text-base-line-height);
+    color: var(--text-base-color);
+    background-color: var(--bg-page);
+  }
+
+  /* Only H1 uses Mincho font - page titles only */
+  h1 {
+    font-family: var(--h1-font);
+    font-size: var(--h1-size);
+    font-weight: var(--h1-weight);
+    line-height: var(--h1-line-height);
+    color: var(--h1-color);
+  }
+
+  /* All other headings use Inter */
+  h2 {
+    font-family: var(--font-base);
+    font-size: var(--h2-size);
+    font-weight: var(--h2-weight);
+    line-height: var(--h2-line-height);
+    color: var(--h2-color);
+  }
+
+  h3 {
+    font-family: var(--font-base);
+    font-size: var(--h3-size);
+    font-weight: var(--h3-weight);
+    line-height: var(--h3-line-height);
+    color: var(--h3-color);
+  }
+
+  h4 {
+    font-family: var(--font-base);
+    font-size: var(--h4-size);
+    font-weight: var(--h4-weight);
+    line-height: var(--h4-line-height);
+    color: var(--h4-color);
+  }
+
+  h5 {
+    font-family: var(--font-base);
+    font-size: var(--h5-size);
+    font-weight: var(--h5-weight);
+  }
+
+  h6 {
+    font-family: var(--font-base);
+    font-size: var(--h6-size);
+    font-weight: var(--h6-weight);
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: var(--code-size);
+    background-color: var(--code-bg);
+    color: var(--code-text);
+    padding: var(--code-padding);
+    border-radius: var(--code-radius);
+  }
+
+  /* ========================================
+     GLOBAL FOCUS STYLES (Accessibility)
+     ======================================== */
+  *:focus {
+    outline: none;
+  }
+
+  *:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    border-radius: var(--radius-sm);
+  }
+
+  /* ========================================
+     KEYFRAME ANIMATIONS
+     ======================================== */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      background-position: 0% 0%;
+    }
+    50% {
+      background-position: 100% 0%;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-1rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-1rem);
+    }
+  }
+
+  @keyframes borderBounce {
+    0% {
+      outline-offset: 0px;
+    }
+    50% {
+      outline-offset: 3px;
+    }
+    100% {
+      outline-offset: 0px;
+    }
+  }
+}

@@ -6,12 +6,20 @@ import HarmonizedDeliverableCard from './shared/HarmonizedDeliverableCard';
 import HarmonizedDeliverableModal from './shared/HarmonizedDeliverableModal';
 import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
+import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
+import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
 
 const AnalyseDesRessourcesLivrable: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { isGlobalLoading, registerDeliverable, setDeliverableLoaded } = useDeliverablesLoading();
+
+  // Register this deliverable on mount
+  useEffect(() => {
+    registerDeliverable('analyse-ressources');
+  }, [registerDeliverable]);
   const [error, setError] = useState<string | null>(null);
   const [openSubCategories, setOpenSubCategories] = useState<Record<string, boolean>>({});
   const [selectedCategory, setSelectedCategory] = useState<string | null>('materielles');
@@ -67,6 +75,7 @@ const AnalyseDesRessourcesLivrable: React.FC = () => {
       if (!projectId) {
         setError("Project ID not found in URL.");
         setLoading(false);
+        setDeliverableLoaded('analyse-ressources');
         console.log("AnalyseDesRessourcesLivrable: Project ID not found.");
         return;
       }
@@ -112,6 +121,7 @@ const AnalyseDesRessourcesLivrable: React.FC = () => {
         console.error("AnalyseDesRessourcesLivrable: Fetch error:", err);
       } finally {
         setLoading(false);
+        setDeliverableLoaded('analyse-ressources');
         console.log("AnalyseDesRessourcesLivrable: Loading finished.");
       }
     };
@@ -238,9 +248,9 @@ const AnalyseDesRessourcesLivrable: React.FC = () => {
     );
   };
 
-  if (loading) {
-    console.log("AnalyseDesRessourcesLivrable: Rendering Loading state.");
-    return <div>Chargement des ressources...</div>;
+  // Show skeleton while global loading OR individual loading
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
   }
 
   if (error) {

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea';
 import { CardHeader } from '@/components/ui/card';
 import { Credit3DDisplay } from '@/components/ui/Credit3DDisplay';
-import { Search, SlidersHorizontal, ChevronDown, Star, Zap, TrendingUp, Users, Settings, Code, Image, Video, Volume2 } from 'lucide-react';
+import { Search, SlidersHorizontal, Star, Zap, TrendingUp, Users, Settings, Code, Image, Video, Volume2, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAIToolsList } from '@/hooks/useAIToolsNew';
 import type { AITool } from '@/types/aiTools';
@@ -50,7 +50,6 @@ const Outils: React.FC = () => {
   const setSortBy = (sort: string) => updateUrlParams({ sort });
   const setFavoritesOnly = (favorites: boolean) => updateUrlParams({ favorites });
 
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     type: '',
@@ -136,25 +135,21 @@ const Outils: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#F4F4F1' }}>
-  <div className="mx-auto px-4 py-8" style={{ width: '85%', maxWidth: '1400px' }}>
+    <div className="min-h-screen bg-[var(--bg-page)]">
+      <div className="container-aurentia py-8">
         {/* En-tête avec boutons d'action */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Outils IA</h1>
-              <p className="text-gray-600">
-                Découvrez et utilisez une collection complète d'outils d'intelligence artificielle
-                pour booster votre productivité et automatiser vos tâches.
-              </p>
+              <h1 style={{ fontFamily: 'var(--h1-font)', fontSize: 'var(--h1-size)', fontWeight: 'var(--h1-weight)', color: 'var(--h1-color)' }}>Outils IA</h1>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="secondary" className="bg-white border border-gray-200 hover:bg-gray-50">
+              <Button className="bg-white border border-gray-200 text-[var(--text-primary)] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                 En savoir +
               </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+                  <Button className="btn-primary">
                     Ajouter +
                   </Button>
                 </DialogTrigger>
@@ -201,10 +196,10 @@ const Outils: React.FC = () => {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                    <Button className="btn-secondary" onClick={() => setDialogOpen(false)}>
                       Annuler
                     </Button>
-                    <Button onClick={handleSubmitRequest} style={{ backgroundColor: '#ff5932' }} className="hover:opacity-90 text-white">
+                    <Button onClick={handleSubmitRequest} className="btn-primary">
                       Soumettre la demande
                     </Button>
                   </DialogFooter>
@@ -215,152 +210,162 @@ const Outils: React.FC = () => {
         </div>
 
         {/* Cartes de statistiques */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid-aurentia grid-cols-2 lg:grid-cols-4 mb-8">
           {statsData.map((stat, index) => (
-            <Card key={index} className="border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{stat.title}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                  </div>
-                  <div className="p-2 rounded-lg" style={{ backgroundColor: '#fef2ed', color: '#ff5932' }}>
-                    {stat.icon}
-                  </div>
-                </div>
+            <Card key={index} className="card-static">
+              <CardContent className="px-4 py-2">
+                <p className="text-sm text-[var(--text-muted)]">{stat.title}</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">{stat.value}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Conteneur de filtres avec accordéon */}
-        <Card className="mb-8 border">
-          <CardHeader className="pb-4">
-            <div
-              className="cursor-pointer flex items-center justify-between"
-              onClick={() => setFiltersOpen(!filtersOpen)}
-            >
-              <div className="flex items-center gap-2">
-                <SlidersHorizontal className="h-5 w-5 text-gray-600" />
-                <CardTitle className="text-lg">Filtres et Recherche</CardTitle>
-              </div>
-              <ChevronDown className={`h-5 w-5 text-gray-600 transition-transform duration-300 ${filtersOpen ? 'rotate-180' : ''}`} />
-            </div>
-          </CardHeader>
-          
-          <div className={cn(
-            "transition-all duration-300 overflow-hidden",
-            filtersOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-          )}>
-            <CardContent className="pt-0">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                {/* Barre de recherche */}
-                <div className="relative flex-1 w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Rechercher un outil..."
-                    className="pl-10 w-full focus:ring-0 focus:border-gray-300"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                
-                {/* Bouton de tri */}
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full md:w-[180px] focus:ring-0 focus:border-gray-300">
-                    <SelectValue placeholder="Trier par" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="popularity">Popularité</SelectItem>
-                    <SelectItem value="name">Nom A-Z</SelectItem>
-                    <SelectItem value="date">Date d'ajout</SelectItem>
-                    <SelectItem value="category">Catégorie</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {/* Filtres supplémentaires */}
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-full md:w-[180px] focus:ring-0 focus:border-gray-300">
-                    <SelectValue placeholder="Catégorie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les catégories</SelectItem>
-                    <SelectItem value="text">Texte</SelectItem>
-                    <SelectItem value="image">Image</SelectItem>
-                    <SelectItem value="video">Vidéo</SelectItem>
-                    <SelectItem value="audio">Audio</SelectItem>
-                    <SelectItem value="code">Code</SelectItem>
-                    <SelectItem value="data">Données</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
-                    <SelectItem value="education">Éducation</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {/* Filtre favoris */}
-                <Button
-                  variant={favoritesOnly ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFavoritesOnly(!favoritesOnly)}
-                  className="flex items-center gap-2"
-                >
-                  <Star className={cn("h-4 w-4", favoritesOnly && "fill-current")} />
-                  Favoris
-                </Button>
-              </div>
-            </CardContent>
+        {/* Filtres et Recherche */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <SlidersHorizontal className="h-5 w-5 text-[var(--text-muted)]" />
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Filtres et Recherche</h2>
           </div>
-        </Card>
+
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            {/* Barre de recherche */}
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)] h-4 w-4 pointer-events-none" />
+              <Input
+                placeholder="Rechercher un outil..."
+                className="bg-white border border-[var(--border-default)] rounded-lg w-full pl-10 pr-4 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-default)] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Bouton de tri */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full md:w-[180px] bg-white border border-[var(--border-default)] rounded-lg transition-all duration-200 focus:outline-none focus:border-gray-400 focus:ring-0">
+                <SelectValue placeholder="Trier par" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="popularity" className="hover:bg-gray-50 cursor-pointer">Popularité</SelectItem>
+                <SelectItem value="name" className="hover:bg-gray-50 cursor-pointer">Nom A-Z</SelectItem>
+                <SelectItem value="date" className="hover:bg-gray-50 cursor-pointer">Date d'ajout</SelectItem>
+                <SelectItem value="category" className="hover:bg-gray-50 cursor-pointer">Catégorie</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Filtres supplémentaires */}
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full md:w-[180px] bg-white border border-[var(--border-default)] rounded-lg transition-all duration-200 focus:outline-none focus:border-gray-400 focus:ring-0">
+                <SelectValue placeholder="Catégorie" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="all" className="hover:bg-gray-50 cursor-pointer">Toutes les catégories</SelectItem>
+                <SelectItem value="text" className="hover:bg-gray-50 cursor-pointer">Texte</SelectItem>
+                <SelectItem value="image" className="hover:bg-gray-50 cursor-pointer">Image</SelectItem>
+                <SelectItem value="video" className="hover:bg-gray-50 cursor-pointer">Vidéo</SelectItem>
+                <SelectItem value="audio" className="hover:bg-gray-50 cursor-pointer">Audio</SelectItem>
+                <SelectItem value="code" className="hover:bg-gray-50 cursor-pointer">Code</SelectItem>
+                <SelectItem value="data" className="hover:bg-gray-50 cursor-pointer">Données</SelectItem>
+                <SelectItem value="business" className="hover:bg-gray-50 cursor-pointer">Business</SelectItem>
+                <SelectItem value="education" className="hover:bg-gray-50 cursor-pointer">Éducation</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Filtre favoris */}
+            <Button
+              className={cn("flex items-center justify-center w-10 h-10", favoritesOnly ? "btn-primary" : "bg-white border border-gray-200 text-[var(--text-primary)] rounded-lg hover:bg-gray-50 transition-colors")}
+              onClick={() => setFavoritesOnly(!favoritesOnly)}
+            >
+              <Star className={cn("h-4 w-4", favoritesOnly && "fill-current")} />
+            </Button>
+          </div>
+        </div>
 
         {/* Grille de cartes d'outils */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedTools.map((tool) => (
             <Card
               key={tool.id}
-              className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 overflow-hidden border rounded-lg"
+              className="bg-[#f4f4f5] rounded-xl cursor-pointer transition-all duration-200 ease-in-out hover:bg-[#e8e8e9] overflow-hidden border-0 group"
               onClick={() => handleToolClick(tool)}
             >
-              <CardContent className="p-4">
-                <div className="flex gap-4 items-center">
-                  {/* Image à gauche, sans background */}
-                  <div className="flex-shrink-0 w-20 h-20 rounded-tl-lg rounded-bl-lg overflow-hidden flex items-center justify-center">
-                    {tool.image_url ? (
-                      <img 
-                        src={tool.image_url} 
-                        alt={tool.title}
-                        className="w-full h-full object-cover"
-                        style={{ width: '100%', height: '100%' }}
-                      />
-                    ) : (
-                      <div className="text-gray-400 text-2xl w-full h-full flex items-center justify-center">
-                        {getCategoryIcon(tool.category)}
+              <CardContent className="p-5">
+                {/* Partie supérieure avec blur (image, titre, description, tags) */}
+                <div className="relative">
+                  {/* Contenu qui blur au hover */}
+                  <div className="group-hover:blur-[8px] group-hover:opacity-30 transition-all duration-500 ease-out">
+                    <div className="flex gap-4 items-center">
+                      {/* Image à gauche, sans background */}
+                      <div className="flex-shrink-0 w-20 h-20 rounded-tl-lg rounded-bl-lg overflow-hidden flex items-center justify-center">
+                        {tool.image_url ? (
+                          <img
+                            src={tool.image_url}
+                            alt={tool.title}
+                            className="w-full h-full object-cover"
+                            style={{ width: '100%', height: '100%' }}
+                          />
+                        ) : (
+                          <div className="text-gray-400 text-2xl w-full h-full flex items-center justify-center">
+                            {getCategoryIcon(tool.category)}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      {/* Titre et description à droite */}
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg font-semibold mb-2">
+                          {tool.title}
+                        </CardTitle>
+                        <CardDescription className="text-sm text-gray-600 line-clamp-2">
+                          {tool.description}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    {/* Tags en dessous du bloc titre+description */}
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      <span className="text-xs px-2 py-1 bg-white text-gray-600 rounded-md font-normal">
+                        {tool.category}
+                      </span>
+                      {tool.tags && tool.tags.slice(0, 2).map((tag, index) => (
+                        <span
+                          key={index}
+                          className="text-xs px-2 py-1 bg-white text-gray-600 rounded-md font-normal"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  {/* Titre et description à droite */}
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg font-semibold mb-2">
-                      {tool.title}
-                    </CardTitle>
-                    <CardDescription className="text-sm text-gray-600 line-clamp-2">
-                      {tool.description}
-                    </CardDescription>
-                  </div>
+
+                  {/* Overlay glassmorphism avec features (uniquement sur la partie supérieure) */}
+                  {tool.features && tool.features.length > 0 && (
+                    <div className="absolute inset-0 flex items-start justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-500 ease-out pt-2">
+                      <div
+                        className="w-full max-h-full flex flex-col gap-2 overflow-y-auto scrollbar-hide"
+                        style={{
+                          backdropFilter: 'blur(12px)',
+                          WebkitBackdropFilter: 'blur(12px)'
+                        }}
+                      >
+                        {tool.features.map((feature, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm shadow-sm transform transition-all duration-300 ease-out"
+                            style={{
+                              opacity: 0,
+                              animation: 'fadeIn 400ms ease-out forwards',
+                              animationDelay: `${index * 50}ms`
+                            }}
+                          >
+                            <Check className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <span className="text-gray-700 font-medium">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {/* Tags en dessous du bloc titre+description */}
-                <div className="flex flex-wrap gap-1 mt-3">
-                  <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-normal">
-                    {tool.category}
-                  </span>
-                  {tool.tags && tool.tags.slice(0, 2).map((tag, index) => (
-                    <span
-                      key={index}
-                      className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-normal"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                {/* Informations de bas de carte */}
+
+                {/* Partie basse toujours visible (prix, favoris, bouton utiliser) */}
                 <div className="flex items-center justify-between mt-4">
                   {/* Affichage du coût en crédits avec image 3D */}
                   <div className="flex items-center gap-1 text-sm">
@@ -399,7 +404,7 @@ const Outils: React.FC = () => {
 
         {/* Message si aucun outil trouvé */}
         {sortedTools.length === 0 && (
-          <Card className="border">
+          <Card className="card-clickable">
             <CardContent className="p-12 text-center">
               <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">

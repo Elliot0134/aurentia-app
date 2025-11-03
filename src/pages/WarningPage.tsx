@@ -1,12 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Sparkles, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button'; // Garder le bouton Shadcn UI
 
 const WarningPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleProceed = () => {
+  const handleNewForm = () => {
+    navigate('/individual/create-project-form');
+  };
+
+  const handleOldForm = () => {
     navigate('/individual/form-business-idea');
   };
 
@@ -24,12 +28,30 @@ const WarningPage: React.FC = () => {
             className="absolute top-0 left-0 w-full h-full rounded-lg"
           ></iframe>
         </div>
-        <Button
-          onClick={handleProceed}
-          className="mt-4 px-4 py-2 rounded-lg bg-gradient-primary hover:from-blue-600 hover:to-purple-700 text-white text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
-        >
-          Continuer vers le formulaire
-        </Button>
+
+        {/* Two button options */}
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 w-full max-w-2xl">
+          <Button
+            onClick={handleNewForm}
+            className="flex-1 px-6 py-4 rounded-lg bg-gradient-to-r from-[#FF6B35] to-[#FF8A5B] hover:from-[#FF5722] hover:to-[#FF6B35] text-white text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-5 h-5" />
+            Nouveau formulaire
+          </Button>
+
+          <Button
+            onClick={handleOldForm}
+            variant="outline"
+            className="flex-1 px-6 py-4 rounded-lg border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-lg font-semibold transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
+          >
+            <FileText className="w-5 h-5" />
+            Formulaire classique
+          </Button>
+        </div>
+
+        <p className="mt-3 text-sm text-gray-500">
+          Recommandé : Essayez le nouveau formulaire avec sauvegarde automatique et design amélioré
+        </p>
       </div>
     </div>
   );

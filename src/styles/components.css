@@ -1,0 +1,516 @@
+/**
+ * Aurentia Design System - Component Utilities
+ * Reusable component classes built with Tailwind's @apply directive
+ */
+
+@layer components {
+  /* ========================================
+     CARDS
+     ======================================== */
+  .card-clickable {
+    @apply bg-[#f4f4f5] rounded-xl p-6 cursor-pointer;
+    @apply transition-all duration-200 ease-in-out;
+    @apply hover:bg-[#e8e8e9];
+  }
+
+  .card-static {
+    @apply bg-white border border-[#f2f2f1] rounded-xl p-6;
+  }
+
+  /* ========================================
+     BUTTONS
+     ======================================== */
+  .btn-primary {
+    @apply bg-[#ff592b] text-[#f8f8f6] px-6 py-3 rounded-lg;
+    @apply font-semibold transition-opacity duration-150;
+    @apply hover:opacity-90 active:scale-[0.98];
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border-2 border-[#e6e6e9] text-[#2e333d] px-6 py-3 rounded-lg;
+    @apply font-semibold transition-all duration-150;
+    @apply hover:bg-[#f4f4f4] hover:border-[#d3d3d8] active:scale-[0.98];
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-tertiary {
+    @apply bg-transparent text-[#2e333d] px-6 py-3 rounded-lg;
+    @apply font-semibold transition-all duration-150;
+    @apply hover:bg-[#f2f2f1] active:scale-[0.98];
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-[#dc2626] text-white px-6 py-3 rounded-lg;
+    @apply font-semibold transition-opacity duration-150;
+    @apply hover:opacity-90 active:scale-[0.98];
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-loading {
+    @apply relative pointer-events-none opacity-60;
+  }
+
+  .btn-loading::before {
+    content: '';
+    @apply absolute left-1/2 top-1/2 w-4 h-4 -ml-2 -mt-2;
+    @apply border-2 border-current border-t-transparent rounded-full;
+    animation: spin 600ms linear infinite;
+  }
+
+  /* ========================================
+     MODALS & DIALOGS
+     ======================================== */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal {
+    @apply bg-[#fafaf8] rounded-2xl p-8;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-enter {
+    animation: fadeIn 200ms ease-out;
+  }
+
+  .modal-exit {
+    animation: fadeOut 200ms ease-in;
+  }
+
+  .modal-close {
+    @apply absolute top-4 right-4 text-[#2e333d] opacity-60;
+    @apply hover:opacity-100 transition-opacity;
+  }
+
+  /* ========================================
+     DROPDOWNS & MENUS
+     ======================================== */
+  .dropdown {
+    @apply bg-white border-2 border-[#f2f2f1] rounded-lg;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .dropdown-item {
+    @apply px-4 py-3 text-[#2e333d] cursor-pointer;
+    @apply transition-colors duration-150;
+    @apply hover:bg-[#f2f2f1];
+  }
+
+  .dropdown-item.active {
+    @apply bg-[#ff592b] text-[#f8f8f6];
+  }
+
+  .dropdown-divider {
+    @apply h-0.5 bg-[#e6e6e9] my-2;
+  }
+
+  /* ========================================
+     TOOLTIPS
+     ======================================== */
+  .tooltip {
+    @apply bg-[#2e333d] text-white text-sm px-3 py-2 rounded-md;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 150ms ease-out;
+  }
+
+  /* ========================================
+     BADGES & PILLS
+     ======================================== */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full;
+  }
+
+  .badge-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-amber-800;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+
+  /* ========================================
+     TABS
+     ======================================== */
+  .tabs {
+    @apply flex border-b-2 border-[#e6e6e9];
+  }
+
+  .tab {
+    @apply px-6 py-3 text-[#2e333d] bg-transparent;
+    @apply border-b-2 border-transparent -mb-0.5 cursor-pointer;
+    @apply transition-all duration-150;
+    @apply hover:bg-[#f4f4f4];
+  }
+
+  .tab.active {
+    @apply bg-[#f2f2f1] border-[#ff592b] font-semibold;
+  }
+
+  /* ========================================
+     ACCORDIONS
+     ======================================== */
+  .accordion-header {
+    @apply flex justify-between items-center px-6 py-4;
+    @apply bg-[#f2f2f1] rounded-lg cursor-pointer;
+    @apply transition-colors duration-150;
+    @apply hover:bg-[#e6e6e4];
+  }
+
+  .accordion-icon {
+    @apply transition-transform duration-200;
+  }
+
+  .accordion-header[aria-expanded='true'] .accordion-icon {
+    @apply rotate-180;
+  }
+
+  .accordion-content {
+    @apply overflow-hidden transition-all duration-200;
+  }
+
+  /* ========================================
+     TABLES
+     ======================================== */
+  .table {
+    @apply w-full border-collapse;
+  }
+
+  .table thead {
+    @apply bg-[#f2f2f1];
+  }
+
+  .table th {
+    @apply px-4 py-3 font-semibold text-left text-[#2e333d];
+    @apply border-b-2 border-[#e6e6e9];
+  }
+
+  .table td {
+    @apply px-4 py-3 border-b border-[#f2f2f1];
+  }
+
+  .table tbody tr:hover {
+    @apply bg-[#fafaf8];
+  }
+
+  .table tbody tr:nth-child(even) {
+    @apply bg-[#fafaf8];
+  }
+
+  /* ========================================
+     PAGINATION
+     ======================================== */
+  .pagination {
+    @apply flex gap-2;
+  }
+
+  .pagination-item {
+    @apply px-3 py-2 bg-white border-2 border-[#e6e6e9] rounded-md;
+    @apply text-[#2e333d] cursor-pointer transition-all duration-150;
+    @apply hover:bg-[#f4f4f4] hover:border-[#d3d3d8];
+  }
+
+  .pagination-item.active {
+    @apply bg-[#ff592b] border-[#ff592b] text-[#f8f8f6] font-semibold;
+  }
+
+  /* ========================================
+     SIDEBAR & NAVIGATION
+     ======================================== */
+  .sidebar {
+    @apply bg-[#fafaf8] border-r-2 border-[#e6e6e9];
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 text-[#2e333d];
+    @apply rounded-lg cursor-pointer transition-all duration-150;
+    @apply hover:bg-[#f2f2f1];
+  }
+
+  .sidebar-item.active {
+    @apply bg-[#ff592b] text-[#f8f8f6] font-semibold;
+  }
+
+  .sidebar-icon {
+    @apply w-5 h-5;
+  }
+
+  /* ========================================
+     PROGRESS BARS
+     ======================================== */
+  .progress {
+    @apply w-full h-2 bg-[#f2f2f1] rounded-full overflow-hidden;
+  }
+
+  .progress-bar {
+    @apply h-full bg-[#ff592b] rounded-full transition-all duration-300;
+  }
+
+  /* ========================================
+     SWITCHES & TOGGLES
+     ======================================== */
+  .switch {
+    @apply w-12 h-6 bg-gray-300 rounded-full relative cursor-pointer;
+    @apply transition-colors duration-200;
+  }
+
+  .switch.checked {
+    @apply bg-[#ff592b];
+  }
+
+  .switch-thumb {
+    @apply w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5;
+    @apply transition-transform duration-200;
+  }
+
+  .switch.checked .switch-thumb {
+    @apply translate-x-6;
+  }
+
+  /* ========================================
+     CHECKBOXES & RADIOS
+     ======================================== */
+  .checkbox {
+    @apply w-5 h-5 border-2 border-[#e6e6e9] rounded cursor-pointer;
+    @apply transition-all duration-150;
+    @apply hover:border-[#d3d3d8];
+  }
+
+  .checkbox:checked {
+    @apply bg-[#ff592b] border-[#ff592b];
+  }
+
+  .checkbox:focus {
+    @apply outline-none shadow-[0_0_0_3px_rgba(255,89,43,0.3)];
+  }
+
+  .radio {
+    @apply w-5 h-5 border-2 border-[#e6e6e9] rounded-full cursor-pointer;
+    @apply transition-all duration-150;
+    @apply hover:border-[#d3d3d8];
+  }
+
+  .radio:checked {
+    @apply bg-[#ff592b] border-[#ff592b];
+  }
+
+  .radio:focus {
+    @apply outline-none shadow-[0_0_0_3px_rgba(255,89,43,0.3)];
+  }
+
+  /* ========================================
+     BREADCRUMBS
+     ======================================== */
+  .breadcrumbs {
+    @apply flex items-center gap-2 text-sm;
+  }
+
+  .breadcrumb-item {
+    @apply text-[#6b7280];
+  }
+
+  .breadcrumb-item.active {
+    @apply text-[#2e333d] font-semibold;
+  }
+
+  .breadcrumb-separator {
+    @apply text-gray-300;
+  }
+
+  /* ========================================
+     LOADING STATES
+     ======================================== */
+  .spinner {
+    @apply border-4 border-[#f2f2f1] border-t-[#ff592b] rounded-full w-10 h-10;
+    animation: spin 800ms linear infinite;
+  }
+
+  .spinner-container {
+    @apply flex justify-center items-center min-h-[200px];
+  }
+
+  .skeleton {
+    @apply bg-[#f2f2f1] rounded-lg;
+    background: linear-gradient(90deg, #f2f2f1 0%, #e6e6e9 50%, #f2f2f1 100%);
+    background-size: 200% 100%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  /* ========================================
+     EMPTY STATES
+     ======================================== */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 px-8 text-center;
+  }
+
+  .empty-state-icon {
+    @apply w-16 h-16 text-gray-300 mb-4;
+  }
+
+  .empty-state-title {
+    @apply text-xl font-semibold text-[#2e333d] mb-2;
+  }
+
+  .empty-state-description {
+    @apply text-sm text-[#6b7280] mb-6;
+  }
+
+  /* ========================================
+     ERROR STATES
+     ======================================== */
+  .error-state {
+    @apply flex flex-col items-center justify-center py-16 px-8 text-center;
+  }
+
+  .error-state-icon {
+    @apply w-16 h-16 text-[#ef4444] mb-4;
+  }
+
+  .error-state-title {
+    @apply text-xl font-semibold text-[#2e333d] mb-2;
+  }
+
+  .error-state-message {
+    @apply text-sm text-[#ef4444] mb-6;
+  }
+
+  /* ========================================
+     TOAST ANIMATIONS
+     ======================================== */
+  .toast-enter {
+    animation: slideDown 200ms ease-out;
+  }
+
+  .toast-exit {
+    animation: slideUp 200ms ease-in;
+  }
+
+  /* ========================================
+     AURENTIA-SPECIFIC COMPONENTS
+     ======================================== */
+
+  /* Deliverable Cards */
+  .deliverable-card {
+    @apply bg-[#f2f2f1] rounded-xl p-6 cursor-pointer;
+    @apply transition-transform duration-200 ease-in-out;
+  }
+
+  .deliverable-card:hover > * {
+    @apply scale-[1.02];
+  }
+
+  /* Project Cards */
+  .project-card {
+    @apply bg-[#f2f2f1] rounded-xl p-6 cursor-pointer;
+    @apply transition-transform duration-200 ease-in-out;
+  }
+
+  .project-card:hover > * {
+    @apply scale-[1.02];
+  }
+
+  /* Credits Badge */
+  .credits-badge {
+    @apply inline-flex items-center gap-2 px-4 py-2;
+    @apply bg-orange-50 border-2 border-[#ff592b] rounded-full;
+    @apply font-semibold text-[#ff592b];
+  }
+
+  /* Chat Bubbles */
+  .chat-bubble-user {
+    @apply bg-[#ff592b] text-[#f8f8f6] px-4 py-3 max-w-[70%] ml-auto;
+    border-radius: 16px 16px 4px 16px;
+  }
+
+  .chat-bubble-ai {
+    @apply bg-[#f2f2f1] text-[#2e333d] px-4 py-3 max-w-[70%];
+    border-radius: 16px 16px 16px 4px;
+  }
+
+  .chat-input {
+    @apply flex gap-2 p-4 bg-white border-t-2 border-[#e6e6e9];
+  }
+
+  /* ========================================
+     FORM INPUTS
+     ======================================== */
+  .input {
+    @apply w-full px-4 py-2 bg-white border border-[#e6e6e9] rounded-lg;
+    @apply text-[#2e333d] transition-all duration-150;
+    @apply focus:outline-none focus:border-2 focus:border-[#ff592b];
+    @apply placeholder:text-[#2e333d]/50 placeholder:bg-transparent;
+  }
+
+  .input::placeholder {
+    background-color: transparent;
+  }
+
+  .input-error {
+    @apply border-2 border-[#ef4444];
+  }
+
+  .input-label {
+    @apply text-sm font-semibold text-[#2e333d] mb-1.5 block;
+  }
+
+  /* ========================================
+     UTILITY CLASSES
+     ======================================== */
+  .container-aurentia {
+    @apply max-w-7xl mx-auto px-4;
+  }
+
+  @media (min-width: 768px) {
+    .container-aurentia {
+      @apply px-8;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-aurentia {
+      @apply px-12;
+    }
+  }
+
+  .grid-aurentia {
+    @apply grid gap-6;
+  }
+
+  .grid-cols-2-aurentia {
+    @apply grid-cols-1 md:grid-cols-2;
+  }
+
+  .grid-cols-3-aurentia {
+    @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  /* Icon Rotation Utility */
+  .icon-rotate {
+    @apply transition-transform duration-200;
+  }
+
+  .icon-rotate.rotated {
+    @apply rotate-180;
+  }
+
+  /* Divider */
+  .divider {
+    @apply h-0.5 bg-[#e6e6e9] my-4;
+  }
+
+  /* Link Styles */
+  .link {
+    @apply text-[#2e333d] font-semibold underline;
+    @apply hover:underline transition-colors;
+  }
+}

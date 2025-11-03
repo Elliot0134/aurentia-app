@@ -182,7 +182,7 @@ const ChatbotPage = () => {
 
       if (reformulatedText !== '') {
         setInputMessage(reformulatedText);
-        toast.success("Question reformulée avec succès !");
+        // Toast supprimé - pas besoin de notifier
         if (textareaRef.current) {
           textareaRef.current.focus();
         }
@@ -312,9 +312,9 @@ const ChatbotPage = () => {
 
   return (
     <ProjectRequiredGuard>
-      <div className="flex flex-col h-screen bg-[#F8F6F1] overflow-hidden overflow-x-hidden">
+      <div className="flex flex-col h-screen bg-[var(--bg-page)] overflow-hidden overflow-x-hidden">
         {/* Interface de chat directe - comme ChatGPT */}
-        <div className="flex flex-col flex-1 w-full md:w-[60vw] mx-auto h-full overflow-hidden relative pt-4"> {/* Changed to 60vw for screen width, added pt-4 */}
+        <div className="flex flex-col flex-1 w-full md:w-[60vw] mx-auto h-full overflow-hidden relative pt-4 md:pt-6"> {/* Changed to 60vw for screen width, added pt-4 */}
           {/* Header avec select de conversation */}
           <ChatHeader
             currentConversation={currentConversation}
@@ -341,28 +341,44 @@ const ChatbotPage = () => {
 
           {/* Mobile History Dropdown */}
           {(isHistoryOpenMobile || isDropdownExiting) && conversationHistory.length > 0 && (
-            <div className={`sm:hidden bg-white border-b border-gray-200 py-2 px-4 mx-4 rounded-xl backdrop-blur-md mt-0.5 absolute top-[60px] left-0 right-0 z-20 shadow-xl ${isDropdownExiting ? 'animate-fade-out' : 'animate-fade-in'}`}> {/* Added absolute, top-[60px], left-0, right-0, z-20 */}
+            <div className={`sm:hidden bg-gray-50 border-0 py-2 px-4 mx-4 rounded-xl backdrop-blur-md mt-0.5 absolute top-[60px] left-0 right-0 z-20 shadow-sm ${isDropdownExiting ? 'animate-fade-out' : 'animate-fade-in'}`}
+                 style={{
+                   animation: isDropdownExiting ? 'fadeOut var(--transition-base) var(--ease-in)' : 'fadeIn var(--transition-base) var(--ease-out)'
+                 }}> {/* Gris clair, sans contour, ombre réduite */}
               {isHistoryLoading ? (
                 <div className="flex items-center gap-2 py-2">
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-500">Chargement des conversations...</span>
+                  <div className="spinner" style={{ width: '1rem', height: '1rem' }}></div>
+                  <span className="text-sm text-[var(--text-muted)] font-sans">Chargement des conversations...</span>
                 </div>
               ) : (
-                <div className="flex flex-col gap-1">
-                  {conversationHistory.map((conv) => (
+                <div className="flex flex-col gap-2">
+                  {conversationHistory.map((conv, index) => (
                     <div key={conv.id} onClick={() => {
                       handleLoadConversation(conv.id);
                       setIsDropdownExiting(true); // Start exit animation
                       setTimeout(() => {
                         setIsHistoryOpenMobile(false); // Close history after animation
                         setIsDropdownExiting(false);
-                      }, 300); // Match animation duration
-                    }} className="py-2 px-3 rounded-md hover:bg-[#F3F4F6] cursor-pointer">
-                      <div className="flex items-center w-full">
-                        <span className="truncate flex-1 min-w-0">{conv.title}</span>
-                        <span className="text-xs text-gray-500 flex-shrink-0 ml-auto pl-4">
-                          {new Date(conv.updatedAt).toLocaleDateString('fr-FR')}
-                        </span>
+                      }, 200); // Match animation duration
+                    }} className="py-3 px-3 rounded-lg bg-white hover:bg-gray-100 cursor-pointer transition-all active:scale-[0.98]"
+                    style={{
+                      transitionDuration: 'var(--transition-fast)',
+                      animation: `fadeIn var(--transition-base) var(--ease-out) ${index * 50}ms backwards`
+                    }}>
+                      <div className="flex items-center w-full gap-3">
+                        <div className="flex-1 min-w-0">
+                          <span className="block truncate text-[var(--text-primary)] font-medium font-sans text-sm">
+                            {conv.title}
+                          </span>
+                          <span className="block text-xs text-[var(--text-muted)] font-sans mt-0.5">
+                            {new Date(conv.updatedAt).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -389,7 +405,7 @@ const ChatbotPage = () => {
               </div>
               
               {/* Input area fixe pour conversation existante */}
-              <div className="fixed md:absolute bottom-[100px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
+              <div className="fixed md:absolute bottom-[100px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[var(--bg-page)]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
                 <div className="w-full mx-auto">
                   {isMobile ? (
                     // Mobile layout: ChatInput with integrated + button
@@ -456,11 +472,12 @@ const ChatbotPage = () => {
             <div className="flex flex-col flex-1 overflow-hidden">
               <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-1 sm:py-8 pb-[160px] md:pb-[200px]">
                 {/* AI Icon and Welcome Message */}
-                <div className="flex flex-col items-center mb-8">
-                  <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4">
+                <div className="flex flex-col items-center mb-8"
+                     style={{ animation: 'fadeIn var(--transition-slow) var(--ease-out)' }}>
+                  <div className="w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 mb-4 shadow-lg">
                     <Sparkles className="w-12 h-12 text-white" />
                   </div>
-                  <h2 className="text-2xl font-semibold text-gray-800 text-center">
+                  <h2 className="text-2xl font-semibold text-[var(--text-primary)] text-center font-sans">
                     Bonjour, une question pour {projectName} ?
                   </h2>
                 </div>
@@ -474,7 +491,7 @@ const ChatbotPage = () => {
               </div>
 
               {/* Input area fixe */}
-              <div className="fixed md:absolute bottom-[100px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[#F8F6F1]/80 backdrop-blur-md z-10">
+              <div className="fixed md:absolute bottom-[100px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[var(--bg-page)]/80 backdrop-blur-md z-10">
                 <div className="w-full mx-auto">
                   {isMobile ? (
                     // Mobile layout: ChatInput with integrated + button

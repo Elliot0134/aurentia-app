@@ -24,9 +24,9 @@ const ThemeSelection = ({ selectedTheme, onSelect }: ThemeSelectionProps) => {
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-6">
+    <div className="w-full max-w-2xl mx-auto px-6">
       <motion.h1
-        className="text-4xl md:text-5xl font-bold text-center mb-12"
+        className="text-3xl md:text-4xl font-bold text-center mb-8"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -34,7 +34,7 @@ const ThemeSelection = ({ selectedTheme, onSelect }: ThemeSelectionProps) => {
         Choisissez votre style
       </motion.h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      <div className="grid grid-cols-2 gap-4 md:gap-6">
         {themes.map((theme, index) => {
           const Icon = theme.icon;
           const isSelected = selectedTheme === theme.id;
@@ -43,22 +43,22 @@ const ThemeSelection = ({ selectedTheme, onSelect }: ThemeSelectionProps) => {
             <motion.button
               key={theme.id}
               onClick={() => onSelect(theme.id)}
-              className={`relative rounded-3xl overflow-hidden transition-all duration-300 ${
+              className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
                 isSelected
                   ? 'ring-4 ring-[#FF6B35] ring-offset-4 shadow-2xl'
                   : 'ring-2 ring-gray-200 hover:ring-gray-300 shadow-lg hover:shadow-xl'
               }`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               <div
-                className={`aspect-[4/3] bg-gradient-to-br ${theme.gradient} flex flex-col items-center justify-center p-8`}
+                className={`bg-gradient-to-br ${theme.gradient} flex flex-col items-center justify-center py-6 px-6`}
               >
                 <motion.div
-                  className={`mb-6 p-6 rounded-2xl ${
+                  className={`mb-2 p-3 rounded-xl ${
                     theme.id === 'light' ? 'bg-white/50' : 'bg-black/30'
                   }`}
                   animate={{
@@ -67,13 +67,13 @@ const ThemeSelection = ({ selectedTheme, onSelect }: ThemeSelectionProps) => {
                   transition={{ duration: 0.3 }}
                 >
                   <Icon
-                    className={`w-16 h-16 ${
+                    className={`w-8 h-8 ${
                       theme.id === 'light' ? 'text-gray-800' : 'text-white'
                     }`}
                   />
                 </motion.div>
                 <div
-                  className={`text-3xl font-semibold ${
+                  className={`text-lg font-semibold ${
                     theme.id === 'light' ? 'text-gray-900' : 'text-white'
                   }`}
                 >

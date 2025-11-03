@@ -2,6 +2,8 @@ import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 
 const Signup = () => {
@@ -70,15 +72,8 @@ const Signup = () => {
         }
       }
 
-      toast({
-        title: "Inscription réussie !",
-        description: "Vérifiez votre email pour confirmer votre compte.",
-      });
-
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      // Redirect to login immediately with confirmation parameter
+      navigate("/login?confirmation=true&email=" + encodeURIComponent(email));
     } catch (error: any) {
       toast({
         title: "Erreur d'inscription",
@@ -128,7 +123,7 @@ const Signup = () => {
         </div>
 
         {/* Main Card */}
-        <div className="rounded-2xl shadow-sm border border-gray-100 p-8 font-poppins bg-white opacity-0 animate-[fadeInUp_0.6s_ease-out_0.2s_forwards]">
+        <div className="rounded-2xl shadow-sm border border-gray-100 p-8 bg-white opacity-0 animate-[fadeInUp_0.6s_ease-out_0.2s_forwards]" style={{ fontFamily: 'var(--font-base)' }}>
           <div className="text-center mb-8 opacity-0 animate-[fadeInBlur_0.8s_ease-out_0.4s_forwards]">
             <h1 className="text-2xl font-semibold font-biz-ud-mincho" style={{ color: 'var(--text-gris-profond)' }}>
               Créer votre compte
@@ -174,15 +169,14 @@ const Signup = () => {
           {/* Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-4 opacity-0 animate-[fadeInBlur_0.8s_ease-out_1s_forwards]">
             <div className="space-y-2">
-              <label htmlFor="fullName" className="block text-sm font-medium" style={{ color: 'var(--text-gris-profond)' }}>
+              <Label htmlFor="fullName">
                 Nom complet
-              </label>
-              <input
+              </Label>
+              <Input
                 id="fullName"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#FF592C] focus:shadow-[0_0_0_3px_rgba(255,89,44,0.1)] transition-all duration-300 ease-in-out"
                 placeholder="John Doe"
                 required
                 disabled={loading}
@@ -190,15 +184,14 @@ const Signup = () => {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium" style={{ color: 'var(--text-gris-profond)' }}>
+              <Label htmlFor="email">
                 Email
-              </label>
-              <input
+              </Label>
+              <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#FF592C] focus:shadow-[0_0_0_3px_rgba(255,89,44,0.1)] transition-all duration-300 ease-in-out"
                 placeholder="m@example.com"
                 required
                 disabled={loading}
@@ -207,16 +200,16 @@ const Signup = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium" style={{ color: 'var(--text-gris-profond)' }}>
+                <Label htmlFor="password">
                   Mot de passe
-                </label>
+                </Label>
                 <div className="relative">
-                  <input
+                  <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 pr-12 border border-gray-200 rounded-lg focus:outline-none focus:border-[#FF592C] focus:shadow-[0_0_0_3px_rgba(255,89,44,0.1)] transition-all duration-300 ease-in-out"
+                    className="pr-12"
                     required
                     disabled={loading}
                   />
@@ -247,16 +240,16 @@ const Signup = () => {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="block text-sm font-medium" style={{ color: 'var(--text-gris-profond)' }}>
+                <Label htmlFor="confirmPassword">
                   Confirmer
-                </label>
+                </Label>
                 <div className="relative">
-                  <input
+                  <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 pr-12 border border-gray-200 rounded-lg focus:outline-none focus:border-[#FF592C] focus:shadow-[0_0_0_3px_rgba(255,89,44,0.1)] transition-all duration-300 ease-in-out"
+                    className="pr-12"
                     required
                     disabled={loading}
                   />
@@ -312,7 +305,7 @@ const Signup = () => {
         </div>
 
         {/* Terms and Privacy Policy */}
-        <div className="mt-6 text-center text-xs text-gray-500 font-poppins opacity-0 animate-[fadeInBlur_0.8s_ease-out_1.4s_forwards]">
+        <div className="mt-6 text-center text-xs text-gray-500 opacity-0 animate-[fadeInBlur_0.8s_ease-out_1.4s_forwards]" style={{ fontFamily: 'var(--font-base)' }}>
           En continuant, vous acceptez nos{" "}
           <a href="#" className="underline underline-offset-4 hover:text-gray-700 transition-colors duration-200">
             Conditions d'utilisation

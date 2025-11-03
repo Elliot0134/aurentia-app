@@ -1,6 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter+Display:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import './styles/ai-tools-animations.css';
+
+/* Aurentia Design System */
+@import './styles/theme.css';
+@import './styles/components.css';
 
 @font-face {
   font-family: 'BIZ UDPMincho';
@@ -72,15 +76,136 @@
   .scrollbar-thin:hover {
     scrollbar-color: rgb(156 163 175) transparent;
   }
+
+  /* Scrollbar personnalisée - complètement transparente */
+  .scrollbar-transparent::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-transparent::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3);
+    border-radius: 4px;
+  }
+
+  .scrollbar-transparent::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.5);
+  }
+
+  /* Pour Firefox */
+  .scrollbar-transparent {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+
+  /* Scrollbar complètement cachée */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* When white-label is enabled */
+  [style*="--org-primary-color"] input[type="checkbox"] {
+    accent-color: var(--org-primary-color);
+  }
+
+  /* Background colors - Pink variants */
+  [style*="--org-primary-color"] .bg-aurentia-pink,
+  [style*="--org-primary-color"] .from-aurentia-pink,
+  [style*="--org-primary-color"] .to-aurentia-pink,
+  [style*="--org-primary-color"] .via-aurentia-pink {
+    background-color: var(--org-primary-color) !important;
+  }
+
+  /* Background colors - Orange variants */
+  [style*="--org-primary-color"] .bg-aurentia-orange,
+  [style*="--org-primary-color"] .bg-aurentia-orange-aurentia,
+  [style*="--org-primary-color"] .from-aurentia-orange,
+  [style*="--org-primary-color"] .to-aurentia-orange,
+  [style*="--org-primary-color"] .via-aurentia-orange,
+  [style*="--org-primary-color"] .from-aurentia-orange-aurentia,
+  [style*="--org-primary-color"] .to-aurentia-orange-aurentia {
+    background-color: var(--org-primary-color) !important;
+  }
+
+  /* Text colors */
+  [style*="--org-primary-color"] .text-aurentia-pink {
+    color: var(--org-primary-color) !important;
+  }
+
+  [style*="--org-primary-color"] .text-aurentia-orange,
+  [style*="--org-primary-color"] .text-aurentia-orange-aurentia {
+    color: var(--org-primary-color) !important;
+  }
+
+  /* Border colors */
+  [style*="--org-primary-color"] .border-aurentia-pink {
+    border-color: var(--org-primary-color) !important;
+  }
+
+  [style*="--org-primary-color"] .border-aurentia-orange,
+  [style*="--org-primary-color"] .border-aurentia-orange-aurentia {
+    border-color: var(--org-primary-color) !important;
+  }
+
+  /* Gradient replacements */
+  [style*="--org-primary-color"] .bg-gradient-to-r.from-aurentia-pink.to-aurentia-orange,
+  [style*="--org-primary-color"] .bg-gradient-to-r.from-aurentia-orange.to-aurentia-pink,
+  [style*="--org-primary-color"] .bg-gradient-to-br.from-aurentia-pink,
+  [style*="--org-primary-color"] .bg-gradient-to-br.from-aurentia-orange,
+  [style*="--org-primary-color"] .bg-gradient-to-tr.from-aurentia-pink,
+  [style*="--org-primary-color"] .bg-gradient-to-tr.from-aurentia-orange {
+    background: linear-gradient(to right, var(--org-primary-color), var(--org-secondary-color)) !important;
+  }
+
+  /* Hover states */
+  [style*="--org-primary-color"] .hover\:bg-aurentia-pink:hover,
+  [style*="--org-primary-color"] .hover\:bg-aurentia-orange:hover,
+  [style*="--org-primary-color"] .hover\:bg-aurentia-orange-aurentia:hover {
+    background-color: var(--org-primary-color) !important;
+  }
+
+  [style*="--org-primary-color"] .hover\:text-aurentia-pink:hover,
+  [style*="--org-primary-color"] .hover\:text-aurentia-orange:hover,
+  [style*="--org-primary-color"] .hover\:text-aurentia-orange-aurentia:hover {
+    color: var(--org-primary-color) !important;
+  }
+
+  /* Ring colors (focus states) */
+  [style*="--org-primary-color"] .ring-aurentia-pink,
+  [style*="--org-primary-color"] .ring-aurentia-orange,
+  [style*="--org-primary-color"] .focus\:ring-aurentia-pink:focus,
+  [style*="--org-primary-color"] .focus\:ring-aurentia-orange:focus {
+    --tw-ring-color: var(--org-primary-color) !important;
+  }
 }
 
-/* Animations pour les composants de collaboration */
+/* Animations */
 @keyframes fade-in {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -110,6 +235,24 @@
   }
 }
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -132,6 +275,55 @@
   }
 }
 
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes popup-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes circle-animation {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+@keyframes square-animation {
+  0%, 80%, 100% {
+    transform: scale(0) rotate(0deg);
+  }
+  40% {
+    transform: scale(1) rotate(180deg);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.5s ease-out;
 }
@@ -142,6 +334,14 @@
 
 .animate-slide-in-right {
   animation: slide-in-right 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+.animate-popup-appear {
+  animation: popup-appear 0.3s ease-out forwards;
 }
 
 /* Styles pour les badges de statut */
@@ -207,11 +407,11 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
-  
+
   .table-responsive {
     overflow-x: auto;
   }
-  
+
   .mobile-stack {
     flex-direction: column;
     gap: 0.5rem;
@@ -223,15 +423,6 @@
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
 }
 
 /* Styles pour les notifications toast */
@@ -249,206 +440,6 @@
 
 .toast-info {
   border-left: 4px solid #3b82f6;
-}
-
-/* Scrollbar personnalisée - complètement transparente */
-@layer utilities {
-  /* Pour Webkit (Chrome, Safari, Edge) */
-  .scrollbar-transparent::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  .scrollbar-transparent::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .scrollbar-transparent::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.3);
-    border-radius: 4px;
-  }
-  
-  .scrollbar-transparent::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(156, 163, 175, 0.5);
-  }
-  
-  /* Pour Firefox */
-  .scrollbar-transparent {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
-  }
-
-  /* Scrollbar complètement cachée */
-  .scrollbar-hide {
-    /* Pour Webkit (Chrome, Safari, Edge) */
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;  /* Firefox */
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Safari and Chrome */
-  }
-}
-
-@layer base {
-  :root {
-    --background: 0 0% 95%; /* #F4F4F1 */
-    --foreground: 0 0% 8.2%; /* #151515 */
-
-    --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 8.2%; /* #151515 */
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 8.2%;
-
-    --primary: 15 100% 58.2%; /* #FF592C */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 15 100% 58.2%; /* Orange Aurentia */
-    --accent-foreground: 0 0% 100%; /* Texte blanc pour l'accent */
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* White label color variables - defaults to Aurentia colors */
-    --color-primary: #FF592C;
-    --color-secondary: #FF592C;
-    --color-aurentia-pink: #EF4A6D;
-    --color-aurentia-orange: #FF592C;
-
-    /* Organization branding colors - will be overridden by RoleBasedLayout */
-    --org-primary-color: #FF592C;
-    --org-secondary-color: #1a1a1a;
-    --org-primary-rgb: 255, 89, 44;
-    --org-secondary-rgb: 26, 26, 26;
-    /* Custom text colors */
-    --text-gris-profond: #2e333d;
-  }
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-body {
-  @apply bg-[#F4F4F1] text-[#151515] font-inter text-base;
-}
-
-/* Fix pour empêcher le zoom sur les inputs mobiles */
-input, textarea, select {
-  font-size: 16px !important;
-}
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-biz-ud-mincho text-[#151515];
-  }
-
-  .card-shadow {
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
-  }
-
-  .gradient-primary {
-    @apply bg-aurentia-orange-aurentia;
-  }
-
-  .btn-primary {
-    @apply bg-aurentia-orange-aurentia text-white font-medium px-5 py-2 text-sm rounded-full transition-all duration-300 hover:shadow-md;
-  }
-
-  .btn-outline {
-    @apply bg-white border border-gray-200 text-gray-800 font-medium px-5 py-2 text-sm rounded-full transition-all duration-300 hover:shadow-md;
-  }
-
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
-  }
-}
-
-@keyframes scale-in {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out forwards;
-}
-
-@keyframes popup-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-popup-appear {
-  animation: popup-appear 0.3s ease-out forwards;
 }
 
 .loader {
@@ -494,26 +485,6 @@ input, textarea, select {
   animation: square-animation 2s infinite ease-in-out;
   animation-delay: 1.5s;
 }
-
-@keyframes circle-animation {
-  0%, 80%, 100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
-@keyframes square-animation {
-  0%, 80%, 100% {
-    transform: scale(0) rotate(0deg);
-  }
-  40% {
-    transform: scale(1) rotate(180deg);
-  }
-}
-
-
 
 .markdown-content {
   @apply text-sm leading-relaxed;
@@ -738,19 +709,15 @@ input, textarea, select {
   .resource-popup-content {
     grid-template-columns: 1fr;
   }
-  
+
   .image-section {
     position: relative;
     top: 0;
   }
 }
-}
 
-
-
-/* Organization branding overrides - applies organization colors when white-label is enabled */
+/* Organization branding overrides */
 @layer components {
-  /* Override Aurentia pink/orange with organization primary color */
   .org-bg-primary {
     background-color: var(--org-primary-color) !important;
   }
@@ -763,12 +730,10 @@ input, textarea, select {
     border-color: var(--org-primary-color) !important;
   }
 
-  /* Gradient overrides for organization */
   .org-gradient-primary {
     background: linear-gradient(to right, var(--org-primary-color), var(--org-secondary-color));
   }
 
-  /* Button overrides - primary button with white-label support */
   button[style*="--org-primary-color"],
   .btn-org-primary,
   .btn-white-label {
@@ -782,13 +747,11 @@ input, textarea, select {
     opacity: 0.9;
   }
 
-  /* Override Radix/ShadCN button hover states for white-label buttons in dialogs */
   [style*="--org-primary-color"] .btn-white-label:hover {
     background-color: var(--org-primary-color) !important;
     opacity: 0.9;
   }
 
-  /* Checkbox accent color support for white-label */
   .checkbox-white-label {
     accent-color: var(--color-primary);
   }
@@ -799,95 +762,179 @@ input, textarea, select {
   }
 }
 
-/* Apply organization colors to ALL Aurentia elements when white-label is enabled */
-/* This works because RoleBasedLayout overrides --color-primary and --color-aurentia-orange variables */
-@layer utilities {
-  /* When white-label is enabled (detected by --org-primary-color presence in styles) */
-
-  /* Apply primary color to all checkboxes globally */
-  [style*="--org-primary-color"] input[type="checkbox"] {
-    accent-color: var(--org-primary-color);
-  }
-
-  /* Background colors - Pink variants */
-  [style*="--org-primary-color"] .bg-aurentia-pink,
-  [style*="--org-primary-color"] .from-aurentia-pink,
-  [style*="--org-primary-color"] .to-aurentia-pink,
-  [style*="--org-primary-color"] .via-aurentia-pink {
-    background-color: var(--org-primary-color) !important;
-  }
-
-  /* Background colors - Orange variants */
-  [style*="--org-primary-color"] .bg-aurentia-orange,
-  [style*="--org-primary-color"] .bg-aurentia-orange-aurentia,
-  [style*="--org-primary-color"] .from-aurentia-orange,
-  [style*="--org-primary-color"] .to-aurentia-orange,
-  [style*="--org-primary-color"] .via-aurentia-orange,
-  [style*="--org-primary-color"] .from-aurentia-orange-aurentia,
-  [style*="--org-primary-color"] .to-aurentia-orange-aurentia {
-    background-color: var(--org-primary-color) !important;
-  }
-
-  /* Text colors - Pink variants */
-  [style*="--org-primary-color"] .text-aurentia-pink {
-    color: var(--org-primary-color) !important;
-  }
-
-  /* Text colors - Orange variants */
-  [style*="--org-primary-color"] .text-aurentia-orange,
-  [style*="--org-primary-color"] .text-aurentia-orange-aurentia {
-    color: var(--org-primary-color) !important;
-  }
-
-  /* Border colors - Pink variants */
-  [style*="--org-primary-color"] .border-aurentia-pink {
-    border-color: var(--org-primary-color) !important;
-  }
-
-  /* Border colors - Orange variants */
-  [style*="--org-primary-color"] .border-aurentia-orange,
-  [style*="--org-primary-color"] .border-aurentia-orange-aurentia {
-    border-color: var(--org-primary-color) !important;
-  }
-
-  /* Gradient replacements - all combinations */
-  [style*="--org-primary-color"] .bg-gradient-to-r.from-aurentia-pink.to-aurentia-orange,
-  [style*="--org-primary-color"] .bg-gradient-to-r.from-aurentia-orange.to-aurentia-pink,
-  [style*="--org-primary-color"] .bg-gradient-to-br.from-aurentia-pink,
-  [style*="--org-primary-color"] .bg-gradient-to-br.from-aurentia-orange,
-  [style*="--org-primary-color"] .bg-gradient-to-tr.from-aurentia-pink,
-  [style*="--org-primary-color"] .bg-gradient-to-tr.from-aurentia-orange {
-    background: linear-gradient(to right, var(--org-primary-color), var(--org-secondary-color)) !important;
-  }
-
-  /* Hover states for backgrounds */
-  [style*="--org-primary-color"] .hover\:bg-aurentia-pink:hover,
-  [style*="--org-primary-color"] .hover\:bg-aurentia-orange:hover,
-  [style*="--org-primary-color"] .hover\:bg-aurentia-orange-aurentia:hover {
-    background-color: var(--org-primary-color) !important;
-  }
-
-  /* Hover states for text */
-  [style*="--org-primary-color"] .hover\:text-aurentia-pink:hover,
-  [style*="--org-primary-color"] .hover\:text-aurentia-orange:hover,
-  [style*="--org-primary-color"] .hover\:text-aurentia-orange-aurentia:hover {
-    color: var(--org-primary-color) !important;
-  }
-
-  /* Ring colors (focus states) */
-  [style*="--org-primary-color"] .ring-aurentia-pink,
-  [style*="--org-primary-color"] .ring-aurentia-orange,
-  [style*="--org-primary-color"] .focus\:ring-aurentia-pink:focus,
-  [style*="--org-primary-color"] .focus\:ring-aurentia-orange:focus {
-    --tw-ring-color: var(--org-primary-color) !important;
-  }
-}
-
 @layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8.2%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8.2%;
+    --primary: 15 100% 58.2%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 15 100% 58.2%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --color-primary: #FF592C;
+    --color-secondary: #FF592C;
+    --color-aurentia-pink: #EF4A6D;
+    --color-aurentia-orange: #FF592C;
+    --org-primary-color: #FF592C;
+    --org-secondary-color: #1a1a1a;
+    --org-primary-rgb: 255, 89, 44;
+    --org-secondary-rgb: 26, 26, 26;
+    --text-gris-profond: #2e333d;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-[#151515] font-inter text-base;
+  }
+
+  html,
+  body {
+    @apply bg-white text-foreground;
+  }
+
+  #root {
+    @apply bg-white;
+  }
+
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    background-color: transparent !important;
+    color: #333333 !important;
+    opacity: 0.5 !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    --tw-ring-shadow: none !important;
+    outline: 1px solid #9ca3af;
+    animation: borderBounce 300ms ease-out;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  @media (min-width: 768px) {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+      opacity: 1;
+      width: 20px;
+      height: 100%;
+      position: relative;
+      cursor: pointer;
+      background: linear-gradient(to bottom,
+        rgba(0, 0, 0, 0.03) 0%,
+        rgba(0, 0, 0, 0.03) 50%,
+        rgba(0, 0, 0, 0.05) 50%,
+        rgba(0, 0, 0, 0.05) 100%
+      );
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button:hover,
+    input[type="number"]::-webkit-outer-spin-button:hover {
+      background: linear-gradient(to bottom,
+        rgba(255, 107, 53, 0.1) 0%,
+        rgba(255, 107, 53, 0.1) 50%,
+        rgba(255, 107, 53, 0.15) 50%,
+        rgba(255, 107, 53, 0.15) 100%
+      );
+    }
+  }
+
+  @media (max-width: 767px) {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+      display: none;
+    }
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-biz-ud-mincho text-[#151515];
+  }
+
+  .card-shadow {
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .gradient-primary {
+    @apply bg-aurentia-orange-aurentia;
+  }
+
+  .btn-primary {
+    @apply bg-aurentia-orange-aurentia text-white font-medium px-5 py-2 text-sm rounded-full transition-all duration-300 hover:shadow-md;
+  }
+
+  .btn-outline {
+    @apply bg-white border border-gray-200 text-gray-800 font-medium px-5 py-2 text-sm rounded-full transition-all duration-300 hover:shadow-md;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
   }
 }
