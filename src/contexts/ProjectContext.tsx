@@ -51,7 +51,7 @@ const DELIVERABLES_CONFIG = [
   { name: 'Proposition de valeur', table: 'proposition_valeur' },
   { name: 'Business Model', table: 'business_model' },
   { name: 'Analyse des ressources', table: 'ressources_requises' },
-  { name: 'Vision/Mission', table: 'vision_mission' }
+  { name: 'Vision/Mission', table: 'vision_mission_valeurs' }
 ];
 
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {

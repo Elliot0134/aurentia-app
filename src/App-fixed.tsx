@@ -78,7 +78,7 @@ import StyleguidePage from "./pages/StyleguidePage";
 import StyleguideGuard from "./components/styleguide/StyleguideGuard";
 import CreateProjectForm from "./pages/individual/CreateProjectForm";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Component, ErrorInfo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 import "./index.css";
@@ -94,7 +94,51 @@ const queryClient = new QueryClient({
   },
 });
 
+// Error Boundary Component to catch rendering errors
+class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean; error?: Error}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    console.error("🚨 ErrorBoundary caught an error:", error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("🚨 ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-red-50">
+          <div className="text-center p-8 max-w-2xl">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">⚠️ Application Error</h1>
+            <p className="text-gray-700 mb-4">An error occurred while loading the application.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 mb-4"
+            >
+              Reload Page
+            </button>
+            <pre className="mt-4 text-xs text-left bg-gray-100 p-4 rounded overflow-auto">
+              {this.state.error?.toString()}
+              {'\n\n'}
+              {this.state.error?.stack}
+            </pre>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 const ProtectedRoute = () => {
+  console.log('[ProtectedRoute] ✅ Component rendering...');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
   const mountedRef = useRef(true);
@@ -250,21 +294,30 @@ const App = () => {
   console.log("🔥 App-fixed component rendered");
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <UserProvider>
-            <ProjectProvider>
-              <VoiceQuotaProvider>
-                <CreditsDialogProvider>
-                  <PendingInvitationsProvider>
-                    <DeliverablesLoadingProvider>
-                      <BuyCreditsDialog />
-                      <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <UserProvider>
+              <ProjectProvider>
+                <VoiceQuotaProvider>
+                  <CreditsDialogProvider>
+                    <PendingInvitationsProvider>
+                      <DeliverablesLoadingProvider>
+                        {console.log('[App] ✅ All providers rendered, rendering BuyCreditsDialog and Routes...')}
+                        <BuyCreditsDialog />
+                        {console.log('[App] ✅ BuyCreditsDialog rendered, rendering Routes...')}
+                        <Routes>
+                        {console.log('[App] 🔵 Routes component is rendering...')}
                         {/* Public routes */}
-                        <Route path="/login" element={<Login />} />
+                        <Route path="/login" element={
+                          <>
+                            {console.log('[App] 🟢 Login route matched!')}
+                            <Login />
+                          </>
+                        } />
                         <Route path="/signup" element={<Signup />} />
                         <Route path="/verify-email" element={<VerifyEmail />} />
                         <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
@@ -461,7 +514,12 @@ const App = () => {
                         <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
                         <Route path="/member/*" element={<Navigate to="/individual/dashboard" replace />} />
                         <Route path="/member/incubator" element={<Navigate to="/individual/my-organization" replace />} />
-                        <Route path="/" element={<Navigate to="/login" replace />} />
+                        <Route path="/" element={
+                          <>
+                            {console.log('[App] 🔴 Root route matched! Redirecting to /login...')}
+                            <Navigate to="/login" replace />
+                          </>
+                        } />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </DeliverablesLoadingProvider>
@@ -473,6 +531,7 @@ const App = () => {
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
