@@ -7,6 +7,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 interface LivrableProps {
   title?: string;
@@ -23,8 +24,7 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
   textColor,
   buttonColor,
 }) => {
-  const definition = "Le Business Model Canvas est un outil stratégique qui permet de visualiser et structurer les éléments clés d'un modèle d'affaires, incluant la proposition de valeur, les segments clients, les ressources et la structure financière.";
-  const importance = "Essentiel pour définir comment l'entreprise crée, délivre et capture de la valeur. Il fournit une vision globale et cohérente du modèle économique et identifie les leviers de croissance.";
+  const definition = <DefinitionContent deliverableType="business_model" />;
 
   const [businessModelData, setBusinessModelData] = useState<any & { avis: string | null }>(null);
   const [loading, setLoading] = useState(true);
@@ -357,7 +357,6 @@ const BusinessModelLivrable: React.FC<LivrableProps> = ({
         iconComponent={<img src="/icones-livrables/business-model-icon.png" alt="Business Model Icon" className="w-full h-full object-contain" />}
         contentComponent={businessModelContent}
         definition={definition}
-        importance={importance}
         showContentTab={true}
         showCommentsTab={true}
         deliverableId={deliverableId || undefined}

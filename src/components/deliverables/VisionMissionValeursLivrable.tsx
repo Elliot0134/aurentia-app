@@ -20,6 +20,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 interface VisionData {
   vision_globale: string;
@@ -82,8 +83,7 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
 
   const livrableTitle = "Vision & Missions";
   const livrableDescription = "Définition de l'identité stratégique du projet";
-  const livrableDefinition = "La vision, mission et valeurs constituent le fondement stratégique d'une entreprise. La vision définit l'ambition à long terme, la mission précise le but et l'impact recherché, tandis que les valeurs établissent les principes directeurs qui guident les décisions et comportements.";
-  const livrableImportance = "Ces éléments sont essentiels pour donner une direction claire à l'entreprise, aligner les équipes autour d'objectifs communs, et communiquer efficacement avec les parties prenantes sur l'identité et les aspirations de l'organisation.";
+  const livrableDefinition = <DefinitionContent deliverableType="vision_mission" />;
   const livrableColor = "#fab85b";
 
   // Utilisation du hook harmonisé pour la modal
@@ -200,7 +200,7 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
       {activeSection === 'vision' && (
         <div className="mt-2">
           <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-            <h4 className="text-sm font-semibold mb-2">Vision globale de l'entreprise</h4>
+            <h4 className="text-base font-sans font-bold mb-2">Vision globale de l'entreprise</h4>
             <p className="text-[#4B5563]">{visionMissionValeursData?.vision?.vision_globale || 'N/A'}</p>
           </div>
 
@@ -249,7 +249,7 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
                   : 'N/A';
                 return (
                   <div key={year} className="bg-[#F9FAFB] rounded-md p-4 mb-4 last:mb-0">
-                    <h5 className="text-sm font-semibold mb-2">Année {year}</h5>
+                    <h5 className="text-base font-sans font-bold mb-2">Année {year}</h5>
                     <p className="text-[#4B5563]">
                       {projectionValue}
                     </p>
@@ -263,11 +263,11 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
       {activeSection === 'mission' && (
         <div className="mt-2">
           <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-            <h4 className="text-sm font-semibold mb-2">Énoncé de la mission</h4>
+            <h4 className="text-base font-sans font-bold mb-2">Énoncé de la mission</h4>
             <p className="text-[#4B5563]">{visionMissionValeursData?.mission?.enonce || 'N/A'}</p>
           </div>
           <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-            <h4 className="text-sm font-semibold mb-2">Impact social et environnemental</h4>
+            <h4 className="text-base font-sans font-bold mb-2">Impact social et environnemental</h4>
             <p className="text-[#4B5563]">{visionMissionValeursData?.mission?.impact_social_environnemental || 'N/A'}</p>
           </div>
         </div>
@@ -306,14 +306,14 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
           <div className="block md:hidden mt-4">
             {visionMissionValeursData?.valeurs?.map((valeur, index) => (
               <div key={index} className="bg-[#F9FAFB] rounded-md p-4 mb-4 last:mb-0">
-                <h5 className="text-sm font-semibold mb-2">{valeur.nom || 'N/A'}</h5>
+                <h5 className="text-base font-sans font-bold mb-2">{valeur.nom || 'N/A'}</h5>
                 <p className="text-[#4B5563]">{valeur.description || 'N/A'}</p>
               </div>
             ))}
             {/* Render placeholders for missing values if less than 6 */}
             {Array.from({ length: Math.max(0, 6 - (visionMissionValeursData?.valeurs?.length || 0)) }).map((_, index) => (
               <div key={`placeholder-${index}`} className="bg-[#F9FAFB] rounded-md p-4 mb-4 last:mb-0">
-                <h5 className="text-sm font-semibold mb-2">N/A</h5>
+                <h5 className="text-base font-sans font-bold mb-2">N/A</h5>
                 <p className="text-[#4B5563]">N/A</p>
               </div>
             ))}
@@ -324,17 +324,17 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
       {activeSection === 'coherence_strategique' && (
         <div className="mt-2">
           <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-            <h4 className="text-sm font-semibold mb-2">Alignement Vision-Mission</h4>
+            <h4 className="text-base font-sans font-bold mb-2">Alignement Vision-Mission</h4>
             <p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.alignement_vision_mission || 'N/A'}</p>
           </div>
 
           <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-            <h4 className="text-sm font-semibold mb-2">Progression temporelle</h4>
+            <h4 className="text-base font-sans font-bold mb-2">Progression temporelle</h4>
             <p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.progression_temporelle || 'N/A'}</p>
           </div>
 
           <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-            <h4 className="text-sm font-semibold mb-2">Opérationnalisation des valeurs</h4>
+            <h4 className="text-base font-sans font-bold mb-2">Opérationnalisation des valeurs</h4>
             <p className="text-[#4B5563]">{visionMissionValeursData?.coherence_strategique?.operationnalisation_valeurs || 'N/A'}</p>
           </div>
         </div>
@@ -361,7 +361,6 @@ const VisionMissionValeursLivrable: React.FC<VisionMissionValeursLivrableProps> 
         iconComponent={<img src="/icones-livrables/vision-icon.png" alt="Vision Icon" className="w-full h-full object-contain" />}
         contentComponent={visionMissionContent}
         definition={livrableDefinition}
-        importance={livrableImportance}
         showContentTab={true}
         showCommentsTab={true}
         deliverableId={deliverableId || undefined}

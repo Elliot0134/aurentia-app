@@ -88,73 +88,73 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
         return (
           <div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Nom du projet</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Nom du projet</h4>
               {isEditing ? (
                 <input
                   type="text"
                   value={displayContent.projectName}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, projectName: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.projectName}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Description synthétique</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Description synthétique</h4>
               {isEditing ? (
                 <textarea
                   value={displayContent.syntheticDescription}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, syntheticDescription: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded h-24"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.syntheticDescription}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Produit ou service</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Produit ou service</h4>
               {isEditing ? (
                 <textarea
                   value={displayContent.produitService}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, produitService: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded h-24"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.produitService}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Proposition de valeur</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Proposition de valeur</h4>
               {isEditing ? (
                 <textarea
                   value={displayContent.propositionValeur}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, propositionValeur: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded h-24"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.propositionValeur}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Éléments distinctifs</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Éléments distinctifs</h4>
               {isEditing ? (
                 <textarea
                   value={displayContent.elementsDistinctifs}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, elementsDistinctifs: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded h-24"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.elementsDistinctifs}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-              <h4 className="text-sm font-semibold mb-2">Problèmes à résoudre</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Problèmes à résoudre</h4>
               {isEditing ? (
                 <textarea
                   value={displayContent.problemes}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, problemes: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded h-24"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.problemes}</p>
@@ -166,13 +166,13 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
         return (
           <div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Public cible principal</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Public cible principal</h4>
               {isEditing ? (
                 <input
                   type="text"
                   value={displayContent.publicCible}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, publicCible: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.publicCible}</p>
@@ -186,7 +186,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Profil</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Profil</h4>
                   {isEditing ? (
                     <textarea
                       value={displayContent.buyerProfiles[0]?.description || ''}
@@ -196,14 +196,14 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 0 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border border-gray-300 rounded h-20"
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
                     />
                   ) : (
                     <p className="text-[#4B5563]">{content.buyerProfiles[0]?.description}</p>
                   )}
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Problèmes à résoudre</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Problèmes à résoudre</h4>
                   {isEditing ? (
                     <textarea
                       value={displayContent.buyerProfiles[1]?.description || ''}
@@ -213,7 +213,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 1 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border border-gray-300 rounded h-20"
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
                     />
                   ) : (
                     <p className="text-[#4B5563]">{content.buyerProfiles[1]?.description}</p>
@@ -226,7 +226,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Profil</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Profil</h4>
                   {isEditing ? (
                     <textarea
                       value={displayContent.buyerProfiles[2]?.description || ''}
@@ -236,14 +236,14 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 2 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border border-gray-300 rounded h-20"
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
                     />
                   ) : (
                     <p className="text-[#4B5563]">{content.buyerProfiles[2]?.description}</p>
                   )}
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Problèmes à résoudre</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Problèmes à résoudre</h4>
                   {isEditing ? (
                     <textarea
                       value={displayContent.buyerProfiles[3]?.description || ''}
@@ -253,7 +253,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 3 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border border-gray-300 rounded h-20"
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
                     />
                   ) : (
                     <p className="text-[#4B5563]">{content.buyerProfiles[3]?.description}</p>
@@ -266,7 +266,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Profil</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Profil</h4>
                   {isEditing ? (
                     <textarea
                       value={displayContent.buyerProfiles[4]?.description || ''}
@@ -276,14 +276,14 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 4 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border border-gray-300 rounded h-20"
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
                     />
                   ) : (
                     <p className="text-[#4B5563]">{content.buyerProfiles[4]?.description}</p>
                   )}
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Problèmes à résoudre</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Problèmes à résoudre</h4>
                   {isEditing ? (
                     <textarea
                       value={displayContent.buyerProfiles[5]?.description || ''}
@@ -293,7 +293,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 5 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border border-gray-300 rounded h-20"
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
                     />
                   ) : (
                     <p className="text-[#4B5563]">{content.buyerProfiles[5]?.description}</p>
@@ -307,64 +307,64 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
         return (
           <div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Marché cible</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Marché cible</h4>
               {isEditing ? (
                 <input
                   type="text"
                   value={displayContent.marcheCible}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, marcheCible: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.marcheCible}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Marchés annexes</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Marchés annexes</h4>
               {isEditing ? (
                 <input
                   type="text"
                   value={displayContent.marchesAnnexes}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, marchesAnnexes: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.marchesAnnexes}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Localisation du projet</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Localisation du projet</h4>
               {isEditing ? (
                 <input
                   type="text"
                   value={displayContent.localisationProjet}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, localisationProjet: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.localisationProjet}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Budget</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Budget</h4>
               {isEditing ? (
                 <input
                   type="text"
                   value={displayContent.budget}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, budget: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.budget}</p>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-              <h4 className="text-sm font-semibold mb-2">L'équipe fondatrice</h4>
+              <h4 className="text-base font-sans font-bold mb-2">L'équipe fondatrice</h4>
               {isEditing ? (
                 <textarea
                   value={displayContent.equipeFondatrice}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, equipeFondatrice: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded h-24"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
                 />
               ) : (
                 <p className="text-[#4B5563]">{content.equipeFondatrice}</p>
@@ -378,7 +378,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleModalClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50" onClick={handleModalClose}>
       <div
         ref={modalRef}
         className={`bg-white text-black rounded-xl shadow-2xl w-full mx-2.5 ${modalWidthClass} relative transform scale-95 opacity-0 overflow-hidden flex flex-col`}

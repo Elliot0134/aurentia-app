@@ -219,7 +219,7 @@ const SidebarSection = ({ category, isCollapsed, location }: SidebarSectionProps
 // Module-level helper functions
 const getActiveMenuClass = (isActive: boolean) => {
   if (!isActive) return "text-gray-500 hover:bg-gray-100 hover:text-gray-700";
-  return "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white font-medium";
+  return "bg-[#ff592b] text-white font-medium transition-all duration-200";
 };
 
 const getUserDisplayName = (user: any) => {

@@ -7,23 +7,28 @@ import PendingInvitationsModal from './PendingInvitationsModal';
  * et affiche un popup quand l'utilisateur en a.
  * À intégrer dans App.tsx pour fonctionner sur toute l'application.
  */
-const PendingInvitationsProvider: React.FC = () => {
+interface PendingInvitationsProviderProps {
+  children: React.ReactNode;
+}
+
+const PendingInvitationsProvider: React.FC<PendingInvitationsProviderProps> = ({ children }) => {
   const {
     invitations,
     showModal,
     handleInvitationAccepted,
   } = usePendingInvitations();
 
-  if (invitations.length === 0) {
-    return null;
-  }
-
   return (
-    <PendingInvitationsModal
-      isOpen={showModal}
-      invitations={invitations}
-      onInvitationAccepted={handleInvitationAccepted}
-    />
+    <>
+      {children}
+      {invitations.length > 0 && (
+        <PendingInvitationsModal
+          isOpen={showModal}
+          invitations={invitations}
+          onInvitationAccepted={handleInvitationAccepted}
+        />
+      )}
+    </>
   );
 };
 

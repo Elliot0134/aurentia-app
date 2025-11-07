@@ -86,7 +86,7 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleModalClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50" onClick={handleModalClose}>
       <div
         ref={modalRef}
         className={`bg-white text-black rounded-xl shadow-2xl w-full mx-2.5 ${modalWidthClass} relative transform scale-95 opacity-0 overflow-hidden flex flex-col`}
@@ -106,7 +106,7 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
         />
         
         {/* Tab Navigation */}
-        <div className="flex bg-white border-b border-gray-100 overflow-x-auto">
+        <div className="flex bg-white border-b border-gray-100 overflow-x-auto flex-shrink-0">
           {showContentTab && (
             <button
               className={`py-3 px-6 text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeTab === 'structure' ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600 hover:text-gray-800'}`}
@@ -179,23 +179,32 @@ const HarmonizedDeliverableModal: React.FC<HarmonizedDeliverableModalProps> = ({
 
             {activeTab === 'definition' && (
               <div className="prose max-w-none">
-                <h3 className="text-lg font-bold mb-2">Définition</h3>
-                {definition ? (
-                  <div style={{ whiteSpace: 'pre-wrap' }}>
-                    {definition}
-                  </div>
+                {/* Check if definition is a React component/element (enhanced definition) */}
+                {React.isValidElement(definition) ? (
+                  // Enhanced definition with its own structure
+                  <div>{definition}</div>
                 ) : (
-                  <p className="text-gray-500">Aucune définition disponible pour le moment.</p>
-                )}
+                  // Legacy simple text definition
+                  <>
+                    <h3 className="text-lg font-bold mb-2">Définition</h3>
+                    {definition ? (
+                      <div style={{ whiteSpace: 'pre-wrap' }}>
+                        {definition}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">Aucune définition disponible pour le moment.</p>
+                    )}
 
-                {/* Section Importance */}
-                <h3 className="text-lg font-bold mb-2 mt-6">Importance</h3>
-                {importance ? (
-                  <div style={{ whiteSpace: 'pre-wrap' }}>
-                    {importance}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">Aucune importance disponible pour le moment.</p>
+                    {/* Section Importance */}
+                    <h3 className="text-lg font-bold mb-2 mt-6">Importance</h3>
+                    {importance ? (
+                      <div style={{ whiteSpace: 'pre-wrap' }}>
+                        {importance}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">Aucune importance disponible pour le moment.</p>
+                    )}
+                  </>
                 )}
               </div>
             )}

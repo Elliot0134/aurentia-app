@@ -13,6 +13,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 interface StructureContent {
   title: string;
@@ -54,8 +55,7 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
   }, [registerDeliverable]);
 
   // Données statiques du livrable
-  const staticDefinition = "Le cadre juridique d'une entreprise constitue l'architecture légale fondamentale qui détermine sa structure, son fonctionnement et ses obligations. Il englobe le choix de la forme juridique (SARL, SAS, etc.) qui définit les modalités de gouvernance, la répartition des pouvoirs, les responsabilités des dirigeants et associés, ainsi que le régime fiscal applicable.\n\nCette analyse comprend également l'identification et la maîtrise des risques juridiques spécifiques au secteur d'activité, incluant les obligations réglementaires, les certifications requises, les licences nécessaires et la conformité aux normes sectorielles. Elle intègre la mise en place de mesures préventives, la souscription d'assurances adaptées et la définition des protocoles de compliance.\n\nLe volet propriété intellectuelle constitue un pilier essentiel, couvrant la protection des marques, des brevets potentiels, des droits d'auteur et des secrets d'affaires. Il établit la stratégie de dépôt, de surveillance et de défense des actifs immatériels qui forment souvent la valeur différenciatrice de l'entreprise.";
-  const staticImportance = "Le cadre juridique est le socle de sécurité et de crédibilité de toute entreprise. Une structuration juridique inadéquate peut entraîner des conséquences dramatiques : responsabilité personnelle illimitée des dirigeants, exposition patrimoniale maximale, difficultés de financement, problèmes de gouvernance, conflits entre associés non anticipés, et impossibilité de céder ou transmettre l'entreprise dans de bonnes conditions.\n\nL'absence de maîtrise des risques sectoriels expose l'entrepreneur à des sanctions administratives, pénales ou civiles, des rappels de produits, des dommages-intérêts, une perte de réputation irréversible et potentiellement la fermeture de l'activité. Dans des secteurs réglementés, l'ignorance de la compliance peut coûter l'existence même de l'entreprise.\n\nLa négligence de la propriété intellectuelle représente un risque majeur de spoliation. Sans protection adéquate, les concurrents peuvent s'approprier librement les innovations, la marque, l'image de marque et les développements techniques, anéantissant l'avantage concurrentiel et la valeur de l'entreprise. Inversement, l'entrepreneur non protégé s'expose aux actions en contrefaçon de tiers.\n\nUn cadre juridique solide facilite les levées de fonds, rassure les partenaires commerciaux, optimise la fiscalité, préserve la flexibilité opérationnelle et prépare les évolutions futures de l'entreprise. Il constitue un facteur déterminant de pérennité et de croissance.";
+  const staticDefinition = <DefinitionContent deliverableType="cadre_juridique" />;
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -241,7 +241,7 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
             <AccordionContent>
               {section.items.map((item, itemIndex) => (
                 <div key={itemIndex} className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">{item.title}</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">{item.title}</h4>
                   <div className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>
                     {item.content}
                   </div>
@@ -273,7 +273,6 @@ const CadreJuridiqueLivrable: React.FC<LivrableProps> = ({
         iconComponent={<img src={iconSrc} alt={`${title} icon`} className="h-16 w-16 object-contain" />}
         contentComponent={renderStructureContent()}
         definition={staticDefinition}
-        importance={staticImportance}
         recommendations={dbRecommendations}
         showContentTab={true}
         showCommentsTab={true}

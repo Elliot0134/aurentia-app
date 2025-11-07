@@ -156,7 +156,7 @@ const ProjectSelector = memo(({ isCollapsed, userRole, onExpandRequest }: Projec
       </Tooltip>
       
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg z-10 max-h-56 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg z-10 max-h-56 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-1">
             {/* Create new project option */}
             <button

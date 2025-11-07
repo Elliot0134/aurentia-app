@@ -68,16 +68,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 value={currentConversation?.id || ""}
                 onValueChange={onLoadConversation}
               >
-                <SelectTrigger className="w-full max-w-xs sm:max-w-sm h-9 border-0 focus:ring-0 focus:ring-offset-0 focus:outline-none">
+                <SelectTrigger className="w-full max-w-xs sm:max-w-sm h-9 border-0 focus:ring-0 focus:ring-offset-0 focus:outline-none bg-gray-50 hover:bg-gray-100 transition-colors">
                   <SelectValue>
                     <span className="truncate text-[var(--text-primary)]">
                       {currentConversation ? currentConversation.title : 'Sélectionner une conversation'}
                     </span>
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="min-w-[400px]">
+                <SelectContent className="min-w-[400px] bg-white">
                   {conversationHistory.map((conv) => (
-                    <SelectItem key={conv.id} value={conv.id} className="hover:bg-[var(--btn-secondary-bg-hover)] transition-colors"
+                    <SelectItem key={conv.id} value={conv.id} className="hover:bg-gray-100 transition-colors"
                                 style={{ transitionDuration: 'var(--transition-fast)' }}>
                       <div className="flex items-center w-full">
                         <span className="truncate flex-1 min-w-0 text-[var(--text-primary)]">{conv.title}</span>

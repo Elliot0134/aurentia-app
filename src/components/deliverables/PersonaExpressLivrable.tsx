@@ -9,6 +9,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 interface PersonaData {
   identite: string;
@@ -142,8 +143,7 @@ const PersonaExpressLivrable: React.FC = () => {
   }, [personaData, personaBusinessData, personaOrganismeData, selectedType]);
 
   const title = "Persona Express";
-  const definition = "Un persona est un profil semi-fictif représentant votre client idéal, basé sur des données réelles et des recherches sur votre marché cible.";
-  const importanceText = "Créer des personas permet de mieux comprendre vos clients, d'adapter votre communication, de développer des produits qui répondent à leurs besoins et d'optimiser vos stratégies marketing et commerciales";
+  const definition = <DefinitionContent deliverableType="persona_express_b2c" />;
 
   // Prépare les recommandations générales pour l'onglet "Recommandations"
   // Fonction utilitaire pour formater le texte avec des sauts de ligne et du gras
@@ -253,11 +253,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Profil Client</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Identité et profil du persona</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Identité et profil du persona</h4>
                   <p className="text-[#4B5563]">{personaData.identite}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Situation personnelle et environnement</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Situation personnelle et environnement</h4>
                   <p className="text-[#4B5563]">{personaData.contexte_personnel}</p>
                 </div>
               </div>
@@ -267,11 +267,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Psychologie Client</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Motivations principales et valeurs</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Motivations principales et valeurs</h4>
                   <p className="text-[#4B5563]">{personaData.motivations_valeurs}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Défis rencontrés et frustrations</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Défis rencontrés et frustrations</h4>
                   <p className="text-[#4B5563]">{personaData.defis_frustrations}</p>
                 </div>
               </div>
@@ -281,11 +281,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Comportement d'Achat</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Habitudes et comportements d'achat</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Habitudes et comportements d'achat</h4>
                   <p className="text-[#4B5563]">{personaData.comportement_achat}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Présence et activité sur les canaux digitaux</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Présence et activité sur les canaux digitaux</h4>
                   <p className="text-[#4B5563]">{personaData.presence_digitale}</p>
                 </div>
               </div>
@@ -295,11 +295,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Stratégies Recommandées</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Stratégies marketing recommandées</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Stratégies marketing recommandées</h4>
                   <p className="text-[#4B5563]">{personaData.strategies_marketing}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Approche de vente adaptée</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Approche de vente adaptée</h4>
                   <p className="text-[#4B5563]">{personaData.approche_vente}</p>
                 </div>
               </div>
@@ -327,11 +327,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Profil Professionnel</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Identité et profil professionnel</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Identité et profil professionnel</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.identite_professionnelle}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Contexte et environnement organisationnel</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.contexte_organisationnel}</p>
                 </div>
               </div>
@@ -341,11 +341,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Contexte Business</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Responsabilités principales</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Responsabilités principales</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.responsabilites_cles}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Enjeux et défis business</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Enjeux et défis business</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.enjeux_business}</p>
                 </div>
               </div>
@@ -355,11 +355,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Processus Décisionnel</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Processus de prise de décision</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.processus_decision}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Méthodes de recherche d'infos</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Méthodes de recherche d'infos</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.recherche_information}</p>
                 </div>
               </div>
@@ -369,11 +369,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Stratégies d'Approche</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Objections et freins</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Objections et freins</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.objections_courantes}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Stratégie d'approche</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Stratégie d'approche</h4>
                   <p className="text-[#4B5563]">{personaBusinessData.strategie_approche}</p>
                 </div>
               </div>
@@ -401,11 +401,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Profil Institutionnel</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Identité et profil institutionnel</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Identité et profil institutionnel</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.identite_institutionnelle}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Contexte et environnement organisationnel</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Contexte et environnement organisationnel</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.contexte_organisationnel}</p>
                 </div>
               </div>
@@ -415,11 +415,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Mission et Contraintes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Mission et responsabilités de l'organisme</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Mission et responsabilités de l'organisme</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.mission_responsabilites}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Contraintes et limitations budgétaires</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Contraintes et limitations budgétaires</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.contraintes_budgetaires}</p>
                 </div>
               </div>
@@ -429,11 +429,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Enjeux et Décisions</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Enjeux et priorités principales</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Enjeux et priorités principales</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.enjeux_prioritaires}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Processus de prise de décision</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Processus de prise de décision</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.processus_decision}</p>
                 </div>
               </div>
@@ -443,11 +443,11 @@ const PersonaExpressLivrable: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Valeurs et Stratégies</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* New grid for sub-items */}
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Valeurs et attentes de l'organisme</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Valeurs et attentes de l'organisme</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.valeurs_attentes}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                  <h4 className="text-sm font-semibold mb-2">Stratégie d'approche recommandée</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Stratégie d'approche recommandée</h4>
                   <p className="text-[#4B5563]">{personaOrganismeData.strategie_approche}</p>
                 </div>
               </div>
@@ -483,7 +483,6 @@ const PersonaExpressLivrable: React.FC = () => {
         contentComponent={personaContent}
         recommendations={getGeneralRecommendations()} // Utilisation de la nouvelle fonction
         definition={definition}
-        importance={importanceText} // Passage de la nouvelle prop 'importance'
         showContentTab={true}
         showCommentsTab={true} // Always show comments tab
         deliverableId={deliverableId || undefined}

@@ -8,6 +8,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 const AnalyseDesRessourcesLivrable: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -26,8 +27,7 @@ const AnalyseDesRessourcesLivrable: React.FC = () => {
 
   const deliverableTitle = "Ressources requises";
   const deliverableDescription = "Identification et planification des ressources nécessaires au projet";
-  const deliverableDefinition = "L'analyse des ressources consiste à identifier, quantifier et planifier l'ensemble des moyens matériels, humains et techniques nécessaires à la réalisation et au fonctionnement d'un projet d'entreprise.";
-  const deliverableImportance = "Cette analyse est cruciale car elle permet d'évaluer les investissements requis, de planifier les recrutements, d'anticiper les coûts et de s'assurer que tous les moyens nécessaires seront disponibles au moment opportun pour le lancement et la croissance de l'entreprise.";
+  const deliverableDefinition = <DefinitionContent deliverableType="ressources_requises" />;
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -360,7 +360,6 @@ const AnalyseDesRessourcesLivrable: React.FC = () => {
         iconComponent={<img src="/icones-livrables/ressources-icon.png" alt="Ressources Icon" className="w-full h-full object-contain" />}
         contentComponent={ressourcesContent}
         definition={deliverableDefinition}
-        importance={deliverableImportance}
         showContentTab={true}
         showCommentsTab={true}
         deliverableId={deliverableId || undefined}

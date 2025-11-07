@@ -9,6 +9,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 const PropositionDeValeurLivrable: React.FC = () => {
   const [data, setData] = useState<any>(null); // Removed '& { avis: string | null }'
@@ -26,8 +27,7 @@ const PropositionDeValeurLivrable: React.FC = () => {
 
   const title = "Proposition de Valeur";
   const description = "Analyse complète de la proposition de valeur par segments clients";
-  const definition = "La proposition de valeur définit la manière dont votre entreprise crée, délivre et capture de la valeur pour différents segments de clients. Elle identifie les besoins, problèmes et aspirations de chaque segment, puis propose des solutions adaptées.";
-  const importance = "Essentiel pour aligner votre offre sur les attentes réelles du marché et différencier votre entreprise de la concurrence. Une proposition de valeur claire permet d'optimiser vos efforts marketing et commerciaux.";
+  const definition = <DefinitionContent deliverableType="proposition_valeur" />;
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -120,15 +120,15 @@ const PropositionDeValeurLivrable: React.FC = () => {
           {selectedSegment === 'B2C' && (
             <>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Produits / Services</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Produits / Services</h4>
                 {renderSectionContent('b2c_carte_valeur_produits_services', 'Produits et services de la carte de valeur B2C')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Bénéfices</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Bénéfices</h4>
                 {renderSectionContent('b2c_carte_valeur_createurs_benefices', 'Créateurs de bénéfices de la carte de valeur B2C')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                <h4 className="text-sm font-semibold mb-2">Solutions</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Solutions</h4>
                 {renderSectionContent('b2c_carte_valeur_solutions', 'Solutions de la carte de valeur B2C')}
               </div>
             </>
@@ -136,15 +136,15 @@ const PropositionDeValeurLivrable: React.FC = () => {
           {selectedSegment === 'B2B' && (
             <>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Produits / Services</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Produits / Services</h4>
                 {renderSectionContent('b2b_carte_valeur_produits_services', 'Produits et services de la carte de valeur B2B')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Bénéfices</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Bénéfices</h4>
                 {renderSectionContent('b2b_carte_valeur_createurs_benefices', 'Créateurs de bénéfices de la carte de valeur B2B')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                <h4 className="text-sm font-semibold mb-2">Solutions</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Solutions</h4>
                 {renderSectionContent('b2b_carte_valeur_solutions', 'Solutions de la carte de valeur B2B')}
               </div>
             </>
@@ -152,15 +152,15 @@ const PropositionDeValeurLivrable: React.FC = () => {
           {selectedSegment === 'Organismes' && (
             <>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Produits / Services</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Produits / Services</h4>
                 {renderSectionContent('organismes_carte_valeur_produits_services', 'Produits et services de la carte de valeur Organismes')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Créateurs de bénéfices</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Créateurs de bénéfices</h4>
                 {renderSectionContent('organismes_carte_valeur_createurs_benefices', 'Créateurs de bénéfices de la carte de valeur Organismes')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
-                <h4 className="text-sm font-semibold mb-2">Solutions</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Solutions</h4>
                 {renderSectionContent('organismes_carte_valeur_solutions', 'Solutions de la carte de valeur Organismes')}
               </div>
             </>
@@ -175,15 +175,15 @@ const PropositionDeValeurLivrable: React.FC = () => {
           {selectedSegment === 'B2C' && (
             <>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Désirs</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Désirs</h4>
                 {renderSectionContent('b2c_profil_aspirations', 'Aspirations du profil B2C')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Besoins</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Besoins</h4>
                 {renderSectionContent('b2c_profil_besoins', 'Besoins du profil B2C')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Difficultés</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Difficultés</h4>
                 {renderSectionContent('b2c_profil_problemes', 'Problèmes du profil B2C')}
               </div>
             </>
@@ -191,15 +191,15 @@ const PropositionDeValeurLivrable: React.FC = () => {
           {selectedSegment === 'B2B' && (
             <>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Désirs</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Désirs</h4>
                 {renderSectionContent('b2b_profil_aspirations', 'Aspirations du profil B2B')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Besoins</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Besoins</h4>
                 {renderSectionContent('b2b_profil_besoins', 'Besoins du profil B2B')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Difficultés</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Difficultés</h4>
                 {renderSectionContent('b2b_profil_problemes', 'Problèmes du profil B2B')}
               </div>
             </>
@@ -207,15 +207,15 @@ const PropositionDeValeurLivrable: React.FC = () => {
           {selectedSegment === 'Organismes' && (
             <>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Désirs</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Désirs</h4>
                 {renderSectionContent('organismes_profil_aspirations', 'Aspirations du profil Organismes')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Besoins</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Besoins</h4>
                 {renderSectionContent('organismes_profil_besoins', 'Besoins du profil Organismes')}
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 w-full">
-                <h4 className="text-sm font-semibold mb-2">Difficultés</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Difficultés</h4>
                 {renderSectionContent('organismes_profil_problemes', 'Problèmes du profil Organismes')}
               </div>
             </>
@@ -245,7 +245,6 @@ const PropositionDeValeurLivrable: React.FC = () => {
         iconComponent={<img src="/icones-livrables/proposition-valeur-icon.png" alt="Proposition de Valeur Icon" />}
         contentComponent={propositionValeurContent}
         definition={definition}
-        importance={importance}
         showContentTab={true}
         showCommentsTab={true}
         deliverableId={deliverableId || undefined}

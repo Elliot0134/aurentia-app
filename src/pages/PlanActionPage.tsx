@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import SimpleTeamTable from "@/components/ui/SimpleTeamTable";
+import ProgressDots from '@/components/onboarding/ProgressDots';
 import { format } from "date-fns";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { fr } from "date-fns/locale";
@@ -40,6 +42,7 @@ const PlanActionPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false); // Initialisé à false, sera géré par useEffect
   const [showWarning, setShowWarning] = useState(false);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
 
   // États pour le plan d'action
   const [selectedElement, setSelectedElement] = useState<HierarchicalElement | null>(null);
@@ -78,10 +81,8 @@ const PlanActionPage = () => {
     setSearchParams(newParams);
   };
 
-  // Navigation states
-  const [slideDirection, setSlideDirection] = useState('next');
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [previousStep, setPreviousStep] = useState(currentStep);
+  // Navigation direction for framer-motion
+  const [direction, setDirection] = useState(0);
 
   const [formData, setFormData] = useState({
     // 1. ÉQUIPE & DISPONIBILITÉ
@@ -130,33 +131,17 @@ const PlanActionPage = () => {
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
-      setSlideDirection('next');
-      setIsTransitioning(true);
-      setPreviousStep(currentStep);
-
-      setTimeout(() => {
-        updateCurrentStep(currentStep + 1);
-      }, 50);
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 350);
+      setDirection(1);
+      updateCurrentStep(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setSlideDirection('prev');
-      setIsTransitioning(true);
-      setPreviousStep(currentStep);
-
-      setTimeout(() => {
-        updateCurrentStep(currentStep - 1);
-      }, 50);
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 350);
+      setDirection(-1);
+      updateCurrentStep(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -308,23 +293,14 @@ const PlanActionPage = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-4">
-            <div className="text-center mb-8">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Équipe & Disponibilité</h2>
+          <div className="max-w-3xl mx-auto space-y-8">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Équipe & Disponibilité</h2>
+              <p className="text-gray-600 mt-2">Définissez les membres de votre équipe et leurs rôles</p>
             </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <span className="text-2xl">👥</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">Équipe du projet</h3>
-                    <p className="text-sm text-gray-600">Définissez les membres de votre équipe et leurs rôles</p>
-                  </div>
-                </div>
-                
+
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                 <SimpleTeamTable
                   teamMembers={formData.teamMembers}
                   onTeamMemberChange={handleTeamMemberChange}
@@ -338,17 +314,17 @@ const PlanActionPage = () => {
 
       case 2:
         return (
-          <div className="space-y-4">
-            <div className="text-center mb-8">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Budget & Approche</h2>
+          <div className="max-w-3xl mx-auto space-y-8">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Budget & Approche</h2>
             </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-4">
-                  💰 Budget total : {formData.budget}€
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="block text-base md:text-lg text-gray-800">
+                  Budget total : <span className="font-semibold">{formData.budget}€</span>
                 </label>
-                <div className="bg-white rounded-lg p-4">
+                <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                   <Slider
                     min={0}
                     max={200000}
@@ -357,18 +333,18 @@ const PlanActionPage = () => {
                     onValueChange={(value) => setFormData({ ...formData, budget: value[0] })}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-sm text-gray-500 mt-2">
+                  <div className="flex justify-between text-sm text-gray-500 mt-4">
                     <span>0€</span>
                     <span>200 000€</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-4">
-                  🎯 Façon de dépenser
+              <div className="space-y-3">
+                <label className="block text-base md:text-lg text-gray-800">
+                  Façon de dépenser
                 </label>
-                <div className="bg-white rounded-lg p-4">
+                <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                   <RadioGroup
                     value={formData.investmentStyle}
                     onValueChange={(value) => setFormData({ ...formData, investmentStyle: value })}
@@ -376,15 +352,15 @@ const PlanActionPage = () => {
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="econome" id="econome" />
-                      <label htmlFor="econome" className="text-base font-normal">💰 Économe (on cherche les solutions pas chères)</label>
+                      <label htmlFor="econome" className="text-base font-normal cursor-pointer">Économe (on cherche les solutions pas chères)</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="equilibre" id="equilibre" />
-                      <label htmlFor="equilibre" className="text-base font-normal">⚖️ Équilibré (on investit quand c'est utile)</label>
+                      <label htmlFor="equilibre" className="text-base font-normal cursor-pointer">Équilibré (on investit quand c'est utile)</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="ambitieux" id="ambitieux" />
-                      <label htmlFor="ambitieux" className="text-base font-normal">🚀 Ambitieux (on investit pour aller plus vite)</label>
+                      <label htmlFor="ambitieux" className="text-base font-normal cursor-pointer">Ambitieux (on investit pour aller plus vite)</label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -395,79 +371,82 @@ const PlanActionPage = () => {
 
       case 3:
         return (
-          <div className="space-y-4">
-            <div className="text-center mb-8">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Timing & Urgence</h2>
+          <div className="max-w-3xl mx-auto space-y-8">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Timing & Urgence</h2>
             </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-4">
-                  📅 Date souhaitée de lancement
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="block text-base md:text-lg text-gray-800">
+                  Date souhaitée de lancement
                 </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-white border-gray-300 focus:border-orange-500 hover:bg-gray-50 hover:text-gray-900",
-                        !formData.launchDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.launchDate ? format(formData.launchDate, "PPP", { locale: fr }) : <span>Sélectionnez une date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.launchDate || undefined}
-                      onSelect={(date) => setFormData({ ...formData, launchDate: date || null })}
-                      initialFocus
-                      locale={fr}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]",
+                          !formData.launchDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.launchDate ? format(formData.launchDate, "PPP", { locale: fr }) : <span>Sélectionnez une date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.launchDate || undefined}
+                        onSelect={(date) => setFormData({ ...formData, launchDate: date || null })}
+                        initialFocus
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
-              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg p-4 border border-yellow-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-4">
-                  ⚡ Niveau d'urgence
+              <div className="space-y-3">
+                <label className="block text-base md:text-lg text-gray-800">
+                  Niveau d'urgence
                 </label>
-                <Select
-                  value={formData.urgencyLevel}
-                  onValueChange={(value) => setFormData({ ...formData, urgencyLevel: value })}
-                >
-                  <SelectTrigger className="w-full bg-white border-gray-300 focus:border-yellow-500">
-                    <SelectValue placeholder="Sélectionnez le niveau d'urgence" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pas_presse">Pas pressé</SelectItem>
-                    <SelectItem value="rythme_normal">Rythme normal</SelectItem>
-                    <SelectItem value="assez_urgent">Assez urgent</SelectItem>
-                    <SelectItem value="tres_urgent">Très urgent</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                  <Select
+                    value={formData.urgencyLevel}
+                    onValueChange={(value) => setFormData({ ...formData, urgencyLevel: value })}
+                  >
+                    <SelectTrigger className="w-full bg-white border-gray-300 focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]">
+                      <SelectValue placeholder="Sélectionnez le niveau d'urgence" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pas_presse">Pas pressé</SelectItem>
+                      <SelectItem value="rythme_normal">Rythme normal</SelectItem>
+                      <SelectItem value="assez_urgent">Assez urgent</SelectItem>
+                      <SelectItem value="tres_urgent">Très urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-
             </div>
           </div>
         );
 
       case 4:
         return (
-          <div className="space-y-4">
-            <div className="text-center mb-8">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Style de travail</h2>
+          <div className="max-w-3xl mx-auto space-y-8">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Style de travail</h2>
             </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 border border-indigo-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-4">
-                  🎲 Prise de risque : {formData.riskTaking}%
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="block text-base md:text-lg text-gray-800">
+                  Prise de risque : <span className="font-semibold">{formData.riskTaking}%</span>
                 </label>
-                <div className="bg-white rounded-lg p-4">
-                  <div className="flex justify-between text-sm text-gray-500 mb-2">
+                <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+                  <div className="flex justify-between text-sm text-gray-500 mb-4">
                     <span>Prudent</span>
                     <span>Fonceur</span>
                   </div>
@@ -482,11 +461,11 @@ const PlanActionPage = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg p-4 border border-rose-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-4">
-                  🚀 Comment aimez-vous avancer ?
+              <div className="space-y-3">
+                <label className="block text-base md:text-lg text-gray-800">
+                  Comment aimez-vous avancer ?
                 </label>
-                <div className="bg-white rounded-lg p-4">
+                <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                   <RadioGroup
                     value={formData.preferredMethod}
                     onValueChange={(value) => setFormData({ ...formData, preferredMethod: value })}
@@ -494,15 +473,15 @@ const PlanActionPage = () => {
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="tout_preparer" id="tout_preparer" />
-                      <label htmlFor="tout_preparer" className="text-base font-normal">🎯 Tout préparer (on lance quand c'est parfait)</label>
+                      <label htmlFor="tout_preparer" className="text-base font-normal cursor-pointer">Tout préparer (on lance quand c'est parfait)</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="tester_rapidement" id="tester_rapidement" />
-                      <label htmlFor="tester_rapidement" className="text-base font-normal">⚡ Tester rapidement (on lance vite et on améliore)</label>
+                      <label htmlFor="tester_rapidement" className="text-base font-normal cursor-pointer">Tester rapidement (on lance vite et on améliore)</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="suivre_chiffres" id="suivre_chiffres" />
-                      <label htmlFor="suivre_chiffres" className="text-base font-normal">📊 Suivre les chiffres (on décide avec les données)</label>
+                      <label htmlFor="suivre_chiffres" className="text-base font-normal cursor-pointer">Suivre les chiffres (on décide avec les données)</label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -513,20 +492,20 @@ const PlanActionPage = () => {
 
       case 5:
         return (
-          <div className="space-y-4">
-            <div className="text-center mb-8">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Ressources disponibles</h2>
+          <div className="max-w-3xl mx-auto space-y-8">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Ressources disponibles</h2>
             </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg p-4 border border-violet-200">
-                <label className="block text-base md:text-lg font-semibold text-gray-800 mb-4">
-                  📝 Ressources disponibles
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="block text-base md:text-lg text-gray-800">
+                  Décrivez les ressources dont vous disposez
                 </label>
-                <div className="bg-white rounded-lg p-4">
+                <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                   <Textarea
-                    className="w-full p-3 text-base md:text-lg border-2 border-gray-200 rounded-lg focus:border-slate-500 focus:outline-none transition-colors h-48 resize-y"
-                    placeholder="Décrivrez les ressources que vous disposez actuellement (sites internet, chaque graphique, produit fini, prototype, fournisseur, etc.)"
+                    className="w-full p-3 text-base md:text-lg border-0 focus:ring-2 focus:ring-[#FF6B35] rounded-lg transition-all h-48 resize-y"
+                    placeholder="Décrivez les ressources que vous disposez actuellement (sites internet, graphiques, produit fini, prototype, fournisseurs, etc.)"
                     value={formData.resources}
                     onChange={(e) => setFormData({ ...formData, resources: e.target.value })}
                   />
@@ -583,6 +562,272 @@ const PlanActionPage = () => {
     );
   }
 
+  // Si le formulaire est affiché, utiliser le layout du formulaire de création de projet
+  if (showForm) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-between py-12 px-4 pb-32 md:pb-12">
+        {/* Main content - Centered */}
+        <div className="flex-1 flex items-center justify-center w-full pb-8 md:pb-0">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={{
+                enter: (direction: number) => ({
+                  x: direction > 0 ? 50 : -50,
+                  opacity: 0,
+                  filter: 'blur(10px)',
+                }),
+                center: {
+                  x: 0,
+                  opacity: 1,
+                  filter: 'blur(0px)',
+                },
+                exit: (direction: number) => ({
+                  x: direction < 0 ? 50 : -50,
+                  opacity: 0,
+                  filter: 'blur(10px)',
+                }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: 'spring', stiffness: 200, damping: 25 },
+                opacity: { duration: 0.5, ease: 'easeInOut' },
+                filter: { duration: 0.5, ease: 'easeInOut' },
+              }}
+              className="w-full"
+            >
+              {getStepContent()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom controls */}
+        <div className="w-full max-w-4xl mx-auto mt-8 md:mt-12 space-y-8">
+          {/* Navigation buttons */}
+          <div className="md:flex md:items-center md:justify-center md:gap-4">
+            {/* MOBILE: Circle button on right with back button */}
+            <div className="md:hidden fixed bottom-8 left-0 right-0 z-50 px-6">
+              <motion.div
+                className="flex items-center justify-end gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                {currentStep > 1 && (
+                  <motion.button
+                    onClick={handlePrevious}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.3 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="flex items-center justify-center mb-1"
+                  >
+                    <ChevronLeft className="w-9 h-9 text-gray-400" strokeWidth={2.5} />
+                  </motion.button>
+                )}
+
+                <motion.button
+                  onClick={currentStep === totalSteps ? handleSubmit : handleNext}
+                  className="relative"
+                  whileTap={{ scale: 0.92 }}
+                >
+                  {/* Mobile: Circle button with progressive fill */}
+                  <span className="flex items-center justify-center w-16 h-16 rounded-full shadow-xl transition-all duration-200 relative overflow-hidden">
+                    {/* Gray background */}
+                    <span className="absolute inset-0 bg-gray-200 rounded-full" />
+
+                    {/* Orange fill from bottom to top */}
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-t from-[#FF6B35] to-[#FF8A5B] rounded-full"
+                      initial={{ height: '0%' }}
+                      animate={{ height: `${(currentStep / totalSteps) * 100}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      style={{ bottom: 0, top: 'auto' }}
+                    />
+
+                    {/* Ambient wave animation - continuous */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'radial-gradient(circle at 50% 120%, rgba(255,255,255,0.3) 0%, transparent 70%)',
+                      }}
+                      animate={{
+                        scale: [1, 1.4, 1],
+                        opacity: [0.3, 0.6, 0.3],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                    <motion.div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'radial-gradient(circle at 50% 120%, rgba(255,255,255,0.2) 0%, transparent 60%)',
+                      }}
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [0.2, 0.5, 0.2],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                        delay: 0.5,
+                      }}
+                    />
+
+                    {/* Arrow icon */}
+                    {currentStep === totalSteps ? (
+                      <CheckCircle className="w-8 h-8 relative z-10 text-white drop-shadow-sm" strokeWidth={2.5} />
+                    ) : (
+                      <ChevronRight className="w-8 h-8 relative z-10 text-white drop-shadow-sm" strokeWidth={2.5} />
+                    )}
+                  </span>
+                </motion.button>
+              </motion.div>
+            </div>
+
+            {/* DESKTOP: Normal layout */}
+            {currentStep > 1 && (
+              <motion.button
+                onClick={handlePrevious}
+                className="hidden md:flex items-center gap-2 text-gray-400 hover:text-gray-600 font-medium px-6 py-2.5 rounded-lg transition-all duration-200"
+                whileHover={{ x: -4 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Retour
+              </motion.button>
+            )}
+
+            <motion.button
+              onClick={currentStep === totalSteps ? handleSubmit : handleNext}
+              className="hidden md:flex items-center relative overflow-hidden bg-[#FF6B35] hover:bg-[#FF5722] text-white px-10 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <motion.span className="relative z-10">
+                {currentStep === totalSteps ? 'Générer le plan d\'action' : 'Continuer'}
+              </motion.span>
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                initial={{ x: '-100%' }}
+                whileHover={{
+                  x: '100%',
+                  transition: { duration: 0.6, ease: 'easeInOut' },
+                }}
+              />
+            </motion.button>
+          </div>
+
+          {/* Progress dots - Hidden on mobile, visible on desktop */}
+          <div className="hidden md:block">
+            <ProgressDots totalSteps={totalSteps} currentStep={currentStep} />
+          </div>
+        </div>
+
+        {/* Dialogs */}
+        {/* Dialog d'avertissement */}
+        <Dialog open={showWarning} onOpenChange={setShowWarning}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-gray-800">Attention !</DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Écrivez bien, répondez le plus possible aux questions. Au plus vous répondez aux questions, au plus vous écrivez, au plus précis sera le plan d'action et correspondra à vos attentes.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowWarning(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleConfirmWarning}
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Continuer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog d'information */}
+        <Dialog open={showInfoPopup} onOpenChange={setShowInfoPopup}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-gray-800 mb-2">
+                Qu'est-ce que le Plan d'Action ?
+              </DialogTitle>
+              <DialogDescription className="text-base text-gray-700 space-y-4">
+                <p className="leading-relaxed">
+                  Le Plan d'Action est votre feuille de route personnalisée pour transformer votre idée en réalité.
+                  Il s'adapte à votre situation unique : votre équipe, votre budget, vos délais et votre style de travail.
+                </p>
+
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-lg font-semibold text-gray-800">📋 Ce qu'il contient :</h3>
+
+                  <div className="pl-4 space-y-3">
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-1">🎯 Classification de votre projet</h4>
+                      <p className="text-sm text-gray-600">
+                        Une analyse de votre projet pour identifier son profil et ses caractéristiques spécifiques.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-1">📦 Livrables recommandés</h4>
+                      <p className="text-sm text-gray-600">
+                        Les documents et éléments clés à créer pour structurer votre projet (personas, business model, pitch, etc.).
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-1">🗂️ Hiérarchie d'actions structurées</h4>
+                      <p className="text-sm text-gray-600">
+                        Un découpage en <strong>phases</strong>, <strong>jalons</strong> et <strong>tâches</strong> concrètes pour avancer étape par étape.
+                      </p>
+                      <ul className="list-disc list-inside text-sm text-gray-600 mt-2 pl-2 space-y-1">
+                        <li><strong>Phases</strong> : Les grandes étapes de votre projet</li>
+                        <li><strong>Jalons</strong> : Les objectifs intermédiaires à atteindre</li>
+                        <li><strong>Tâches</strong> : Les actions concrètes à réaliser au quotidien</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 mt-4 border border-orange-200">
+                  <p className="text-sm text-gray-700 font-medium">
+                    💡 <strong>Conseil :</strong> Pour obtenir un plan d'action le plus précis possible,
+                    prenez le temps de répondre en détail au questionnaire. Plus vos réponses seront complètes,
+                    plus votre plan sera adapté à votre situation.
+                  </p>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex justify-end">
+              <Button
+                onClick={() => setShowInfoPopup(false)}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+              >
+                J'ai compris
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // Layout normal pour les autres états
   return (
     <ProjectRequiredGuard>
       <div className="container mx-auto px-4 py-8 min-h-screen animate-fade-in">
@@ -596,7 +841,11 @@ const PlanActionPage = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="secondary" className="bg-white border border-gray-200 hover:bg-gray-50">
+                <Button
+                  variant="secondary"
+                  className="bg-white border border-gray-200 hover:bg-gray-50"
+                  onClick={() => setShowInfoPopup(true)}
+                >
                   En savoir +
                 </Button>
               </div>
@@ -604,190 +853,23 @@ const PlanActionPage = () => {
           </div>
 
           {/* Condition 1: Statut vide (null) */}
-          {statusActionPlan === null && (
-            <>
-              {!showForm && ( // Affiche le prompt initial si le formulaire n'est pas encore affiché
-                <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg p-6 text-center shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Générer un plan d'action</h2>
-                  <p className="text-gray-600 text-base mb-6">
-                    Votre plan d'action n'a pas encore été généré. Cliquez sur le bouton ci-dessous pour commencer.
-                  </p>
-                  <Button
-                    style={{ backgroundColor: '#ff5932' }}
-                    className="hover:opacity-90 text-white px-8 py-4 text-lg"
-                    onClick={handleGeneratePlanClick}
-                  >
-                    Générer le plan d'action
-                  </Button>
-                </div>
-              )}
-              {showForm && ( // Affiche le questionnaire si showForm est true
-                <div className="min-h-screen bg-[#F8F6F1] flex flex-col md:justify-center py-10 container mx-auto px-4">
-                  {/* Header */}
-                  <div className="text-center">
-                    <h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-                      Questionnaire Plan d'Action
-                    </h1>
-                    <p className="text-gray-600 text-base mb-6">Répondez aux questions suivantes pour générer votre plan d'action personnalisé</p>
-
-                    {/* Progress Bar */}
-                    <div className="max-w-4xl mx-auto mb-8">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-medium text-gray-500">Étape {currentStep} sur {totalSteps}</span>
-                        <span className="text-sm font-medium text-gray-500">{Math.round((currentStep / totalSteps) * 100)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500 ease-out"
-                          style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Form Content with Slide Animation */}
-                    <div className="max-w-4xl mx-auto">
-                      <div className="relative overflow-hidden min-h-[500px]">
-                        {isTransitioning ? (
-                          <>
-                            {/* Previous content sliding out */}
-                            <div 
-                              className={`absolute inset-0 ${
-                                slideDirection === 'next' ? 'animate-slide-out-left' : 'animate-slide-out-right'
-                              }`}
-                              style={{ willChange: 'transform' }}
-                            >
-                              <div className="p-4 md:p-6 text-left">
-                                {getStepContent(previousStep)}
-                              </div>
-                            </div>
-                            
-                            {/* New content sliding in */}
-                            <div 
-                              className={`absolute inset-0 ${
-                                slideDirection === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
-                              }`}
-                              style={{ willChange: 'transform' }}
-                            >
-                              <div className="p-4 md:p-6 text-left">
-                                {getStepContent()}
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="p-4 md:p-6 text-left">
-                            {getStepContent()}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Navigation Buttons */}
-                      <div className="flex justify-between items-center mt-6 px-4 pb-[80px]">
-                        <button
-                          onClick={handlePrevious}
-                          disabled={currentStep === 1}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
-                            currentStep === 1
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                          }`}
-                        >
-                          <ChevronLeft size={18} />
-                          <span>Précédent</span>
-                        </button>
-
-                        {currentStep < totalSteps ? (
-                          <button
-                            onClick={handleNext}
-                            className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2 rounded-full font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                          >
-                            <span>Suivant</span>
-                            <ChevronRight size={18} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={handleSubmit}
-                            className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 rounded-full font-semibold hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                          >
-                            <span>Générer le plan d'action</span>
-                            <CheckCircle size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CSS for slide animations */}
-                  <style>{`
-                    .animate-slide-out-left {
-                      animation: slide-out-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                      animation-fill-mode: forwards;
-                    }
-                    
-                    .animate-slide-out-right {
-                      animation: slide-out-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                      animation-fill-mode: forwards;
-                    }
-                    
-                    .animate-slide-in-left {
-                      animation: slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                      animation-fill-mode: forwards;
-                    }
-                    
-                    .animate-slide-in-right {
-                      animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                      animation-fill-mode: forwards;
-                    }
-                    
-                    @keyframes slide-out-left {
-                      0% {
-                        transform: translate3d(0, 0, 0);
-                        opacity: 1;
-                      }
-                      100% {
-                        transform: translate3d(-100%, 0, 0);
-                        opacity: 0;
-                      }
-                    }
-                    
-                    @keyframes slide-out-right {
-                      0% {
-                        transform: translate3d(0, 0, 0);
-                        opacity: 1;
-                      }
-                      100% {
-                        transform: translate3d(100%, 0, 0);
-                        opacity: 0;
-                      }
-                    }
-                    
-                    @keyframes slide-in-left {
-                      0% {
-                        transform: translate3d(-100%, 0, 0);
-                        opacity: 0;
-                      }
-                      100% {
-                        transform: translate3d(0, 0, 0);
-                        opacity: 1;
-                      }
-                    }
-                    
-                    @keyframes slide-in-right {
-                      0% {
-                        transform: translate3d(100%, 0, 0);
-                        opacity: 0;
-                      }
-                      100% {
-                        transform: translate3d(0, 0, 0);
-                        opacity: 1;
-                      }
-                    }
-                  `}</style>
-                </div>
-              )}
-            </>
+          {statusActionPlan === null && !showForm && (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg p-6 text-center shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Générer un plan d'action</h2>
+              <p className="text-gray-600 text-base mb-6">
+                Votre plan d'action n'a pas encore été généré. Cliquez sur le bouton ci-dessous pour commencer.
+              </p>
+              <Button
+                style={{ backgroundColor: '#ff5932' }}
+                className="hover:opacity-90 text-white px-8 py-4 text-lg"
+                onClick={handleGeneratePlanClick}
+              >
+                Générer le plan d'action
+              </Button>
+            </div>
           )}
 
-          {/* Dialog d'avertissement (peut rester en dehors des conditions principales) */}
+          {/* Dialog d'avertissement (pour l'état non-formulaire) */}
           <Dialog open={showWarning} onOpenChange={setShowWarning}>
             <DialogContent className="max-w-md">
               <DialogHeader>
@@ -812,7 +894,72 @@ const PlanActionPage = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
+          {/* Dialog d'information (pour l'état non-formulaire) */}
+          <Dialog open={showInfoPopup} onOpenChange={setShowInfoPopup}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-gray-800 mb-2">
+                  Qu'est-ce que le Plan d'Action ?
+                </DialogTitle>
+                <DialogDescription className="text-base text-gray-700 space-y-4">
+                  <p className="leading-relaxed">
+                    Le Plan d'Action est votre feuille de route personnalisée pour transformer votre idée en réalité.
+                    Il s'adapte à votre situation unique : votre équipe, votre budget, vos délais et votre style de travail.
+                  </p>
+
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-lg font-semibold text-gray-800">📋 Ce qu'il contient :</h3>
+
+                    <div className="pl-4 space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-1">🎯 Classification de votre projet</h4>
+                        <p className="text-sm text-gray-600">
+                          Une analyse de votre projet pour identifier son profil et ses caractéristiques spécifiques.
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-1">📦 Livrables recommandés</h4>
+                        <p className="text-sm text-gray-600">
+                          Les documents et éléments clés à créer pour structurer votre projet (personas, business model, pitch, etc.).
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-1">🗂️ Hiérarchie d'actions structurées</h4>
+                        <p className="text-sm text-gray-600">
+                          Un découpage en <strong>phases</strong>, <strong>jalons</strong> et <strong>tâches</strong> concrètes pour avancer étape par étape.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-gray-600 mt-2 pl-2 space-y-1">
+                          <li><strong>Phases</strong> : Les grandes étapes de votre projet</li>
+                          <li><strong>Jalons</strong> : Les objectifs intermédiaires à atteindre</li>
+                          <li><strong>Tâches</strong> : Les actions concrètes à réaliser au quotidien</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 mt-4 border border-orange-200">
+                    <p className="text-sm text-gray-700 font-medium">
+                      💡 <strong>Conseil :</strong> Pour obtenir un plan d'action le plus précis possible,
+                      prenez le temps de répondre en détail au questionnaire. Plus vos réponses seront complètes,
+                      plus votre plan sera adapté à votre situation.
+                    </p>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex justify-end">
+                <Button
+                  onClick={() => setShowInfoPopup(false)}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                >
+                  J'ai compris
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Condition 2: Statut "En cours" */}
           {statusActionPlan === 'En cours' && (
             <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg p-6 text-center shadow-sm border border-gray-200">

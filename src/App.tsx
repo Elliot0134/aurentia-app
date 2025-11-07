@@ -310,9 +310,9 @@ const App = () => {
               <ProjectProvider>
                 <VoiceQuotaProvider>
                   <CreditsDialogProvider>
-                    <BuyCreditsDialog />
                     <PendingInvitationsProvider>
                       <DeliverablesLoadingProvider>
+                        <BuyCreditsDialog />
                         <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />

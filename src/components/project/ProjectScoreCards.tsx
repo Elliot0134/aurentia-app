@@ -111,7 +111,7 @@ const ScoreDetailPopup: React.FC<ScoreDetailPopupProps> = ({ isOpen, onClose, ti
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
       <div
         ref={modalRef}
         className="bg-white text-black rounded-lg w-full mx-2.5 md:w-3/4 relative transform scale-95 opacity-0 overflow-hidden flex flex-col"

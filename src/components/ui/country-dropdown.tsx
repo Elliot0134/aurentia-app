@@ -137,7 +137,7 @@ const CountryDropdownComponent = (
         ) : (
           <span className="text-[#333333] opacity-50 text-base">
             {slim === false ? (
-              placeholder || setSelectedCountry.name
+              placeholder
             ) : (
               <Globe size={20} />
             )}

@@ -13,6 +13,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 interface AnalyseDeLaConcurrenceData {
   free_direct_definition: string;
@@ -92,10 +93,10 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
 
   const deliverableColor = "#6191e2";
   const title = "Concurrence";
-  const description = projectStatus === 'free' 
+  const description = projectStatus === 'free'
     ? 'Analyse concurrentielle de votre projet (forces et faiblesses des concurrents) + site web'
     : concurrenceData?.justification_avis;
-  const definition = "L'analyse de la concurrence est une étude stratégique qui permet d'identifier et d'analyser les entreprises qui opèrent sur le même marché, offrent des produits ou services similaires, ou ciblent la même clientèle.\n\n**Importance :** Cette analyse est cruciale pour positionner efficacement l'entreprise sur son marché, identifier les opportunités de différenciation, anticiper les menaces concurrentielles et développer des stratégies marketing et commerciales adaptées.";
+  const definition = <DefinitionContent deliverableType="concurrence" />;
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -242,11 +243,11 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
             {activeDefinition === 'direct' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                  <h4 className="text-sm font-semibold mb-2">Définition</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Définition</h4>
                   <p className="text-[#4B5563]">{concurrenceData?.free_direct_definition}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                  <h4 className="text-sm font-semibold mb-2">Importance</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Importance</h4>
                   <p className="text-[#4B5563]">{concurrenceData?.free_direct_importance}</p>
                 </div>
               </div>
@@ -255,11 +256,11 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
             {activeDefinition === 'indirect' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                  <h4 className="text-sm font-semibold mb-2">Définition</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Définition</h4>
                   <p className="text-[#4B5563]">{concurrenceData?.free_indirect_definition}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                  <h4 className="text-sm font-semibold mb-2">Importance</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Importance</h4>
                   <p className="text-[#4B5563]">{concurrenceData?.free_potentiel_importance}</p>
                 </div>
               </div>
@@ -268,11 +269,11 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
             {activeDefinition === 'potentiel' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                  <h4 className="text-sm font-semibold mb-2">Définition</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Définition</h4>
                   <p className="text-[#4B5563]">{concurrenceData?.free_potentiel_definition}</p>
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                  <h4 className="text-sm font-semibold mb-2">Importance</h4>
+                  <h4 className="text-base font-sans font-bold mb-2">Importance</h4>
                   <p className="text-[#4B5563]">{concurrenceData?.free_potentiel_importance}</p>
                 </div>
               </div>
@@ -314,21 +315,21 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
               return (
                 <div key={num}>
                   <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                    <h4 className="text-sm font-semibold mb-2">Description</h4>
+                    <h4 className="text-base font-sans font-bold mb-2">Description</h4>
                     <p className="text-[#4B5563]">{concurrenceData?.[`concurrent_${num}_description`]}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-[#E8F7DF] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                      <h4 className="text-sm font-semibold mb-2 text-black">Forces</h4>
-                      <p className="text-[#4B5563]">{concurrenceData?.[`concurrent_${num}_forces`]}</p>
+                    <div className="bg-green-50 border border-green-100 rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
+                      <h4 className="text-sm font-sans font-bold mb-2 text-green-900">Forces</h4>
+                      <p className="text-green-800">{concurrenceData?.[`concurrent_${num}_forces`]}</p>
                     </div>
-                    <div className="bg-[#FFDFDF] rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
-                      <h4 className="text-sm font-semibold mb-2 text-black">Faiblesses</h4>
-                      <p className="text-[#4B5563]">{concurrenceData?.[`concurrent_${num}_faiblesses`]}</p>
+                    <div className="bg-red-50 border border-red-100 rounded-md px-4 pb-4 pt-4 mb-4 md:mb-0">
+                      <h4 className="text-sm font-sans font-bold mb-2 text-red-900">Faiblesses</h4>
+                      <p className="text-red-800">{concurrenceData?.[`concurrent_${num}_faiblesses`]}</p>
                     </div>
                   </div>
                   <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4 mt-4">
-                    <h4 className="text-sm font-semibold mb-2">Caractéristiques</h4>
+                    <h4 className="text-base font-sans font-bold mb-2">Caractéristiques</h4>
                     <p className="text-[#4B5563]">{concurrenceData?.[`concurrent_${num}_caracteristiques`]}</p>
                   </div>
                   <div className="mt-4">
@@ -356,19 +357,19 @@ const AnalyseDeLaConcurrenceLivrable: React.FC<AnalyseDeLaConcurrenceLivrablePro
           <AccordionTrigger className="text-lg">Stratégie de Différenciation</AccordionTrigger>
           <AccordionContent>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Segmentation concurrentielle</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Segmentation concurrentielle</h4>
               <p className="text-[#4B5563]">{concurrenceData?.free_segmentation_concurrentielle}</p>
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Premier critère de différenciation</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Premier critère de différenciation</h4>
               <p className="text-[#4B5563]">{concurrenceData?.free_critere_differentiation_1}</p>
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Deuxième critère de différenciation</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Deuxième critère de différenciation</h4>
               <p className="text-[#4B5563]">{concurrenceData?.free_critere_differentiation_2}</p>
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-              <h4 className="text-sm font-semibold mb-2">Troisième critère de différenciation</h4>
+              <h4 className="text-base font-sans font-bold mb-2">Troisième critère de différenciation</h4>
               <p className="text-[#4B5563]">{concurrenceData?.free_critere_differentiation_3}</p>
             </div>
           </AccordionContent>

@@ -7,6 +7,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 import {
   Accordion,
   AccordionContent,
@@ -83,8 +84,7 @@ const PitchLivrable: React.FC = () => {
 
   const title = "Pitch";
   const description = "Présentations commerciales de votre projet";
-  const definition = "Le pitch est une présentation concise et percutante de votre projet d'entreprise, conçue pour capter l'attention et convaincre votre audience en différents formats selon le contexte.";
-  const importance = "Le pitch est essentiel pour communiquer efficacement sur votre projet, que ce soit pour convaincre des investisseurs, des partenaires ou des clients potentiels. Il vous permet de structurer votre discours et de présenter votre valeur ajoutée de manière claire et impactante.";
+  const definition = <DefinitionContent deliverableType="pitch" />;
 
   // Contenu spécifique du Pitch
   const pitchContent = (
@@ -97,7 +97,7 @@ const PitchLivrable: React.FC = () => {
             <AccordionTrigger className="text-lg">Pitch Express (30 secondes)</AccordionTrigger>
             <AccordionContent>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Contenu du pitch de 30 secondes</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Contenu du pitch de 30 secondes</h4>
                 <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_30_secondes_texte}</p>
                 <div className="flex justify-end mt-2">
                   <Button
@@ -108,7 +108,7 @@ const PitchLivrable: React.FC = () => {
                         setCopiedState(prev => ({ ...prev, pitch_30_secondes_texte: false }));
                       }, 2000);
                     }}
-                    className="bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:shadow-md"
+                    className="bg-aurentia-pink text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:bg-aurentia-pink/90"
                   >
                     {copiedState.pitch_30_secondes_texte ? (
                       <>
@@ -135,7 +135,7 @@ const PitchLivrable: React.FC = () => {
             <AccordionTrigger className="text-lg">Pitch Court</AccordionTrigger>
             <AccordionContent>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Contenu du pitch court</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Contenu du pitch court</h4>
                 <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_court_texte}</p>
                 <div className="flex justify-end mt-2">
                   <Button
@@ -146,7 +146,7 @@ const PitchLivrable: React.FC = () => {
                         setCopiedState(prev => ({ ...prev, pitch_court_texte: false }));
                       }, 2000);
                     }}
-                    className="bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:shadow-md"
+                    className="bg-aurentia-pink text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:bg-aurentia-pink/90"
                   >
                     {copiedState.pitch_court_texte ? (
                       <>
@@ -173,7 +173,7 @@ const PitchLivrable: React.FC = () => {
             <AccordionTrigger className="text-lg">Pitch Complet</AccordionTrigger>
             <AccordionContent>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Contenu du pitch complet</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Contenu du pitch complet</h4>
                 <p className="text-[#4B5563]" style={{ whiteSpace: 'pre-wrap' }}>{pitchData.pitch_complet_texte}</p>
                 <div className="flex justify-end mt-2">
                   <Button
@@ -184,7 +184,7 @@ const PitchLivrable: React.FC = () => {
                         setCopiedState(prev => ({ ...prev, pitch_complet_texte: false }));
                       }, 2000);
                     }}
-                    className="bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:shadow-md"
+                    className="bg-aurentia-pink text-white px-3 py-1 text-sm rounded transition-all duration-300 hover:bg-aurentia-pink/90"
                   >
                     {copiedState.pitch_complet_texte ? (
                       <>
@@ -235,7 +235,6 @@ const PitchLivrable: React.FC = () => {
         iconComponent={<img src="/icones-livrables/pitch-icon.png" alt="Pitch Icon" className="w-full h-full object-contain" />}
         contentComponent={pitchContent}
         definition={definition}
-        importance={importance}
         showContentTab={true}
         showCommentsTab={true}
         deliverableId={deliverableId || undefined}

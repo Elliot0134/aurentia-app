@@ -9,6 +9,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 interface SuccessStoryData {
   projections_un_an_titre: string;
@@ -36,8 +37,7 @@ const MaSuccessStoryLivrable: React.FC = () => {
 
   const deliverableTitle = "Ma Success Story";
   const deliverableDescription = "Visualisez vos projections d'évolution entrepreneuriale";
-  const deliverableDefinition = "La Success Story est un outil de projection qui permet de visualiser l'évolution de votre entreprise à travers différentes échéances temporelles, accompagnée d'un message de motivation personnalisé.";
-  const deliverableImportance = "Ce livrable est essentiel pour maintenir la motivation entrepreneuriale, clarifier la vision à long terme et structurer les objectifs de croissance de l'entreprise selon des horizons temporels définis.";
+  const deliverableDefinition = <DefinitionContent deliverableType="ma_success_story" />;
 
   // Utilisation du hook harmonisé pour la modal
   const { isPopupOpen, handleTemplateClick, handlePopupClose } = useHarmonizedModal({
@@ -164,7 +164,6 @@ const MaSuccessStoryLivrable: React.FC = () => {
         iconComponent={<img src="/icones-livrables/story-icon.png" alt="Success Story Icon" className="w-full h-full object-contain" />}
         contentComponent={successStoryContent}
         definition={deliverableDefinition}
-        importance={deliverableImportance}
         showContentTab={true}
         showCommentsTab={true}
         deliverableId={deliverableId || undefined}

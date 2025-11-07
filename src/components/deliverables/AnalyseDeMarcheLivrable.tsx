@@ -20,6 +20,7 @@ import { useHarmonizedModal } from './shared/useHarmonizedModal';
 import { useDeliverableWithComments } from '@/hooks/useDeliverableWithComments';
 import DeliverableCardSkeleton from './shared/DeliverableCardSkeleton';
 import { useDeliverablesLoading } from '@/contexts/DeliverablesLoadingContext';
+import { DefinitionContent } from './shared/DefinitionContent';
 
 interface AnalyseDeMarcheLivrableProps {
   projectId: string;
@@ -39,8 +40,7 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
 
   const title = "Analyse de Marché";
   const description = "Analyse complète du marché cible et de ses opportunités";
-  const definition = "L'analyse de marché est une étude approfondie qui permet d'évaluer les opportunités et menaces d'un marché spécifique, incluant sa taille, sa segmentation, ses tendances d'évolution et les facteurs d'influence qui le caractérisent.";
-  const importance = "Cette analyse est essentielle pour valider la viabilité commerciale d'un projet d'entreprise, identifier les segments les plus prometteurs, et définir une stratégie d'entrée sur le marché adaptée aux réalités économiques, sociodémographiques et technologiques.";
+  const definition = <DefinitionContent deliverableType="marche" />;
   const color = "#f24e83";
 
   // Utilisation du hook harmonisé pour la modal
@@ -93,7 +93,7 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
     type: 'opportunity' | 'threat';
   }> = ({ title, recommendation, associatedItem, priority, type }) => (
     <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-      <h4 className="text-sm font-semibold mb-2">{title}</h4>
+      <h4 className="text-base font-sans font-bold mb-2">{title}</h4>
       <p className="text-[#4B5563]">
         <strong>Recommandation :</strong> {recommendation}<br/>
         <strong>{type === 'opportunity' ? 'Opportunité associée' : 'Menace associée'} :</strong> {associatedItem}<br/>
@@ -114,27 +114,27 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
             <AccordionTrigger className="text-left text-lg flex-1 pr-4">Présentation générale du marché</AccordionTrigger>
             <AccordionContent>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Nom du marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Nom du marché</h4>
                 <p className="text-[#4B5563]">{marketData.free_marche}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Marchés connexes</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Marchés connexes</h4>
                 <p className="text-[#4B5563]">{marketData.free_marches_annexe}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Description détaillée du marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Description détaillée du marché</h4>
                 <p className="text-[#4B5563]">{marketData.free_description_du_marche}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Trois enjeux principaux</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Trois enjeux principaux</h4>
                 <p className="text-[#4B5563]">{marketData.free_3_enjeux_principaux}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Évolution du marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Évolution du marché</h4>
                 <p className="text-[#4B5563]">{marketData.free_evolution_du_marche}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Prédictions sur le marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Prédictions sur le marché</h4>
                 <p className="text-[#4B5563]">{marketData.free_predictions}</p>
               </div>
             </AccordionContent>
@@ -145,23 +145,23 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
             <AccordionTrigger className="text-left text-lg flex-1 pr-4">Analyse de la viabilité</AccordionTrigger>
             <AccordionContent>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Difficultés d'entrée sur le marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Difficultés d'entrée sur le marché</h4>
                 <p className="text-[#4B5563]">{marketData.free_difficulte_a_l_entree}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Détails des difficultés d'entrée</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Détails des difficultés d'entrée</h4>
                 <p className="text-[#4B5563]">{marketData.free_details_difficulte_a_l_entree}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Classification du marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Classification du marché</h4>
                 <p className="text-[#4B5563]">{marketData.free_classification}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Justification de la classification</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Justification de la classification</h4>
                 <p className="text-[#4B5563]">{marketData.free_justification_concise}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Viabilité du marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Viabilité du marché</h4>
                 <p className="text-[#4B5563]">{marketData.free_marche_viable}</p>
               </div>
             </AccordionContent>
@@ -177,48 +177,48 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                 <div><h4 className="text-2xl font-semibold mb-2">Menaces</h4></div>
 
                 {/* Économique Row */}
-                <div className="bg-[#e8f7df] rounded-md p-4 mb-4">
-                  <h5 className="text-lg font-semibold mb-2">Économique</h5>
+                <div className="bg-green-50 border border-green-100 rounded-md p-4 mb-4">
+                  <h5 className="text-lg font-semibold mb-2 text-green-900">Économique</h5>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_economique_opportunite_1_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_economique_opportunite_1_impact_potentiel}<br/>
                       <a href={marketData.pay_economique_opportunite_1_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_economique_opportunite_1_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_economique_opportunite_2_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_economique_opportunite_2_impact_potentiel}<br/>
                       <a href={marketData.pay_economique_opportunite_2_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_economique_opportunite_2_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_economique_opportunite_3_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_economique_opportunite_3_impact_potentiel}<br/>
                       <a href={marketData.pay_economique_opportunite_3_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_economique_opportunite_3_source}</a>
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#ffdfdf] rounded-md p-4 mb-4">
-                  <h5 className="text-lg font-semibold mb-2">Économique</h5>
+                <div className="bg-red-50 border border-red-100 rounded-md p-4 mb-4">
+                  <h5 className="text-lg font-semibold mb-2 text-red-900">Économique</h5>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_economique_menace_1_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_economique_menace_1_impact_potentiel}<br/>
                       <a href={marketData.pay_economique_menace_1_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_economique_menace_1_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_economique_menace_2_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_economique_menace_2_impact_potentiel}<br/>
                       <a href={marketData.pay_economique_menace_2_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_economique_menace_2_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_economique_menace_3_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_economique_menace_3_impact_potentiel}<br/>
                       <a href={marketData.pay_economique_menace_3_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_economique_menace_3_source}</a>
@@ -227,48 +227,48 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                 </div>
 
                 {/* Socio-démographique Row */}
-                <div className="bg-[#e8f7df] rounded-md p-4 mb-4">
-                  <h5 className="text-lg font-semibold mb-2">Socio-démographique</h5>
+                <div className="bg-green-50 border border-green-100 rounded-md p-4 mb-4">
+                  <h5 className="text-lg font-semibold mb-2 text-green-900">Socio-démographique</h5>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_sociodemographique_opportunite_1_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_sociodemographique_opportunite_1_impact_potentiel}<br/>
                       <a href={marketData.pay_sociodemographique_opportunite_1_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_sociodemographique_opportunite_1_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_sociodemographique_opportunite_2_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_sociodemographique_opportunite_2_impact_potentiel}<br/>
                       <a href={marketData.pay_sociodemographique_opportunite_2_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_sociodemographique_opportunite_2_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_sociodemographique_opportunite_3_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_sociodemographique_opportunite_3_impact_potentiel}<br/>
                       <a href={marketData.pay_sociodemographique_opportunite_3_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_sociodemographique_opportunite_3_source}</a>
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#ffdfdf] rounded-md p-4 mb-4">
-                  <h5 className="text-lg font-semibold mb-2">Socio-démographique</h5>
+                <div className="bg-red-50 border border-red-100 rounded-md p-4 mb-4">
+                  <h5 className="text-lg font-semibold mb-2 text-red-900">Socio-démographique</h5>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_sociodemographique_menace_1_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_sociodemographique_menace_1_impact_potentiel}<br/>
                       <a href={marketData.pay_sociodemographique_menace_1_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_sociodemographique_menace_1_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_sociodemographique_menace_2_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_sociodemographique_menace_2_impact_potentiel}<br/>
                       <a href={marketData.pay_sociodemographique_menace_2_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_sociodemographique_menace_2_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_sociodemographique_menace_3_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_sociodemographique_menace_3_impact_potentiel}<br/>
                       <a href={marketData.pay_sociodemographique_menace_3_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_sociodemographique_menace_3_source}</a>
@@ -277,48 +277,48 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                 </div>
 
                 {/* Technologique Row */}
-                <div className="bg-[#e8f7df] rounded-md p-4 mb-4">
-                  <h5 className="text-lg font-semibold mb-2">Technologique</h5>
+                <div className="bg-green-50 border border-green-100 rounded-md p-4 mb-4">
+                  <h5 className="text-lg font-semibold mb-2 text-green-900">Technologique</h5>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_technologique_opportunite_1_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_technologique_opportunite_1_impact_potentiel}<br/>
                       <a href={marketData.pay_technologique_opportunite_1_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_technologique_opportunite_1_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_technologique_opportunite_2_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_technologique_opportunite_2_impact_potentiel}<br/>
                       <a href={marketData.pay_technologique_opportunite_2_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_technologique_opportunite_2_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-green-800">
                       <strong>Description:</strong> {marketData.pay_technologique_opportunite_3_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_technologique_opportunite_3_impact_potentiel}<br/>
                       <a href={marketData.pay_technologique_opportunite_3_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_technologique_opportunite_3_source}</a>
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#ffdfdf] rounded-md p-4 mb-4">
-                  <h5 className="text-lg font-semibold mb-2">Technologique</h5>
+                <div className="bg-red-50 border border-red-100 rounded-md p-4 mb-4">
+                  <h5 className="text-lg font-semibold mb-2 text-red-900">Technologique</h5>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_technologique_menace_1_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_technologique_menace_1_impact_potentiel}<br/>
                       <a href={marketData.pay_technologique_menace_1_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_technologique_menace_1_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_technologique_menace_2_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_technologique_menace_2_impact_potentiel}<br/>
                       <a href={marketData.pay_technologique_menace_2_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_technologique_menace_2_source}</a>
                     </p>
                   </div>
                   <div className="bg-white rounded-md p-2 mb-2">
-                    <p className="text-[#4B5563]">
+                    <p className="text-red-800">
                       <strong>Description:</strong> {marketData.pay_technologique_menace_3_description}<br/>
                       <strong>Impact:</strong> {marketData.pay_technologique_menace_3_impact_potentiel}<br/>
                       <a href={marketData.pay_technologique_menace_3_url} target="_blank" rel="noopener noreferrer" className="inline-block px-3 py-1 rounded-full text-sm text-white font-bold" style={{ backgroundColor: '#f24e83' }}>{marketData.pay_technologique_menace_3_source}</a>
@@ -338,11 +338,11 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                 <div className="border rounded-md overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-[#e8f7df]">
-                        <TableHead className="font-semibold text-black">Opportunité</TableHead>
-                        <TableHead className="font-semibold text-black hidden lg:table-cell">Recommandation</TableHead>
-                        <TableHead className="font-semibold text-black">Opportunité associée</TableHead>
-                        <TableHead className="font-semibold text-black">Priorité</TableHead>
+                      <TableRow className="bg-green-50">
+                        <TableHead className="font-semibold text-green-900">Opportunité</TableHead>
+                        <TableHead className="font-semibold text-green-900 hidden lg:table-cell">Recommandation</TableHead>
+                        <TableHead className="font-semibold text-green-900">Opportunité associée</TableHead>
+                        <TableHead className="font-semibold text-green-900">Priorité</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -383,8 +383,8 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
 
               {/* Version Mobile */}
               <div className="block md:hidden space-y-4">
-                <div className="bg-[#e8f7df] rounded-md p-4">
-                  <h4 className="font-semibold text-lg mb-2">Opportunité 1</h4>
+                <div className="bg-green-50 border border-green-100 rounded-md p-4">
+                  <h4 className="font-semibold text-lg mb-2 text-green-900">Opportunité 1</h4>
                   <div className="space-y-2">
                     <p><strong>Recommandation:</strong> {marketData.pay_exploitation_opportunite_1_recommandation}</p>
                     <p><strong>Opportunité associée:</strong> {marketData.pay_exploitation_opportunite_1_opportunite_associee}</p>
@@ -395,8 +395,8 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#e8f7df] rounded-md p-4">
-                  <h4 className="font-semibold text-lg mb-2">Opportunité 2</h4>
+                <div className="bg-green-50 border border-green-100 rounded-md p-4">
+                  <h4 className="font-semibold text-lg mb-2 text-green-900">Opportunité 2</h4>
                   <div className="space-y-2">
                     <p><strong>Recommandation:</strong> {marketData.pay_exploitation_opportunite_2_recommandation}</p>
                     <p><strong>Opportunité associée:</strong> {marketData.pay_exploitation_opportunite_2_opportunite_associee}</p>
@@ -407,8 +407,8 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#e8f7df] rounded-md p-4">
-                  <h4 className="font-semibold text-lg mb-2">Opportunité 3</h4>
+                <div className="bg-green-50 border border-green-100 rounded-md p-4">
+                  <h4 className="font-semibold text-lg mb-2 text-green-900">Opportunité 3</h4>
                   <div className="space-y-2">
                     <p><strong>Recommandation:</strong> {marketData.pay_exploitation_opportunite_3_recommandation}</p>
                     <p><strong>Opportunité associée:</strong> {marketData.pay_exploitation_opportunite_3_opportunite_associee}</p>
@@ -432,11 +432,11 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                 <div className="border rounded-md overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-[#ffdfdf]">
-                        <TableHead className="font-semibold text-black">Menace</TableHead>
-                        <TableHead className="font-semibold text-black hidden lg:table-cell">Recommandation</TableHead>
-                        <TableHead className="font-semibold text-black">Menace associée</TableHead>
-                        <TableHead className="font-semibold text-black">Priorité</TableHead>
+                      <TableRow className="bg-red-50">
+                        <TableHead className="font-semibold text-red-900">Menace</TableHead>
+                        <TableHead className="font-semibold text-red-900 hidden lg:table-cell">Recommandation</TableHead>
+                        <TableHead className="font-semibold text-red-900">Menace associée</TableHead>
+                        <TableHead className="font-semibold text-red-900">Priorité</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -477,8 +477,8 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
 
               {/* Version Mobile */}
               <div className="block md:hidden space-y-4">
-                <div className="bg-[#ffdfdf] rounded-md p-4">
-                  <h4 className="font-semibold text-lg mb-2">Menace 1</h4>
+                <div className="bg-red-50 border border-red-100 rounded-md p-4">
+                  <h4 className="font-semibold text-lg mb-2 text-red-900">Menace 1</h4>
                   <div className="space-y-2">
                     <p><strong>Recommandation:</strong> {marketData.pay_attenuation_menace_1_recommandation}</p>
                     <p><strong>Menace associée:</strong> {marketData.pay_attenuation_menace_1_menace_associee}</p>
@@ -489,8 +489,8 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#ffdfdf] rounded-md p-4">
-                  <h4 className="font-semibold text-lg mb-2">Menace 2</h4>
+                <div className="bg-red-50 border border-red-100 rounded-md p-4">
+                  <h4 className="font-semibold text-lg mb-2 text-red-900">Menace 2</h4>
                   <div className="space-y-2">
                     <p><strong>Recommandation:</strong> {marketData.pay_attenuation_menace_2_recommandation}</p>
                     <p><strong>Menace associée:</strong> {marketData.pay_attenuation_menace_2_menace_associee}</p>
@@ -501,8 +501,8 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#ffdfdf] rounded-md p-4">
-                  <h4 className="font-semibold text-lg mb-2">Menace 3</h4>
+                <div className="bg-red-50 border border-red-100 rounded-md p-4">
+                  <h4 className="font-semibold text-lg mb-2 text-red-900">Menace 3</h4>
                   <div className="space-y-2">
                     <p><strong>Recommandation:</strong> {marketData.pay_attenuation_menace_3_recommandation}</p>
                     <p><strong>Menace associée:</strong> {marketData.pay_attenuation_menace_3_menace_associee}</p>
@@ -648,15 +648,15 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
             <AccordionTrigger className="text-left text-lg flex-1 pr-4">Synthèse et vue d'ensemble</AccordionTrigger>
             <AccordionContent>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Vue d'ensemble du marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Vue d'ensemble du marché</h4>
                 <p className="text-[#4B5563]">{marketData.pay_vue_d_ensemble}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Synthèse de la demande</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Synthèse de la demande</h4>
                 <p className="text-[#4B5563]">{marketData.pay_synthese_demande}</p>
               </div>
               <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
-                <h4 className="text-sm font-semibold mb-2">Facteurs d'influence sur le marché</h4>
+                <h4 className="text-base font-sans font-bold mb-2">Facteurs d'influence sur le marché</h4>
                 <p className="text-[#4B5563]">{marketData.pay_facteurs_influence}</p>
               </div>
             </AccordionContent>
@@ -685,7 +685,6 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
         iconComponent={<img src="/icones-livrables/market-icon.png" alt="Market Icon" className="w-full h-full object-contain" />}
         contentComponent={analyseMarche}
         definition={definition}
-        importance={importance}
         showContentTab={true}
         showCommentsTab={true}
         deliverableId={deliverableId || undefined}
