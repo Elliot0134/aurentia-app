@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import BetaInscription from "./pages/BetaInscription";
 import ConfirmEmail from "./pages/ConfirmEmail";
 import VerifyEmail from "./pages/VerifyEmail";
 import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
@@ -315,6 +316,7 @@ const App = () => {
                         <BuyCreditsDialog />
                         <Routes>
                 {/* Public routes */}
+                <Route path="/beta-inscription" element={<BetaInscription />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
@@ -516,7 +518,7 @@ const App = () => {
                 <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
                 <Route path="/member/*" element={<Navigate to="/individual/dashboard" replace />} />
                 <Route path="/member/incubator" element={<Navigate to="/individual/my-organization" replace />} />
-                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<Navigate to="/beta-inscription" replace />} />
                 <Route path="*" element={<NotFound />} />
                         </Routes>
                       </DeliverablesLoadingProvider>
