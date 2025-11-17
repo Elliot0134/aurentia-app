@@ -48,7 +48,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fetch profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles' as any)
-        .select('email,first_name,last_name,user_role,subscription_status,stripe_customer_id,organization_setup_pending,organization_setup_dismissed,avatar_url')
+        .select('email,first_name,last_name,user_role,subscription_status,stripe_customer_id,organization_setup_pending,organization_setup_dismissed,avatar_url,has_beta_access')
         .eq('id', session.user.id)
         .single();
 

@@ -782,9 +782,12 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
       orgItem = { name: "Rejoindre une organisation", path: "/join-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
     }
 
-    // Define allowed menu items for beta users
+    // Define allowed menu items based on beta access
+    // Users with has_beta_access = true can access all items (grandfathered users)
+    // Users with has_beta_access = false are restricted to specific items
+    const hasBetaAccess = userProfile?.has_beta_access === true;
     const allowedItems = ["Tableau de bord", "Livrables", "Assistant IA", "Plan d'action", "Collaborateurs", "Messages"];
-    const isItemAllowed = (itemName: string) => allowedItems.includes(itemName);
+    const isItemAllowed = (itemName: string) => hasBetaAccess || allowedItems.includes(itemName);
 
     return {
       standaloneItems: [

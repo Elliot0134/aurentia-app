@@ -16,6 +16,24 @@ const AuthCallback = () => {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session) {
+          // Check if user validated beta access code (for OAuth signups)
+          const hasBetaAccess = localStorage.getItem('aurentia_has_beta_access') === 'true';
+          if (hasBetaAccess && session.user) {
+            try {
+              // Update profile with beta access for new OAuth users
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ has_beta_access: true })
+                .eq('id', session.user.id);
+
+              if (profileError) {
+                console.error('Erreur lors de la mise à jour du profil avec beta access:', profileError);
+              }
+            } catch (profileErr) {
+              console.error('Erreur lors de la mise à jour du beta access:', profileErr);
+            }
+          }
+
           // Attendre que le profil utilisateur soit chargé
           if (!userProfileLoading) {
             if (userProfile?.user_role) {

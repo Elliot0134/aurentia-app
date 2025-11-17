@@ -1,9 +1,11 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 /**
- * Guard component that blocks access to restricted routes for beta users
+ * Guard component that blocks access to restricted routes for users WITHOUT beta access
  *
- * Allowed routes:
+ * Users with has_beta_access = true can access all routes (grandfathered users)
+ * Users with has_beta_access = false are restricted to:
  * - /individual/dashboard (Tableau de bord)
  * - /individual/project-business/* (Livrables)
  * - /individual/chatbot/* (Assistant IA)
@@ -13,8 +15,19 @@ import { Navigate, useLocation } from 'react-router-dom';
  */
 const RestrictedRouteGuard = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const { userProfile, loading } = useUserProfile();
 
-  // Define allowed route patterns
+  // Wait for profile to load
+  if (loading) {
+    return <>{children}</>;
+  }
+
+  // If user has beta access, allow all routes (grandfathered users)
+  if (userProfile?.has_beta_access === true) {
+    return <>{children}</>;
+  }
+
+  // Define allowed routes for users WITHOUT beta access
   const allowedRoutes = [
     '/individual/dashboard',
     '/individual/project-business',
@@ -41,7 +54,7 @@ const RestrictedRouteGuard = ({ children }: { children: React.ReactNode }) => {
 
   // If route is not allowed, redirect to the first available page (Livrables)
   if (!isAllowed) {
-    console.log(`[RestrictedRouteGuard] Blocked access to ${location.pathname}`);
+    console.log(`[RestrictedRouteGuard] Blocked access to ${location.pathname} (no beta access)`);
     return <Navigate to="/individual/project-business" replace />;
   }
 
