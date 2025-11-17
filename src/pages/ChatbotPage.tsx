@@ -5,13 +5,14 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { toast } from "sonner";
 import { useProject } from '@/contexts/ProjectContext';
 import { useChatConversation } from '@/hooks/useChatConversation';
-import { 
-  ChatHeader, 
-  MessageList, 
-  ChatInput, 
-  SuggestedPrompts, 
-  ChatDialogs 
+import {
+  ChatHeader,
+  MessageList,
+  ChatInput,
+  SuggestedPrompts,
+  ChatDialogs
 } from '@/components/chat';
+import { ConversationShareDialog } from '@/components/chat/ConversationShareDialog';
 import { Sparkles, Plus } from 'lucide-react';
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { Button } from "@/components/ui/button"; // Import Button
@@ -35,6 +36,7 @@ const ChatbotPage = () => {
   const [isHistoryOpenMobile, setIsHistoryOpenMobile] = useState(false); // New state for mobile history visibility
   const [isDropdownExiting, setIsDropdownExiting] = useState(false); // New state for exit animation
   const [isMobileChatOptionsOpen, setIsMobileChatOptionsOpen] = useState(false); // New state for mobile chat options popup
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false); // New state for share dialog
 
   // State for communication style and search mode
   const [communicationStyle, setCommunicationStyle] = useState('normal');
@@ -258,6 +260,17 @@ const ChatbotPage = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleShareConversation = () => {
+    setIsShareDialogOpen(true);
+  };
+
+  const handleShareToggled = () => {
+    // Refresh conversation to get updated is_shared status
+    if (currentConversation?.id) {
+      loadConversation(currentConversation.id);
+    }
+  };
+
   const suggestedPrompts = [
     "Comment améliorer ma proposition de valeur ?",
     "Analyse les risques de mon projet"
@@ -325,6 +338,7 @@ const ChatbotPage = () => {
             onNewChat={handleNewChat}
             onRenameConversation={handleRenameConversation}
             onDeleteConversation={handleDeleteConversation}
+            onShareConversation={handleShareConversation}
             onToggleHistoryMobile={() => {
               if (isHistoryOpenMobile) {
                 setIsDropdownExiting(true);
@@ -568,6 +582,16 @@ const ChatbotPage = () => {
           onCancelDelete={handleCancelDelete}
         />
 
+        {/* Share Dialog */}
+        {currentConversation && (
+          <ConversationShareDialog
+            conversationId={currentConversation.id}
+            isShared={currentConversation.is_shared || false}
+            isOpen={isShareDialogOpen}
+            onClose={() => setIsShareDialogOpen(false)}
+            onShareToggled={handleShareToggled}
+          />
+        )}
 
       </div>
     </ProjectRequiredGuard>

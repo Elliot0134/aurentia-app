@@ -12,6 +12,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import UpdateEmailConfirm from "./pages/UpdateEmailConfirm";
 import UpdatePassword from "./pages/UpdatePassword";
 import AcceptInvitation from "./pages/AcceptInvitation";
+import JoinProject from "./pages/JoinProject";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import OrganisationRedirect from "./pages/OrganisationRedirect";
@@ -38,6 +39,7 @@ import Integrations from "./pages/individual/Integrations";
 import Onboarding from "./pages/Onboarding";
 import RoleBasedLayout from "./components/RoleBasedLayout";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
+import RestrictedRouteGuard from "./components/RestrictedRouteGuard";
 import MyOrganization from "./pages/MyOrganization";
 import OrganisationRouteGuard from "./components/organisation/OrganisationRouteGuard";
 import {
@@ -79,6 +81,7 @@ import PendingInvitationsProvider from "./components/collaboration/PendingInvita
 import StyleguidePage from "./pages/StyleguidePage";
 import StyleguideGuard from "./components/styleguide/StyleguideGuard";
 import CreateProjectForm from "./pages/individual/CreateProjectForm";
+import RootRedirect from "./components/RootRedirect";
 
 import { useState, useEffect, ErrorInfo, Component, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,6 +143,7 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
 const ProtectedRoute = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
+  const [needsBetaAccess, setNeedsBetaAccess] = useState(false);
   const mountedRef = useRef(true);
   const authCheckInProgressRef = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -192,11 +196,11 @@ const ProtectedRoute = () => {
       console.log("[ProtectedRoute] Session valid for user:", session.user.id);
       setIsAuthenticated(true);
       
-      // Check email verification avec timeout
+      // Check email verification and beta access avec timeout
       try {
         const profilePromise = supabase
           .from('profiles')
-          .select('email_confirmation_required, email_confirmed_at')
+          .select('email_confirmation_required, email_confirmed_at, has_beta_access')
           .eq('id', session.user.id)
           .single();
 
@@ -208,22 +212,27 @@ const ProtectedRoute = () => {
           profilePromise,
           profileTimeoutPromise
         ]) as any;
-        
+
         if (!mountedRef.current) return;
 
         if (profileError) {
           console.warn("[ProtectedRoute] Profile fetch error (non-critical):", profileError);
           setNeedsEmailVerification(false);
+          setNeedsBetaAccess(false);
         } else {
-          const needsVerification = 
-            profileData?.email_confirmation_required !== false || 
+          const needsVerification =
+            profileData?.email_confirmation_required === true &&
             profileData?.email_confirmed_at === null;
-          
+
+          const needsBeta = profileData?.has_beta_access !== true;
+
           setNeedsEmailVerification(needsVerification);
+          setNeedsBetaAccess(needsBeta);
         }
       } catch (profileErr) {
         console.warn("[ProtectedRoute] Profile check failed (non-critical):", profileErr);
         setNeedsEmailVerification(false);
+        setNeedsBetaAccess(false);
       }
 
     } catch (error) {
@@ -255,6 +264,7 @@ const ProtectedRoute = () => {
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setNeedsEmailVerification(false);
+        setNeedsBetaAccess(false);
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         // Attendre un peu avant de recheck pour éviter les race conditions
         setTimeout(() => {
@@ -287,6 +297,11 @@ const ProtectedRoute = () => {
   if (needsEmailVerification && window.location.pathname !== '/verify-email') {
     console.log("[ProtectedRoute] Email verification required");
     return <Navigate to="/verify-email" replace />;
+  }
+
+  if (needsBetaAccess && window.location.pathname !== '/beta-inscription') {
+    console.log("[ProtectedRoute] Beta access required");
+    return <Navigate to="/beta-inscription" replace />;
   }
 
   return (
@@ -322,6 +337,7 @@ const App = () => {
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
+                <Route path="/join-project" element={<JoinProject />} />
                 <Route path="/update-email-confirm" element={<UpdateEmailConfirm />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
@@ -337,33 +353,52 @@ const App = () => {
                   <Route path="/organisation" element={<OrganisationRedirect />} />
                   
                   <Route element={<RoleBasedLayout />}>
+                    {/* Allowed routes - Dashboard */}
                     <Route path="/individual/dashboard" element={<Dashboard />} />
+
+                    {/* Restricted routes - wrapped in RestrictedRouteGuard */}
                     <Route path="/individual/profile" element={<Profile />} />
+
+                    {/* Allowed routes - Livrables */}
                     <Route path="/individual/project-business/:projectId" element={<ProjectBusiness />} />
                     <Route path="/individual/project-business" element={<ProjectBusiness />} />
+
+                    {/* Allowed routes - Assistant IA */}
                     <Route path="/individual/chatbot" element={<ChatbotPage />} />
                     <Route path="/individual/chatbot/:projectId" element={<ChatbotPage />} />
                     <Route path="/individual/chatbot/:projectId/:conversationId" element={<ChatbotPage />} />
-                    <Route path="/individual/outils" element={<Outils />} />
-                    <Route path="/individual/outils/:slug/:id" element={<ToolDetailPage />} />
-                    <Route path="/individual/integrations" element={<Integrations />} />
-                    <Route path="/individual/ressources" element={<Ressources />} />
+
+                    {/* Restricted routes */}
+                    <Route path="/individual/outils" element={<RestrictedRouteGuard><Outils /></RestrictedRouteGuard>} />
+                    <Route path="/individual/outils/:slug/:id" element={<RestrictedRouteGuard><ToolDetailPage /></RestrictedRouteGuard>} />
+                    <Route path="/individual/integrations" element={<RestrictedRouteGuard><Integrations /></RestrictedRouteGuard>} />
+                    <Route path="/individual/ressources" element={<RestrictedRouteGuard><Ressources /></RestrictedRouteGuard>} />
+
+                    {/* Allowed routes - Collaborateurs */}
                     <Route path="/individual/collaborateurs" element={<Collaborateurs />} />
-                    <Route path="/individual/template" element={<TemplatePage />} />
-                    <Route path="/individual/template/tool-template" element={<ToolTemplatePage />} />
-                    <Route path="/individual/components-template" element={<ComponentsTemplate />} />
+
+                    {/* Restricted routes */}
+                    <Route path="/individual/template" element={<RestrictedRouteGuard><TemplatePage /></RestrictedRouteGuard>} />
+                    <Route path="/individual/template/tool-template" element={<RestrictedRouteGuard><ToolTemplatePage /></RestrictedRouteGuard>} />
+                    <Route path="/individual/components-template" element={<RestrictedRouteGuard><ComponentsTemplate /></RestrictedRouteGuard>} />
+
+                    {/* Allowed routes - Plan d'action */}
                     <Route path="/individual/plan-action" element={<PlanActionPage />} />
+
+                    {/* Restricted/Supporting routes */}
                     <Route path="/individual/roadmap/:id" element={<Roadmap />} />
                     <Route path="/individual/project/:projectId" element={<Project />} />
                     <Route path="/individual/form-business-idea" element={<FormBusinessIdea />} />
                     <Route path="/individual/create-project-form" element={<CreateProjectForm />} />
                     <Route path="/individual/warning" element={<WarningPage />} />
-                    <Route path="/individual/automatisations" element={<Automatisations />} />
+                    <Route path="/individual/automatisations" element={<RestrictedRouteGuard><Automatisations /></RestrictedRouteGuard>} />
                     <Route path="/individual/knowledge" element={<Knowledge />} />
-                    <Route path="/individual/partenaires" element={<Partenaires />} />
+                    <Route path="/individual/partenaires" element={<RestrictedRouteGuard><Partenaires /></RestrictedRouteGuard>} />
                     <Route path="/individual/my-organization" element={<MyOrganization />} />
                     <Route path="/individual/knowledge-base" element={<KnowledgeBase />} />
                     <Route path="/individual/knowledge-base/:projectId" element={<KnowledgeBase />} />
+
+                    {/* Allowed routes - Messages */}
                     <Route path="/messages" element={<Messages />} />
 
                     {/* Styleguide - Restricted Access */}
@@ -518,7 +553,8 @@ const App = () => {
                 <Route path="/collaborateurs" element={<Navigate to="/individual/collaborateurs" replace />} />
                 <Route path="/member/*" element={<Navigate to="/individual/dashboard" replace />} />
                 <Route path="/member/incubator" element={<Navigate to="/individual/my-organization" replace />} />
-                <Route path="/" element={<Navigate to="/beta-inscription" replace />} />
+                {/* Smart redirect that handles OAuth callbacks */}
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="*" element={<NotFound />} />
                         </Routes>
                       </DeliverablesLoadingProvider>

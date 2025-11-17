@@ -19,7 +19,10 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ProjectSelector from './ProjectSelector';
+import RolePermissionsPreview from './RolePermissionsPreview';
 import { Mail, UserPlus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { ActivityLogService } from '@/services/activityLog.service';
+import { supabase } from '@/integrations/supabase/client';
 
 const InviteModal = ({ 
   isOpen, 
@@ -39,19 +42,19 @@ const InviteModal = ({
 
   const roles = [
     {
-      value: 'read',
+      value: 'viewer',
       label: 'Lecteur',
-      description: 'Peut consulter les projets et livrables'
+      description: 'Peut uniquement consulter les projets et livrables (lecture seule)'
     },
     {
-      value: 'write',
+      value: 'editor',
       label: 'Éditeur',
-      description: 'Peut modifier les projets et créer des livrables'
+      description: 'Peut modifier les projets, créer et éditer des livrables'
     },
     {
       value: 'admin',
       label: 'Administrateur',
-      description: 'Accès complet à tous les projets et paramètres'
+      description: 'Peut inviter des collaborateurs, gérer les rôles et accéder à tout'
     }
   ];
 
@@ -83,13 +86,32 @@ const InviteModal = ({
   // Gérer la soumission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     const result = await onInvite(formData);
-    
+
     if (result.success) {
       setSuccess(true);
+
+      // Log activity for each project invitation
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && formData.projects.length > 0) {
+          for (const projectId of formData.projects) {
+            await ActivityLogService.logInvitationSent(
+              projectId,
+              user.id,
+              formData.email,
+              formData.role
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error logging invitation activity:', error);
+        // Don't block the success flow for logging errors
+      }
+
       setTimeout(() => {
         handleClose();
       }, 2000);
@@ -157,8 +179,8 @@ const InviteModal = ({
             {/* Rôle */}
             <div className="space-y-2">
               <Label htmlFor="role">Rôle</Label>
-              <Select 
-                value={formData.role} 
+              <Select
+                value={formData.role}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
               >
                 <SelectTrigger className={formErrors.role ? 'border-red-500' : ''}>
@@ -175,11 +197,13 @@ const InviteModal = ({
                   ))}
                 </SelectContent>
               </Select>
-              {formData.role && (
-                <p className="text-xs text-gray-600">{getSelectedRoleDescription()}</p>
-              )}
               {formErrors.role && (
                 <p className="text-sm text-red-500">{formErrors.role}</p>
+              )}
+
+              {/* Permissions Preview */}
+              {formData.role && (
+                <RolePermissionsPreview role={formData.role} className="mt-3" />
               )}
             </div>
 

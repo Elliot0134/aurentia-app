@@ -185,22 +185,23 @@ export function VoiceInputFieldButton({
   const speechToTextOptions: UseSpeechToTextOptions = {
     onTranscriptionComplete: (text) => {
       // Append to existing text
+      let newValue = text;
+
       if (inputRef?.current) {
         const currentValue = inputRef.current.value;
-        const newValue = currentValue
+        newValue = currentValue
           ? `${currentValue} ${text}`.trim()
           : text;
 
-        // Update input value directly
+        // Update input value directly for immediate visual feedback
         inputRef.current.value = newValue;
-
-        // Trigger React's onChange event so parent component gets updated
-        const event = new Event('input', { bubbles: true });
-        inputRef.current.dispatchEvent(event);
       }
 
-      // Don't call onTranscript - the input event above will trigger onChange in parent
-      // This prevents double-updating and ensures append behavior works correctly
+      // Call onTranscript callback to update React state with the new combined value
+      // This is essential for controlled components to update properly
+      if (onTranscript) {
+        onTranscript(newValue);
+      }
     },
     maxDurationSeconds: remainingTimeForField,
     projectId,

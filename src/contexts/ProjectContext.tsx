@@ -87,23 +87,74 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     setUserProjectsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         setUserProjects([]); // Clear any existing projects
         setUserProjectsLoading(false);
         return;
       }
 
-      // Get projects from project_summary table
-      const { data, error } = await supabase
+      // Get projects where user is the OWNER
+      const { data: ownedProjects, error: ownedError } = await supabase
         .from('project_summary')
         .select('project_id, nom_projet, created_at, statut_project')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ownedError) throw ownedError;
 
-      setUserProjects(data || []);
+      // Get projects where user is a COLLABORATOR
+      const { data: collaboratorProjects, error: collabError } = await supabase
+        .from('project_collaborators')
+        .select(`
+          project_id,
+          project_summary!inner(
+            project_id,
+            nom_projet,
+            created_at,
+            statut_project
+          )
+        `)
+        .eq('user_id', session.user.id)
+        .eq('status', 'active');
+
+      if (collabError) {
+        console.error("Error fetching collaborative projects:", collabError);
+        // Don't throw - just log and continue with owned projects
+      }
+
+      // Combine and deduplicate projects
+      const allProjects = [...(ownedProjects || [])];
+
+      if (collaboratorProjects) {
+        collaboratorProjects.forEach((collab: {
+          project_id: string;
+          project_summary: {
+            project_id: string;
+            nom_projet: string;
+            created_at: string;
+            statut_project: string;
+          };
+        }) => {
+          const projectData = collab.project_summary;
+          // Only add if not already in list (user might be both owner and collaborator)
+          if (projectData && !allProjects.find(p => p.project_id === projectData.project_id)) {
+            allProjects.push({
+              project_id: projectData.project_id,
+              nom_projet: projectData.nom_projet,
+              created_at: projectData.created_at,
+              statut_project: projectData.statut_project
+            });
+          }
+        });
+      }
+
+      // Sort by creation date
+      allProjects.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setUserProjects(allProjects);
 
     } catch (error) {
       console.error("Error fetching user projects:", error);

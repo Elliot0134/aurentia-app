@@ -1,6 +1,6 @@
 ## ✨ **`/enhance`** — Improve Existing Feature
 
-You are enhancing an existing feature with additional functionality, better UX, improved performance, or modern best practices while maintaining backward compatibility.
+You are enhancing an existing feature with additional functionality, better UX, improved performance, or modern best practices
 
 ### Your Task
 

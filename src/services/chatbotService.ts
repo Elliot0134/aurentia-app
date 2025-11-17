@@ -145,19 +145,19 @@ class ChatbotService {
     }
   }
 
-  // Lister les conversations d'un utilisateur pour un projet (using existing conversation table)
+  // Lister les conversations d'un utilisateur pour un projet (including shared conversations)
   async getUserConversationsFromDB(
     userId: string,
     projectId: string
   ): Promise<Conversation[]> {
     try {
-      let query = supabase
+      // Get both private conversations and shared project conversations
+      const { data, error } = await supabase
         .from('conversation')
         .select('*')
-        .eq('user_id', userId)
-        .eq('project_id', projectId);
-
-      const { data, error } = await query.order('updated_at', { ascending: false });
+        .eq('project_id', projectId)
+        .or(`user_id.eq.${userId},is_shared.eq.true`)
+        .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Erreur chargement conversations DB:', error);
@@ -733,6 +733,106 @@ ${projectContext ? `Pour votre projet :\n${projectContext}\n\n` : ''}Quel aspect
   // Get current conversation
   getCurrentConversation(): Conversation | null {
     return this.currentConversationId ? this.getConversation(this.currentConversationId) : null;
+  }
+
+  // Toggle conversation sharing status
+  async toggleConversationSharing(conversationId: string, isShared: boolean): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('conversation')
+        .update({
+          is_shared: isShared,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+
+      if (error) {
+        console.error('Error toggling conversation sharing:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in toggleConversationSharing:', error);
+      return false;
+    }
+  }
+
+  // Create a shared conversation
+  async createSharedConversation(
+    userId: string,
+    projectId: string,
+    title?: string
+  ): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('conversation')
+        .insert({
+          project_id: projectId,
+          created_by: userId,
+          user_id: null, // Shared conversations don't belong to a specific user
+          is_shared: true,
+          title: title || 'Nouvelle conversation partagée'
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('Error creating shared conversation:', error);
+        return null;
+      }
+
+      return data.id;
+    } catch (error: any) {
+      console.error('Error in createSharedConversation:', error);
+      return null;
+    }
+  }
+
+  // Add participant to a shared conversation
+  async addConversationParticipant(conversationId: string, userId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('conversation_participants')
+        .insert({
+          conversation_id: conversationId,
+          user_id: userId,
+          role: 'participant'
+        });
+
+      if (error) {
+        console.error('Error adding conversation participant:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in addConversationParticipant:', error);
+      return false;
+    }
+  }
+
+  // Get conversation participants
+  async getConversationParticipants(conversationId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('conversation_participants')
+        .select(`
+          *,
+          user:user_id(id, email, first_name)
+        `)
+        .eq('conversation_id', conversationId);
+
+      if (error) {
+        console.error('Error getting conversation participants:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getConversationParticipants:', error);
+      return [];
+    }
   }
 }
 

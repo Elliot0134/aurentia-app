@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, Users, Mail, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { UserPlus, Users, Mail, Clock, CheckCircle, XCircle, Link2, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useProject } from '@/contexts/ProjectContext';
@@ -14,8 +14,11 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import CollaboratorStats from '@/components/collaboration/CollaboratorStats';
 import CollaboratorsTable from '@/components/collaboration/CollaboratorsTable';
 import InviteModal from '@/components/collaboration/InviteModal';
+import ShareCodeModal from '@/components/collaboration/ShareCodeModal';
+import OwnershipTransferDialog from '@/components/collaboration/OwnershipTransferDialog';
+import InvitationsTable from '@/components/collaboration/InvitationsTable';
 import { useCollaborators } from '@/hooks/useCollaborators';
-import { TemplateDataTable } from '@/pages/individual/ComponentsTemplate';
+import { useProjectPermissions } from '@/hooks/useProjectPermissions';
 
 const CollaboratorsPage = () => {
   const navigate = useNavigate();
@@ -23,8 +26,13 @@ const CollaboratorsPage = () => {
   const { userRole } = useUserRole();
   const { toast } = useToast();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isShareCodeModalOpen, setIsShareCodeModalOpen] = useState(false);
+  const [isOwnershipTransferOpen, setIsOwnershipTransferOpen] = useState(false);
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(true);
+
+  // Get permissions for current project
+  const permissions = useProjectPermissions(currentProjectId);
   
   const {
     collaborators,
@@ -75,19 +83,12 @@ const CollaboratorsPage = () => {
 
       const formattedInvitations = data?.map((invitation) => ({
         id: invitation.id,
-        col1: invitation.email,
-        col2: project?.nom_projet || 'Projet inconnu',
-        col3: invitation.role === 'admin' ? 'Administrateur' : 
-              invitation.role === 'editor' ? 'Éditeur' : 'Lecteur',
-        col4: invitation.status === 'pending' ? 'En attente' : 
-              invitation.status === 'accepted' ? 'Acceptée' : 'Expirée',
-        col5: new Date(invitation.invited_at).toLocaleDateString('fr-FR'),
-        dateCreated: new Date(invitation.invited_at),
         email: invitation.email,
-        status: invitation.status,
         role: invitation.role,
-        expiresAt: invitation.expires_at,
-        projectName: project?.nom_projet
+        status: invitation.status,
+        invited_at: invitation.invited_at,
+        expires_at: invitation.expires_at,
+        project_name: project?.nom_projet
       })) || [];
 
       setInvitations(formattedInvitations);
@@ -194,6 +195,9 @@ const CollaboratorsPage = () => {
     }
   }, []);
 
+  // Get current project for modals
+  const currentProject = projects.find(p => p.id === currentProjectId);
+
   if (userProjectsLoading) {
     return <LoadingSpinner message="Chargement..." fullScreen />;
   }
@@ -220,38 +224,72 @@ const CollaboratorsPage = () => {
       <div className="container mx-auto py-8 min-h-screen animate-fade-in">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* En-tête */}
-          <div className="flex flex-col lg:flex-row lg:flex-wrap justify-between items-start lg:items-center gap-4 mb-8">
-            <div className="flex-grow">
-              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                <Users className="text-blue-600" size={32} />
-                Gestion des Collaborateurs
-              </h1>
-              <p className="text-gray-600">
-                Invitez et gérez les collaborateurs de vos projets entrepreneuriaux
-              </p>
+          <div className="flex flex-col gap-6 mb-8 animate-fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="space-y-2">
+                <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Users className="text-blue-600 dark:text-blue-400" size={32} />
+                  </div>
+                  <span>Gestion des Collaborateurs</span>
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
+                  Invitez et gérez les collaborateurs de vos projets entrepreneuriaux
+                </p>
+              </div>
             </div>
-            
-            <Button
-              onClick={() => setIsInviteModalOpen(true)}
-              className="bg-gradient-primary text-white flex items-center gap-2 w-full lg:w-auto mt-4 lg:mt-0"
-            >
-              <UserPlus size={16} />
-              Inviter un collaborateur
-            </Button>
+
+            {/* Action Buttons - Improved Layout */}
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+              {permissions.canInvite && (
+                <Button
+                  onClick={() => setIsInviteModalOpen(true)}
+                  className="bg-gradient-primary text-white flex items-center justify-center gap-2 min-h-[44px] shadow-md hover:shadow-lg transition-all duration-200"
+                  aria-label="Inviter un collaborateur par email"
+                >
+                  <UserPlus size={18} aria-hidden="true" />
+                  <span>Inviter par email</span>
+                </Button>
+              )}
+              {permissions.canGenerateShareCodes && (
+                <Button
+                  onClick={() => setIsShareCodeModalOpen(true)}
+                  variant="outline"
+                  className="flex items-center justify-center gap-2 min-h-[44px] border-2 hover:bg-accent transition-all duration-200"
+                  aria-label="Générer un code d'invitation partageable"
+                >
+                  <Link2 size={18} aria-hidden="true" />
+                  <span>Codes d'invitation</span>
+                </Button>
+              )}
+              {permissions.canTransferOwnership && (
+                <Button
+                  onClick={() => setIsOwnershipTransferOpen(true)}
+                  variant="outline"
+                  className="flex items-center justify-center gap-2 min-h-[44px] border-2 border-yellow-300 hover:bg-yellow-50 dark:border-yellow-700 dark:hover:bg-yellow-950/30 transition-all duration-200"
+                  aria-label="Transférer la propriété du projet"
+                >
+                  <Crown size={18} className="text-yellow-600 dark:text-yellow-400" aria-hidden="true" />
+                  <span>Transférer la propriété</span>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Statistiques */}
           <CollaboratorStats stats={stats} loading={loading} />
 
           {/* Tableau des collaborateurs */}
-          <Card className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users size={20} />
-                Liste des Collaborateurs
+          <Card className="animate-slide-up shadow-sm hover:shadow-md transition-shadow duration-200" style={{ animationDelay: '0.2s' }}>
+            <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-950">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Users size={20} className="text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                </div>
+                <span>Liste des Collaborateurs</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="overflow-x-auto pt-6">
               <CollaboratorsTable
                 collaborators={collaborators}
                 projects={projects}
@@ -264,29 +302,21 @@ const CollaboratorsPage = () => {
           </Card>
 
           {/* Tableau de suivi des invitations */}
-          <Card className="mt-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail size={20} />
-                Suivi des Invitations
+          <Card className="mt-8 animate-slide-up shadow-sm hover:shadow-md transition-shadow duration-200" style={{ animationDelay: '0.3s' }}>
+            <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Mail size={20} className="text-primary" aria-hidden="true" />
+                </div>
+                <span>Invitations Envoyées</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {invitationsLoading ? (
-                <LoadingSpinner message="Chargement des invitations..." />
-              ) : invitations.length > 0 ? (
-                <TemplateDataTable data={invitations} />
-              ) : (
-                <div className="text-center py-8">
-                  <Mail size={48} className="mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                    Aucune invitation envoyée
-                  </h3>
-                  <p className="text-gray-500">
-                    Les invitations que vous envoyez apparaîtront ici avec leur statut.
-                  </p>
-                </div>
-              )}
+            <CardContent className="pt-6">
+              <InvitationsTable
+                invitations={invitations}
+                loading={invitationsLoading}
+                onRefresh={refreshInvitations}
+              />
             </CardContent>
           </Card>
 
@@ -300,28 +330,31 @@ const CollaboratorsPage = () => {
             error={error}
           />
 
-          {/* Message d'état vide */}
-          {!loading && collaborators.length === 0 && (
-            <Card className="mt-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-              <CardContent className="text-center py-12">
-                <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  Aucun collaborateur pour le moment
-                </h3>
-                <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                  Commencez à collaborer en invitant des personnes à rejoindre vos projets. 
-                  Elles pourront consulter, modifier ou administrer vos projets selon leurs permissions.
-                </p>
-                <Button
-                  onClick={() => setIsInviteModalOpen(true)}
-                  className="bg-gradient-primary text-white"
-                >
-                  <UserPlus size={16} className="mr-2" />
-                  Inviter votre premier collaborateur
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Share Code Modal */}
+          {currentProjectId && (
+            <ShareCodeModal
+              isOpen={isShareCodeModalOpen}
+              onClose={() => setIsShareCodeModalOpen(false)}
+              projectId={currentProjectId}
+              projectName={currentProject?.name}
+            />
           )}
+
+          {/* Ownership Transfer Dialog */}
+          {currentProjectId && (
+            <OwnershipTransferDialog
+              isOpen={isOwnershipTransferOpen}
+              onClose={() => setIsOwnershipTransferOpen(false)}
+              projectId={currentProjectId}
+              projectName={currentProject?.name || 'votre projet'}
+              collaborators={collaborators}
+              onTransferComplete={() => {
+                // Refresh the page to update all data and permissions
+                window.location.reload();
+              }}
+            />
+          )}
+
         </div>
       </div>
     </ProjectRequiredGuard>

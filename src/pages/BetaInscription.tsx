@@ -28,12 +28,21 @@ const BetaInscription = () => {
   }, []);
 
   const VALID_PROMO_CODE = "36HCHRONO";
+  const BETA_ACCESS_KEY = "aurentia_has_beta_access";
 
   const handleCodeSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (promoCode.toUpperCase() === VALID_PROMO_CODE) {
-      // Code valide, rediriger vers login
-      navigate("/login");
+      // Code valide, sauvegarder dans localStorage
+      localStorage.setItem(BETA_ACCESS_KEY, "true");
+
+      toast({
+        title: "Code validé !",
+        description: "Vous pouvez maintenant créer votre compte.",
+      });
+
+      // Rediriger vers signup
+      navigate("/signup");
     } else {
       // Code invalide
       setCodeError(true);

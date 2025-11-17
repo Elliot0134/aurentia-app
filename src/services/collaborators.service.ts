@@ -65,20 +65,58 @@ export class CollaboratorsService {
 
       console.log('Récupération des projets pour l\'utilisateur:', user.id);
 
-      // Récupérer tous les projets de l'utilisateur
-      const { data: projects, error: projectsError } = await supabase
+      // Récupérer tous les projets où l'utilisateur est propriétaire
+      const { data: ownedProjects, error: ownedError } = await supabase
         .from('project_summary')
         .select('project_id, nom_projet')
         .eq('user_id', user.id);
 
-      if (projectsError) {
-        console.error('Erreur lors de la récupération des projets:', projectsError);
-        throw projectsError;
+      if (ownedError) {
+        console.error('Erreur lors de la récupération des projets possédés:', ownedError);
+        throw ownedError;
       }
 
-      console.log('Projets trouvés:', projects?.length || 0);
+      // Récupérer tous les projets où l'utilisateur est collaborateur
+      const { data: collabProjects, error: collabError } = await supabase
+        .from('project_collaborators')
+        .select(`
+          project_id,
+          project_summary!inner(
+            project_id,
+            nom_projet
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active');
 
-      if (!projects || projects.length === 0) {
+      if (collabError) {
+        console.error('Erreur lors de la récupération des projets collaboratifs:', collabError);
+      }
+
+      // Combiner tous les projets (possédés + collaboratifs)
+      const allProjects = [...(ownedProjects || [])];
+
+      if (collabProjects) {
+        collabProjects.forEach((collab: {
+          project_id: string;
+          project_summary: {
+            project_id: string;
+            nom_projet: string;
+          };
+        }) => {
+          const projectData = collab.project_summary;
+          if (projectData && !allProjects.find(p => p.project_id === projectData.project_id)) {
+            allProjects.push({
+              project_id: projectData.project_id,
+              nom_projet: projectData.nom_projet
+            });
+          }
+        });
+      }
+
+      console.log('Projets trouvés (possédés + collaboratifs):', allProjects.length);
+
+      if (allProjects.length === 0) {
         console.log('Aucun projet trouvé pour cet utilisateur');
         return [];
       }
@@ -87,7 +125,7 @@ export class CollaboratorsService {
       const { data, error } = await supabase
         .from('project_collaborators')
         .select('*')
-        .in('project_id', projects.map(p => p.project_id))
+        .in('project_id', allProjects.map(p => p.project_id))
         .order('joined_at', { ascending: false });
 
       if (error) {
@@ -111,7 +149,7 @@ export class CollaboratorsService {
               .single();
 
             // Trouver le projet correspondant dans notre liste
-            const project = projects.find(p => p.project_id === collab.project_id);
+            const project = allProjects.find(p => p.project_id === collab.project_id);
 
             return {
               id: collab.id,
@@ -412,16 +450,25 @@ export class CollaboratorsService {
 
       if (existingCollaborator) {
         // Marquer l'invitation comme utilisée même si déjà collaborateur
-        await supabase
-          .from('project_invitations')
-          .update({ 
-            status: 'accepted',
-            accepted_at: new Date().toISOString(),
-            accepted_by: profile.id
-          })
-          .eq('id', invitation.id);
-        
-        return { success: false, error: 'Vous êtes déjà collaborateur sur ce projet' };
+        console.log('Utilisateur déjà collaborateur, marquage de l\'invitation comme acceptée');
+        console.log('Auth email check - Profile:', profile.email, 'Invitation:', invitation.email);
+
+        // Use secure RPC function to bypass RLS
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('accept_invitation_secure', {
+            p_invitation_id: invitation.id,
+            p_user_id: profile.id,
+            p_user_email: profile.email
+          });
+
+        if (rpcError || !rpcResult?.success) {
+          console.error('Erreur lors de la mise à jour de l\'invitation (déjà collaborateur):', rpcError || rpcResult);
+          return { success: false, error: rpcResult?.error || rpcError?.message || 'Impossible de marquer l\'invitation comme acceptée' };
+        }
+
+        // Retourner succès au lieu d'une erreur - l'utilisateur est déjà sur le projet
+        console.log('=== INVITATION DÉJÀ ACCEPTÉE (utilisateur existant) ===');
+        return { success: true };
       }
 
       // Ajouter le collaborateur
@@ -437,17 +484,23 @@ export class CollaboratorsService {
 
       // Marquer l'invitation comme utilisée
       console.log('Mise à jour de l\'invitation avec ID:', invitation.id);
-      const { error: updateError } = await supabase
-        .from('project_invitations')
-        .update({ 
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-          accepted_by: profile.id
-        })
-        .eq('id', invitation.id);
+      console.log('Profile email pour la mise à jour:', profile.email);
 
-      console.log('Erreur de mise à jour:', updateError);
-      if (updateError) throw updateError;
+      // Use secure RPC function to bypass RLS
+      const { data: rpcResult, error: rpcError } = await supabase
+        .rpc('accept_invitation_secure', {
+          p_invitation_id: invitation.id,
+          p_user_id: profile.id,
+          p_user_email: profile.email
+        });
+
+      console.log('RPC Result:', rpcResult);
+      console.log('RPC Error:', rpcError);
+
+      if (rpcError) throw rpcError;
+      if (!rpcResult?.success) {
+        throw new Error(rpcResult?.error || 'Failed to mark invitation as accepted');
+      }
 
       // Récupérer les informations pour envoyer l'email de confirmation
       const { data: inviterProfile } = await supabase
@@ -456,6 +509,15 @@ export class CollaboratorsService {
         .eq('id', invitation.invited_by)
         .single();
 
+      // Log activity
+      const { ActivityLogService } = await import('@/services/activityLog.service');
+      await ActivityLogService.logInvitationAccepted(
+        invitation.project_id,
+        profile.id,
+        profile.email || invitation.email,
+        invitation.role as string
+      );
+
       // Envoyer l'email de confirmation d'acceptation
       if (inviterProfile?.email) {
         const emailResult = await EmailService.sendInvitationAcceptedNotification(
@@ -463,7 +525,7 @@ export class CollaboratorsService {
           invitation.email,
           invitation.project_id
         );
-        
+
         if (!emailResult.success) {
           console.warn('Email de confirmation non envoyé:', emailResult.error);
         }
@@ -567,18 +629,49 @@ export class CollaboratorsService {
         console.error('Erreur lors de la requête project_invitations:', error);
         throw error;
       }
-      
+
       if (!data) return [];
 
-      console.log('Invitations trouvées:', data);
+      console.log('Invitations trouvées:', data.length);
 
-      // Pour l'instant, retournons les données basiques sans enrichissement
-      return data.map(invitation => ({
-        ...invitation,
-        role: invitation.role as CollaboratorRole,
-        project: undefined,
-        inviter: undefined
-      })) as Invitation[];
+      // Filtrer les invitations où l'utilisateur est déjà collaborateur
+      const filteredInvitations = await Promise.all(
+        data.map(async (invitation) => {
+          const { data: existingCollab } = await supabase
+            .from('project_collaborators')
+            .select('id')
+            .eq('project_id', invitation.project_id)
+            .eq('user_id', user.id)
+            .single();
+
+          // Si l'utilisateur est déjà collaborateur, marquer l'invitation comme acceptée et la filtrer
+          if (existingCollab) {
+            console.log(`Utilisateur déjà collaborateur sur projet ${invitation.project_id}, marquage de l'invitation comme acceptée`);
+
+            // Use secure RPC function to bypass RLS
+            await supabase.rpc('accept_invitation_secure', {
+              p_invitation_id: invitation.id,
+              p_user_id: user.id,
+              p_user_email: user.email as string
+            });
+
+            return null; // Filtrer cette invitation
+          }
+
+          return {
+            ...invitation,
+            role: invitation.role as CollaboratorRole,
+            project: undefined,
+            inviter: undefined
+          } as Invitation;
+        })
+      );
+
+      // Retourner uniquement les invitations non nulles
+      const validInvitations = filteredInvitations.filter(inv => inv !== null) as Invitation[];
+      console.log('Invitations valides après filtrage:', validInvitations.length);
+
+      return validInvitations;
 
     } catch (error) {
       console.error('Erreur dans getPendingInvitations:', error);
@@ -623,13 +716,157 @@ export class CollaboratorsService {
   }
 
   // Annuler une invitation
-  static async cancelInvitation(invitationId: string): Promise<void> {
-    const { error } = await supabase
-      .from('project_invitations')
-      .delete()
-      .eq('id', invitationId);
+  static async cancelInvitation(invitationId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Get invitation details first for activity logging
+      const { data: invitation, error: fetchError } = await supabase
+        .from('project_invitations')
+        .select('project_id, email, invited_by')
+        .eq('id', invitationId)
+        .single();
 
-    if (error) throw error;
+      if (fetchError) {
+        return { success: false, error: fetchError.message };
+      }
+
+      // Delete the invitation
+      const { error } = await supabase
+        .from('project_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      // Log activity
+      if (invitation) {
+        const { ActivityLogService } = await import('@/services/activityLog.service');
+        await ActivityLogService.logInvitationCancelled(
+          invitation.project_id,
+          invitation.invited_by,
+          invitation.email
+        );
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error cancelling invitation:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Rejeter une invitation
+  static async rejectInvitation(invitationId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      // Get invitation details first for activity logging
+      const { data: invitation, error: fetchError } = await supabase
+        .from('project_invitations')
+        .select('project_id, email, invited_by')
+        .eq('id', invitationId)
+        .eq('email', user.email)
+        .single();
+
+      if (fetchError) {
+        return { success: false, error: 'Invitation not found or not authorized' };
+      }
+
+      // Update invitation status
+      const { error } = await supabase
+        .from('project_invitations')
+        .update({
+          status: 'rejected',
+          accepted_at: new Date().toISOString(),
+          accepted_by: user.id
+        })
+        .eq('id', invitationId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      // Log activity
+      if (invitation) {
+        const { ActivityLogService } = await import('@/services/activityLog.service');
+        await ActivityLogService.logInvitationRejected(
+          invitation.project_id,
+          user.id,
+          user.email || invitation.email
+        );
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error rejecting invitation:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Renvoyer une invitation
+  static async resendInvitation(invitationId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      // Get invitation details
+      const { data: invitation, error: fetchError } = await supabase
+        .from('project_invitations')
+        .select('project_id, email, role, invited_by, expires_at')
+        .eq('id', invitationId)
+        .single();
+
+      if (fetchError) {
+        return { success: false, error: 'Invitation not found' };
+      }
+
+      // Verify user is the one who sent the invitation
+      if (invitation.invited_by !== user.id) {
+        return { success: false, error: 'Not authorized to resend this invitation' };
+      }
+
+      // Extend expiration and update invited_at
+      const newExpiresAt = new Date();
+      newExpiresAt.setDate(newExpiresAt.getDate() + 7); // 7 days from now
+
+      const { error } = await supabase
+        .from('project_invitations')
+        .update({
+          invited_at: new Date().toISOString(),
+          expires_at: newExpiresAt.toISOString(),
+          status: 'pending'
+        })
+        .eq('id', invitationId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      // TODO: Send new email notification
+      // This would require edge function or email service integration
+
+      // Log activity
+      if (invitation) {
+        const { ActivityLogService } = await import('@/services/activityLog.service');
+        await ActivityLogService.logInvitationResent(
+          invitation.project_id,
+          user.id,
+          invitation.email,
+          invitation.role as string
+        );
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error resending invitation:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   // Vérifier les permissions d'un utilisateur sur un projet
@@ -699,7 +936,7 @@ export class CollaboratorsService {
       canWrite: role === 'editor' || role === 'admin' || role === 'owner',
       canDelete: role === 'admin' || role === 'owner',
       canManageCollaborators: role === 'admin' || role === 'owner',
-      canChangeSettings: role === 'admin' || role === 'owner'
+      canChangeSettings: role === 'owner'
     };
 
     return {
@@ -837,6 +1074,110 @@ export class CollaboratorsService {
     } catch (error) {
       console.error('Erreur lors du traitement des invitations acceptées:', error);
       return 0;
+    }
+  }
+
+  // Transfer ownership of a project to another collaborator
+  static async transferOwnership(
+    projectId: string,
+    newOwnerId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      // Verify current user is the owner
+      const { data: project, error: projectError } = await supabase
+        .from('project_summary')
+        .select('user_id, owner_id, nom_projet')
+        .eq('project_id', projectId)
+        .single();
+
+      if (projectError || !project) {
+        return { success: false, error: 'Project not found' };
+      }
+
+      // Check if current user is owner (check both user_id and owner_id)
+      const currentOwnerId = project.owner_id || project.user_id;
+      if (currentOwnerId !== user.id) {
+        return { success: false, error: 'Only the project owner can transfer ownership' };
+      }
+
+      // Verify new owner is a collaborator
+      const { data: newOwnerCollab, error: collabError } = await supabase
+        .from('project_collaborators')
+        .select('id, user_id')
+        .eq('project_id', projectId)
+        .eq('user_id', newOwnerId)
+        .single();
+
+      if (collabError || !newOwnerCollab) {
+        return { success: false, error: 'New owner must be an existing collaborator' };
+      }
+
+      // Get new owner email for logging
+      const { data: newOwnerProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', newOwnerId)
+        .single();
+
+      // Start transaction-like operations
+      // 1. Update project owner
+      const { error: updateProjectError } = await supabase
+        .from('project_summary')
+        .update({
+          user_id: newOwnerId,
+          owner_id: newOwnerId
+        })
+        .eq('project_id', projectId);
+
+      if (updateProjectError) {
+        console.error('Error updating project owner:', updateProjectError);
+        return { success: false, error: 'Failed to transfer ownership' };
+      }
+
+      // 2. Remove new owner from collaborators table (they're now the owner)
+      const { error: removeCollabError } = await supabase
+        .from('project_collaborators')
+        .delete()
+        .eq('id', newOwnerCollab.id);
+
+      if (removeCollabError) {
+        console.warn('Error removing new owner from collaborators:', removeCollabError);
+        // Don't fail the operation for this
+      }
+
+      // 3. Add previous owner as admin
+      const { error: addOldOwnerError } = await supabase
+        .from('project_collaborators')
+        .insert({
+          project_id: projectId,
+          user_id: user.id,
+          role: 'admin',
+          status: 'active'
+        });
+
+      if (addOldOwnerError) {
+        console.error('Error adding previous owner as admin:', addOldOwnerError);
+        // Don't fail the operation for this
+      }
+
+      // 4. Log the ownership transfer
+      const ActivityLogService = (await import('./activityLog.service')).ActivityLogService;
+      await ActivityLogService.logOwnershipTransfer(
+        projectId,
+        user.id,
+        newOwnerId,
+        newOwnerProfile?.email || 'Unknown'
+      );
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error in transferOwnership:', error);
+      return { success: false, error: error.message };
     }
   }
 }

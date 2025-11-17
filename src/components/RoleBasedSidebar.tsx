@@ -32,6 +32,7 @@ interface MenuItem {
   isDivider?: boolean;
   isCustomAction?: boolean;
   isCreateOrg?: boolean;
+  isDisabled?: boolean;
 }
 
 interface MenuCategory {
@@ -92,6 +93,7 @@ const SidebarSection = ({ category, isCollapsed, location }: SidebarSectionProps
     }
 
     const isActive = isItemActive(item);
+    const isDisabled = item.isDisabled || false;
     const baseClasses = "relative group flex items-center justify-center py-2 px-2 rounded-md transition-all duration-200";
 
     if (item.isCustomAction && item.isCreateOrg) {
@@ -109,6 +111,24 @@ const SidebarSection = ({ category, isCollapsed, location }: SidebarSectionProps
           </button>
           <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
             {organizationLoading ? "Chargement..." : item.name}
+          </div>
+        </div>
+      );
+    }
+
+    if (isDisabled) {
+      return (
+        <div key={`${item.path}-${item.name}-${index}`} className="relative group">
+          <div
+            className={cn(
+              baseClasses,
+              "opacity-30 cursor-not-allowed text-gray-400"
+            )}
+          >
+            {item.icon}
+          </div>
+          <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+            {item.name} (Bientôt disponible)
           </div>
         </div>
       );
@@ -138,6 +158,8 @@ const SidebarSection = ({ category, isCollapsed, location }: SidebarSectionProps
       return <div key={`divider-${index}`} className="my-1 border-t border-gray-200"></div>;
     }
 
+    const isDisabled = item.isDisabled || false;
+
     if (item.isCustomAction && item.isCreateOrg) {
       return (
         <button
@@ -152,6 +174,19 @@ const SidebarSection = ({ category, isCollapsed, location }: SidebarSectionProps
           {item.icon}
           <span>{organizationLoading ? "Chargement..." : item.name}</span>
         </button>
+      );
+    }
+
+    if (isDisabled) {
+      return (
+        <div
+          key={`${item.path}-${item.name}-${index}`}
+          className="flex items-center gap-3 py-2 px-3 rounded-md text-sm transition-all duration-200 opacity-30 cursor-not-allowed text-gray-400"
+          title="Bientôt disponible"
+        >
+          {item.icon}
+          <span>{item.name}</span>
+        </div>
       );
     }
 
@@ -747,29 +782,33 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
       orgItem = { name: "Rejoindre une organisation", path: "/join-organization", icon: <Plus size={20} />, isCustomAction: true, isCreateOrg: true };
     }
 
+    // Define allowed menu items for beta users
+    const allowedItems = ["Tableau de bord", "Livrables", "Assistant IA", "Plan d'action", "Collaborateurs", "Messages"];
+    const isItemAllowed = (itemName: string) => allowedItems.includes(itemName);
+
     return {
       standaloneItems: [
-        { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} /> },
-        { name: "Messages", path: "/messages", icon: <Mail size={20} /> },
+        { name: "Tableau de bord", path: "/individual/dashboard", icon: <LayoutDashboard size={20} />, isDisabled: !isItemAllowed("Tableau de bord") },
+        { name: "Messages", path: "/messages", icon: <Mail size={20} />, isDisabled: !isItemAllowed("Messages") },
       ],
       categories: [
         {
           name: "Mon Projet",
           icon: <Briefcase size={20} />,
           items: [
-            { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} /> },
-            { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} /> },
-            { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} /> },
-            { name: "Template", path: "/individual/template", icon: <FileText size={20} /> },
+            { name: "Livrables", path: activeProjectId ? `/individual/project-business/${activeProjectId}` : "/individual/project-business", icon: <FileText size={20} />, isDisabled: !isItemAllowed("Livrables") },
+            { name: "Assistant IA", path: activeProjectId ? `/individual/chatbot/${activeProjectId}` : "/individual/chatbot", icon: <MessageSquare size={20} />, isDisabled: !isItemAllowed("Assistant IA") },
+            { name: "Plan d'action", path: "/individual/plan-action", icon: <LandPlot size={20} />, isDisabled: !isItemAllowed("Plan d'action") },
+            { name: "Template", path: "/individual/template", icon: <FileText size={20} />, isDisabled: !isItemAllowed("Template") },
           ]
         },
         {
           name: "Outils",
           icon: <Zap size={20} />,
           items: [
-            { name: "Outils", path: "/individual/outils", icon: <Settings size={20} /> },
-            { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} /> },
-            { name: "Intégrations", path: "/individual/integrations", icon: <Plug size={20} /> },
+            { name: "Outils", path: "/individual/outils", icon: <Settings size={20} />, isDisabled: !isItemAllowed("Outils") },
+            { name: "Automatisations", path: "/individual/automatisations", icon: <Zap size={20} />, isDisabled: !isItemAllowed("Automatisations") },
+            { name: "Intégrations", path: "/individual/integrations", icon: <Plug size={20} />, isDisabled: !isItemAllowed("Intégrations") },
           ]
         },
         {
@@ -777,16 +816,16 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
           icon: <Users size={20} />,
           items: [
             orgItem,
-            { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} /> },
+            { name: "Collaborateurs", path: "/individual/collaborateurs", icon: <Users size={20} />, isDisabled: !isItemAllowed("Collaborateurs") },
           ]
         },
         {
           name: "Ressources",
           icon: <Library size={20} />,
           items: [
-            { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} /> },
-            { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} /> },
-            { name: "Base de connaissance", path: activeProjectId ? `/individual/knowledge-base/${activeProjectId}` : "/individual/knowledge-base", icon: <Database size={20} /> },
+            { name: "Partenaires", path: "/individual/partenaires", icon: <Handshake size={20} />, isDisabled: !isItemAllowed("Partenaires") },
+            { name: "Ressources", path: "/individual/ressources", icon: <Library size={20} />, isDisabled: !isItemAllowed("Ressources") },
+            { name: "Base de connaissance", path: activeProjectId ? `/individual/knowledge-base/${activeProjectId}` : "/individual/knowledge-base", icon: <Database size={20} />, isDisabled: !isItemAllowed("Base de connaissance") },
           ]
         },
       ],

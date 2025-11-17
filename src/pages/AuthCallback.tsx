@@ -22,8 +22,9 @@ const AuthCallback = () => {
               // Rôle déjà défini, rediriger vers le tableau de bord par défaut
               navigate(getDefaultDashboard(), { replace: true });
             } else {
-              // Pas de rôle défini, rediriger vers la page d'inscription pour la sélection de rôle
-              navigate("/signup", { replace: true });
+              // Pas de rôle défini, rediriger vers l'onboarding pour la configuration initiale
+              // (OAuth users go directly to onboarding flow)
+              navigate("/onboarding", { replace: true });
             }
           }
         } else {

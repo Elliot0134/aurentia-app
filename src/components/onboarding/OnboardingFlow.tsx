@@ -89,6 +89,8 @@ const OnboardingFlow = () => {
         },
         theme_preference: data.theme || 'light',
         preferred_language: data.preferredLanguage || 'fr',
+        first_name: data.firstName || null,
+        location: data.country || null,
       }).eq('id', session.user.id);
 
       if (error) throw error;

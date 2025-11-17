@@ -1381,9 +1381,31 @@ export type Database = {
           },
         ]
       }
+      beta: {
+        Row: {
+          id: string
+          email: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           abonnement: string | null
+          avatar_url: string | null
+          bio: string | null
+          cohort_year: number | null
+          company: string | null
           conv_limit: string | null
           created_at: string | null
           credit_limit: string | null
@@ -1391,15 +1413,44 @@ export type Database = {
           drive_folder_rag: string | null
           drive_folder_url: string | null
           email: string | null
+          email_confirmed_at: string | null
+          email_confirmation_required: boolean | null
+          first_name: string | null
+          has_beta_access: boolean | null
           id: string
+          invitation_code_used: string | null
+          is_member: boolean | null
+          job_title: string | null
+          last_credit_reset: string
+          last_name: string | null
+          linkedin_url: string | null
+          location: string | null
+          monthly_credits_limit: number
+          monthly_credits_remaining: number
           nb_projects: string | null
+          onboarding_completed: boolean | null
+          onboarding_data: Json | null
+          organization_setup_dismissed: boolean | null
+          organization_setup_pending: boolean | null
+          phone: string | null
+          preferred_language: string | null
+          program_type: string | null
+          purchased_credits_remaining: number
+          availability_schedule: Json | null
           stripe_customer_id: string | null
           subscription_status: string | null
+          theme_preference: string | null
+          training_budget: number | null
+          user_role: string | null
           user_type: string | null
-          is_member: boolean | null
+          website: string | null
         }
         Insert: {
           abonnement?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          cohort_year?: number | null
+          company?: string | null
           conv_limit?: string | null
           created_at?: string | null
           credit_limit?: string | null
@@ -1407,15 +1458,44 @@ export type Database = {
           drive_folder_rag?: string | null
           drive_folder_url?: string | null
           email?: string | null
+          email_confirmed_at?: string | null
+          email_confirmation_required?: boolean | null
+          first_name?: string | null
+          has_beta_access?: boolean | null
           id: string
+          invitation_code_used?: string | null
+          is_member?: boolean | null
+          job_title?: string | null
+          last_credit_reset?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          location?: string | null
+          monthly_credits_limit?: number
+          monthly_credits_remaining?: number
           nb_projects?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
+          organization_setup_dismissed?: boolean | null
+          organization_setup_pending?: boolean | null
+          phone?: string | null
+          preferred_language?: string | null
+          program_type?: string | null
+          purchased_credits_remaining?: number
+          availability_schedule?: Json | null
           stripe_customer_id?: string | null
           subscription_status?: string | null
+          theme_preference?: string | null
+          training_budget?: number | null
+          user_role?: string | null
           user_type?: string | null
-          is_member?: boolean | null
+          website?: string | null
         }
         Update: {
           abonnement?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          cohort_year?: number | null
+          company?: string | null
           conv_limit?: string | null
           created_at?: string | null
           credit_limit?: string | null
@@ -1423,12 +1503,37 @@ export type Database = {
           drive_folder_rag?: string | null
           drive_folder_url?: string | null
           email?: string | null
+          email_confirmed_at?: string | null
+          email_confirmation_required?: boolean | null
+          first_name?: string | null
+          has_beta_access?: boolean | null
           id?: string
+          invitation_code_used?: string | null
+          is_member?: boolean | null
+          job_title?: string | null
+          last_credit_reset?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          location?: string | null
+          monthly_credits_limit?: number
+          monthly_credits_remaining?: number
           nb_projects?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
+          organization_setup_dismissed?: boolean | null
+          organization_setup_pending?: boolean | null
+          phone?: string | null
+          preferred_language?: string | null
+          program_type?: string | null
+          purchased_credits_remaining?: number
+          availability_schedule?: Json | null
           stripe_customer_id?: string | null
           subscription_status?: string | null
+          theme_preference?: string | null
+          training_budget?: number | null
+          user_role?: string | null
           user_type?: string | null
-          is_member?: boolean | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -1477,12 +1582,14 @@ export type Database = {
         Row: {
           accepted_at: string | null
           accepted_by: string | null
+          accepted_email: string | null
           email: string
           expires_at: string | null
           id: string
           invited_at: string | null
           invited_by: string
           project_id: string
+          project_name: string | null
           role: string
           status: string
           token: string
@@ -1490,12 +1597,14 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           accepted_by?: string | null
+          accepted_email?: string | null
           email: string
           expires_at?: string | null
           id?: string
           invited_at?: string | null
           invited_by: string
           project_id: string
+          project_name?: string | null
           role?: string
           status?: string
           token?: string
@@ -1503,12 +1612,14 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           accepted_by?: string | null
+          accepted_email?: string | null
           email?: string
           expires_at?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string
           project_id?: string
+          project_name?: string | null
           role?: string
           status?: string
           token?: string

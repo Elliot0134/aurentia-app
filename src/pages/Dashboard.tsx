@@ -5,9 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DashboardMetricsCards } from "@/components/dashboard/DashboardMetricsCards";
 import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
+import { PendingInvitesSection } from "@/components/dashboard/PendingInvitesSection";
 import { useUserStatusChecks } from "@/hooks/useUserStatusChecks";
 import { CreditsUsageChart } from "@/components/dashboard/CreditsUsageChart";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import { usePendingInvitations } from "@/hooks/usePendingInvitations";
 import { CheckCircle2, FolderOpen, Plus, Circle, ChevronRight, Bell, TrendingUp, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -26,8 +28,11 @@ const Dashboard = () => {
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   // Use Project Context instead of local state
-  const { userProjects, userProjectsLoading, deleteProject, currentProjectId, setCurrentProjectId } = useProject();
+  const { userProjects, userProjectsLoading, deleteProject, currentProjectId, setCurrentProjectId, loadUserProjects } = useProject();
   const { onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
+
+  // Hook for pending invitations
+  const { invitations, loading: invitationsLoading, handleInvitationAccepted, refetch: refetchInvitations } = usePendingInvitations();
 
   // Hook pour les indicateurs de statut
   const { checks, completionPercentage, completedCount, totalCount, isLoading: statusLoading } = useUserStatusChecks(currentProjectId);
@@ -237,11 +242,11 @@ const Dashboard = () => {
             </div>
 
             {/* Items des projets - sans container */}
-            {userProjectsLoading ? (
+            {userProjectsLoading || invitationsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="spinner"></div>
               </div>
-            ) : userProjects.length === 0 ? (
+            ) : userProjects.length === 0 && invitations.length === 0 ? (
               <div className="text-center py-8">
                 <FolderOpen className="h-12 w-12 mx-auto mb-3 text-text-muted/50" />
                 <h3 className="text-base font-semibold text-text-primary mb-2">Aucun projet</h3>
@@ -258,6 +263,20 @@ const Dashboard = () => {
               </div>
             ) : (
               <>
+                {/* Pending Invitations Section */}
+                {!invitationsLoading && invitations.length > 0 && (
+                  <PendingInvitesSection
+                    invitations={invitations}
+                    onInvitationHandled={() => {
+                      handleInvitationAccepted();
+                      refetchInvitations();
+                      // CRITICAL: Reload projects to show newly accessible collaborative projects
+                      loadUserProjects();
+                    }}
+                  />
+                )}
+
+                {/* Projects List */}
                 <div className="space-y-1.5">
                   {userProjects.slice(0, 5).map((project) => {
                     const isActive = currentProjectId === project.project_id;

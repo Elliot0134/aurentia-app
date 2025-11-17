@@ -36,8 +36,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import StatusBadge from './StatusBadge';
 import ProjectSelector from './ProjectSelector';
+import { RoleBadge } from './RoleBadge';
 import {
   Search,
   MoreHorizontal,
@@ -125,23 +131,27 @@ const CollaboratorsTable = ({
       }
     });
 
-  // Obtenir le label du rôle
+  // Obtenir le label du rôle (kept for backward compatibility)
   const getRoleLabel = (role) => {
     const roles = {
       viewer: 'Lecteur',
       editor: 'Éditeur',
-      admin: 'Administrateur'
+      administrator: 'Administrateur',
+      admin: 'Administrateur', // backward compatibility
+      owner: 'Propriétaire'
     };
     return roles[role] || role;
   };
 
 
-  // Obtenir la couleur du rôle
+  // Obtenir la couleur du rôle (kept for backward compatibility)
   const getRoleColor = (role) => {
     const colors = {
       viewer: 'bg-gray-100 text-gray-800',
       editor: 'bg-blue-100 text-blue-800',
-      admin: 'bg-purple-100 text-purple-800'
+      administrator: 'bg-purple-100 text-purple-800',
+      admin: 'bg-purple-100 text-purple-800', // backward compatibility
+      owner: 'bg-yellow-100 text-yellow-800'
     };
     return colors[role] || 'bg-gray-100 text-gray-800';
   };
@@ -262,7 +272,7 @@ const CollaboratorsTable = ({
               {/* Contenu de la carte */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Projets:</span>
+                  <span className="text-sm text-gray-500">Projet:</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -270,41 +280,37 @@ const CollaboratorsTable = ({
                     onClick={() => setEditingCollaborator(collaborator)}
                   >
                     <span className="text-sm text-gray-900">
-                      {(collaborator.projects || []).length} projet{(collaborator.projects || []).length > 1 ? 's' : ''}
+                      {collaborator.project?.nom_projet ||
+                       (collaborator.projects && collaborator.projects.length > 0
+                         ? `${collaborator.projects.length} projet${collaborator.projects.length > 1 ? 's' : ''}`
+                         : 'Aucun projet')}
                     </span>
                   </Button>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Rôle:</span>
-                  <Select
-                    value={collaborator.role}
-                    onValueChange={(newRole) => handleRoleChange(collaborator.id, newRole)}
-                  >
-                    <SelectTrigger className="w-[120px] h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="viewer">
-                        <div className="flex items-center gap-2">
-                          <Eye size={14} />
-                          Lecteur
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="editor">
-                        <div className="flex items-center gap-2">
-                          <PencilLine size={14} />
-                          Éditeur
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                          <UserCog size={14} />
-                          Admin
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className="cursor-pointer hover:opacity-80 transition-opacity">
+                        <RoleBadge role={collaborator.role} showIcon={true} />
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium mb-3">Changer le rôle</p>
+                        {['viewer', 'editor', 'admin'].map((role) => (
+                          <button
+                            key={role}
+                            onClick={() => handleRoleChange(collaborator.id, role)}
+                            className="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center gap-2 transition-colors"
+                          >
+                            <RoleBadge role={role} showIcon={true} />
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
@@ -379,42 +385,38 @@ const CollaboratorsTable = ({
                       <div className="flex items-center gap-2">
                         <Folder size={14} className="text-gray-400" />
                         <span className="text-sm text-gray-900 hover:text-gray-700">
-                          {(collaborator.projects || []).length} projet{(collaborator.projects || []).length > 1 ? 's' : ''}
+                          {collaborator.project?.nom_projet ||
+                           (collaborator.projects && collaborator.projects.length > 0
+                             ? `${collaborator.projects.length} projet${collaborator.projects.length > 1 ? 's' : ''}`
+                             : 'Aucun projet')}
                         </span>
                       </div>
                     </Button>
                   </TableCell>
                   
-                  {/* Rôle - Dropdown */}
+                  {/* Rôle - Badge with Popover */}
                   <TableCell>
-                    <Select
-                      value={collaborator.role}
-                      onValueChange={(newRole) => handleRoleChange(collaborator.id, newRole)}
-                    >
-                      <SelectTrigger className="w-[140px] h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="viewer">
-                          <div className="flex items-center gap-2">
-                            <Eye size={14} />
-                            Lecteur
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="editor">
-                          <div className="flex items-center gap-2">
-                            <PencilLine size={14} />
-                            Éditeur
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
-                            <UserCog size={14} />
-                            Administrateur
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div className="cursor-pointer hover:opacity-80 transition-opacity w-fit">
+                          <RoleBadge role={collaborator.role} showIcon={true} />
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56">
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium mb-3">Changer le rôle</p>
+                          {['viewer', 'editor', 'admin'].map((role) => (
+                            <button
+                              key={role}
+                              onClick={() => handleRoleChange(collaborator.id, role)}
+                              className="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center gap-2 transition-colors"
+                            >
+                              <RoleBadge role={role} showIcon={true} />
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </TableCell>
                   
                   {/* Statut */}

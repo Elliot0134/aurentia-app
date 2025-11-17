@@ -1,8 +1,10 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Plus, Pencil, Trash2, History } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Plus, Pencil, Trash2, History, Share2, Users } from "lucide-react";
 import { type Conversation } from '@/services/chatbotService';
+import { cn } from '@/lib/utils';
 
 interface ChatHeaderProps {
   currentConversation: Conversation | null;
@@ -14,6 +16,7 @@ interface ChatHeaderProps {
   onRenameConversation: () => void;
   onDeleteConversation: () => void;
   onToggleHistoryMobile: () => void; // New prop for toggling history on mobile
+  onShareConversation?: () => void; // New prop for sharing conversation
   organizationLogoUrl?: string; // Organization logo URL for white label mode
 }
 
@@ -27,6 +30,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onRenameConversation,
   onDeleteConversation,
   onToggleHistoryMobile, // Destructure new prop
+  onShareConversation,
   organizationLogoUrl,
 }) => {
   return (
@@ -70,9 +74,17 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               >
                 <SelectTrigger className="w-full max-w-xs sm:max-w-sm h-9 border-0 focus:ring-0 focus:ring-offset-0 focus:outline-none bg-gray-50 hover:bg-gray-100 transition-colors">
                   <SelectValue>
-                    <span className="truncate text-[var(--text-primary)]">
-                      {currentConversation ? currentConversation.title : 'Sélectionner une conversation'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-[var(--text-primary)]">
+                        {currentConversation ? currentConversation.title : 'Sélectionner une conversation'}
+                      </span>
+                      {currentConversation?.is_shared && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200 px-1.5 py-0">
+                          <Users size={10} className="mr-1" />
+                          Partagée
+                        </Badge>
+                      )}
+                    </div>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="min-w-[400px] bg-white">
@@ -121,6 +133,23 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             {/* Boutons d'édition - uniquement si conversation active */}
             {currentConversation && (
               <>
+                {onShareConversation && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onShareConversation}
+                    className={cn(
+                      "p-2 transition-all",
+                      currentConversation.is_shared
+                        ? "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        : "text-[var(--text-muted)] hover:text-white hover:bg-[var(--btn-primary-bg)]"
+                    )}
+                    style={{ transitionDuration: 'var(--transition-fast)' }}
+                    aria-label="Partager la conversation"
+                  >
+                    <Share2 size={14} />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"

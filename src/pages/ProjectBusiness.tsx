@@ -36,6 +36,7 @@ import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 import { useCreditsDialog } from '@/contexts/CreditsDialogContext'; // Import useCreditsDialog
 import { useCreditsSimple } from '@/hooks/useCreditsSimple'; // Import useCreditsSimple
 import { DeliverablesLoadingProvider } from '@/contexts/DeliverablesLoadingContext'; // Import DeliverablesLoadingProvider
+import { useProjectPermissions } from '@/hooks/useProjectPermissions'; // Import useProjectPermissions
 
 const ProjectBusiness = () => {
   const { projectId } = useParams();
@@ -43,6 +44,7 @@ const ProjectBusiness = () => {
   const { userRole } = useUserRole(); // Get user role
   const { openCreditsDialog } = useCreditsDialog(); // Utiliser le contexte des crédits
   const { purchasedRemaining, monthlyRemaining, refresh: fetchCredits } = useCreditsSimple(); // Utiliser le hook des crédits
+  const permissions = useProjectPermissions(projectId); // Get permissions for this project
 
   // Get persona from URL params (source of truth)
   const [searchParams, setSearchParams] = useSearchParams();
@@ -466,40 +468,46 @@ const ProjectBusiness = () => {
             </div>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
               <div className="flex items-center gap-3 w-full justify-end">
-                <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
-                  if (projectStatus === 'free') {
-                    handleUnlockClick();
-                  } else {
-                    // TODO: Implement actual modify functionality here
-                    toast({
-                      title: "Modification",
-                      description: "La fonctionnalité de modification sera bientôt disponible.",
-                      duration: 3000,
-                    });
-                  }
-                }}>
-                  <Settings size={18} />
-                </Button>
-                <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
-                  if (projectStatus === 'free') {
-                    handleUnlockClick();
-                  } else {
-                    // TODO: Implement actual export functionality here
-                    toast({
-                      title: "Exportation",
-                      description: "La fonctionnalité d'exportation sera bientôt disponible.",
-                      duration: 3000,
-                    });
-                  }
-                }}>
-                  <Download size={18} />
-                </Button>
-                <Button
-                  onClick={() => setIsComingSoonOpen(true)}
-                  className="h-10 w-10 p-0 bg-gradient-primary hover:opacity-90 transition-opacity"
-                >
-                  <UserPlus size={18} />
-                </Button>
+                {permissions.canWrite && (
+                  <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
+                    if (projectStatus === 'free') {
+                      handleUnlockClick();
+                    } else {
+                      // TODO: Implement actual modify functionality here
+                      toast({
+                        title: "Modification",
+                        description: "La fonctionnalité de modification sera bientôt disponible.",
+                        duration: 3000,
+                      });
+                    }
+                  }}>
+                    <Settings size={18} />
+                  </Button>
+                )}
+                {permissions.canRead && (
+                  <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
+                    if (projectStatus === 'free') {
+                      handleUnlockClick();
+                    } else {
+                      // TODO: Implement actual export functionality here
+                      toast({
+                        title: "Exportation",
+                        description: "La fonctionnalité d'exportation sera bientôt disponible.",
+                        duration: 3000,
+                      });
+                    }
+                  }}>
+                    <Download size={18} />
+                  </Button>
+                )}
+                {permissions.canInvite && (
+                  <Button
+                    onClick={() => setIsComingSoonOpen(true)}
+                    className="h-10 w-10 p-0 bg-gradient-primary hover:opacity-90 transition-opacity"
+                  >
+                    <UserPlus size={18} />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
