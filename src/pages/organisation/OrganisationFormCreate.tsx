@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { ArrowLeft, Save, Eye, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { FlowTallyEditor } from '@/components/form-builder/FlowTallyEditor';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function OrganisationFormCreate() {
+  useOrgPageTitle("Créer Formulaire");
   const { id: orgId, formId } = useParams<{ id: string; formId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();

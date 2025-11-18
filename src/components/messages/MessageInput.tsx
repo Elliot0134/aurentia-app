@@ -8,12 +8,14 @@ interface MessageInputProps {
   onSend: (content: string) => void | Promise<void>;
   disabled?: boolean;
   placeholder?: string;
+  organizationId?: string;
 }
 
 export const MessageInput = ({
   onSend,
   disabled = false,
-  placeholder = "Type a message...",
+  placeholder = "Tapez un message...",
+  organizationId,
 }: MessageInputProps) => {
   const [content, setContent] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -71,13 +73,13 @@ export const MessageInput = ({
           onClick={handleSend}
           disabled={!content.trim() || disabled || isSending}
           size="icon"
-          className="h-10 w-10 btn-white-label hover:opacity-90"
+          className={organizationId ? "h-10 w-10 btn-white-label hover:opacity-90" : "h-10 w-10 bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white hover:opacity-90"}
         >
           <Send className="h-4 w-4" />
         </Button>
       </div>
       <div className="text-xs text-muted-foreground mt-2">
-        Press Enter to send, Shift+Enter for new line
+        Appuyez sur Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne
       </div>
     </div>
   );

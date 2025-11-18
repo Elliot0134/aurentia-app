@@ -15,8 +15,10 @@ import { useAIToolsList } from '@/hooks/useAIToolsNew';
 import type { AITool } from '@/types/aiTools';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import usePageTitle from '@/hooks/usePageTitle';
 
 const Outils: React.FC = () => {
+  usePageTitle("Outils");
   const navigate = useNavigate();
   const { tools, loading, favorites, toggleFavorite } = useAIToolsList();
 

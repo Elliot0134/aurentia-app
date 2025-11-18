@@ -6,8 +6,10 @@ import { ModularDataTable } from "@/components/ui/modular-data-table";
 import { adherentsTableConfig, AdherentData } from "@/config/tables";
 import { Adherent } from "@/types/organisationTypes";
 import { toast } from "sonner";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 const OrganisationAdherents = () => {
+  useOrgPageTitle("Adhérents");
   const { id: organisationId } = useParams();
 
   // Utiliser les données Supabase

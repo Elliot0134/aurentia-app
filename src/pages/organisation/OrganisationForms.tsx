@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { Plus, FileText, Eye, Edit, Trash2, Copy, BarChart } from 'lucide-react';
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ interface Form {
 }
 
 export default function OrganisationForms() {
+  useOrgPageTitle("Formulaires");
   const { id: orgId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();

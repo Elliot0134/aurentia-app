@@ -8,8 +8,10 @@ import type { Project } from '@/services/organisationService';
 import StaffProjectManagement from "@/components/organisation/StaffProjectManagement";
 import CustomTabs from "@/components/ui/CustomTabs";
 import { FolderKanban, Settings } from "lucide-react";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 const OrganisationProjets = () => {
+  useOrgPageTitle("Projets");
   const { id: organisationId } = useParams();
 
   // Get tab from URL params (source of truth)

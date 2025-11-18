@@ -72,7 +72,7 @@ export function CreditsUsageChart({ className }: CreditsUsageChartProps) {
                 "px-3 py-1 text-xs font-medium rounded-md transition-colors duration-200",
                 timeRange === range.value
                   ? "bg-[#ff592b] text-white"
-                  : "bg-gray-100 text-text-muted hover:bg-gray-200",
+                  : "bg-gray-100 dark:bg-[#585a60] text-[#6b7280] dark:text-[#94a3b8] hover:bg-gray-200 dark:hover:bg-[#6a6d72]",
                 isLoading && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -89,7 +89,7 @@ export function CreditsUsageChart({ className }: CreditsUsageChartProps) {
             <div className="spinner"></div>
           </div>
         ) : error || dailyUsage.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px] text-center text-text-muted text-sm">
+          <div className="flex items-center justify-center h-[200px] text-center text-[#6b7280] dark:text-[#94a3b8] text-sm">
             {error || 'Aucune donnée disponible'}
           </div>
         ) : (

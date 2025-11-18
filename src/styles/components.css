@@ -8,44 +8,119 @@
      CARDS
      ======================================== */
   .card-clickable {
-    @apply bg-[#f4f4f5] rounded-xl p-6 cursor-pointer;
-    @apply transition-all duration-200 ease-in-out;
-    @apply hover:bg-[#e8e8e9];
+    background-color: var(--bg-card-clickable);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 200ms ease-in-out;
+  }
+
+  .card-clickable:hover {
+    background-color: var(--bg-card-clickable-hover, #e8e8e9);
+  }
+
+  .dark .card-clickable:hover {
+    background-color: #585a60;
   }
 
   .card-static {
-    @apply bg-white border border-[#f2f2f1] rounded-xl p-6;
+    background-color: var(--bg-card-static);
+    border: 1px solid var(--border-card-static);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
   }
 
   /* ========================================
      BUTTONS
      ======================================== */
   .btn-primary {
-    @apply bg-[#ff592b] text-[#f8f8f6] px-6 py-3 rounded-lg;
-    @apply font-semibold transition-opacity duration-150;
-    @apply hover:opacity-90 active:scale-[0.98];
-    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: opacity 150ms;
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-transparent border-2 border-[#e6e6e9] text-[#2e333d] px-6 py-3 rounded-lg;
-    @apply font-semibold transition-all duration-150;
-    @apply hover:bg-[#f4f4f4] hover:border-[#d3d3d8] active:scale-[0.98];
-    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+    background-color: var(--btn-secondary-bg);
+    border: 2px solid var(--btn-secondary-border);
+    color: var(--btn-secondary-text);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 150ms;
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--btn-secondary-bg-hover);
+    border-color: var(--btn-secondary-border-hover);
+  }
+
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-tertiary {
-    @apply bg-transparent text-[#2e333d] px-6 py-3 rounded-lg;
-    @apply font-semibold transition-all duration-150;
-    @apply hover:bg-[#f2f2f1] active:scale-[0.98];
-    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+    background-color: var(--btn-tertiary-bg);
+    color: var(--btn-tertiary-text);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 150ms;
+  }
+
+  .btn-tertiary:hover {
+    background-color: var(--btn-tertiary-bg-hover);
+  }
+
+  .btn-tertiary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-tertiary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-danger {
-    @apply bg-[#dc2626] text-white px-6 py-3 rounded-lg;
-    @apply font-semibold transition-opacity duration-150;
-    @apply hover:opacity-90 active:scale-[0.98];
-    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+    background-color: var(--btn-danger-bg);
+    color: var(--btn-danger-text);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: opacity 150ms;
+  }
+
+  .btn-danger:hover {
+    opacity: 0.9;
+  }
+
+  .btn-danger:active {
+    transform: scale(0.98);
+  }
+
+  .btn-danger:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-loading {
@@ -63,12 +138,16 @@
      MODALS & DIALOGS
      ======================================== */
   .modal-overlay {
-    @apply fixed inset-0 bg-black/50;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
   }
 
   .modal {
-    @apply bg-[#fafaf8] rounded-2xl p-8;
+    background-color: var(--bg-modal);
+    border-radius: 1rem;
+    padding: 2rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   }
 
@@ -81,30 +160,48 @@
   }
 
   .modal-close {
-    @apply absolute top-4 right-4 text-[#2e333d] opacity-60;
-    @apply hover:opacity-100 transition-opacity;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    color: var(--text-primary);
+    opacity: 0.6;
+    transition: opacity 150ms;
+  }
+
+  .modal-close:hover {
+    opacity: 1;
   }
 
   /* ========================================
      DROPDOWNS & MENUS
      ======================================== */
   .dropdown {
-    @apply bg-white border-2 border-[#f2f2f1] rounded-lg;
+    background-color: var(--bg-card-static);
+    border: 2px solid var(--border-card-static);
+    border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   }
 
   .dropdown-item {
-    @apply px-4 py-3 text-[#2e333d] cursor-pointer;
-    @apply transition-colors duration-150;
-    @apply hover:bg-[#f2f2f1];
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: colors 150ms;
+  }
+
+  .dropdown-item:hover {
+    background-color: var(--bg-card-clickable);
   }
 
   .dropdown-item.active {
-    @apply bg-[#ff592b] text-[#f8f8f6];
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
   }
 
   .dropdown-divider {
-    @apply h-0.5 bg-[#e6e6e9] my-2;
+    height: 0.125rem;
+    background-color: var(--divider);
+    margin: 0.5rem 0;
   }
 
   /* ========================================

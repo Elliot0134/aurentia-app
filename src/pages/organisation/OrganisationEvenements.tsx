@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 
 const OrganisationEvenements = () => {
+  useOrgPageTitle("Événements");
   const { id: organisationId } = useParams();
   const { events, loading, error, addEvent, editEvent, removeEvent } = useEvents(organisationId);
   const { eventTypeColors, loading: colorsLoading } = useEventTypeColors(organisationId);

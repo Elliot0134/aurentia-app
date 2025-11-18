@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useOrganisationData } from '@/hooks/useOrganisationData';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { updateOrganisationSettings } from '@/services/organisationService';
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 
 const OrganisationSettings = () => {
+  useOrgPageTitle("Paramètres");
   const { id: organisationId } = useParams();
   const { organisation, loading, refetch } = useOrganisationData();
   const { toast } = useToast();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ interface ConversationListProps {
   organizationId?: string;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  onRefetchReady?: (refetch: () => void) => void;
 }
 
 export const ConversationList = ({
@@ -24,9 +25,17 @@ export const ConversationList = ({
   organizationId,
   isCollapsed,
   onToggleCollapse,
+  onRefetchReady,
 }: ConversationListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: conversations, isLoading } = useConversations(organizationId);
+  const { data: conversations, isLoading, refetch } = useConversations(organizationId);
+
+  // Pass refetch function to parent on mount
+  useEffect(() => {
+    if (onRefetchReady && refetch) {
+      onRefetchReady(refetch);
+    }
+  }, [onRefetchReady, refetch]);
 
   const filteredConversations = conversations?.filter((conv) => {
     if (!searchQuery) return true;
@@ -154,7 +163,7 @@ export const ConversationList = ({
               {searchQuery ? "Aucune conversation trouvée" : "Aucune conversation pour le moment"}
             </p>
             {!searchQuery && (
-              <Button onClick={onNewConversation} className="btn-white-label hover:opacity-90">
+              <Button onClick={onNewConversation} className={organizationId ? "btn-white-label hover:opacity-90" : "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white hover:opacity-90"}>
                 <Plus className="h-4 w-4 mr-2" />
                 Démarrer une conversation
               </Button>

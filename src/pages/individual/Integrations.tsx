@@ -9,8 +9,10 @@ import { IntegrationsGrid } from '@/components/integrations/IntegrationsGrid';
 import { WebhooksSection } from '@/components/integrations/WebhooksSection';
 import { ApiKeysSection } from '@/components/integrations/ApiKeysSection';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import usePageTitle from '@/hooks/usePageTitle';
 
 const Integrations = () => {
+  usePageTitle("Intégrations");
   const { data: integrations = [], isLoading: integrationsLoading } = useIntegrations();
   const { data: webhooks = [], isLoading: webhooksLoading } = useIntegrationWebhooks();
   const { data: apiKeys = [], isLoading: apiKeysLoading } = useIntegrationApiKeys();

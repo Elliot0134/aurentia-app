@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Download, UserPlus, Eye, Edit, FolderSearch } from "lucide-react";
+import { Download, UserPlus, Edit } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MultiSelect } from "@/components/ui/multi-select";
 import RetranscriptionConceptLivrable from "@/components/deliverables/RetranscriptionConceptLivrable";
 import PersonaExpressLivrable from "@/components/deliverables/PersonaExpressLivrable";
 import MiniSwotLivrable from "@/components/deliverables/MiniSwotLivrable";
@@ -27,7 +26,6 @@ import { X } from "lucide-react"; // Import X icon
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import Dialog components
 import PlanCard from "@/components/ui/PlanCard"; // Import PlanCard component
-import ComingSoonDialog from "@/components/ui/ComingSoonDialog"; // Import ComingSoonDialog
 import { useProject } from "@/contexts/ProjectContext";
 import { useDeliverableProgress } from "@/hooks/useDeliverableProgress"; // Import the new hook
 import ProjectScoreCards from "@/components/project/ProjectScoreCards"; // Import ProjectScoreCards
@@ -37,14 +35,19 @@ import { useCreditsDialog } from '@/contexts/CreditsDialogContext'; // Import us
 import { useCreditsSimple } from '@/hooks/useCreditsSimple'; // Import useCreditsSimple
 import { DeliverablesLoadingProvider } from '@/contexts/DeliverablesLoadingContext'; // Import DeliverablesLoadingProvider
 import { useProjectPermissions } from '@/hooks/useProjectPermissions'; // Import useProjectPermissions
+import { useCollaborators } from '@/hooks/useCollaborators'; // Import useCollaborators hook
+import ProjectInviteModal from '@/components/collaboration/ProjectInviteModal'; // Import ProjectInviteModal
+import usePageTitle from '@/hooks/usePageTitle';
 
 const ProjectBusiness = () => {
+  usePageTitle("Livrables");
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { userRole } = useUserRole(); // Get user role
   const { openCreditsDialog } = useCreditsDialog(); // Utiliser le contexte des crédits
   const { purchasedRemaining, monthlyRemaining, refresh: fetchCredits } = useCreditsSimple(); // Utiliser le hook des crédits
   const permissions = useProjectPermissions(projectId); // Get permissions for this project
+  const { inviteCollaborator, loading: collaboratorsLoading, error: collaboratorsError } = useCollaborators(); // Get collaborators hook
 
   // Get persona from URL params (source of truth)
   const [searchParams, setSearchParams] = useSearchParams();
@@ -79,13 +82,9 @@ const ProjectBusiness = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
   const [isGenerateDeliverablesConfirmOpen, setIsGenerateDeliverablesConfirmOpen] = useState(false); // New state for confirmation popup
-  
-  // États pour le popup d'invitation
+
+  // État pour le modal d'invitation
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'Lecteur' | 'Éditeur'>('Lecteur');
-  const [inviteProjects, setInviteProjects] = useState<string[]>([]);
-  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false); // State for ComingSoonDialog
   
   // États pour la génération des livrables premium
   const { userProjects } = useProject();
@@ -265,47 +264,25 @@ const ProjectBusiness = () => {
     );
   };
 
-  const handleInvite = () => {
-    if (!inviteEmail) {
+  // Gérer l'invitation d'un nouveau collaborateur
+  const handleInviteCollaborator = async (inviteData: { email: string; role: string; projects: string[] }) => {
+    const result = await inviteCollaborator(inviteData);
+
+    if (result.success) {
+      toast({
+        title: "Invitation envoyée",
+        description: `L'invitation a été envoyée à ${inviteData.email}`,
+      });
+      setIsInviteModalOpen(false);
+    } else {
       toast({
         title: "Erreur",
-        description: "Veuillez entrer une adresse email",
+        description: result.error || "Impossible d'envoyer l'invitation",
         variant: "destructive",
       });
-      return;
     }
 
-    // Vérifier si l'email est valide
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail)) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer une adresse email valide",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Vérifier qu'au moins un projet est sélectionné
-    if (inviteProjects.length === 0) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner au moins un projet",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // TODO: Implémenter l'envoi réel de l'invitation
-    setIsInviteModalOpen(false);
-    setInviteEmail('');
-    setInviteRole('Lecteur');
-    setInviteProjects([]);
-    
-    toast({
-      title: "Succès",
-      description: `Invitation envoyée à ${inviteEmail}`,
-    });
+    return result;
   };
 
   useEffect(() => {
@@ -486,8 +463,9 @@ const ProjectBusiness = () => {
                 )}
                 {permissions.canInvite && (
                   <Button
-                    onClick={() => setIsComingSoonOpen(true)}
+                    onClick={() => setIsInviteModalOpen(true)}
                     className="h-10 w-10 p-0 bg-gradient-primary hover:opacity-90 transition-opacity"
+                    title="Inviter un collaborateur"
                   >
                     <UserPlus size={18} />
                   </Button>
@@ -679,84 +657,18 @@ const ProjectBusiness = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Popup d'invitation */}
-        <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
-          <DialogContent className="rounded-xl w-[90vw] mx-auto my-4 sm:max-w-[425px] sm:w-full">
-            <DialogHeader>
-              <DialogTitle className="font-heading text-text-primary">Inviter un nouveau collaborateur</DialogTitle>
-              <DialogDescription className="text-base font-sans text-text-muted">
-                Envoyez une invitation par email pour donner accès à votre projet.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Adresse email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="collaborateur@example.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="placeholder:text-xs"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="role">Rôle</Label>
-                <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'Lecteur' | 'Éditeur')}>
-                  <SelectTrigger id="role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Lecteur">
-                      <div className="flex items-center">
-                        <Eye className="w-4 h-4 mr-2" />
-                        Lecteur - Peut consulter le projet
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="Éditeur">
-                      <div className="flex items-center">
-                        <Edit className="w-4 h-4 mr-2" />
-                        Éditeur - Peut modifier le projet
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="projects">Projets</Label>
-                <MultiSelect
-                  options={userProjects.map(project => ({
-                    value: project.project_id,
-                    label: (
-                      <div className="flex items-center gap-2">
-                        <FolderSearch className="w-4 h-4" />
-                        {project.nom_projet}
-                      </div>
-                    ),
-                  }))}
-                  value={inviteProjects}
-                  onChange={setInviteProjects}
-                  placeholder="Sélectionner les projets..."
-                />
-              </div>
-            </div>
-            <DialogFooter className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="mr-2 flex-1">
-                Annuler
-              </Button>
-              <Button onClick={handleInvite} className="flex-1">
-                Envoyer l'invitation
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Coming Soon Dialog */}
-        <ComingSoonDialog
-          isOpen={isComingSoonOpen}
-          onClose={() => setIsComingSoonOpen(false)}
-          description="La fonctionnalité d'invitation de collaborateurs sera bientôt disponible. Restez à l'écoute pour les mises à jour !"
-        />
+        {/* Modal d'invitation de collaborateurs */}
+        {projectId && project && (
+          <ProjectInviteModal
+            isOpen={isInviteModalOpen}
+            onClose={() => setIsInviteModalOpen(false)}
+            onInvite={handleInviteCollaborator}
+            projectId={projectId}
+            projectName={project.nom_projet || 'ce projet'}
+            loading={collaboratorsLoading}
+            error={collaboratorsError}
+          />
+        )}
         </div>
       </DeliverablesLoadingProvider>
     </ProjectRequiredGuard>

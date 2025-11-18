@@ -17,8 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 const OrganisationStaff = () => {
+  useOrgPageTitle("Staff");
   const { id: organisationId } = useParams();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [organizationOwnerId, setOrganizationOwnerId] = useState<string | null>(null);

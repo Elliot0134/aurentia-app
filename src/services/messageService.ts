@@ -246,15 +246,22 @@ export const getConversationParticipants = async (
         first_name,
         last_name,
         avatar_url,
-        role,
-        organization_id
+        user_role
       )
     `
     )
     .eq("conversation_id", conversationId);
 
   if (error) throw error;
-  return data as ConversationParticipantWithProfile[];
+
+  // Map user_role to role to match TypeScript interface
+  return (data || []).map(item => ({
+    ...item,
+    profile: item.profile ? {
+      ...item.profile,
+      role: item.profile.user_role,
+    } : undefined
+  })) as ConversationParticipantWithProfile[];
 };
 
 export const addParticipant = async (
@@ -344,8 +351,7 @@ export const getMessages = async (
         first_name,
         last_name,
         avatar_url,
-        role,
-        organization_id
+        user_role
       ),
       organization_sender:organizations!conversation_messages_organization_sender_id_fkey (
         id,
@@ -370,7 +376,14 @@ export const getMessages = async (
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data || []) as MessageWithSender[];
+  // Map user_role to role to match TypeScript interface
+  return (data || []).map(item => ({
+    ...item,
+    sender: item.sender ? {
+      ...item.sender,
+      role: item.sender.user_role,
+    } : undefined
+  })) as MessageWithSender[];
 };
 
 export const getLastMessage = async (
@@ -594,4 +607,28 @@ export const searchUsers = async (
   if (error) throw error;
 
   return data || [];
+};
+
+export const validateUserByEmail = async (
+  email: string
+): Promise<{
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+} | null> => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, email, first_name, last_name, avatar_url")
+    .eq("email", email.toLowerCase().trim())
+    .single();
+
+  if (error) {
+    // User not found is not an error, just return null
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
+
+  return data;
 };

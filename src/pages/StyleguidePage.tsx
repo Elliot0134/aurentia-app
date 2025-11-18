@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import usePageTitle from '@/hooks/usePageTitle';
 
 // We'll import these as we create them
 import StyleguideNav from '@/components/styleguide/StyleguideNav';
@@ -10,6 +11,7 @@ import PatternsSection from '@/components/styleguide/PatternsSection';
 export type StyleguideSection = 'foundations' | 'components' | 'patterns';
 
 export default function StyleguidePage() {
+  usePageTitle("Guide de Style");
   const [activeSection, setActiveSection] = useState<StyleguideSection>('foundations');
 
   return (

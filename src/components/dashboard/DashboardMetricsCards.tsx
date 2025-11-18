@@ -15,9 +15,9 @@ interface MetricCardProps {
 
 const MetricCard = ({ icon, label, value, subtext, subtextColor, trend }: MetricCardProps) => {
   return (
-    <div className="bg-white border border-[#f2f2f1] rounded-xl p-4 hover:border-aurentia-pink/20 transition-all duration-200">
+    <div className="bg-white dark:bg-[#40444d] border border-[#f2f2f1] dark:border-[#787b80] rounded-xl p-4 hover:border-aurentia-pink/20 transition-all duration-200">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[15px] text-text-muted font-normal">{label}</p>
+        <p className="text-[15px] text-[#6b7280] dark:text-[#94a3b8] font-normal">{label}</p>
         {trend && (
           <div className={cn(
             "flex items-center gap-1 text-xs font-medium",
@@ -28,9 +28,9 @@ const MetricCard = ({ icon, label, value, subtext, subtextColor, trend }: Metric
           </div>
         )}
       </div>
-      <p className="text-3xl font-bold text-text-primary mb-1">{value}</p>
+      <p className="text-3xl font-bold text-[#2e333d] dark:text-[#f9f6f1] mb-1">{value}</p>
       {subtext && (
-        <p className={cn("text-xs", subtextColor || "text-text-muted")}>
+        <p className={cn("text-xs", subtextColor || "text-[#6b7280] dark:text-[#94a3b8]")}>
           {subtext}
         </p>
       )}

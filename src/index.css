@@ -838,16 +838,16 @@
   }
 
   body {
-    @apply bg-white text-[#151515] font-inter text-base;
+    @apply bg-[var(--bg-page)] text-[var(--text-base-color)] font-inter text-base transition-colors duration-200;
   }
 
   html,
   body {
-    @apply bg-white text-foreground;
+    @apply bg-[var(--bg-page)] text-[var(--text-base-color)] transition-colors duration-200;
   }
 
   #root {
-    @apply bg-white;
+    @apply bg-[var(--bg-page)] transition-colors duration-200;
   }
 
   input, textarea, select {

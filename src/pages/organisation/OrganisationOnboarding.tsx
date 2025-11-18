@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { CheckCircle, ChevronLeft, ChevronRight, Building, Target, Users, Award, Globe, Settings } from 'lucide-react';
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { getOrganisation, updateOrganisation, createOrganisation } from "@/services/organisationService";
@@ -34,6 +35,7 @@ import {
 } from "@/constants/organizationTags";
 
 const OrganisationOnboardingPage = () => {
+  useOrgPageTitle("Onboarding");
   const { id: organisationIdFromParams } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();

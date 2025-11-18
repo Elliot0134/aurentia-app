@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -39,6 +40,7 @@ import {
 } from "lucide-react";
 
 const OrganisationPartenaires = () => {
+  useOrgPageTitle("Partenaires");
   const { id: organisationId } = useParams();
   const { partners, loading, error, addPartner, editPartner, removePartner } = usePartners(organisationId);
 

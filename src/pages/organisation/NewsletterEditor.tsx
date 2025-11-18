@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useOrganisationData } from "@/hooks/useOrganisationData";
 import {
   useNewsletter,
@@ -27,6 +28,7 @@ import type { RecipientFilter } from "@/types/newsletterTypes";
 import { newsletterTemplates } from "@/utils/newsletterTemplates";
 
 const NewsletterEditor = () => {
+  useOrgPageTitle("Éditeur Newsletter");
   const { id, newsletterId } = useParams<{ id: string; newsletterId?: string }>();
   const navigate = useNavigate();
   const isEditing = !!newsletterId;

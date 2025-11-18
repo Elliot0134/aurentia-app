@@ -16,8 +16,10 @@ import { User } from '@supabase/supabase-js';
 import { userInitializationService } from '@/services/userInitializationService';
 import { profileService, ProfileData } from '@/services/profileService';
 import { AddressAutocompleteInput } from "@/components/ui/address-autocomplete-input";
+import usePageTitle from '@/hooks/usePageTitle';
 
 const Profile = () => {
+  usePageTitle("Profil");
   const navigate = useNavigate();
   const { currentProjectId } = useProject();
   const [searchParams, setSearchParams] = useSearchParams();

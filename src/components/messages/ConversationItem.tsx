@@ -18,13 +18,13 @@ export const ConversationItem = ({
 }: ConversationItemProps) => {
   const getConversationTitle = () => {
     if (conversation.is_group) {
-      return conversation.group_name || "Group Chat";
+      return conversation.group_name || "Discussion de groupe";
     }
     if (conversation.type === "organization") {
-      return "Organization Support";
+      return "Support organisation";
     }
     if (conversation.type === "system") {
-      return "System Messages";
+      return "Messages système";
     }
     // 1-on-1
     if (conversation.other_participant) {
@@ -51,7 +51,7 @@ export const ConversationItem = ({
   };
 
   const getLastMessagePreview = () => {
-    if (!conversation.last_message) return "No messages yet";
+    if (!conversation.last_message) return "Aucun message pour le moment";
 
     const { content, sender, sender_type } = conversation.last_message;
 

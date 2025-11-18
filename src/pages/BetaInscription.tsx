@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const BETA_SUBSCRIPTION_KEY = "aurentia_beta_subscribed";
 
 const BetaInscription = () => {
+  usePageTitle("Accès Beta");
   const [hasCode, setHasCode] = useState<boolean | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [email, setEmail] = useState("");

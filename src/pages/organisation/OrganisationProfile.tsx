@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useOrganisationData, useOrganisationStats } from '@/hooks/useOrganisationData';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { updateOrganisation } from '@/services/organisationService';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -96,6 +97,7 @@ interface OrganisationProfile {
 }
 
 const OrganisationProfile = () => {
+  useOrgPageTitle("Profil");
   const { id: organisationId } = useParams();
   const { organisation, loading: orgLoading, refetch } = useOrganisationData();
   const { stats, loading: statsLoading } = useOrganisationStats();

@@ -19,8 +19,10 @@ import OwnershipTransferDialog from '@/components/collaboration/OwnershipTransfe
 import InvitationsTable from '@/components/collaboration/InvitationsTable';
 import { useCollaborators } from '@/hooks/useCollaborators';
 import { useProjectPermissions } from '@/hooks/useProjectPermissions';
+import usePageTitle from '@/hooks/usePageTitle';
 
 const CollaboratorsPage = () => {
+  usePageTitle("Collaborateurs");
   const navigate = useNavigate();
   const { currentProjectId, userProjectsLoading } = useProject();
   const { userRole } = useUserRole();

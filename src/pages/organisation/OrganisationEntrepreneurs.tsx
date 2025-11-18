@@ -23,8 +23,10 @@ import {
 } from "lucide-react";
 import { useEntrepreneurs } from '@/hooks/useOrganisationData';
 import type { Entrepreneur } from '@/types/organisationTypes';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 const OrganisationEntrepreneurs = () => {
+  useOrgPageTitle("Entrepreneurs");
   const { id: organisationId } = useParams();
 
   // Get filters from URL params (source of truth)

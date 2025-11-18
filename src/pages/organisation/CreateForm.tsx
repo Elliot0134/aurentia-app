@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { FormBuilder, Question } from '@/components/form-builder/FormBuilder';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,7 @@ interface FormData {
 }
 
 export default function CreateForm() {
+  useOrgPageTitle("Créer Formulaire");
   const { id: orgId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();

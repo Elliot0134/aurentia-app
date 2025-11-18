@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNavigationBlocker } from '@/hooks/useNavigationBlocker';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Edit, Trash2, Eye, Save, X, Settings, ChevronDown, FileText, MessageSquare, Copy, History, Download, Sparkles, Mail } from 'lucide-react';
@@ -34,6 +35,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const OrganisationRessourcesDetail = () => {
+  useOrgPageTitle("Détail Ressource");
   const { id: organisationId, resourceId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();

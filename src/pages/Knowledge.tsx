@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import usePageTitle from "@/hooks/usePageTitle";
 
 // Types pour nos ressources
 interface Resource {
@@ -23,6 +24,7 @@ interface Resource {
 }
 
 const Knowledge = () => {
+  usePageTitle("Connaissances");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedType, setSelectedType] = useState("all");

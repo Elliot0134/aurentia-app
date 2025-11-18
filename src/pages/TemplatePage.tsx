@@ -19,8 +19,10 @@ import {
   SlidersHorizontal
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const TemplatePage = () => {
+  usePageTitle("Templates");
   const navigate = useNavigate();
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [favoritesOnly, setFavoritesOnly] = useState(false);

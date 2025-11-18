@@ -36,6 +36,7 @@ import { Loader2, Trash2, MessageCircle } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useProject } from '@/contexts/ProjectContext';
 import { supabase } from '@/integrations/supabase/client';
+import usePageTitle from '@/hooks/usePageTitle';
 
 const TAGS = [
   'marketing', 'front-end', 'back-end', 'data', 'sales', 'rh', 'produit', 'design', 'support', 'juridique' // Elliot
@@ -230,6 +231,7 @@ function KanbanColumn({
 }
 
 const Roadmap = () => {
+  usePageTitle("Feuille de route");
   const { id: routeProjectId } = useParams<{ id: string }>();
   const { currentProjectId } = useProject();
   const projectId = currentProjectId || routeProjectId;

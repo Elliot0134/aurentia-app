@@ -13,6 +13,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { SendResourceDialog } from '@/components/resource-viewer/SendResourceDialog';
 import { cn } from '@/lib/utils';
 import type { OrganizationResource } from '@/services/resourcesService';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 // Helper function to convert hex to RGB
 const hexToRgb = (hex: string): string => {
@@ -23,6 +24,7 @@ const hexToRgb = (hex: string): string => {
 };
 
 const OrganisationRessources = () => {
+  useOrgPageTitle("Ressources");
   const { id: organisationId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();

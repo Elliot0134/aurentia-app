@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useFreeDeliverableProgress } from "@/hooks/useFreeDeliverableProgress";
 import FreeDeliverableProgressContainer from "@/components/deliverables/FreeDeliverableProgressContainer";
 import { useUserRole } from "@/hooks/useUserRole";
+import usePageTitle from "@/hooks/usePageTitle";
 
 // Mapping des noms de livrables aux chemins d'icônes
 const deliverableIcons: { [key: string]: string } = {
@@ -39,6 +40,7 @@ const deliverableIcons: { [key: string]: string } = {
 };
 
 const Form = () => {
+  usePageTitle("Formulaire Idée");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { userProfile, loading: userLoading } = useUserRole();

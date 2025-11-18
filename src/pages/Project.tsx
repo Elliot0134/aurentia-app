@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Download, Settings } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useProject } from "@/contexts/ProjectContext";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const Project = () => {
+  usePageTitle("Projet");
   const { projectId } = useParams();
   const navigate = useNavigate();
   

@@ -81,6 +81,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCustomModalTabs } from "@/components/deliverables/shared/useCustomModalTabs";
 import { DynamicLinkDropdown } from "@/components/ui/dynamic-link-dropdown";
+import usePageTitle from "@/hooks/usePageTitle";
 import { 
   adherentsTableConfig, 
   AdherentData,
@@ -1792,6 +1793,7 @@ export function TemplateDataTable<TData extends TemplateRowData>({
 }
 
 const ComponentsTemplate = () => {
+  usePageTitle("Composants");
   // Données fictives pour démonstration avec des colonnes génériques
   const fakeData: TemplateRowData[] = [
     {

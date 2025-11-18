@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -53,6 +54,7 @@ const MetricCard = MetricCardShared as typeof MetricCardShared;
 const ProgressMetric = ProgressMetricShared as typeof ProgressMetricShared;
 
 const OrganisationAnalyticsAdvanced = () => {
+  useOrgPageTitle("Analytics Avancé");
   const { id: organisationId } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [timeRange, setTimeRange] = useState<TimeRangeKey>("6months");

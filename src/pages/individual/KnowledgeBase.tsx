@@ -19,6 +19,7 @@ import {
   useDeleteProjectKnowledgeBaseItem,
 } from '@/hooks/useKnowledgeBase';
 import { useProjectKnowledgeBaseStorage } from '@/hooks/useKnowledgeBaseStorage';
+import usePageTitle from '@/hooks/usePageTitle';
 import type {
   ProjectKnowledgeBaseItem,
   UrlContentData,
@@ -27,6 +28,7 @@ import type {
 } from '@/types/knowledgeBaseTypes';
 
 const KnowledgeBase: React.FC = () => {
+  usePageTitle("Base de Connaissances");
   const { projectId } = useParams<{ projectId?: string }>();
   const navigate = useNavigate();
   const { currentProjectId } = useProject();

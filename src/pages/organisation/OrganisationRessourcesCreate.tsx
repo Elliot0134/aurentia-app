@@ -16,8 +16,10 @@ import type { ResourceContent } from '@/types/resourceTypes';
 import { createEmptyResourceContent } from '@/types/resourceTypes';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { CreateResourceData } from '@/services/resourcesService';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 const OrganisationRessourcesCreate = () => {
+  useOrgPageTitle("Créer Ressource");
   const { id: organisationId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();

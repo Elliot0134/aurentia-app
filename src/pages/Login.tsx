@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { CollaboratorsService } from "@/services/collaborators.service";
+import usePageTitle from "@/hooks/usePageTitle";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Users, Eye, EyeOff, Mail } from "lucide-react";
+
 const Login = () => {
+  usePageTitle("Connexion");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

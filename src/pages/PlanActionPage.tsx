@@ -29,8 +29,10 @@ import ActionPlanHierarchy from "@/components/actionplan/ActionPlanHierarchy";
 import ActionPlanModal from "@/components/actionplan/ActionPlanModal";
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
+import usePageTitle from '@/hooks/usePageTitle';
 
 const PlanActionPage = () => {
+  usePageTitle("Plan d'action");
   const navigate = useNavigate();
   const { projectId: urlProjectId } = useParams();
   const { currentProjectId, userProjects, userProjectsLoading } = useProject(); // Add userProjectsLoading

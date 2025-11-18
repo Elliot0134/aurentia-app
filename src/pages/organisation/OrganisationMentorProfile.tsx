@@ -35,6 +35,7 @@ import {
   Target,
   ExternalLink
 } from "lucide-react";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 interface Availability {
   days_per_week: number;
@@ -67,6 +68,7 @@ interface MentorProfile {
 }
 
 const OrganisationMentorProfile = () => {
+  useOrgPageTitle("Profil Mentor");
   const { id: organisationId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);

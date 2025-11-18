@@ -15,8 +15,10 @@ import {
 import { Sparkles, Building2, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 const OrganisationChatbot = () => {
+  useOrgPageTitle("Assistant IA");
   const { id: organisationId, conversationId } = useParams();
   const navigate = useNavigate();
 

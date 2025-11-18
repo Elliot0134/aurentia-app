@@ -1,9 +1,11 @@
 import { MessageLayout } from "@/components/messages/MessageLayout";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useOrganisationData } from "@/hooks/useOrganisationData";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const OrganisationMessages = () => {
+  useOrgPageTitle("Messages");
   const { id } = useParams<{ id: string }>();
   const { organisation, loading } = useOrganisationData(id);
 

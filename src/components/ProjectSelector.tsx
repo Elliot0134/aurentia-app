@@ -1,8 +1,9 @@
 import { useState, useEffect, memo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom"; // Import useLocation
-import { ArrowRight, Plus, FolderSearch } from "lucide-react"; // Import FolderSearch, remove Settings
+import { ArrowRight, Plus, FolderSearch, Link2 } from "lucide-react"; // Import FolderSearch, Link2, remove Settings
 import { useProject } from "@/contexts/ProjectContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import JoinWithCodeDialog from "@/components/collaboration/JoinWithCodeDialog";
 
 import { UserRole } from '@/types/userTypes';
 
@@ -17,6 +18,7 @@ const ProjectSelector = memo(({ isCollapsed, userRole, onExpandRequest }: Projec
   const { projectId } = useParams(); // Get project ID from URL
   const location = useLocation(); // Get current location
   const [isOpen, setIsOpen] = useState(false);
+  const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   
   // Use the Project Context
   const { 
@@ -90,6 +92,22 @@ const ProjectSelector = memo(({ isCollapsed, userRole, onExpandRequest }: Projec
     navigate(`${basePath}/warning`);
   };
 
+  const handleJoinWithCode = () => {
+    setIsOpen(false);
+    setIsJoinDialogOpen(true);
+  };
+
+  const handleJoinSuccess = async (newProjectId: string) => {
+    // Reload projects to include the newly joined one
+    await loadUserProjects();
+    // Navigate to the new project
+    let basePath = '';
+    if (userRole === 'individual' || location.pathname.startsWith('/individual')) {
+      basePath = '/individual';
+    }
+    navigate(`${basePath}/project-business/${newProjectId}`);
+  };
+
   const toggleDropdown = () => {
     // If sidebar is collapsed, expand it first
     if (isCollapsed && onExpandRequest) {
@@ -156,15 +174,24 @@ const ProjectSelector = memo(({ isCollapsed, userRole, onExpandRequest }: Projec
       </Tooltip>
       
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg z-10 max-h-56 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 rounded-md shadow-lg z-10 max-h-56 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-1">
             {/* Create new project option */}
             <button
               onClick={handleCreateNewProject}
-              className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition flex items-center gap-2 border-b border-gray-100 mb-1"
+              className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-2"
             >
               <Plus size={16} className="text-aurentia-pink" />
               <span className="text-aurentia-pink font-medium">Créer un nouveau projet</span>
+            </button>
+
+            {/* Join with code option */}
+            <button
+              onClick={handleJoinWithCode}
+              className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 mb-1"
+            >
+              <Link2 size={16} className="text-blue-600" />
+              <span className="text-blue-600 font-medium">Rejoindre avec un code</span>
             </button>
             
             {/* Existing projects */}
@@ -197,6 +224,13 @@ const ProjectSelector = memo(({ isCollapsed, userRole, onExpandRequest }: Projec
           </div>
         </div>
       )}
+
+      {/* Join with Code Dialog */}
+      <JoinWithCodeDialog
+        isOpen={isJoinDialogOpen}
+        onClose={() => setIsJoinDialogOpen(false)}
+        onSuccess={handleJoinSuccess}
+      />
     </div>
   );
 });

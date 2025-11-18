@@ -2,8 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Sparkles, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button'; // Garder le bouton Shadcn UI
+import usePageTitle from '@/hooks/usePageTitle';
 
 const WarningPage: React.FC = () => {
+  usePageTitle("Avertissement");
   const navigate = useNavigate();
 
   const handleNewForm = () => {

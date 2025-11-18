@@ -56,7 +56,7 @@ export const MessageBubble = ({
   };
 
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this message?")) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) {
       await deleteMutation.mutateAsync(message.id);
     }
   };
@@ -67,7 +67,7 @@ export const MessageBubble = ({
   };
 
   const getSenderName = () => {
-    if (message.sender_type === "system") return "System";
+    if (message.sender_type === "system") return "Système";
     if (message.sender_type === "organization" && message.organization_sender) {
       return message.organization_sender.name;
     }
@@ -75,7 +75,7 @@ export const MessageBubble = ({
       const { first_name, last_name, email } = message.sender;
       return first_name && last_name ? `${first_name} ${last_name}` : email;
     }
-    return "Unknown";
+    return "Inconnu";
   };
 
   const getSenderInitials = () => {
@@ -98,11 +98,11 @@ export const MessageBubble = ({
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={handleEdit} disabled={editMutation.isPending}>
               <Check className="h-4 w-4 mr-1" />
-              Save
+              Enregistrer
             </Button>
             <Button size="sm" variant="outline" onClick={handleCancelEdit}>
               <X className="h-4 w-4 mr-1" />
-              Cancel
+              Annuler
             </Button>
           </div>
         </div>
@@ -188,7 +188,7 @@ export const MessageBubble = ({
           {/* Edited indicator */}
           {message.edited_at && (
             <div className="text-xs opacity-70 mt-1">
-              (edited)
+              (modifié)
             </div>
           )}
 
@@ -208,12 +208,12 @@ export const MessageBubble = ({
                 {canEdit && (
                   <DropdownMenuItem onClick={() => setIsEditing(true)}>
                     <Edit2 className="h-4 w-4 mr-2" />
-                    Edit
+                    Modifier
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  Supprimer
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -16,8 +16,10 @@ import {
   Play
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const ToolTemplatePage = () => {
+  usePageTitle("Template Outil");
   const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState('description');

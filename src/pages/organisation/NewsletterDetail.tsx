@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useOrganisationData } from "@/hooks/useOrganisationData";
 import { useNewsletter } from "@/hooks/newsletters/useNewsletters";
 import { useNewsletterStats, useNewsletterRecipients } from "@/hooks/newsletters/useNewsletterStats";
@@ -12,6 +13,7 @@ import { exportNewsletterRecipientsToCSV } from "@/utils/csvExport";
 import { toast } from "@/components/ui/use-toast";
 
 const NewsletterDetail = () => {
+  useOrgPageTitle("Détail Newsletter");
   const { id, newsletterId } = useParams<{ id: string; newsletterId: string }>();
   const navigate = useNavigate();
 

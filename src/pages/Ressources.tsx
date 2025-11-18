@@ -4,8 +4,10 @@ import { useProject } from '@/contexts/ProjectContext';
 import { Button } from "@/components/ui/button";
 import ResourcesPage from '@/pages/individual/ResourcesPage';
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import usePageTitle from '@/hooks/usePageTitle';
 
 const Ressources = () => {
+  usePageTitle("Ressources");
   const navigate = useNavigate();
   const { currentProjectId, userProjectsLoading } = useProject();
 

@@ -203,6 +203,122 @@
   }
 
   /* ========================================
+     DARK MODE THEME
+     ======================================== */
+  .dark {
+    /* ========================================
+       COLORS - Pages & Layouts
+       ======================================== */
+    --bg-page: #2e333d;
+    --bg-modal: #40444d;
+
+    /* ========================================
+       COLORS - Cards
+       ======================================== */
+    --bg-card-clickable: #40444d;
+    --bg-card-static: #40444d;
+    --border-card-static: #787b80;
+
+    /* ========================================
+       COLORS - Typography
+       ======================================== */
+    --text-primary: #f9f6f1;
+    --text-secondary: #2e333d;
+    --text-muted: #94a3b8;
+
+    /* ========================================
+       COLORS - Borders & Separators
+       ======================================== */
+    --border-default: #787b80;
+    --border-hover: #8a8d92;
+    --divider: #787b80;
+
+    /* ========================================
+       COLORS - Buttons (Orange stays the same)
+       ======================================== */
+    --btn-primary-bg: #ff592b;
+    --btn-primary-text: #f9f6f1;
+    --btn-primary-opacity-default: 100%;
+    --btn-primary-opacity-hover: 90%;
+
+    --btn-secondary-bg: transparent;
+    --btn-secondary-border: #787b80;
+    --btn-secondary-text: #f9f6f1;
+    --btn-secondary-bg-hover: #585a60;
+    --btn-secondary-border-hover: #8a8d92;
+
+    --btn-tertiary-bg: transparent;
+    --btn-tertiary-text: #f9f6f1;
+    --btn-tertiary-bg-hover: #585a60;
+
+    --btn-danger-bg: #dc2626;
+    --btn-danger-text: #f9f6f1;
+    --btn-danger-opacity-default: 100%;
+    --btn-danger-opacity-hover: 90%;
+
+    --btn-disabled-opacity: 40%;
+
+    /* ========================================
+       COLORS - States & Feedback
+       ======================================== */
+    --color-success: #10b981;
+    --color-error: #ef4444;
+    --color-warning: #f59e0b;
+    --color-info: #3b82f6;
+
+    /* ========================================
+       COLORS - Toasts & Notifications
+       ======================================== */
+    --toast-bg: #40444d;
+    --toast-border: #787b80;
+
+    /* ========================================
+       COLORS - Focus (Accessibility)
+       ======================================== */
+    --focus-ring-color: rgba(255, 89, 43, 0.5);
+    --focus-ring-width: 3px;
+    --focus-ring-offset: 2px;
+
+    /* ========================================
+       COLORS - Links
+       ======================================== */
+    --link-color: #f9f6f1;
+    --link-weight: 600;
+
+    /* ========================================
+       COLORS - Form Inputs
+       ======================================== */
+    --input-bg: #40444d;
+    --input-border: #787b80;
+    --input-border-focus: #ff592b;
+    --input-border-error: #ef4444;
+    --input-text: #f9f6f1;
+    --input-placeholder: rgba(249, 246, 241, 0.5);
+
+    /* ========================================
+       TYPOGRAPHY - Headings
+       ======================================== */
+    --h1-color: #f9f6f1;
+    --h2-color: #f9f6f1;
+    --h3-color: #f9f6f1;
+    --h4-color: #f9f6f1;
+
+    /* ========================================
+       TYPOGRAPHY - Body Text
+       ======================================== */
+    --text-base-color: #f9f6f1;
+    --text-sm-color: #cbd5e1;
+    --text-xs-color: #94a3b8;
+
+    /* ========================================
+       TYPOGRAPHY - Specialized Text
+       ======================================== */
+    --code-bg: #585a60;
+    --code-text: #f9f6f1;
+    --label-color: #f9f6f1;
+  }
+
+  /* ========================================
      GLOBAL TYPOGRAPHY STYLES
      ======================================== */
   body {

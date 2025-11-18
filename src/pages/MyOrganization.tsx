@@ -13,8 +13,10 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ApplyProjectToOrganisation from '@/components/organisation/ApplyProjectToOrganisation';
+import usePageTitle from '@/hooks/usePageTitle';
 
 const MyOrganization = () => {
+  usePageTitle("Mon Organisation");
   const { userProfile } = useUserRole();
   const navigate = useNavigate();
   const { organization } = userProfile || {};

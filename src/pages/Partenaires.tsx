@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ProjectRequiredGuard from '@/components/ProjectRequiredGuard';
 import { useProject } from '@/contexts/ProjectContext'; // Import useProject
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
+import usePageTitle from '@/hooks/usePageTitle';
 
 interface Partner {
   id: number;
@@ -185,6 +186,7 @@ const mockPartners: Partner[] = [
 ];
 
 const Partenaires = () => {
+  usePageTitle("Partenaires");
   const navigate = useNavigate(); // Initialize useNavigate
   const { currentProjectId, userProjectsLoading } = useProject(); // Use userProjectsLoading
   const [showPopup, setShowPopup] = useState(false);

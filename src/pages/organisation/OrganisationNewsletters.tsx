@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useOrganisationData } from "@/hooks/useOrganisationData";
 import { useNewsletters, useDeleteNewsletter } from "@/hooks/newsletters/useNewsletters";
 import { useSendNewsletter } from "@/hooks/newsletters/useSendNewsletter";
@@ -16,6 +17,7 @@ import { format } from "date-fns";
 import { exportNewslettersToCSV } from "@/utils/csvExport";
 
 const OrganisationNewsletters = () => {
+  useOrgPageTitle("Newsletters");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { organisation, loading: orgLoading } = useOrganisationData(id);

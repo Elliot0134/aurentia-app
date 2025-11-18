@@ -34,6 +34,7 @@ import { useOrganisationDeliverableMetrics } from "@/hooks/useOrganisationDelive
 import { useOrganisationEventMetrics, useOrganisationResourceMetrics, useOrganisationEngagementMetrics, useOrganisationStaffMetrics } from "@/hooks/useOrganisationAnalyticsMetrics";
 import { useOrganisationStats, useProjects, useEntrepreneurs } from '@/hooks/useOrganisationData';
 import { useNewsletters } from '@/hooks/newsletters/useNewsletters';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { subDays } from "date-fns";
 import {
   BarChart,
@@ -71,6 +72,7 @@ import {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d1'];
 
 const OrganisationAnalytics = () => {
+  useOrgPageTitle("Analytics");
   const { id: organisationId } = useParams();
 
   // Get tab from URL params (source of truth)

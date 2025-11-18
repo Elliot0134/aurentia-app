@@ -23,8 +23,10 @@ import type {
   DocumentContentData,
   TextContentData,
 } from '@/types/knowledgeBaseTypes';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 
 const OrganisationKnowledgeBase: React.FC = () => {
+  useOrgPageTitle("Base de Connaissances");
   const { organisationId } = useParams<{ organisationId: string }>();
 
   // Get search from URL params (source of truth)

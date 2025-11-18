@@ -13,6 +13,7 @@ import { usePendingInvitations } from "@/hooks/usePendingInvitations";
 import { CheckCircle2, FolderOpen, Plus, Circle, ChevronRight, Bell, TrendingUp, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import usePageTitle from "@/hooks/usePageTitle";
 
 declare global {
   interface Window {
@@ -23,6 +24,7 @@ declare global {
 }
 
 const Dashboard = () => {
+  usePageTitle("Tableau de bord");
   const navigate = useNavigate();
   const { userProfile } = useUser();
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -149,8 +151,8 @@ const Dashboard = () => {
                       className={cn(
                         "flex items-start gap-3 p-3 rounded-lg transition-all duration-200",
                         check.isCompleted
-                          ? "bg-green-50 border border-green-200"
-                          : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
+                          ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                          : "bg-gray-50 dark:bg-[#585a60] border border-gray-200 dark:border-[#787b80] hover:bg-gray-100 dark:hover:bg-[#6a6d72]"
                       )}
                     >
                       {/* Icône de statut */}
@@ -167,7 +169,7 @@ const Dashboard = () => {
                         <h4
                           className={cn(
                             "text-sm font-medium mb-0.5 font-sans",
-                            check.isCompleted ? "text-green-900" : "text-text-primary"
+                            check.isCompleted ? "text-green-900 dark:text-green-100" : "text-[#2e333d] dark:text-[#f9f6f1]"
                           )}
                         >
                           {check.label}
@@ -292,13 +294,13 @@ const Dashboard = () => {
                           "flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-all duration-200 group",
                           isActive
                             ? "bg-[#ff592b] border border-[#ff592b]"
-                            : "bg-[#f4f4f5] hover:bg-[#e8e8e9] border border-transparent"
+                            : "bg-[#f4f4f5] dark:bg-[#585a60] hover:bg-[#e8e8e9] dark:hover:bg-[#6a6d72] border border-transparent"
                         )}
                       >
                         <div className="flex-1 min-w-0">
                           <h4 className={cn(
                             "text-sm font-normal font-sans truncate",
-                            isActive ? "text-white font-medium" : "text-text-primary"
+                            isActive ? "text-white font-medium" : "text-[#2e333d] dark:text-[#f9f6f1]"
                           )}>
                             {project.nom_projet || 'Projet sans nom'}
                           </h4>

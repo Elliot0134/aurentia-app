@@ -9,6 +9,7 @@ import { NewConversationDialog } from "./NewConversationDialog";
 import { useStaffPermissions } from "@/hooks/useStaffPermissions";
 import { useUserRole } from "@/hooks/useUserRole";
 import { cn } from "@/lib/utils";
+import { getConversationById } from "@/services/messageService";
 import type { ConversationWithDetails } from "@/types/messageTypes";
 
 type MessageContext = "personal" | "organization";
@@ -38,6 +39,7 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithDetails | null>(null);
   const [showNewConversationDialog, setShowNewConversationDialog] = useState(false);
   const [showMobileThread, setShowMobileThread] = useState(false);
+  const [conversationListRefetch, setConversationListRefetch] = useState<(() => void) | null>(null);
 
   // Update URL when permissions change and user is in org context without permission
   useEffect(() => {
@@ -77,10 +79,32 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
     setShowNewConversationDialog(true);
   };
 
-  const handleConversationCreated = (conversationId: string) => {
-    // The conversation list will be invalidated and refetched
-    // We could optionally select the new conversation here
+  const handleConversationCreated = async (conversationId: string) => {
     setShowNewConversationDialog(false);
+
+    try {
+      // Give the database a moment to fully commit the transaction
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Explicitly refetch the conversation list to ensure it's up to date
+      if (conversationListRefetch) {
+        conversationListRefetch();
+      }
+
+      // Fetch the newly created conversation details
+      const newConversation = await getConversationById(conversationId);
+
+      if (newConversation) {
+        // Select and open the new conversation
+        setSelectedConversation(newConversation);
+        setShowMobileThread(true);
+      }
+
+      // The conversation list will also refresh via real-time subscriptions as a fallback
+    } catch (error) {
+      console.error("Error loading new conversation:", error);
+      // The conversation list will still refresh via real-time subscriptions
+    }
   };
 
   return (
@@ -120,6 +144,7 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
             organizationId={activeOrgId}
             isCollapsed={isConversationListCollapsed}
             onToggleCollapse={() => setIsConversationListCollapsed(!isConversationListCollapsed)}
+            onRefetchReady={setConversationListRefetch}
           />
         </div>
 
@@ -155,7 +180,7 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
             <p className="text-muted-foreground mb-4">
               Sélectionnez une conversation pour commencer
             </p>
-            <Button onClick={handleNewConversation} className="btn-white-label hover:opacity-90">
+            <Button onClick={handleNewConversation} className={activeOrgId ? "btn-white-label hover:opacity-90" : "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white hover:opacity-90"}>
               Nouvelle conversation
             </Button>
           </div>

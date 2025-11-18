@@ -23,8 +23,10 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
+import usePageTitle from '@/hooks/usePageTitle';
 
 const ChatbotPage = () => {
+  usePageTitle("Assistant IA");
   const { projectId, conversationId } = useParams();
   const navigate = useNavigate(); // Initialize useNavigate
   const { userRole } = useUserRole(); // Get user role

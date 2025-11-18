@@ -5,6 +5,7 @@
 
 import { Settings } from 'lucide-react';
 import { useParams } from 'react-router-dom';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useOrganisationData } from '@/hooks/useOrganisationData';
 import { useIntegrations, useIntegrationWebhooks, useIntegrationApiKeys } from '@/hooks/useIntegrations';
 import { IntegrationsGrid } from '@/components/integrations/IntegrationsGrid';
@@ -13,6 +14,7 @@ import { ApiKeysSection } from '@/components/integrations/ApiKeysSection';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const OrganisationIntegrations = () => {
+  useOrgPageTitle("Intégrations");
   const { id: organisationId } = useParams();
   const { organisation, loading: orgLoading } = useOrganisationData();
   const { data: integrations = [], isLoading: integrationsLoading } = useIntegrations();

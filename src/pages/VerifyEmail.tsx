@@ -9,8 +9,10 @@ import { useEmailConfirmation } from '@/hooks/useEmailConfirmation';
 import { EmailConfirmationModal } from '@/components/auth/EmailConfirmationModal';
 import { toast } from '@/components/ui/use-toast';
 import { User } from '@supabase/supabase-js';
+import usePageTitle from '@/hooks/usePageTitle';
 
 const VerifyEmail = () => {
+  usePageTitle("Vérification Email");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();

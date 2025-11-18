@@ -328,8 +328,8 @@ const App = () => {
                   <CreditsDialogProvider>
                     <PendingInvitationsProvider>
                       <DeliverablesLoadingProvider>
-                        <BuyCreditsDialog />
-                        <Routes>
+                      <BuyCreditsDialog />
+                      <Routes>
                 {/* Public routes */}
                 <Route path="/beta-inscription" element={<BetaInscription />} />
                 <Route path="/login" element={<Login />} />
@@ -556,7 +556,7 @@ const App = () => {
                 {/* Smart redirect that handles OAuth callbacks */}
                 <Route path="/" element={<RootRedirect />} />
                 <Route path="*" element={<NotFound />} />
-                        </Routes>
+                      </Routes>
                       </DeliverablesLoadingProvider>
                     </PendingInvitationsProvider>
                   </CreditsDialogProvider>

@@ -32,6 +32,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAIToolDetails, useAIToolsList } from '@/hooks/useAIToolsNew';
 import { useCustomModalTabs } from '@/components/deliverables/shared/useCustomModalTabs';
+import usePageTitle from '@/hooks/usePageTitle';
 
 // Type pour les liens internes
 interface InternalLink {
@@ -41,6 +42,7 @@ interface InternalLink {
 }
 
 const ToolDetailPage = () => {
+  usePageTitle("Outil");
   const { slug, id } = useParams<{ slug: string; id: string }>();
   const navigate = useNavigate();
   const { toggleFavorite, favorites } = useAIToolsList();

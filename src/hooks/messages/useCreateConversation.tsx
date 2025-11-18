@@ -16,15 +16,15 @@ export const useCreateConversation = () => {
         const result = await createConversation(request);
         // Real-time subscriptions will handle updating the UI
         toast({
-          title: "Conversation created",
-          description: "You can now start messaging.",
+          title: "Conversation créée",
+          description: "Vous pouvez maintenant commencer à échanger.",
         });
         return result;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error("Failed to create conversation");
+        const error = err instanceof Error ? err : new Error("Échec de la création de la conversation");
         setError(error);
         toast({
-          title: "Failed to create conversation",
+          title: "Échec de la création",
           description: error.message,
           variant: "destructive",
         });
@@ -66,10 +66,10 @@ export const useFindOrCreateDirectConversation = () => {
       // Real-time subscriptions will handle updating the UI
       return result;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to create conversation");
+      const error = err instanceof Error ? err : new Error("Échec de la création de la conversation");
       setError(error);
       toast({
-        title: "Failed to create conversation",
+        title: "Échec de la création",
         description: error.message,
         variant: "destructive",
       });

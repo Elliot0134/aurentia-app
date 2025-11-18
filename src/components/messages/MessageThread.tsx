@@ -171,6 +171,7 @@ export const MessageThread = ({ conversation, organizationId }: MessageThreadPro
         <MessageInput
           onSend={handleSendMessage}
           disabled={sendUserMessageMutation.isLoading || sendOrgMessageMutation.isLoading}
+          organizationId={organizationId}
         />
       )}
     </div>

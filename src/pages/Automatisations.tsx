@@ -8,8 +8,10 @@ import { useProject } from '@/contexts/ProjectContext'; // Import useProject
 import { Button } from "@/components/ui/button"; // Import Button
 import { useUserRole } from '@/hooks/useUserRole'; // Import useUserRole
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const Automatisations = () => {
+  usePageTitle("Automatisations");
   const navigate = useNavigate(); // Initialize useNavigate
   const { currentProjectId, userProjectsLoading } = useProject(); // Use userProjectsLoading
   const { userRole } = useUserRole(); // Get user role

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useInvitationCodes } from '@/hooks/useOrganisationData';
 import { OrganisationPageLayout } from '@/components/organisation/OrganisationLayout';
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ interface Invitation {
 }
 
 const OrganisationInvitations = () => {
+  useOrgPageTitle("Invitations");
   const { codes, loading, generateCode } = useInvitationCodes();
   const { toast } = useToast();
 

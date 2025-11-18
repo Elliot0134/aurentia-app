@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrganisationData, useOrganisationStats, useInvitationCodes } from '@/hooks/useOrganisationData';
+import { useOrgPageTitle } from '@/hooks/usePageTitle';
 import { useRecentActivities } from '@/hooks/useRecentActivities';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +35,7 @@ import {
 } from "lucide-react";
 
 const OrganisationDashboard = () => {
+  useOrgPageTitle("Tableau de bord");
   const navigate = useNavigate();
   const { organisation, loading: orgLoading } = useOrganisationData();
   const { stats, loading: statsLoading } = useOrganisationStats();

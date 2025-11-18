@@ -861,7 +861,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
   // Desktop sidebar (memoized to prevent remounting on navigation)
   const desktopSidebarJSX = useMemo(() => (
     <div className={cn("hidden md:block h-screen fixed top-0 left-0 z-10 transition-all duration-300", isCollapsed ? "w-20" : "w-64")}>
-      <div className="bg-white/80 backdrop-blur-sm h-full rounded-r-xl shadow-sm border-r border-gray-100 flex flex-col">
+      <div className="bg-[var(--bg-card-static)]/80 backdrop-blur-sm h-full rounded-r-xl shadow-sm border-r border-[var(--border-default)] flex flex-col transition-colors duration-200">
         {/* Header - Fixed */}
         <div className="flex-shrink-0">
           <div className="flex items-center p-4 gap-2 relative">
@@ -1107,12 +1107,13 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
         </nav>
 
         {/* Profile section - Fixed at bottom */}
-        <div className="flex-shrink-0 border-t border-gray-200 p-3 bg-white/80 backdrop-blur-sm">
+        <div className="flex-shrink-0 border-t border-[var(--border-default)] p-3 bg-[var(--bg-card-static)]/80 backdrop-blur-sm transition-colors duration-200">
           {user && config.showCredits && (
             <div className={cn("px-3 mb-3", isCollapsed && "flex flex-col items-center")}>
               <CreditInfo isCollapsed={isCollapsed} {...credits} />
             </div>
           )}
+
           {user ? (
             <>
               <Link
@@ -1543,10 +1544,10 @@ const RoleBasedMobileNavbar = ({
         )}
       >
         {/* Main navigation with scrollable content */}
-        <nav className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <nav className="bg-[var(--bg-card-static)] rounded-2xl shadow-lg border border-[var(--border-default)] overflow-hidden transition-colors duration-200">
           {/* Credits display for mobile - integrated into navbar */}
           {user && userCredits && (userProfile?.user_role === 'individual' || userProfile?.user_role === 'member') && (
-            <div className="bg-white px-4 py-2 border-b border-gray-200">
+            <div className="bg-[var(--bg-card-static)] px-4 py-2 border-b border-[var(--border-default)] transition-colors duration-200">
               <div className="flex items-center justify-center gap-2 text-sm">
                 <img src="/credit-3D.png" alt="Crédits" className="h-4 w-4" />
                 <span className="font-medium text-gray-700">
@@ -1645,7 +1646,7 @@ const RoleBasedMobileNavbar = ({
                   <LogOut size={20} />
                 </Link>
               )}
-              
+
               {/* Close button */}
               <button
                 onClick={() => setIsNavbarOpen(false)}
