@@ -889,7 +889,7 @@ const RoleBasedSidebar = memo(({ userProfile, isCollapsed, setIsCollapsed }: Rol
                 </div>
               ) : (
                 <div className="h-8 w-auto">
-                  <img src="/Aurentia-logo-long.svg" alt="Aurentia Logo" className="h-full w-auto" />
+                  <img src="/aurentia-logo-long.svg" alt="Aurentia Logo" className="h-full w-auto" />
                 </div>
               )
             )}

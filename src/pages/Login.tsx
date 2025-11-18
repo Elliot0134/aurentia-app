@@ -232,7 +232,7 @@ const Login = () => {
         {/* Logo Aurentia */}
         <div className="flex items-center justify-center mb-6 opacity-0 animate-[fadeInUp_0.6s_ease-out_0.1s_forwards]">
           <img
-            src="/Aurentia-logo-long.svg"
+            src="/aurentia-logo-long.svg"
             alt="Aurentia"
             className="h-10"
           />
