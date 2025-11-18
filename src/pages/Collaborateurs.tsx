@@ -246,7 +246,7 @@ const CollaboratorsPage = () => {
               {permissions.canInvite && (
                 <Button
                   onClick={() => setIsInviteModalOpen(true)}
-                  className="bg-gradient-primary text-white flex items-center justify-center gap-2 min-h-[44px] shadow-md hover:shadow-lg transition-all duration-200"
+                  className="btn-primary flex items-center justify-center gap-2 min-h-[44px]"
                   aria-label="Inviter un collaborateur par email"
                 >
                   <UserPlus size={18} aria-hidden="true" />
@@ -257,7 +257,7 @@ const CollaboratorsPage = () => {
                 <Button
                   onClick={() => setIsShareCodeModalOpen(true)}
                   variant="outline"
-                  className="flex items-center justify-center gap-2 min-h-[44px] border-2 hover:bg-accent transition-all duration-200"
+                  className="flex items-center justify-center gap-2 min-h-[44px]"
                   aria-label="Générer un code d'invitation partageable"
                 >
                   <Link2 size={18} aria-hidden="true" />
@@ -268,7 +268,7 @@ const CollaboratorsPage = () => {
                 <Button
                   onClick={() => setIsOwnershipTransferOpen(true)}
                   variant="outline"
-                  className="flex items-center justify-center gap-2 min-h-[44px] border-2 border-yellow-300 hover:bg-yellow-50 dark:border-yellow-700 dark:hover:bg-yellow-950/30 transition-all duration-200"
+                  className="flex items-center justify-center gap-2 min-h-[44px]"
                   aria-label="Transférer la propriété du projet"
                 >
                   <Crown size={18} className="text-yellow-600 dark:text-yellow-400" aria-hidden="true" />

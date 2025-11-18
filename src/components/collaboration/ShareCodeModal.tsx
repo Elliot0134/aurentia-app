@@ -227,7 +227,7 @@ const ShareCodeModal: React.FC<ShareCodeModalProps> = ({
                 <SelectTrigger id="role" className="h-9">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-full">
                   <SelectItem value="viewer">Lecteur</SelectItem>
                   <SelectItem value="editor">Éditeur</SelectItem>
                   <SelectItem value="admin">Administrateur</SelectItem>
@@ -266,7 +266,7 @@ const ShareCodeModal: React.FC<ShareCodeModalProps> = ({
           <Button
             onClick={handleGenerateCode}
             disabled={generating}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full btn-primary"
             size="sm"
           >
             {generating ? 'Génération...' : 'Générer le code'}

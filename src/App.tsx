@@ -76,6 +76,7 @@ import { CreditsDialogProvider } from "./contexts/CreditsDialogContext";
 import { UserProvider } from "./contexts/UserContext";
 import { VoiceQuotaProvider } from "./contexts/VoiceQuotaContext";
 import { DeliverablesLoadingProvider } from "./contexts/DeliverablesLoadingContext";
+import { ChatStreamingProvider } from "./contexts/ChatStreamingContext";
 import BuyCreditsDialog from "./components/subscription/BuyCreditsDialog";
 import PendingInvitationsProvider from "./components/collaboration/PendingInvitationsProvider";
 import StyleguidePage from "./pages/StyleguidePage";
@@ -324,12 +325,13 @@ const App = () => {
           <BrowserRouter>
             <UserProvider>
               <ProjectProvider>
-                <VoiceQuotaProvider>
-                  <CreditsDialogProvider>
-                    <PendingInvitationsProvider>
-                      <DeliverablesLoadingProvider>
-                      <BuyCreditsDialog />
-                      <Routes>
+                <ChatStreamingProvider>
+                  <VoiceQuotaProvider>
+                    <CreditsDialogProvider>
+                      <PendingInvitationsProvider>
+                        <DeliverablesLoadingProvider>
+                          <BuyCreditsDialog />
+                          <Routes>
                 {/* Public routes */}
                 <Route path="/beta-inscription" element={<BetaInscription />} />
                 <Route path="/login" element={<Login />} />
@@ -556,11 +558,12 @@ const App = () => {
                 {/* Smart redirect that handles OAuth callbacks */}
                 <Route path="/" element={<RootRedirect />} />
                 <Route path="*" element={<NotFound />} />
-                      </Routes>
-                      </DeliverablesLoadingProvider>
-                    </PendingInvitationsProvider>
-                  </CreditsDialogProvider>
-                </VoiceQuotaProvider>
+                          </Routes>
+                        </DeliverablesLoadingProvider>
+                      </PendingInvitationsProvider>
+                    </CreditsDialogProvider>
+                  </VoiceQuotaProvider>
+                </ChatStreamingProvider>
               </ProjectProvider>
             </UserProvider>
           </BrowserRouter>

@@ -46,7 +46,8 @@ class ChatbotService {
         .insert({
           user_id: userId,
           project_id: projectId,
-          title: title || 'Nouvelle conversation'
+          title: title || 'Nouvelle conversation',
+          created_by: userId  // Fix: Add created_by to enable deletion via RLS policy
         })
         .select('id')
         .single();
@@ -386,10 +387,21 @@ class ChatbotService {
       }
 
       // Ajouter localement avec l'ID de la DB
-      const conversation = this.conversations.get(conversationId);
+      let conversation = this.conversations.get(conversationId);
+
+      // Si la conversation n'est pas en cache, la charger depuis la DB
       if (!conversation) {
-        console.error('Conversation non trouvée localement:', conversationId);
-        return null;
+        console.log('⚠️ Conversation non trouvée en cache, chargement depuis DB:', conversationId);
+        conversation = await this.loadConversationFromDB(conversationId);
+
+        if (!conversation) {
+          console.error('❌ Conversation non trouvée en DB:', conversationId);
+          return null;
+        }
+
+        // Ajouter au cache local
+        this.conversations.set(conversationId, conversation);
+        console.log('✅ Conversation rechargée en cache depuis DB');
       }
 
       const message: Message = {
@@ -465,10 +477,21 @@ class ChatbotService {
       }
 
       // Mettre à jour localement
-      const conversation = this.conversations.get(conversationId);
+      let conversation = this.conversations.get(conversationId);
+
+      // Si la conversation n'est pas en cache, la charger depuis la DB
       if (!conversation) {
-        console.error('Conversation non trouvée localement:', conversationId);
-        return null;
+        console.log('⚠️ Conversation non trouvée en cache, chargement depuis DB:', conversationId);
+        conversation = await this.loadConversationFromDB(conversationId);
+
+        if (!conversation) {
+          console.error('❌ Conversation non trouvée en DB:', conversationId);
+          return null;
+        }
+
+        // Ajouter au cache local
+        this.conversations.set(conversationId, conversation);
+        console.log('✅ Conversation rechargée en cache depuis DB');
       }
 
       const messageIndex = conversation.messages.findIndex(m => m.id === messageId);

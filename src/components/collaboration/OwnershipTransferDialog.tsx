@@ -146,12 +146,12 @@ const OwnershipTransferDialog: React.FC<OwnershipTransferDialogProps> = ({
                     <SelectTrigger id="collaborator">
                       <SelectValue placeholder="Sélectionner un collaborateur" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-w-full">
                       {activeCollaborators.map((collab) => (
                         <SelectItem key={collab.user_id} value={collab.user_id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{collab.user?.email}</span>
-                            <span className="text-xs text-gray-500">
+                          <div className="flex flex-col w-full min-w-0">
+                            <span className="font-medium break-words whitespace-normal">{collab.user?.email}</span>
+                            <span className="text-xs text-gray-500 break-words whitespace-normal">
                               Rôle actuel: {
                                 collab.role === 'viewer' ? 'Lecteur' :
                                 collab.role === 'editor' ? 'Éditeur' :
@@ -193,7 +193,7 @@ const OwnershipTransferDialog: React.FC<OwnershipTransferDialogProps> = ({
               <Button
                 onClick={() => setShowConfirmation(true)}
                 disabled={!selectedCollaboratorId || activeCollaborators.length === 0}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                className="btn-primary"
               >
                 Continuer
               </Button>

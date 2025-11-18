@@ -10,7 +10,8 @@ import { useUserStatusChecks } from "@/hooks/useUserStatusChecks";
 import { CreditsUsageChart } from "@/components/dashboard/CreditsUsageChart";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { usePendingInvitations } from "@/hooks/usePendingInvitations";
-import { CheckCircle2, FolderOpen, Plus, Circle, ChevronRight, Bell, TrendingUp, Sparkles } from "lucide-react";
+import { useCollaborativeProjects } from "@/hooks/useCollaborativeProjects";
+import { CheckCircle2, FolderOpen, Plus, Circle, ChevronRight, Bell, TrendingUp, Sparkles, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import usePageTitle from "@/hooks/usePageTitle";
@@ -35,6 +36,9 @@ const Dashboard = () => {
 
   // Hook for pending invitations
   const { invitations, loading: invitationsLoading, handleInvitationAccepted, refetch: refetchInvitations } = usePendingInvitations();
+
+  // Hook for collaborative projects
+  const { collaborativeProjects, loading: collabProjectsLoading } = useCollaborativeProjects();
 
   // Hook pour les indicateurs de statut
   const { checks, completionPercentage, completedCount, totalCount, isLoading: statusLoading } = useUserStatusChecks(currentProjectId);
@@ -335,6 +339,71 @@ const Dashboard = () => {
                   >
                     Voir tous les projets ({userProjects.length}) →
                   </Button>
+                )}
+
+                {/* Collaborative Projects Section */}
+                {!collabProjectsLoading && collaborativeProjects.length > 0 && (
+                  <div className="mt-8 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-text-muted" />
+                      <h3 className="text-lg font-semibold text-text-primary font-sans">
+                        Mes projets (Collab)
+                        <span className="text-xs font-normal text-text-muted ml-2">
+                          ({collaborativeProjects.length})
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {collaborativeProjects.map((project) => {
+                        const isActive = currentProjectId === project.project_id;
+
+                        return (
+                          <div
+                            key={project.project_id}
+                            onClick={() => setCurrentProjectId(project.project_id)}
+                            className={cn(
+                              "flex items-center justify-between px-3 py-2.5 rounded-md cursor-pointer transition-all duration-200 group border",
+                              isActive
+                                ? "bg-blue-50 border-blue-200"
+                                : "bg-gray-50/50 hover:bg-gray-100/50 border-gray-200/50"
+                            )}
+                          >
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className={cn(
+                                  "text-sm font-normal font-sans truncate",
+                                  isActive ? "text-blue-900 font-medium" : "text-text-primary"
+                                )}>
+                                  {project.nom_projet || 'Projet sans nom'}
+                                </h4>
+                                {/* Role Badge */}
+                                <span className={cn(
+                                  "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0",
+                                  project.my_role === 'admin' && "bg-purple-100 text-purple-700 border border-purple-200",
+                                  project.my_role === 'editor' && "bg-blue-100 text-blue-700 border border-blue-200",
+                                  project.my_role === 'viewer' && "bg-gray-100 text-gray-700 border border-gray-200"
+                                )}>
+                                  {project.my_role === 'admin' ? 'Admin' :
+                                   project.my_role === 'editor' ? 'Éditeur' :
+                                   'Lecteur'}
+                                </span>
+                              </div>
+                              {/* Owner indicator */}
+                              <p className="text-xs text-text-muted flex items-center gap-1">
+                                <span>Propriétaire:</span>
+                                <span className="font-medium">{project.owner_name || project.owner_email}</span>
+                              </p>
+                            </div>
+                            <ChevronRight className={cn(
+                              "h-4 w-4 transition-transform duration-200 flex-shrink-0",
+                              isActive ? "text-blue-600" : "text-text-muted group-hover:translate-x-1"
+                            )} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </>
             )}
