@@ -1527,7 +1527,7 @@ const RoleBasedMobileNavbar = ({
       {!isNavbarOpen && (
         <button
           onClick={() => setIsNavbarOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-primary text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 md:hidden"
+          className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-gradient-primary text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 md:hidden"
         >
           <Menu size={24} />
         </button>
@@ -1536,7 +1536,7 @@ const RoleBasedMobileNavbar = ({
       {/* Navbar container with fade animation */}
       <div
         className={cn(
-          "fixed bottom-4 left-4 right-4 z-50 md:hidden transition-all duration-300 ease-in-out",
+          "fixed bottom-4 left-4 right-4 z-[60] md:hidden transition-all duration-300 ease-in-out",
           isNavbarOpen
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-8 pointer-events-none"

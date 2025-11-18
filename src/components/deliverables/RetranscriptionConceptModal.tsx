@@ -1,4 +1,6 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import DeliverableModalHeader from './shared/DeliverableModalHeader';
 import { useCustomModalTabs } from './shared/useCustomModalTabs';
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,57 @@ interface RetranscriptionConceptModalProps {
   content: ConceptContent;
   modalWidthClass?: string;
 }
+
+// Helper function to calculate textarea rows based on content
+const calculateRows = (text: string, minRows: number = 3, maxRows: number = 20): number => {
+  if (!text) return minRows;
+  const lines = text.split('\n').length;
+  const estimatedRows = Math.max(lines, minRows);
+  return Math.min(estimatedRows, maxRows);
+};
+
+// Helper component to render markdown content
+const MarkdownText: React.FC<{ children: string }> = ({ children }) => {
+  return (
+    <div className="text-[#4B5563] leading-relaxed">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          strong: (props) => <strong className="font-bold text-gray-900" {...props} />,
+          em: (props) => <em className="italic text-gray-800" {...props} />,
+          h1: (props) => <h1 className="text-xl font-bold text-gray-900 mb-2 mt-3 first:mt-0" {...props} />,
+          h2: (props) => <h2 className="text-lg font-bold text-gray-900 mb-2 mt-2 first:mt-0" {...props} />,
+          h3: (props) => <h3 className="text-base font-semibold text-gray-900 mb-1 mt-2 first:mt-0" {...props} />,
+          p: (props) => <p className="mb-2 last:mb-0" {...props} />,
+          ul: (props) => <ul className="list-disc list-inside space-y-1 mb-2 ml-2" {...props} />,
+          ol: (props) => <ol className="list-decimal list-inside space-y-1 mb-2 ml-2" {...props} />,
+          li: (props) => <li {...props} />,
+          blockquote: (props) => (
+            <blockquote className="border-l-4 border-[#FF6B35] pl-3 py-1 my-2 italic bg-gray-50 rounded-r" {...props} />
+          ),
+          code: (props) => {
+            const { inline, ...rest } = props as any;
+            return inline ? (
+              <code className="bg-gray-100 text-[#FF6B35] px-1 py-0.5 rounded text-sm font-mono" {...rest} />
+            ) : (
+              <code className="block bg-gray-100 text-gray-800 p-2 rounded my-2 text-sm font-mono overflow-x-auto" {...rest} />
+            );
+          },
+          a: (props) => (
+            <a
+              className="text-[#FF6B35] hover:text-[#FF5722] underline font-medium"
+              target="_blank"
+              rel="noopener noreferrer"
+              {...props}
+            />
+          ),
+        }}
+      >
+        {children}
+      </ReactMarkdown>
+    </div>
+  );
+};
 
 const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = ({
   isOpen,
@@ -97,7 +150,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                   className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.projectName}</p>
+                <MarkdownText>{content.projectName}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
@@ -106,10 +159,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                 <textarea
                   value={displayContent.syntheticDescription}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, syntheticDescription: e.target.value }))}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
+                  rows={calculateRows(displayContent.syntheticDescription, 4)}
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.syntheticDescription}</p>
+                <MarkdownText>{content.syntheticDescription}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
@@ -118,10 +172,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                 <textarea
                   value={displayContent.produitService}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, produitService: e.target.value }))}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
+                  rows={calculateRows(displayContent.produitService, 4)}
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.produitService}</p>
+                <MarkdownText>{content.produitService}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
@@ -130,10 +185,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                 <textarea
                   value={displayContent.propositionValeur}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, propositionValeur: e.target.value }))}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
+                  rows={calculateRows(displayContent.propositionValeur, 3)}
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.propositionValeur}</p>
+                <MarkdownText>{content.propositionValeur}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
@@ -142,10 +198,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                 <textarea
                   value={displayContent.elementsDistinctifs}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, elementsDistinctifs: e.target.value }))}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
+                  rows={calculateRows(displayContent.elementsDistinctifs, 4)}
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.elementsDistinctifs}</p>
+                <MarkdownText>{content.elementsDistinctifs}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
@@ -154,10 +211,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                 <textarea
                   value={displayContent.problemes}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, problemes: e.target.value }))}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
+                  rows={calculateRows(displayContent.problemes, 3)}
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.problemes}</p>
+                <MarkdownText>{content.problemes}</MarkdownText>
               )}
             </div>
           </div>
@@ -175,7 +233,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                   className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.publicCible}</p>
+                <MarkdownText>{content.publicCible}</MarkdownText>
               )}
             </div>
 
@@ -196,10 +254,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 0 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
+                      rows={calculateRows(displayContent.buyerProfiles[0]?.description || '', 3)}
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                     />
                   ) : (
-                    <p className="text-[#4B5563]">{content.buyerProfiles[0]?.description}</p>
+                    <MarkdownText>{content.buyerProfiles[0]?.description || ''}</MarkdownText>
                   )}
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
@@ -213,10 +272,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 1 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
+                      rows={calculateRows(displayContent.buyerProfiles[1]?.description || '', 3)}
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                     />
                   ) : (
-                    <p className="text-[#4B5563]">{content.buyerProfiles[1]?.description}</p>
+                    <MarkdownText>{content.buyerProfiles[1]?.description || ''}</MarkdownText>
                   )}
                 </div>
               </div>
@@ -236,10 +296,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 2 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
+                      rows={calculateRows(displayContent.buyerProfiles[2]?.description || '', 3)}
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                     />
                   ) : (
-                    <p className="text-[#4B5563]">{content.buyerProfiles[2]?.description}</p>
+                    <MarkdownText>{content.buyerProfiles[2]?.description || ''}</MarkdownText>
                   )}
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
@@ -253,10 +314,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 3 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
+                      rows={calculateRows(displayContent.buyerProfiles[3]?.description || '', 3)}
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                     />
                   ) : (
-                    <p className="text-[#4B5563]">{content.buyerProfiles[3]?.description}</p>
+                    <MarkdownText>{content.buyerProfiles[3]?.description || ''}</MarkdownText>
                   )}
                 </div>
               </div>
@@ -276,10 +338,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 4 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
+                      rows={calculateRows(displayContent.buyerProfiles[4]?.description || '', 3)}
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                     />
                   ) : (
-                    <p className="text-[#4B5563]">{content.buyerProfiles[4]?.description}</p>
+                    <MarkdownText>{content.buyerProfiles[4]?.description || ''}</MarkdownText>
                   )}
                 </div>
                 <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
@@ -293,10 +356,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                           index === 5 ? { ...profile, description: e.target.value } : profile
                         )
                       }))}
-                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-20 resize-none"
+                      rows={calculateRows(displayContent.buyerProfiles[5]?.description || '', 3)}
+                      className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                     />
                   ) : (
-                    <p className="text-[#4B5563]">{content.buyerProfiles[5]?.description}</p>
+                    <MarkdownText>{content.buyerProfiles[5]?.description || ''}</MarkdownText>
                   )}
                 </div>
               </div>
@@ -316,7 +380,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                   className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.marcheCible}</p>
+                <MarkdownText>{content.marcheCible}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
@@ -329,7 +393,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                   className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.marchesAnnexes}</p>
+                <MarkdownText>{content.marchesAnnexes}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
@@ -342,7 +406,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                   className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.localisationProjet}</p>
+                <MarkdownText>{content.localisationProjet}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4 mb-4">
@@ -355,7 +419,7 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                   className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.budget}</p>
+                <MarkdownText>{content.budget}</MarkdownText>
               )}
             </div>
             <div className="bg-[#F9FAFB] rounded-md px-4 pb-4 pt-4">
@@ -364,10 +428,11 @@ const RetranscriptionConceptModal: React.FC<RetranscriptionConceptModalProps> = 
                 <textarea
                   value={displayContent.equipeFondatrice}
                   onChange={(e) => setEditedContent(prev => ({ ...prev, equipeFondatrice: e.target.value }))}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors h-24 resize-none"
+                  rows={calculateRows(displayContent.equipeFondatrice, 4)}
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#ff592b] focus:outline-none transition-colors resize-y"
                 />
               ) : (
-                <p className="text-[#4B5563]">{content.equipeFondatrice}</p>
+                <MarkdownText>{content.equipeFondatrice}</MarkdownText>
               )}
             </div>
           </div>

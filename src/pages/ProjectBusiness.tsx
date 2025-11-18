@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Download, Settings, UserPlus, Eye, Edit, FolderSearch } from "lucide-react";
+import { Download, UserPlus, Eye, Edit, FolderSearch } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -468,22 +468,6 @@ const ProjectBusiness = () => {
             </div>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
               <div className="flex items-center gap-3 w-full justify-end">
-                {permissions.canWrite && (
-                  <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
-                    if (projectStatus === 'free') {
-                      handleUnlockClick();
-                    } else {
-                      // TODO: Implement actual modify functionality here
-                      toast({
-                        title: "Modification",
-                        description: "La fonctionnalité de modification sera bientôt disponible.",
-                        duration: 3000,
-                      });
-                    }
-                  }}>
-                    <Settings size={18} />
-                  </Button>
-                )}
                 {permissions.canRead && (
                   <Button variant="outline" className="h-10 w-10 p-0" onClick={() => {
                     if (projectStatus === 'free') {

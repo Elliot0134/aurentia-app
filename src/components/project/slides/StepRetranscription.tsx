@@ -1,5 +1,5 @@
-import { Textarea } from '@/components/ui/textarea';
 import { ProjectCreationData } from '@/types/projectCreation';
+import MarkdownEditableField from './MarkdownEditableField';
 
 interface StepRetranscriptionProps {
   data: ProjectCreationData;
@@ -8,6 +8,11 @@ interface StepRetranscriptionProps {
 }
 
 const StepRetranscription = ({ data, onChange, isLoading }: StepRetranscriptionProps) => {
+  console.log('🎨 StepRetranscription - Full data received:', data);
+  console.log('🎨 StepRetranscription - vision3Ans:', data.vision3Ans);
+  console.log('🎨 StepRetranscription - equipeFondatrice:', data.equipeFondatrice);
+  console.log('🎨 StepRetranscription - businessModel:', data.businessModel);
+
   if (isLoading) {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
@@ -42,24 +47,17 @@ const StepRetranscription = ({ data, onChange, isLoading }: StepRetranscriptionP
         </p>
       </div>
 
-      {/* Champs de retranscription avec icônes */}
+      {/* Champs de retranscription avec icônes et rendu markdown */}
       <div className="space-y-5">
         {fields.map((field) => (
-          <div key={field.key} className="space-y-2">
-            <label className="block text-base md:text-lg text-gray-800">{field.label}</label>
-            <div className="flex flex-col md:flex-row gap-4 items-stretch">
-              {/* Icon container - matches full height of content */}
-              <div className="hidden md:flex w-16 bg-gray-100 rounded-lg items-center justify-center flex-shrink-0">
-                <img src={`/icones-livrables/${field.icon}`} alt={field.label} className="w-10 h-10 object-contain" />
-              </div>
-              <Textarea
-                placeholder={field.placeholder}
-                className="flex-1 min-h-[100px] transition-all duration-200 focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
-                value={data[field.key as keyof ProjectCreationData] as string || ''}
-                onChange={(e) => onChange(field.key as keyof ProjectCreationData, e.target.value)}
-              />
-            </div>
-          </div>
+          <MarkdownEditableField
+            key={field.key}
+            label={field.label}
+            value={(data[field.key as keyof ProjectCreationData] as string) || ''}
+            placeholder={field.placeholder}
+            icon={field.icon}
+            onChange={(value) => onChange(field.key as keyof ProjectCreationData, value)}
+          />
         ))}
       </div>
     </div>
