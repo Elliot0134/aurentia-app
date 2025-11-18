@@ -251,7 +251,7 @@ const ProjectBusiness = () => {
           <img src="/credit-3D.png" alt="Crédits" className="h-8 w-8 inline-block mr-2" /> <span className="text-2xl font-sans">600</span>
         </div>
         <DialogDescription className="text-center text-base font-sans text-text-muted">
-          <span className="font-bold text-text-primary">JeFaisQuoi</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
+          <span className="font-bold text-text-primary">{project?.nom_projet || "Ce projet"}</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
         </DialogDescription>
         <DialogFooter className="flex justify-center gap-4 mt-8">
           <Button variant="outline" onClick={closePopup} className="flex-1">
@@ -437,7 +437,108 @@ const ProjectBusiness = () => {
   // Les listeners pour 'deliverablesCompleted' ont été supprimés car la logique est maintenant gérée par le polling sur `statut_project`.
 
   if (loading) {
-    return <LoadingSpinner message="Chargement..." fullScreen />;
+    return (
+      <ProjectRequiredGuard>
+        <DeliverablesLoadingProvider>
+          <div className="container-aurentia py-8 animate-fade-in">
+            <div>
+              {/* Header avec titre */}
+              <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+                <div className="flex flex-col w-full md:w-1/2 md:order-first">
+                  <div className="skeleton h-10 w-64 rounded bg-gray-200"></div>
+                </div>
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-1/2 md:order-last">
+                  <div className="flex items-center gap-3 w-full justify-end">
+                    <div className="skeleton h-10 w-10 rounded bg-gray-200"></div>
+                    <div className="skeleton h-10 w-10 rounded bg-gray-200"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Project Score Cards Skeleton */}
+              <div className="mb-8">
+                <div className="skeleton h-6 w-40 mb-4 rounded bg-gray-200"></div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Skeleton carte principale */}
+                  <div className="card-static" style={{ minHeight: '240px' }}>
+                    <div className="flex flex-col h-full items-center justify-center text-center gap-4">
+                      <div className="skeleton h-16 w-24 rounded-lg bg-gray-200"></div>
+                      <div className="skeleton h-5 w-48 rounded bg-gray-200"></div>
+                      <div className="skeleton h-4 w-full lg:w-[85%] mx-auto rounded bg-gray-200"></div>
+                    </div>
+                  </div>
+                  {/* Grid 2x2 pour skeletons secondaires */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="card-static" style={{ minHeight: '120px' }}>
+                        <div className="flex flex-col justify-center h-full gap-2">
+                          <div className="skeleton h-8 w-16 rounded bg-gray-200"></div>
+                          <div className="skeleton h-4 w-32 rounded bg-gray-200"></div>
+                          <div className="skeleton h-3 w-24 rounded bg-gray-200"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mes livrables Skeleton */}
+              <div className="col-span-full mb-8">
+                <div className="skeleton h-6 w-32 mb-4 rounded bg-gray-200"></div>
+                <div className="bg-[#f4f4f5] rounded-xl px-4 py-2 h-[80px] mb-4 animate-pulse">
+                  <div className="flex gap-4 h-full items-center">
+                    <div className="w-12 h-12 bg-[#e0e0e0] rounded-lg"></div>
+                    <div className="flex-grow flex flex-col min-w-0 gap-2">
+                      <div className="h-4 bg-[#e0e0e0] rounded w-3/4"></div>
+                      <div className="h-3 bg-[#e0e0e0] rounded w-full"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Level 1 Deliverables Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-stretch auto-rows-fr min-h-[200px]">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="bg-[#f4f4f5] rounded-xl px-4 py-2 h-full mb-4 animate-pulse">
+                    <div className="flex gap-4 h-full items-center">
+                      <div className="w-12 h-12 bg-[#e0e0e0] rounded-lg"></div>
+                      <div className="flex-grow flex flex-col min-w-0 gap-2">
+                        <div className="h-4 bg-[#e0e0e0] rounded w-3/4"></div>
+                        <div className="h-3 bg-[#e0e0e0] rounded w-full"></div>
+                        <div className="h-5 bg-[#e0e0e0] rounded-full w-20"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Level 2 Button Skeleton */}
+              <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
+                <div className="col-span-12 text-center">
+                  <div className="skeleton h-10 w-64 mx-auto rounded-lg bg-gray-200"></div>
+                </div>
+              </div>
+
+              {/* Level 2 Deliverables Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="bg-[#f4f4f5] rounded-xl px-4 py-2 h-full mb-4 animate-pulse">
+                    <div className="flex gap-4 h-full items-center">
+                      <div className="w-12 h-12 bg-[#e0e0e0] rounded-lg"></div>
+                      <div className="flex-grow flex flex-col min-w-0 gap-2">
+                        <div className="h-4 bg-[#e0e0e0] rounded w-3/4"></div>
+                        <div className="h-3 bg-[#e0e0e0] rounded w-full"></div>
+                        <div className="h-5 bg-[#e0e0e0] rounded-full w-20"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DeliverablesLoadingProvider>
+      </ProjectRequiredGuard>
+    );
   }
 
   if (!project) {
@@ -651,26 +752,10 @@ const ProjectBusiness = () => {
         <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
           <DialogContent className="w-[95vw] max-w-[500px] rounded-lg sm:w-full">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-heading text-text-primary text-center">{popupContent?.title}</DialogTitle>
+              <DialogTitle className="text-2xl font-sans text-text-primary text-center">{popupContent?.title}</DialogTitle>
             </DialogHeader>
             {popupContent?.content}
-            <div className="absolute right-4 top-4 flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => {
-                  // TODO: Implement actual modify functionality here
-                  toast({
-                    title: "Modification",
-                    description: "La fonctionnalité de modification sera bientôt disponible.",
-                    duration: 3000,
-                  });
-                }}
-              >
-                <Edit className="h-4 w-4" />
-                <span className="sr-only">Modifier</span>
-              </Button>
+            <div className="absolute right-4 top-4">
               <DialogPrimitive.Close className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
                 <X className="h-4 w-4" />
                 <span className="sr-only">Fermer</span>

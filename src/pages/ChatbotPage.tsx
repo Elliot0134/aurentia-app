@@ -404,9 +404,14 @@ const ChatbotPage = () => {
           {/* Messages et interface de chat */}
           {currentConversation && messages.length > 0 ? (
             // Messages existants
-            <div className="w-full flex flex-col flex-1 overflow-hidden px-4">
+            <div className="w-full flex flex-col flex-1 overflow-hidden px-4 relative z-0">
+              {/* Gradient overlay pour transition douce */}
+              <div className="absolute bottom-[180px] md:bottom-[220px] left-0 right-0 h-24
+                            bg-gradient-to-t from-[var(--bg-page)] to-transparent
+                            pointer-events-none z-5" />
+
               {/* Messages avec scroll */}
-              <div className="flex-1 overflow-y-auto scrollbar-hide pb-[160px] md:pb-[200px]">
+              <div className="flex-1 overflow-y-auto scrollbar-hide pb-[160px] md:pb-[200px] relative z-0">
                 <MessageList
                   messages={messages}
                   isLoading={isLoading}
@@ -417,9 +422,9 @@ const ChatbotPage = () => {
                   isStreaming={Boolean(streamingMessageId)}
                 />
               </div>
-              
+
               {/* Input area fixe pour conversation existante */}
-              <div className="fixed md:absolute bottom-[100px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[var(--bg-page)]/80 backdrop-blur-md z-10"> {/* Added md:px-0 */}
+              <div className="fixed md:absolute bottom-[100px] md:bottom-[40px] inset-x-0 px-2 md:px-0 bg-[var(--bg-page)]/95 backdrop-blur-md z-20">
                 <div className="w-full mx-auto">
                   {isMobile ? (
                     // Mobile layout: ChatInput with integrated + button
@@ -483,8 +488,13 @@ const ChatbotPage = () => {
             </div>
           ) : (
             // Interface de démarrage de conversation
-            <div className="flex flex-col flex-1 overflow-hidden">
-              <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-1 sm:py-8 pb-[160px] md:pb-[200px]">
+            <div className="flex flex-col flex-1 overflow-hidden relative z-0">
+              {/* Gradient overlay pour transition douce */}
+              <div className="absolute bottom-[180px] md:bottom-[190px] left-0 right-0 h-24
+                            bg-gradient-to-t from-[var(--bg-page)] to-transparent
+                            pointer-events-none z-5" />
+
+              <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center px-3 sm:px-4 py-1 sm:py-8 pb-[160px] md:pb-[200px] relative z-0">
                 {/* AI Icon and Welcome Message */}
                 <div className="flex flex-col items-center mb-8"
                      style={{ animation: 'fadeIn var(--transition-slow) var(--ease-out)' }}>
@@ -505,7 +515,7 @@ const ChatbotPage = () => {
               </div>
 
               {/* Input area fixe */}
-              <div className="fixed md:absolute bottom-[100px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[var(--bg-page)]/80 backdrop-blur-md z-10">
+              <div className="fixed md:absolute bottom-[100px] md:bottom-[10px] inset-x-0 px-2 md:px-0 bg-[var(--bg-page)]/95 backdrop-blur-md z-20">
                 <div className="w-full mx-auto">
                   {isMobile ? (
                     // Mobile layout: ChatInput with integrated + button

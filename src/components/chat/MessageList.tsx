@@ -38,10 +38,58 @@ export const MessageList: React.FC<MessageListProps> = ({
   organizationLogoUrl,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const isUserScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Détecter si l'utilisateur est proche du bas (tolérance de 100px)
+  const isNearBottom = () => {
+    const container = scrollContainerRef.current?.parentElement;
+    if (!container) return true;
+
+    const threshold = 100;
+    const position = container.scrollTop + container.clientHeight;
+    const height = container.scrollHeight;
+
+    return position >= height - threshold;
+  };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    // Ne scroller que si l'utilisateur est déjà proche du bas
+    if (isNearBottom() && !isUserScrollingRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
   };
+
+  // Détecter le scroll manuel de l'utilisateur
+  useEffect(() => {
+    const container = scrollContainerRef.current?.parentElement;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // Marquer que l'utilisateur scrolle manuellement
+      isUserScrollingRef.current = true;
+
+      // Clear timeout précédent
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Réinitialiser après 150ms d'inactivité
+      scrollTimeoutRef.current = setTimeout(() => {
+        isUserScrollingRef.current = false;
+      }, 150);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -75,7 +123,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   );
 
   return (
-    <div className={`mx-auto px-3 sm:px-4 py-4 sm:py-6 ${bottomPaddingClass} space-y-6 sm:space-y-8 w-full`}>
+    <div ref={scrollContainerRef} className={`mx-auto px-3 sm:px-4 py-4 sm:py-6 ${bottomPaddingClass} space-y-6 sm:space-y-8 w-full relative z-0`}>
         {messages.map((message) => (
           <div
             key={message.id}

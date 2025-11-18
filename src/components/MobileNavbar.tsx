@@ -92,6 +92,16 @@ const MobileNavbar = () => {
 
   if (!isMobile) return null;
 
+  // Determine if we're on a form page with navigation arrows (right side)
+  const isFormPageWithArrows =
+    location.pathname === '/onboarding' ||
+    location.pathname === '/individual/create-project-form' ||
+    location.pathname === '/individual/form-business-idea' ||
+    location.pathname === '/individual/plan-action';
+
+  // Position burger on left for form pages with arrows, right for others
+  const burgerPosition = isFormPageWithArrows ? 'left-6' : 'right-6';
+
   return (
     <>
       {/* Menu toggle button - only show when navbar is closed */}
@@ -99,7 +109,7 @@ const MobileNavbar = () => {
       {!isNavbarOpen && (
         <button
           onClick={() => setIsNavbarOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-10 h-10 bg-gradient-primary text-white rounded-md shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 md:hidden"
+          className={cn("fixed bottom-6 z-50 w-10 h-10 bg-gradient-primary text-white rounded-md shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 md:hidden", burgerPosition)}
         >
           <Menu size={18} />
         </button>

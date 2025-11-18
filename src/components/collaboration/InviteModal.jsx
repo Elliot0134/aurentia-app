@@ -186,12 +186,12 @@ const InviteModal = ({
                 <SelectTrigger className={formErrors.role ? 'border-red-500' : ''}>
                   <SelectValue placeholder="Sélectionner un rôle" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-full">
                   {roles.map((role) => (
                     <SelectItem key={role.value} value={role.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{role.label}</span>
-                        <span className="text-xs text-gray-500">{role.description}</span>
+                      <div className="flex flex-col w-full min-w-0">
+                        <span className="font-medium break-words whitespace-normal">{role.label}</span>
+                        <span className="text-xs text-gray-500 break-words whitespace-normal">{role.description}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -238,18 +238,18 @@ const InviteModal = ({
             )}
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={handleClose}
                 disabled={loading}
               >
                 Annuler
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="btn-primary"
               >
                 {loading ? (
                   <>

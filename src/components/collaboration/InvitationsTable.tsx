@@ -280,7 +280,7 @@ const InvitationsTable: React.FC<InvitationsTableProps> = ({
             <Filter size={16} className="mr-2" />
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-w-full">
             <SelectItem value="all">Tous les statuts</SelectItem>
             <SelectItem value="pending">En attente</SelectItem>
             <SelectItem value="accepted">Acceptée</SelectItem>
@@ -293,7 +293,7 @@ const InvitationsTable: React.FC<InvitationsTableProps> = ({
           <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Rôle" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-w-full">
             <SelectItem value="all">Tous les rôles</SelectItem>
             <SelectItem value="viewer">Lecteur</SelectItem>
             <SelectItem value="editor">Éditeur</SelectItem>

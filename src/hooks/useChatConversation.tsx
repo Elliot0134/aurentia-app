@@ -3,6 +3,7 @@ import { chatbotService, type Message, type Conversation } from '@/services/chat
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { useProject } from '@/contexts/ProjectContext';
+import { useChatStreaming } from '@/contexts/ChatStreamingContext';
 
 export const useChatConversation = (
   projectId: string | undefined,
@@ -16,9 +17,10 @@ export const useChatConversation = (
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
-  const [streamingText, setStreamingText] = useState('');
-  
+
+  // Utiliser le context pour le streaming au lieu du state local
+  const { registerStream, getStreamText, getActiveStreamId } = useChatStreaming();
+
   const lastSentMessage = useRef<string>('');
   const lastSentTime = useRef<number>(0);
   const lastErrorTime = useRef<number>(0);
@@ -141,25 +143,9 @@ export const useChatConversation = (
     }
   };
 
-  const streamText = async (text: string, messageId: string) => {
-    setStreamingMessageId(messageId);
-    setStreamingText('');
-    
-    const words = text.split(' ');
-    let currentText = '';
-    
-    for (let i = 0; i < words.length; i++) {
-      currentText += (i === 0 ? '' : ' ') + words[i];
-      setStreamingText(currentText);
-      
-      const delay = words[i].length > 8 ? 40 : 25;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    
-    setTimeout(() => {
-      setStreamingMessageId(null);
-      setStreamingText('');
-    }, 100);
+  const streamText = async (text: string, messageId: string, conversationId: string) => {
+    // Utiliser le context pour gérer le streaming en arrière-plan
+    registerStream(conversationId, messageId, text);
   };
 
   const sendMessage = async (
@@ -301,8 +287,8 @@ export const useChatConversation = (
           setCurrentConversation({...updatedConversation}); // Force re-render
         }
         
-        await streamText(botResponse, botMessage.id);
-        
+        await streamText(botResponse, botMessage.id, conversationToUse.id);
+
         const updatedMessage = await chatbotService.updateMessageWithDB(conversationToUse.id, botMessage.id, botResponse);
         if (updatedMessage) {
           updatedConversation = chatbotService.getConversation(conversationToUse.id);
@@ -423,8 +409,8 @@ export const useChatConversation = (
         }
       }
       
-      await streamText(newResponse, messageToUpdate.id);
-      
+      await streamText(newResponse, messageToUpdate.id, currentConversation.id);
+
       const finalUpdatedMessage = await chatbotService.updateMessageWithDB(currentConversation.id, messageToUpdate.id, newResponse);
       if (finalUpdatedMessage) {
         const finalConversation = chatbotService.getConversation(currentConversation.id);
@@ -496,11 +482,14 @@ export const useChatConversation = (
   const newChat = () => {
     setCurrentConversation(null);
     setConversationId(null);
-    setStreamingMessageId(null);
-    setStreamingText('');
-    
+
     toast.success("Prêt pour une nouvelle conversation");
   };
+
+  // Computed values depuis le context
+  const activeStreamId = getActiveStreamId();
+  const streamingMessageId = activeStreamId;
+  const streamingText = activeStreamId ? getStreamText(activeStreamId) || '' : '';
 
   return {
     currentConversation,
