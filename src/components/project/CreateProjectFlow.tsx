@@ -211,23 +211,35 @@ const CreateProjectFlow = () => {
           const webhookData = result[0];
 
           if (webhookData) {
-            setData((prev) => ({
-              ...prev,
-              descriptionSynthetique: webhookData.DescriptionSynthetique || '',
-              produitServiceRetranscription: webhookData['Produit/Service'] || '',
-              propositionValeur: webhookData.PropositionValeur || '',
-              elementDistinctif: webhookData.ElementDistinctif || '',
-              clienteleCibleRetranscription: webhookData.ClienteleCible || '',
-              problemResoudreRetranscription: webhookData.ProblemResoudre || '',
-              vision3Ans: webhookData.Vision3Ans || '',
-              businessModel: webhookData.BusinessModel || '',
-              competences: webhookData.Compétences || '',
-              monPourquoiRetranscription: webhookData.MotivationEntrepreneur || '',
-              equipeFondatrice: webhookData.EquipeFondatrice || '',
-              projectID: webhookData.ProjectID || '',
-            }));
+            console.log('📊 WEBHOOK DATA RECEIVED:', JSON.stringify(webhookData, null, 2));
+            console.log('🔍 All webhook keys:', Object.keys(webhookData));
+            console.log('🔍 vision value:', webhookData.vision);
+            console.log('🔍 team value:', webhookData.team);
+            console.log('🔍 BusinessModel value:', webhookData.BusinessModel);
 
-            console.log('✅ Retranscription received, projectID:', webhookData.ProjectID);
+            setData((prev) => {
+              const updatedData = {
+                ...prev,
+                descriptionSynthetique: webhookData.DescriptionSynthetique || '',
+                produitServiceRetranscription: webhookData['Produit/Service'] || '',
+                propositionValeur: webhookData.PropositionValeur || '',
+                elementDistinctif: webhookData.ElementDistinctif || '',
+                clienteleCibleRetranscription: webhookData.ClienteleCible || '',
+                problemResoudreRetranscription: webhookData.ProblemResoudre || '',
+                vision3Ans: webhookData.vision || '',
+                businessModel: webhookData.BusinessModel || '',
+                competences: webhookData.Compétences || '',
+                monPourquoiRetranscription: webhookData.MotivationEntrepreneur || '',
+                equipeFondatrice: webhookData.team || '',
+                projectID: webhookData.ProjectID || '',
+              };
+
+              console.log('✅ UPDATED DATA - vision3Ans:', updatedData.vision3Ans);
+              console.log('✅ UPDATED DATA - equipeFondatrice:', updatedData.equipeFondatrice);
+              console.log('✅ UPDATED DATA - businessModel:', updatedData.businessModel);
+
+              return updatedData;
+            });
           }
         } else {
           throw new Error(`Webhook responded with status ${response.status}`);
@@ -407,10 +419,10 @@ const CreateProjectFlow = () => {
       <div className="w-full max-w-4xl mx-auto mt-8 md:mt-12 space-y-8">
         {/* Navigation buttons */}
         <div className="md:flex md:items-center md:justify-center md:gap-4">
-          {/* MOBILE: Circle button on right with back button */}
-          <div className="md:hidden fixed bottom-8 left-0 right-0 z-50 px-6">
+          {/* MOBILE: Circle button on right with back button - aligned with burger menu */}
+          <div className="md:hidden fixed bottom-6 right-6 z-50 pointer-events-none">
             <motion.div
-              className="flex items-center justify-end gap-2"
+              className="flex items-center gap-2 pointer-events-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
@@ -436,8 +448,8 @@ const CreateProjectFlow = () => {
                 className="relative"
                 whileTap={{ scale: 0.92 }}
               >
-                {/* Mobile: Circle button with progressive fill */}
-                <span className="flex items-center justify-center w-16 h-16 rounded-full shadow-xl transition-all duration-200 disabled:opacity-50 relative overflow-hidden">
+                {/* Mobile: Circle button with progressive fill - Same size as burger menu (w-14 h-14) */}
+                <span className="flex items-center justify-center w-14 h-14 rounded-full shadow-xl transition-all duration-200 disabled:opacity-50 relative overflow-hidden">
                   {/* Gray background */}
                   <span className="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-full" />
 
@@ -485,9 +497,9 @@ const CreateProjectFlow = () => {
 
                   {/* Arrow icon */}
                   {currentStep === totalSteps - 1 ? (
-                    <CheckCircle className="w-8 h-8 relative z-10 text-white drop-shadow-sm" strokeWidth={2.5} />
+                    <CheckCircle className="w-7 h-7 relative z-10 text-white drop-shadow-sm" strokeWidth={2.5} />
                   ) : (
-                    <ChevronRight className="w-8 h-8 relative z-10 text-white drop-shadow-sm" strokeWidth={2.5} />
+                    <ChevronRight className="w-7 h-7 relative z-10 text-white drop-shadow-sm" strokeWidth={2.5} />
                   )}
                 </span>
               </motion.button>

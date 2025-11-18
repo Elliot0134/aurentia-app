@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/elliotestrade/Desktop/**)",
+      "Bash(npm run build:*)",
+      "Bash(cd /Users/elliotestrade/Desktop/Documents/03.\\ ESST-SOLUTIONS/Coding/aurentia-app-feature-chatbot && npm install:*)",
+      "Bash(cd /Users/elliotestrade/Desktop/Documents/03.\\ ESST-SOLUTIONS/Coding/aurentia-app-feature-chatbot && npm run build:dev:*)",
+      "Bash(npm run build:dev:*)",
+      "SlashCommand(/ui-polish je veux que tout soit design et élégant avec une animation de chargement progressive élément par élément avec effet de flou)",
+      "Bash(rm:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev)",
+      "mcp__ide__getDiagnostics",
+      "Bash(cd:*)",
+      "Bash(npm run lint)",
+      "Bash(for file in src/components/deliverables/{MiniSwotLivrable,PitchLivrable,MaSuccessStoryLivrable}.tsx)",
+      "Bash(do head -10 \"$file\")",
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(npx eslint:*)",
+      "Bash(awk:*)",
+      "Bash(cat:*)",
+      "Bash(timeout 15 npm run dev)",
+      "Bash(node -e \"try { require(''''/Users/elliotestrade/Desktop/Documents/03. ESST-SOLUTIONS/Coding/aurentia-app-feature-chatbot/src/App.tsx''''); } catch(e) { console.log(''''Syntax error:'''', e.message); }\")",
+      "Bash(psql:*)",
+      "Bash(node -e \"console.log(JSON.parse(require(''fs'').readFileSync(''.mcp.json'', ''utf8'')).mcpServers ? ''Valid JSON - MCP servers configured'' : ''Invalid'')\")",
+      "Read(//Users/elliotestrade/Library/**)",
+      "mcp__supabase__list_tables",
+      "Bash(node:*)",
+      "Bash(curl -s \"https://llcliurrrrxnkquwmwsi.supabase.co/rest/v1/beta?select=*&limit=1\" )",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "Bash(pnpm install)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enabledMcpjsonServers": [
+    "sequential-thinking",
+    "context-7",
+    "supabase",
+    "browser",
+    "terminal",
+    "lint",
+    "formatter"
+  ]
+}
