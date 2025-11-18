@@ -641,7 +641,31 @@ const ProjectScoreCards: React.FC<ProjectScoreCardsProps> = ({ className }) => {
   };
 
   if (loading) {
-    return <div>Chargement des scores...</div>;
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Skeleton pour la carte principale */}
+        <div className="card-static skeleton" style={{ minHeight: '240px' }}>
+          <div className="flex flex-col h-full items-center justify-center text-center">
+            <div className="skeleton h-16 w-24 mb-4 rounded-lg"></div>
+            <div className="skeleton h-5 w-48 mb-4 rounded"></div>
+            <div className="skeleton h-4 w-full lg:w-[85%] mx-auto rounded"></div>
+          </div>
+        </div>
+
+        {/* Grid 2x2 pour les skeletons secondaires */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card-static skeleton" style={{ minHeight: '120px' }}>
+              <div className="flex flex-col justify-center h-full">
+                <div className="skeleton h-8 w-16 mb-2 rounded"></div>
+                <div className="skeleton h-4 w-32 mb-1 rounded"></div>
+                <div className="skeleton h-3 w-24 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (!scoreData) {

@@ -226,6 +226,11 @@ const PropositionDeValeurLivrable: React.FC = () => {
     </>
   );
 
+  // Afficher le skeleton pendant le chargement global ou local
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
+
   return (
     <>
       {/* Utilisation de la carte harmonisée */}

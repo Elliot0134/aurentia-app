@@ -666,6 +666,11 @@ const AnalyseDeMarcheLivrable: React.FC<AnalyseDeMarcheLivrableProps> = ({ proje
     </>
   );
 
+  // Afficher le skeleton pendant le chargement global ou local
+  if (isGlobalLoading || loading) {
+    return <DeliverableCardSkeleton />;
+  }
+
   return (
     <>
       {/* Utilisation de la carte harmonisée */}
