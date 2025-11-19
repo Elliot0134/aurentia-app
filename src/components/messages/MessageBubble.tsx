@@ -112,7 +112,7 @@ export const MessageBubble = ({
     // Auto-linkify URLs
     const linkifiedContent = message.content.replace(
       /(https?:\/\/[^\s]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">$1</a>'
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>'
     );
 
     return (
@@ -141,18 +141,25 @@ export const MessageBubble = ({
         isOwnMessage && "flex-row-reverse"
       )}
     >
-      {/* Avatar - only show in group conversations or for non-own messages */}
-      {(isGroupConversation || !isOwnMessage) && showSenderInfo && (
-        <Avatar className="h-8 w-8">
-          <AvatarImage
-            src={
-              message.sender_type === "organization"
-                ? message.organization_sender?.logo_url || undefined
-                : message.sender?.avatar_url || undefined
-            }
-          />
-          <AvatarFallback>{getSenderInitials()}</AvatarFallback>
-        </Avatar>
+      {/* Avatar - show in group conversations or for non-own messages */}
+      {(isGroupConversation || !isOwnMessage) && (
+        <>
+          {showSenderInfo ? (
+            <Avatar className="h-8 w-8 flex-shrink-0">
+              <AvatarImage
+                src={
+                  message.sender_type === "organization"
+                    ? message.organization_sender?.logo_url || undefined
+                    : message.sender?.avatar_url || undefined
+                }
+              />
+              <AvatarFallback>{getSenderInitials()}</AvatarFallback>
+            </Avatar>
+          ) : (
+            // Spacer to maintain alignment for consecutive messages
+            <div className="h-8 w-8 flex-shrink-0" />
+          )}
+        </>
       )}
 
       <div
@@ -179,7 +186,7 @@ export const MessageBubble = ({
             isOwnMessage
               ? "bg-primary text-primary-foreground"
               : isOrgMessage
-              ? "bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100"
+              ? "bg-accent text-accent-foreground"
               : "bg-muted"
           )}
         >

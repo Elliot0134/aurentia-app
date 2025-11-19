@@ -1,4 +1,4 @@
-export type CollaboratorRole = 'admin' | 'editor' | 'viewer';
+export type CollaboratorRole = 'owner' | 'admin' | 'editor' | 'viewer';
 export type CollaboratorStatus = 'active' | 'inactive' | 'suspended';
 export type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
 
@@ -84,6 +84,14 @@ export const getPermissions = (role: CollaboratorRole): CollaboratorPermissions 
         canManageCollaborators: true,
         canChangeSettings: true
       };
+    case 'owner':
+      return {
+        canRead: true,
+        canWrite: true,
+        canDelete: true,
+        canManageCollaborators: true,
+        canChangeSettings: true
+      };
     default:
       return {
         canRead: false,
@@ -103,6 +111,8 @@ export const getRoleLabel = (role: CollaboratorRole): string => {
       return 'Éditeur';
     case 'admin':
       return 'Administrateur';
+    case 'owner':
+      return 'Propriétaire';
     default:
       return 'Inconnu';
   }

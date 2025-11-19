@@ -232,7 +232,7 @@ export const NewConversationDialog = ({
 
         onConversationCreated?.(conversation.id);
         handleClose();
-      } else if (conversationType === "group" && emails.length >= 1 && groupName.trim()) {
+      } else if (conversationType === "group" && emails.length >= 1) {
         // Look up all users by email
         const userPromises = emails.map(email => validateUserByEmail(email));
         const users = await Promise.all(userPromises);
@@ -257,15 +257,92 @@ export const NewConversationDialog = ({
           });
         }
 
-        const conversation = await groupMutation.mutateAsync({
-          group_name: groupName.trim(),
-          group_description: groupDescription.trim() || undefined,
-          participant_user_ids: validUsers.map(u => u.id),
-          organization_id: organizationId,
-        });
+        // If only 1 user, create a direct message instead of a group
+        if (validUsers.length === 1) {
+          const user = validUsers[0];
 
-        onConversationCreated?.(conversation.id);
-        handleClose();
+          // Check for existing direct conversation with this user
+          const { data: existingConversation } = await supabase
+            .from("conversation_participants")
+            .select("conversation_id, conversations!inner(*)")
+            .eq("user_id", userProfile!.id)
+            .is("left_at", null);
+
+          if (existingConversation) {
+            for (const participation of existingConversation) {
+              const conv = (participation as any).conversations;
+
+              // Skip if wrong type or group
+              if (conv.is_group) continue;
+              if (organizationId && conv.organization_id !== organizationId) continue;
+              if (!organizationId && conv.organization_id) continue;
+
+              // Check if other participant is the target user
+              const { data: participants } = await supabase
+                .from("conversation_participants")
+                .select("user_id")
+                .eq("conversation_id", participation.conversation_id)
+                .is("left_at", null);
+
+              if (
+                participants &&
+                participants.length === 2 &&
+                participants.some((p) => p.user_id === user.id)
+              ) {
+                // Found existing conversation!
+                toast({
+                  title: "Message direct créé",
+                  description: "Une seule personne ajoutée, création d'un message direct",
+                });
+                onConversationCreated?.(participation.conversation_id);
+                handleClose();
+                setIsCreating(false);
+                return;
+              }
+            }
+          }
+
+          // Create new direct conversation
+          let conversation;
+          if (organizationId) {
+            conversation = await createConversationMutation.mutateAsync({
+              type: "organization",
+              is_group: false,
+              organization_id: organizationId,
+              participant_user_ids: [user.id],
+            });
+          } else {
+            conversation = await directMutation.mutateAsync(user.id);
+          }
+
+          toast({
+            title: "Message direct créé",
+            description: "Une seule personne ajoutée, création d'un message direct",
+          });
+          onConversationCreated?.(conversation.id);
+          handleClose();
+        } else {
+          // Create group with 2+ users
+          if (!groupName.trim()) {
+            toast({
+              title: "Nom de groupe requis",
+              description: "Veuillez entrer un nom pour le groupe",
+              variant: "destructive",
+            });
+            setIsCreating(false);
+            return;
+          }
+
+          const conversation = await groupMutation.mutateAsync({
+            group_name: groupName.trim(),
+            group_description: groupDescription.trim() || undefined,
+            participant_user_ids: validUsers.map(u => u.id),
+            organization_id: organizationId,
+          });
+
+          onConversationCreated?.(conversation.id);
+          handleClose();
+        }
       }
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -312,7 +389,7 @@ export const NewConversationDialog = ({
 
   const canCreate = conversationType === "direct"
     ? (emails.length === 1 || (emailInput.trim() && isValidEmail(emailInput.trim().toLowerCase())))
-    : emails.length >= 1 && groupName.trim().length > 0;
+    : emails.length >= 2 && groupName.trim().length > 0;
 
   const isLoading = isCreating || directMutation.isLoading || createConversationMutation.isLoading || groupMutation.isLoading;
 
@@ -391,13 +468,19 @@ export const NewConversationDialog = ({
         {emails.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4 p-3 bg-muted/50 rounded-md">
             {emails.map((email) => (
-              <Badge key={email} variant="secondary" className="pl-3 pr-1">
+              <Badge
+                key={email}
+                className={organizationId
+                  ? "pl-3 pr-1 btn-white-label !bg-[var(--color-primary)] text-white hover:!bg-[var(--color-primary)] hover:!opacity-90"
+                  : "pl-3 pr-1 bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white border-0"
+                }
+              >
                 <Mail className="h-3 w-3 mr-1" />
                 {email}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-4 w-4 ml-1 hover:bg-transparent"
+                  className="h-4 w-4 ml-1 hover:bg-white/20 text-white"
                   onClick={() => handleRemoveEmail(email)}
                 >
                   <X className="h-3 w-3" />

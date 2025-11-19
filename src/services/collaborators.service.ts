@@ -8,50 +8,65 @@ export class CollaboratorsService {
     const { data, error } = await supabase
       .from('project_collaborators')
       .select('*')
-          .eq('project_id', projectId)
-          .order('joined_at', { ascending: false });
+      .eq('project_id', projectId)
+      .order('joined_at', { ascending: false });
 
-        if (error) throw error;
-        if (!data) return [];
+    if (error) throw error;
+    if (!data) return [];
 
-        // Enrichir les données avec les informations des utilisateurs et projets
-        const collaborators = await Promise.all(
-          data.map(async (collab) => {
-            // Récupérer les informations de l'utilisateur
-            const { data: user } = await supabase
-              .from('profiles')
-              .select('id, email')
-              .eq('id', collab.user_id)
-              .single();
+    // Collect all unique user IDs for batch fetching
+    const userIds = [...new Set(data.map(collab => collab.user_id))];
 
-            // Récupérer les informations du projet
-            const { data: project } = await supabase
-              .from('project_summary')
-              .select('project_id, nom_projet, description_synthetique')
-              .eq('project_id', collab.project_id)
-              .single();
+    // Fetch all user profiles in a single query (OPTIMIZATION: eliminates N+1 query pattern)
+    const profilesMap = new Map<string, any>();
+    if (userIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', userIds);
 
-            // Les informations de la personne qui a invité sont stockées dans project_invitations
-            // Pour les collaborateurs existants, nous n'avons pas cette information directement
-            const inviter = null;
+      if (profilesError) {
+        console.error('Erreur lors de la récupération des profils utilisateurs:', profilesError);
+      } else if (profiles) {
+        profiles.forEach(profile => profilesMap.set(profile.id, profile));
+      }
+    }
 
-            return {
-              id: collab.id,
-              project_id: collab.project_id,
-              user_id: collab.user_id,
-              role: collab.role as CollaboratorRole,
-              status: collab.status as CollaboratorStatus,
-              permissions: (collab as any).permissions || null,
-              joined_at: (collab as any).joined_at || new Date().toISOString(),
-              updated_at: (collab as any).updated_at || new Date().toISOString(),
-              user: user || undefined,
-              project: project || undefined,
-              inviter: inviter || undefined
-            } as Collaborator;
-          })
-        );
+    // Fetch project information once (all collaborators are from the same project)
+    const { data: project, error: projectError } = await supabase
+      .from('project_summary')
+      .select('project_id, nom_projet, description_synthetique')
+      .eq('project_id', projectId)
+      .single();
 
-        return collaborators;
+    if (projectError) {
+      console.error('Erreur lors de la récupération des informations du projet:', projectError);
+    }
+
+    // Build collaborators array with fetched data
+    const collaborators = data.map((collab) => {
+      const user = profilesMap.get(collab.user_id);
+
+      if (!user) {
+        console.warn(`Profil utilisateur non trouvé pour l'ID ${collab.user_id}`);
+      }
+
+      return {
+        id: collab.id,
+        project_id: collab.project_id,
+        user_id: collab.user_id,
+        role: collab.role as CollaboratorRole,
+        status: collab.status as CollaboratorStatus,
+        permissions: (collab as any).permissions || null,
+        joined_at: (collab as any).joined_at || new Date().toISOString(),
+        updated_at: (collab as any).updated_at || new Date().toISOString(),
+        user: user || undefined,
+        project: project || undefined,
+        inviter: null
+      } as Collaborator;
+    });
+
+    return collaborators;
   }
 
   // Récupérer tous les collaborateurs de l'utilisateur connecté
@@ -66,6 +81,7 @@ export class CollaboratorsService {
       console.log('Récupération des projets pour l\'utilisateur:', user.id);
 
       const allCollaboratorsData: Collaborator[] = [];
+      const userIdsToFetch = new Set<string>();
 
       // 1. Récupérer les projets dont l'utilisateur est propriétaire
       const { data: ownedProjects, error: ownedError } = await supabase
@@ -79,41 +95,20 @@ export class CollaboratorsService {
       }
 
       // Pour les projets possédés : récupérer les collaborateurs (les autres utilisateurs)
+      let ownedProjectsCollaborators: any[] = [];
       if (ownedProjects && ownedProjects.length > 0) {
-        const { data: ownedProjectsCollaborators } = await supabase
+        const { data, error: collabFetchError } = await supabase
           .from('project_collaborators')
           .select('*')
           .in('project_id', ownedProjects.map(p => p.project_id))
           .order('joined_at', { ascending: false });
 
-        if (ownedProjectsCollaborators) {
-          for (const collab of ownedProjectsCollaborators) {
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('id, email')
-              .eq('id', collab.user_id)
-              .single();
-
-            const project = ownedProjects.find(p => p.project_id === collab.project_id);
-
-            allCollaboratorsData.push({
-              id: collab.id,
-              project_id: collab.project_id,
-              user_id: collab.user_id,
-              role: collab.role as CollaboratorRole,
-              status: collab.status as CollaboratorStatus,
-              permissions: (collab as any).permissions || null,
-              joined_at: (collab as any).joined_at || new Date().toISOString(),
-              updated_at: (collab as any).updated_at || new Date().toISOString(),
-              user: userProfile || undefined,
-              project: project ? {
-                project_id: project.project_id,
-                nom_projet: project.nom_projet,
-                description_synthetique: ''
-              } : undefined,
-              inviter: null
-            } as Collaborator);
-          }
+        if (collabFetchError) {
+          console.error('Erreur lors de la récupération des collaborateurs:', collabFetchError);
+        } else if (data) {
+          ownedProjectsCollaborators = data;
+          // Collect user IDs for batch fetching
+          data.forEach(collab => userIdsToFetch.add(collab.user_id));
         }
       }
 
@@ -135,75 +130,135 @@ export class CollaboratorsService {
         console.error('Erreur lors de la récupération des projets collaboratifs:', collabError);
       }
 
-      // Pour les projets où l'utilisateur est collaborateur : afficher le propriétaire + autres collaborateurs (pas soi-même)
+      // Collect owner IDs and other collaborator data
+      let collabProjectsData: Array<{ projectData: any; otherCollaborators: any[] }> = [];
       if (collabProjects && collabProjects.length > 0) {
         for (const collabProject of collabProjects) {
           const projectData = collabProject.project_summary as any;
           const projectId = projectData.project_id;
           const ownerId = projectData.user_id;
 
-          // Récupérer le propriétaire du projet
-          const { data: ownerProfile } = await supabase
-            .from('profiles')
-            .select('id, email')
-            .eq('id', ownerId)
-            .single();
-
-          // Ajouter le propriétaire comme "collaborateur" (pour la vue de l'utilisateur invité)
-          if (ownerProfile) {
-            allCollaboratorsData.push({
-              id: `owner-${projectId}`,
-              project_id: projectId,
-              user_id: ownerId,
-              role: 'admin' as CollaboratorRole, // Le propriétaire a tous les droits
-              status: 'active' as CollaboratorStatus,
-              permissions: null,
-              joined_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              user: ownerProfile,
-              project: {
-                project_id: projectData.project_id,
-                nom_projet: projectData.nom_projet,
-                description_synthetique: ''
-              },
-              inviter: null
-            } as Collaborator);
-          }
+          // Collect owner ID for batch fetching
+          userIdsToFetch.add(ownerId);
 
           // Récupérer les autres collaborateurs (pas soi-même)
-          const { data: otherCollaborators } = await supabase
+          const { data: otherCollaborators, error: otherCollabError } = await supabase
             .from('project_collaborators')
             .select('*')
             .eq('project_id', projectId)
             .neq('user_id', user.id); // Exclure l'utilisateur actuel
 
-          if (otherCollaborators) {
-            for (const collab of otherCollaborators) {
-              const { data: userProfile } = await supabase
-                .from('profiles')
-                .select('id, email')
-                .eq('id', collab.user_id)
-                .single();
-
-              allCollaboratorsData.push({
-                id: collab.id,
-                project_id: collab.project_id,
-                user_id: collab.user_id,
-                role: collab.role as CollaboratorRole,
-                status: collab.status as CollaboratorStatus,
-                permissions: (collab as any).permissions || null,
-                joined_at: (collab as any).joined_at || new Date().toISOString(),
-                updated_at: (collab as any).updated_at || new Date().toISOString(),
-                user: userProfile || undefined,
-                project: {
-                  project_id: projectData.project_id,
-                  nom_projet: projectData.nom_projet,
-                  description_synthetique: ''
-                },
-                inviter: null
-              } as Collaborator);
-            }
+          if (otherCollabError) {
+            console.error(`Erreur lors de la récupération des autres collaborateurs pour le projet ${projectId}:`, otherCollabError);
+          } else if (otherCollaborators) {
+            // Collect user IDs for batch fetching
+            otherCollaborators.forEach(collab => userIdsToFetch.add(collab.user_id));
+            collabProjectsData.push({ projectData, otherCollaborators });
           }
+        }
+      }
+
+      // 3. Fetch ALL user profiles in a single query (OPTIMIZATION: eliminates N+1 query pattern)
+      const profilesMap = new Map<string, any>();
+      if (userIdsToFetch.size > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', Array.from(userIdsToFetch));
+
+        if (profilesError) {
+          console.error('Erreur lors de la récupération des profils utilisateurs:', profilesError);
+        } else if (profiles) {
+          profiles.forEach(profile => profilesMap.set(profile.id, profile));
+        }
+      }
+
+      // 4. Build collaborators data for owned projects
+      if (ownedProjectsCollaborators.length > 0) {
+        for (const collab of ownedProjectsCollaborators) {
+          const userProfile = profilesMap.get(collab.user_id);
+          const project = ownedProjects?.find(p => p.project_id === collab.project_id);
+
+          if (!userProfile) {
+            console.warn(`Profil utilisateur non trouvé pour l'ID ${collab.user_id}`);
+          }
+
+          allCollaboratorsData.push({
+            id: collab.id,
+            project_id: collab.project_id,
+            user_id: collab.user_id,
+            role: collab.role as CollaboratorRole,
+            status: collab.status as CollaboratorStatus,
+            permissions: (collab as any).permissions || null,
+            joined_at: (collab as any).joined_at || new Date().toISOString(),
+            updated_at: (collab as any).updated_at || new Date().toISOString(),
+            user: userProfile || undefined,
+            project: project ? {
+              project_id: project.project_id,
+              nom_projet: project.nom_projet,
+              description_synthetique: ''
+            } : undefined,
+            inviter: null
+          } as Collaborator);
+        }
+      }
+
+      // 5. Build collaborators data for collaborative projects
+      for (const { projectData, otherCollaborators } of collabProjectsData) {
+        const projectId = projectData.project_id;
+        const ownerId = projectData.user_id;
+        const ownerProfile = profilesMap.get(ownerId);
+
+        if (!ownerProfile) {
+          console.warn(`Profil propriétaire non trouvé pour l'ID ${ownerId}`);
+        }
+
+        // Ajouter le propriétaire comme "collaborateur" (pour la vue de l'utilisateur invité)
+        if (ownerProfile) {
+          allCollaboratorsData.push({
+            id: `owner-${projectId}`,
+            project_id: projectId,
+            user_id: ownerId,
+            role: 'admin' as CollaboratorRole, // Le propriétaire a tous les droits
+            status: 'active' as CollaboratorStatus,
+            permissions: null,
+            joined_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            user: ownerProfile,
+            project: {
+              project_id: projectData.project_id,
+              nom_projet: projectData.nom_projet,
+              description_synthetique: ''
+            },
+            inviter: null
+          } as Collaborator);
+        }
+
+        // Add other collaborators
+        for (const collab of otherCollaborators) {
+          const userProfile = profilesMap.get(collab.user_id);
+
+          if (!userProfile) {
+            console.warn(`Profil utilisateur non trouvé pour l'ID ${collab.user_id}`);
+          }
+
+          allCollaboratorsData.push({
+            id: collab.id,
+            project_id: collab.project_id,
+            user_id: collab.user_id,
+            role: collab.role as CollaboratorRole,
+            status: collab.status as CollaboratorStatus,
+            permissions: (collab as any).permissions || null,
+            joined_at: (collab as any).joined_at || new Date().toISOString(),
+            updated_at: (collab as any).updated_at || new Date().toISOString(),
+            user: userProfile || undefined,
+            project: {
+              project_id: projectData.project_id,
+              nom_projet: projectData.nom_projet,
+              description_synthetique: ''
+            },
+            inviter: null
+          } as Collaborator);
         }
       }
 
@@ -933,7 +988,7 @@ export class CollaboratorsService {
       .select('role, status')
       .eq('project_id', projectId)
       .eq('user_id', userId)
-      .eq('status', 'accepted')
+      .eq('status', 'active')
       .single();
 
     if (collaboratorError || !collaborator) {
@@ -970,18 +1025,26 @@ export class CollaboratorsService {
   // Méthode privée pour enrichir les données d'un collaborateur
   private static async enrichCollaboratorData(collab: any): Promise<Collaborator> {
     // Récupérer les informations de l'utilisateur
-    const { data: user } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('profiles')
       .select('id, email')
       .eq('id', collab.user_id)
       .single();
 
+    if (userError) {
+      console.error(`Erreur lors de la récupération du profil utilisateur ${collab.user_id}:`, userError);
+    }
+
     // Récupérer les informations du projet
-    const { data: project } = await supabase
+    const { data: project, error: projectError } = await supabase
       .from('project_summary')
       .select('project_id, nom_projet, description_synthetique')
       .eq('project_id', collab.project_id)
       .single();
+
+    if (projectError) {
+      console.error(`Erreur lors de la récupération du projet ${collab.project_id}:`, projectError);
+    }
 
     // Les informations de la personne qui a invité sont stockées dans project_invitations
     // Pour les collaborateurs existants, nous n'avons pas cette information directement

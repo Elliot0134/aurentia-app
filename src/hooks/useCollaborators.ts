@@ -273,16 +273,17 @@ export const useCollaborators = (projectId?: string) => {
   // Statistiques
   const stats = {
     total: collaborators.length,
-    active: collaborators.filter(c => c.status === 'accepted').length,
+    active: collaborators.filter(c => c.status === 'active').length,
     pending: invitations.length,
     suspended: collaborators.filter(c => c.status === 'suspended').length,
-    collaborativeProjects: projects.filter(p => 
-      collaborators.some(c => c.project?.project_id === p.id && c.status === 'accepted')
+    collaborativeProjects: projects.filter(p =>
+      collaborators.some(c => c.project?.project_id === p.id && c.status === 'active')
     ).length,
     byRole: {
-      read: collaborators.filter(c => c.role === 'read').length,
-      write: collaborators.filter(c => c.role === 'write').length,
+      viewer: collaborators.filter(c => c.role === 'viewer').length,
+      editor: collaborators.filter(c => c.role === 'editor').length,
       admin: collaborators.filter(c => c.role === 'admin').length,
+      owner: collaborators.filter(c => c.role === 'owner').length,
     }
   };
 

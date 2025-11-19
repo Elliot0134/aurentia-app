@@ -45,7 +45,7 @@ const OwnershipTransferDialog: React.FC<OwnershipTransferDialogProps> = ({
 
   // Filter out non-active collaborators
   const activeCollaborators = collaborators.filter(
-    collab => collab.status === 'active' || collab.status === 'accepted'
+    collab => collab.status === 'active'
   );
 
   const selectedCollaborator = activeCollaborators.find(
@@ -156,6 +156,7 @@ const OwnershipTransferDialog: React.FC<OwnershipTransferDialogProps> = ({
                                 collab.role === 'viewer' ? 'Lecteur' :
                                 collab.role === 'editor' ? 'Éditeur' :
                                 collab.role === 'admin' ? 'Administrateur' :
+                                collab.role === 'owner' ? 'Propriétaire' :
                                 collab.role
                               }
                             </span>

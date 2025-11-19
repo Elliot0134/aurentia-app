@@ -4,237 +4,214 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Aurentia is a multi-tenant platform built with Vite + React + TypeScript + Supabase + ShadCN UI + Tailwind. It supports multiple user roles (individual, member, staff, organisation, super_admin) with role-based navigation and features. The platform provides project management tools, AI-powered chatbots, deliverables tracking, organization management, and credit-based subscriptions.
+Aurentia is a multi-tenant SaaS platform: **Vite + React 18 + TypeScript + Supabase + Tailwind + ShadCN UI**. Supports 5 user roles (individual, member, staff, organisation, admin) with role-based routing. Features include project management, AI chatbots, deliverables tracking, messaging, knowledge bases, integrations, newsletters, and credit-based subscriptions.
 
 ## Common Commands
 
 ```bash
-# Development
-npm run dev              # Start dev server on port 8080
-
-# Build
+npm run dev              # Dev server on port 8080 (IPv6)
 npm run build            # Production build
 npm run build:dev        # Development build
-
-# Linting
-npm run lint             # Run ESLint
-
-# Preview
-npm run preview          # Preview production build
+npm run lint             # ESLint
+npm run preview          # Preview build
 ```
+
+## Design System Essentials
+
+**Philosophy**: Centralized CSS variables in `/src/styles/theme.css` and reusable component classes in `/src/styles/components.css`. Supports light/dark modes and white-label branding.
+
+### Key Colors
+```css
+Primary: #FF592C (--color-primary)
+Text: #2e333d (--text-primary)
+Background: #ffffff (--bg-page)
+Cards: #f4f4f5 (--bg-card-clickable), #ffffff (--bg-card-static)
+States: --color-success, --color-error, --color-warning, --color-info
+```
+
+### Typography
+```css
+--font-base: 'Inter', sans-serif           /* Body text, UI elements */
+--font-heading: 'BIZUD Mincho', serif      /* H1 ONLY (page titles) */
+```
+**Critical**: H1 uses BIZUD Mincho (page titles only), everything else uses Inter. Body text is 16px (prevents mobile zoom on input focus).
+
+### Essential Component Classes
+```css
+.btn-primary, .btn-secondary, .btn-danger, .btn-white-label
+.card-clickable, .card-static
+.input, .input-error, .checkbox, .checkbox-white-label
+.modal, .modal-overlay, .dropdown, .tabs, .badge
+.spinner, .skeleton, .loading-shimmer
+```
+
+### White-Label System
+Organizations can override Aurentia colors when:
+1. On `/organisation/*` routes
+2. `settings.branding.whiteLabel: true`
+3. Custom `primaryColor` and `secondaryColor` defined
+
+CSS variables injected: `--org-primary-color`, `--org-secondary-color` (automatically override `--color-primary`). Use `.btn-white-label`, `.checkbox-white-label` for org-branded components.
 
 ## Architecture
 
-### Authentication & User Management
+### Auth Flow (ProtectedRoute checks)
+1. Session validity (5s timeout)
+2. Email confirmation (`email_confirmed_at`)
+3. Beta access (`has_beta_access` flag)
+4. Redirects to `/verify-email` or `/beta-inscription` if needed
 
-- **Supabase Auth**: Singleton client at `/src/integrations/supabase/client.ts`
-- **Auth Flow**: Protected routes use `<ProtectedRoute>` which checks session and email verification status
-- **User Context**: `/src/contexts/UserContext.tsx` provides `userProfile`, `userRole`, `organizationId`, and `refetchProfile()`
-- **Email Verification**: Required for new users; redirects to `/verify-email` if not confirmed
+**Critical**: Singleton Supabase client at `/src/integrations/supabase/client.ts` prevents multiple GoTrueClient instances.
 
-### Multi-Tenant & Role System
+**Auth Events**: `SIGNED_IN`, `SIGNED_OUT`, `TOKEN_REFRESHED` handled. `INITIAL_SESSION` **ignored** to prevent loops.
 
-**User Roles** (defined in `/src/types/userTypes.ts`):
-- `individual`: Standalone users with their own projects
-- `member`: Entrepreneurs/clients within an organization
-- `staff`: Organization employees with admin privileges
-- `organisation`: Organization owners/main admins
-- `super_admin`: Platform administrators
+### Role System
+```typescript
+type UserRole = 'individual' | 'member' | 'staff' | 'organisation' | 'admin';
 
-**Role-Based Routing**:
-- Individual routes: `/individual/*`
-- Organization routes: `/organisation/:id/*` (protected by `<OrganisationRouteGuard>`)
-- Super admin routes: `/super-admin/*`
-- All protected routes wrapped in `<RoleBasedLayout>` which renders `<RoleBasedSidebar>`
-
-**Navigation**: `RoleBasedRedirect` component handles automatic redirects based on user role
-
-### Context Providers
-
-**Provider Hierarchy** (from `App.tsx`):
+// individual - Standalone users with projects
+// member - Entrepreneurs/clients in organization
+// staff - Organization employees (can also be mentors)
+// organisation - Organization owners
+// admin - Platform administrators
 ```
-QueryClientProvider
-└─ TooltipProvider
+
+### Context Hierarchy (CRITICAL - Non-obvious!)
+```
+ErrorBoundary
+└─ QueryClientProvider (5min stale, 10min gc, no refetch on focus)
    └─ BrowserRouter
-      └─ UserProvider (user profile, role, organization)
-         └─ ProjectProvider (projects, deliverables, credits)
-            └─ CreditsDialogProvider
-               └─ PendingInvitationsProvider
-                  └─ DeliverablesLoadingProvider (progressive loading state)
+      └─ UserProvider (profile, role, organizationId, refetchProfile)
+         └─ ProjectProvider (currentProjectId, userProjects, deliverableNames, userCredits)
+            └─ ChatStreamingProvider (real-time chat streaming)
+               └─ VoiceQuotaProvider (audio quota tracking)
+                  └─ CreditsDialogProvider
+                     └─ PendingInvitationsProvider
+                        └─ DeliverablesLoadingProvider (progressive loading state)
 ```
 
-**DeliverablesLoadingContext** (`/src/contexts/DeliverablesLoadingContext.tsx`):
-- Manages progressive loading state for deliverable cards
-- `registerDeliverable(id)`: Register a deliverable that needs to load
-- `setDeliverableLoaded(id)`: Mark a deliverable as loaded
-- `isGlobalLoading`: Boolean indicating if any deliverables are still loading
-- Used for element-by-element progressive loading animations with blur effects
+**UserContext** features:
+- Fetches `profiles` + joins `user_organizations` + `organizations`
+- Concurrent fetch prevention via `fetchInProgressRef`
+- 3s timeout protection
+- Handles auth events (ignores `INITIAL_SESSION`)
 
-**ProjectContext** (`/src/contexts/ProjectContext.tsx`):
-- Manages `currentProjectId` (persisted to localStorage)
-- Provides `userProjects`, `deliverableNames`, `userCredits`
-- Methods: `loadUserProjects()`, `deleteProject()`, `loadUserCredits()`
+**ProjectContext** features:
+- `currentProjectId` persisted to localStorage
+- Loads owned + collaborated projects
+- Auto-selects first project if none selected
+- Validates `currentProjectId` when projects change
+- n8n webhook for RAG deletion on project delete
 
-### Data Layer
+### Route Guards
+```tsx
+<ProtectedRoute>            // Session + email + beta
+<OrganisationRouteGuard>    // Org membership (supports requireOwner prop)
+<RestrictedRouteGuard>      // Beta/restricted features
+<EmailConfirmationGuard>    // Email verification
+<ProjectRequiredGuard>      // Ensures project selected
+<RootRedirect>              // OAuth callback + role-based routing
+```
 
-**Supabase Client**: Always import from `@/integrations/supabase/client` (singleton pattern)
+## Database Patterns
 
-**React Query**: Configured with 5min staleTime, 10min gcTime, no window refocus
+### RLS (Row Level Security)
+All tables have RLS enabled. **Error handling**:
+- `403` = Permission denied (user lacks access)
+- `404` = Wrong table/missing data (or RLS blocked)
 
-**Common Patterns**:
-- Services in `/src/services/` (e.g., `organisationService.ts`, `stripeService.ts`)
-- Custom hooks in `/src/hooks/` (e.g., `useUserRole`, `useOrganisationData`)
-- Types in `/src/types/` (e.g., `userTypes.ts`, `organisationTypes.ts`)
+### Core Table Groups
+**Auth & Users**: `profiles`, `beta_users`, `email_confirmations`, `email_confirmation_logs`, `user_activity_log`
 
-### UI Components & Design System
+**Organizations**: `organizations`, `user_organizations`, `staff`, `mentors`, `mentor_assignments`, `partners`, `invitation_codes`
 
-**Component Library**: ShadCN UI components in `/src/components/ui/`
+**Projects**: `project_summary`, `project_collaborators`, `project_invitations`, `deliverables`, 13+ individual deliverable tables (persona_express_b2c, pitch, marche, etc.)
 
-**Aurentia Design System**: Centralized design tokens and components
-- **Theme Variables**: `/src/styles/theme.css` defines all design tokens (colors, typography, spacing, animations)
-- **Component Utilities**: `/src/styles/components.css` provides reusable component classes with `@apply` directives
-- **Import Order**: Both files imported in `/src/index.css` and applied via `@layer` directives
+**Messaging** (20251019000000): `conversations`, `conversation_participants`, `conversation_messages`, `resource_shares`
 
-**Design Token Usage**:
-- Colors: Use CSS variables like `var(--text-primary)`, `var(--bg-card-clickable)`, `var(--btn-primary-bg)`
-- Typography: H1 uses 'BIZUD Mincho' serif font (page titles only), all other text uses 'Inter' sans-serif
-- Spacing: Use `var(--spacing-4)`, `var(--spacing-8)`, etc.
-- Border Radius: Use `var(--radius-md)`, `var(--radius-lg)`, etc.
-- Transitions: Use `var(--transition-base)` with `var(--ease-default)`
+**Knowledge Base** (20251020000000): `project_knowledge_base` (50MB/file), `organization_knowledge_base` (100MB/file), `knowledge_base_storage_usage`
 
-**Component Classes** (from `components.css`):
-- Cards: `.card-clickable`, `.card-static`, `.deliverable-card`, `.project-card`
-- Buttons: `.btn-primary`, `.btn-secondary`, `.btn-tertiary`, `.btn-danger`, `.btn-loading`
-- Forms: `.input`, `.input-error`, `.input-label`
-- Loading: `.spinner`, `.skeleton`, `.spinner-container`
-- Modals: `.modal`, `.modal-overlay`, `.modal-close`
-- Chat: `.chat-bubble-user`, `.chat-bubble-ai`, `.chat-input`
+**Integrations** (20251021000000): `integrations`, `integration_webhooks`, `integration_api_keys`, `integration_logs` (30-day retention)
 
-**Styling Best Practices**:
-- Prefer design system classes over custom Tailwind when available
-- Use `cn()` helper from `/src/lib/utils` for conditional classes
-- Mobile-first responsive design with breakpoints
-- Path alias: `@/` maps to `/src/`
+**Events**: `events`, `organizations.event_type_colors` (JSONB)
 
-**Key UI Patterns**:
-- Toast notifications: `import { toast } from '@/components/ui/use-toast'`
-- Loading states: `<LoadingSpinner message="..." fullScreen />` or use skeleton classes
-- Empty states and error handling required in all data-fetching components
-- Progressive loading animations: `fadeInUp`, `fadeInBlur` keyframes available
+**Stripe**: `payment_intents`, `subscription_intents`, `stripe_customers`, `stripe_subscriptions`, `stripe_webhook_events`
 
-### Deliverables System
+### Common Patterns
+- `created_at`, `updated_at` timestamps
+- Soft delete with `deleted_at`
+- Auto-cleanup triggers
+- JSONB for settings (`organizations.settings`, `organizations.event_type_colors`)
+- UUID primary keys
+- CASCADE deletes on foreign keys
 
-**Deliverable Types** (configured in ProjectContext):
-- Cible B2C (`persona_express_b2c`)
-- Cible B2B (`persona_express_b2b`)
-- Cible Organismes (`persona_express_organismes`)
-- Pitch (`pitch`)
-- Concurrence (`concurrence`)
-- Marché (`marche`)
-- Proposition de valeur (`proposition_valeur`)
-- Business Model (`business_model`)
-- Analyse des ressources (`ressources_requises`)
-- Vision/Mission (`vision_mission`)
+### Storage Buckets
+```
+knowledge-base-files        # Individual KBs (50MB/file)
+org-knowledge-base-files    # Organization KBs (100MB/file)
+resource-files              # Platform resources
+avatars                     # User avatars
+audio-storage               # Audio files
+```
 
-Each deliverable has a dedicated Supabase table linked to `project_id` and `user_id`.
+## Key Development Patterns
 
-### Credits & Subscription System
+### Concurrent Fetch Prevention
+```typescript
+const fetchInProgressRef = useRef(false);
 
-- Credit tracking via `useCreditsSimple` hook
-- Stripe integration services: `stripeService.ts`, `aurentiaStripeService.ts`
-- Credit dialog context for purchase flows
-- User subscription status in profile
+if (fetchInProgressRef.current) return;
+fetchInProgressRef.current = true;
+try {
+  // fetch logic
+} finally {
+  fetchInProgressRef.current = false;
+}
+```
 
-## Development Guidelines
+### Mounted Ref Pattern
+```typescript
+const mountedRef = useRef(true);
 
-### Code Style
+useEffect(() => {
+  return () => { mountedRef.current = false; };
+}, []);
 
-- **TypeScript**: Strict types (note: `noImplicitAny: false` in tsconfig but prefer explicit types)
-- **Imports**: Always use `@/` alias for imports
-- **Components**: PascalCase `.tsx` files
-- **Hooks**: `use{FeatureName}.tsx` naming convention
-- **Services**: Lowercase with `.ts` extension
+// In async functions:
+if (!mountedRef.current) return;
+```
 
-### Supabase Patterns
-
-- Use `.select().eq()` query builders, not raw SQL
+### Supabase Best Practices
+- Always import from `@/integrations/supabase/client` (singleton)
+- Use `.select().eq()` query builders (not raw SQL except in migrations)
 - Apply RLS policies in migrations
-- Handle RLS errors (403 = permission issue, 404 = wrong table/missing data)
-- Wrap async Supabase calls in try/catch with user-friendly toast messages
+- Wrap async calls in try/catch with toast notifications
+- Handle RLS errors: 403 = permission issue, 404 = wrong table/missing data
 
 ### Error Handling
-
 - Always provide loading, error, and empty states
-- Use toast notifications for user feedback
-- Log errors to console with descriptive context
-- Avoid exposing sensitive error details to users
+- Use `import { toast } from '@/components/ui/use-toast'` for user feedback
+- Log errors to console with context
+- Never expose sensitive error details to users
 
-### Component Patterns
-
-- Prefer ShadCN primitives over custom Tailwind components
-- Mobile-first responsive design
-- Use React Query for data fetching (`useQuery`, `useMutation`)
-- Avoid `any` and `// @ts-ignore`
-
-## Organization Features
-
-**Organization Pages** (`/src/pages/organisation/`):
-- Dashboard: Overview and analytics
-- Adherents: Member management
-- Projets: Project tracking for members
-- Livrables: Deliverables across all projects
-- Invitations: Invite code management
-- Forms: Custom form builder
-- Evenements: Calendar and event management
-- Mentors: Mentor assignment system
-- Settings: White-label branding, notifications
-
-**Organization Context**: Use `useOrganisationData` hook for organization-specific data
-
-## Key Integrations
-
-- **Supabase**: Database, auth, edge functions
-- **Stripe**: Payments and subscriptions
-- **Google Maps**: Address autocomplete (`@googlemaps/js-api-loader`)
-- **FullCalendar**: Event calendar (`@fullcalendar/react`)
-- **Chart.js**: Analytics charts (`chart.js`, `react-chartjs-2`)
-- **n8n Webhooks**: External automation triggers (e.g., RAG deletion at `n8n.srv906204.hstgr.cloud`)
-
-## Slash Commands
-
-Custom commands available in `.claude/commands/`:
-- `/feature`: Add new feature with proper structure
-- `/fix`: Debug and resolve issues
-- `/enhance`: Enhance existing features
-- `/ui-polish`: UI/UX improvements
-- `/doc`: Documentation tasks
-- `/plan-flow`: Plan multi-step workflows
-- `/review`: Code review
-- `/refactor`: Code refactoring
-- `/test`: Testing tasks
-- `/migrate`: Database migration tasks
-
-## White-Label Branding System
-
-**Organization Color Overrides**: When white-label branding is enabled in organization settings, the platform dynamically applies organization colors:
-- CSS Variables: `--org-primary-color`, `--org-secondary-color`, `--org-primary-rgb`, `--org-secondary-rgb`
-- Tailwind Config: `primary` and `secondary` colors use `var(--color-primary)` and `var(--color-secondary)`
-- Override Classes: `.org-bg-primary`, `.org-text-primary`, `.org-border-primary`, `.org-gradient-primary`
-- Automatic Replacement: Utility selectors in `index.css` replace all Aurentia pink/orange colors with org colors when `[style*="--org-primary-color"]` is detected
-- Checkboxes: Automatically styled with organization colors via `accent-color` CSS property
-
-**White-Label Conditions** (all must be true):
-1. User is in `/organisation/*` routes
-2. White-label setting enabled in organization settings
-3. Organization has custom logo and name configured
+### Code Style
+- **TypeScript**: Prefer explicit types, avoid `any`
+- **Imports**: Always use `@/` alias
+- **Components**: PascalCase `.tsx` files
+- **Hooks**: `use{FeatureName}.tsx` naming
+- **Services**: Lowercase `.ts` extension
+- Prefer ShadCN primitives over custom Tailwind
+- Use design system classes (`.btn-primary`, `.card-clickable`) over custom styles
 
 ## Important Notes
 
-- Email confirmation required for new users (see `EmailConfirmationGuard`)
-- Project selector persists to localStorage as `currentProjectId`
-- Auth state managed via singleton Supabase client to prevent multiple GoTrueClient instances
-- Organization routes require active organization membership
-- Deliverables are loaded on-demand when `currentProjectId` changes
-- Development server runs on port 8080 by default
-- Design system tokens defined in `/src/styles/theme.css` - always use CSS variables over hardcoded values
-- Progressive loading animations use `DeliverablesLoadingContext` for coordinated element-by-element reveals
+1. **Email + Beta required**: New users need email confirmation AND beta access to use platform
+2. **Port 8080**: Dev server runs on port 8080 with IPv6 (`::`), not 5173
+3. **Project persistence**: `currentProjectId` saved to localStorage
+4. **Singleton client**: Supabase client must be imported from `/src/integrations/supabase/client` to prevent multiple GoTrueClient instances
+5. **Design system**: Always use CSS variables from `/src/styles/theme.css`, never hardcode colors
+6. **White-label**: Automatically overrides Aurentia colors when enabled in org settings
+7. **Input font size**: 16px prevents mobile zoom on focus
+8. **Progressive loading**: `DeliverablesLoadingContext` coordinates element-by-element reveals with fadeInUp/fadeInBlur animations
+9. **React Query**: 5min stale time, 10min gc, no refetch on window focus
+10. **RLS**: Handle 403/404 errors appropriately - not all "not found" errors are actual 404s

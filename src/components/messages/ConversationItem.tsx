@@ -85,15 +85,19 @@ export const ConversationItem = ({
     <div
       onClick={onClick}
       className={cn(
-        "flex items-start gap-3 p-3 cursor-pointer rounded-lg transition-colors",
-        isActive ? "bg-accent" : "hover:bg-accent/50"
+        "flex items-start gap-3 p-3 mx-2 my-1 cursor-pointer rounded-lg transition-all",
+        isActive
+          ? "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white shadow-sm"
+          : "hover:bg-gray-100"
       )}
     >
       {/* Avatar */}
       <div className="relative">
         <Avatar className="h-12 w-12">
           <AvatarImage src={getAvatarUrl()} />
-          <AvatarFallback>
+          <AvatarFallback className={cn(
+            isActive ? "bg-white/20 text-white" : "bg-gray-100"
+          )}>
             {conversation.is_group ? (
               <Users className="h-5 w-5" />
             ) : (
@@ -109,30 +113,44 @@ export const ConversationItem = ({
           <div className="flex items-center gap-2 min-w-0">
             <h3 className={cn(
               "font-semibold truncate text-sm",
+              isActive ? "text-white" : "text-foreground",
               (conversation.unread_count || 0) > 0 && "font-bold"
             )}>
               {getConversationTitle()}
             </h3>
             {conversation.is_group && (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
+              <span className={cn(
+                "text-xs whitespace-nowrap",
+                isActive ? "text-white/80" : "text-muted-foreground"
+              )}>
                 {conversation.participant_count}
               </span>
             )}
           </div>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
+          <span className={cn(
+            "text-xs whitespace-nowrap",
+            isActive ? "text-white/80" : "text-muted-foreground"
+          )}>
             {formatTimestamp()}
           </span>
         </div>
 
         <div className="flex items-center justify-between gap-2">
           <p className={cn(
-            "text-sm text-muted-foreground truncate",
-            (conversation.unread_count || 0) > 0 && "font-medium text-foreground"
+            "text-sm truncate",
+            isActive
+              ? "text-white/90"
+              : (conversation.unread_count || 0) > 0
+                ? "font-medium text-foreground"
+                : "text-muted-foreground"
           )}>
             {getLastMessagePreview()}
           </p>
           {(conversation.unread_count || 0) > 0 && (
-            <Badge className="ml-auto shrink-0 h-5 min-w-[20px] rounded-full flex items-center justify-center px-1.5">
+            <Badge className={cn(
+              "ml-auto shrink-0 h-5 min-w-[20px] rounded-full flex items-center justify-center px-1.5",
+              isActive ? "bg-white text-aurentia-pink" : "bg-aurentia-pink text-white"
+            )}>
               {conversation.unread_count}
             </Badge>
           )}

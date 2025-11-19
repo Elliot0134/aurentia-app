@@ -6,7 +6,7 @@ import { MessageLayout } from "@/components/messages/MessageLayout";
  */
 const Messages = () => {
   return (
-    <div className="h-[calc(100vh-4rem)]">
+    <div className="h-full flex flex-col">
       <MessageLayout />
     </div>
   );

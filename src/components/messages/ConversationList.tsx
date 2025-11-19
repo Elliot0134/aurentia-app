@@ -66,13 +66,17 @@ export const ConversationList = ({
   return (
     <div className={cn(
       "flex flex-col h-full border-r bg-white transition-all duration-300 relative",
-      isCollapsed ? "w-16" : "w-80"
+      // Mobile: always full width, Desktop: support collapse
+      "w-full",
+      isCollapsed ? "lg:w-16" : "lg:w-80"
     )}>
-      {/* Collapse Toggle Button */}
-      <SidebarCollapseToggle
-        isCollapsed={isCollapsed}
-        onToggle={onToggleCollapse}
-      />
+      {/* Collapse Toggle Button - Desktop only */}
+      <div className="hidden lg:block">
+        <SidebarCollapseToggle
+          isCollapsed={isCollapsed}
+          onToggle={onToggleCollapse}
+        />
+      </div>
 
       {isCollapsed ? (
         /* Collapsed view - show + button and conversation icons */
@@ -108,7 +112,7 @@ export const ConversationList = ({
                 key={conversation.id}
                 onClick={() => onSelectConversation(conversation)}
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium transition-all mx-auto",
+                  "w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-medium transition-all mx-auto",
                   conversation.id === selectedConversationId
                     ? "bg-gradient-to-r from-aurentia-pink to-aurentia-orange ring-2 ring-aurentia-pink ring-offset-2"
                     : "bg-gray-400 hover:bg-gray-500"

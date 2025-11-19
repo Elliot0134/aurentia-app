@@ -62,6 +62,8 @@ const RolePermissionsPreview: React.FC<RolePermissionsPreviewProps> = ({ role, c
         return 'border-green-200 bg-green-50 dark:bg-green-900/20';
       case 'admin':
         return 'border-purple-200 bg-purple-50 dark:bg-purple-900/20';
+      case 'owner':
+        return 'border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20';
       default:
         return 'border-gray-200 bg-gray-50';
     }
@@ -75,6 +77,8 @@ const RolePermissionsPreview: React.FC<RolePermissionsPreviewProps> = ({ role, c
         return 'Peut créer et modifier du contenu - parfait pour les contributeurs actifs';
       case 'admin':
         return 'Accès complet avec gestion d\'équipe - pour les responsables de projet';
+      case 'owner':
+        return 'Propriétaire du projet avec tous les droits - peut transférer la propriété';
       default:
         return '';
     }
@@ -87,7 +91,7 @@ const RolePermissionsPreview: React.FC<RolePermissionsPreviewProps> = ({ role, c
         <div className="space-y-3">
           <div>
             <p className="font-semibold text-sm mb-1">
-              Permissions du rôle {role === 'viewer' ? 'Lecteur' : role === 'editor' ? 'Éditeur' : 'Administrateur'}
+              Permissions du rôle {role === 'viewer' ? 'Lecteur' : role === 'editor' ? 'Éditeur' : role === 'admin' ? 'Administrateur' : role === 'owner' ? 'Propriétaire' : role}
             </p>
             <p className="text-xs opacity-80">
               {getRoleDescription(role)}
@@ -132,6 +136,11 @@ const RolePermissionsPreview: React.FC<RolePermissionsPreviewProps> = ({ role, c
           {role === 'admin' && (
             <p className="text-xs italic opacity-75 mt-2">
               ⚠️ Les administrateurs ont un accès complet - choisissez avec soin
+            </p>
+          )}
+          {role === 'owner' && (
+            <p className="text-xs italic opacity-75 mt-2">
+              👑 Les propriétaires ont tous les droits sur le projet
             </p>
           )}
         </div>

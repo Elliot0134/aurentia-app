@@ -48,37 +48,47 @@ export const MessageInput = ({
   const isNearLimit = characterCount > maxLength * 0.9;
 
   return (
-    <div className="border-t bg-background p-4">
-      <div className="flex gap-2 items-end">
-        <div className="flex-1 relative">
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled || isSending}
-            className="min-h-[80px] max-h-[200px] resize-none pr-16"
-            maxLength={maxLength}
-          />
-          {isNearLimit && (
-            <div className={cn(
-              "absolute bottom-2 right-2 text-xs",
-              characterCount >= maxLength ? "text-destructive" : "text-muted-foreground"
-            )}>
-              {characterCount}/{maxLength}
-            </div>
-          )}
-        </div>
+    <div className="border-t bg-background p-4 relative z-10">
+      <div className="relative">
+        <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled || isSending}
+          className="min-h-[80px] max-h-[200px] resize-none pr-14 pb-12"
+          maxLength={maxLength}
+        />
+
+        {/* Character count - positioned above send button */}
+        {isNearLimit && (
+          <div className={cn(
+            "absolute top-2 right-2 text-xs px-2 py-1 rounded bg-background/80 backdrop-blur-sm z-10",
+            characterCount >= maxLength ? "text-destructive" : "text-muted-foreground"
+          )}>
+            {characterCount}/{maxLength}
+          </div>
+        )}
+
+        {/* Send button - positioned inside textarea at bottom-right */}
         <Button
           onClick={handleSend}
           disabled={!content.trim() || disabled || isSending}
           size="icon"
-          className={organizationId ? "h-10 w-10 btn-white-label hover:opacity-90" : "h-10 w-10 bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white hover:opacity-90"}
+          className={cn(
+            "absolute bottom-2 right-2 h-10 w-10 rounded-full shadow-lg transition-all z-20",
+            organizationId
+              ? "btn-white-label hover:opacity-90"
+              : "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white hover:opacity-90 hover:scale-105 active:scale-95",
+            (!content.trim() || disabled || isSending) && "opacity-50 cursor-not-allowed"
+          )}
+          aria-label="Envoyer le message"
         >
           <Send className="h-4 w-4" />
         </Button>
       </div>
-      <div className="text-xs text-muted-foreground mt-2">
+
+      <div className="text-xs text-muted-foreground mt-2 hidden sm:block">
         Appuyez sur Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne
       </div>
     </div>

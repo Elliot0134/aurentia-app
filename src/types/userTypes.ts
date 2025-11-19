@@ -40,6 +40,16 @@ export interface UserProfile {
   id: string;
   email: string;
   user_role: UserRole;
+  first_name?: string; // User first name
+  last_name?: string; // User last name
+  avatar_url?: string; // URL to user avatar/profile picture
+  phone?: string; // User phone number
+  bio?: string; // User biography/description
+  location?: string; // User location
+  company?: string; // User company name
+  job_title?: string; // Current job title or role
+  linkedin_url?: string; // LinkedIn profile URL
+  website?: string; // Personal or professional website URL
   organization?: Organization; // Loaded via join, not a direct column
   organization_setup_pending?: boolean; // Flag indicating user needs to complete organization setup
   organization_setup_dismissed?: boolean; // Flag indicating user permanently dismissed the setup guide
@@ -59,6 +69,18 @@ export interface UserProfile {
   user_type?: string; // Legacy field for backwards compatibility
   is_member?: boolean; // Legacy field for backwards compatibility
   incubateur_id?: string; // Legacy field for backwards compatibility
+  monthly_credits_remaining?: number;
+  purchased_credits_remaining?: number;
+  monthly_credits_limit?: number;
+  last_credit_reset?: string;
+  cohort_year?: number;
+  program_type?: string;
+  availability_schedule?: any;
+  training_budget?: number;
+  onboarding_completed?: boolean;
+  onboarding_data?: any;
+  theme_preference?: string;
+  preferred_language?: string;
 }
 
 export interface InvitationCode {

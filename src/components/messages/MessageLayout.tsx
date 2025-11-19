@@ -117,11 +117,11 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
               <TabsList className="bg-gray-50 h-11">
                 <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-white">
                   <User className="h-4 w-4" />
-                  <span>Messages personnels</span>
+                  <span>Entrepreneur</span>
                 </TabsTrigger>
                 <TabsTrigger value="organization" className="flex items-center gap-2 data-[state=active]:bg-white">
                   <Building className="h-4 w-4" />
-                  <span>Messages de l'organisation</span>
+                  <span>Organisation</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -133,7 +133,8 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
         {/* Conversation List - hidden on mobile when thread is shown */}
         <div
           className={cn(
-            "w-full lg:w-80 flex-shrink-0 h-full",
+            "w-full flex-shrink-0 h-full transition-all duration-300",
+            isConversationListCollapsed ? "lg:w-16" : "lg:w-80",
             showMobileThread && "hidden lg:block"
           )}
         >
@@ -176,13 +177,15 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
             </div>
           </div>
         ) : (
-          <div className="hidden lg:flex flex-col items-center justify-center h-full bg-muted/20">
-            <p className="text-muted-foreground mb-4">
-              Sélectionnez une conversation pour commencer
-            </p>
-            <Button onClick={handleNewConversation} className={activeOrgId ? "btn-white-label hover:opacity-90" : "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white hover:opacity-90"}>
-              Nouvelle conversation
-            </Button>
+          <div className="hidden lg:flex flex-col items-center justify-center h-full bg-muted/20 px-4">
+            <div className="flex flex-col items-center">
+              <p className="text-muted-foreground mb-4 text-center">
+                Sélectionnez une conversation pour commencer
+              </p>
+              <Button onClick={handleNewConversation} className={activeOrgId ? "btn-white-label hover:opacity-90" : "bg-gradient-to-r from-aurentia-pink to-aurentia-orange text-white hover:opacity-90"}>
+                Nouvelle conversation
+              </Button>
+            </div>
           </div>
         )}
       </div>
