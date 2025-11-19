@@ -73,23 +73,8 @@ const Signup = () => {
           console.error('Erreur lors de l\'appel à send-confirmation-email:', emailErr);
         }
 
-        // Check if user validated beta access code
-        const hasBetaAccess = localStorage.getItem('aurentia_has_beta_access') === 'true';
-        if (hasBetaAccess) {
-          try {
-            // Update profile with beta access
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .update({ has_beta_access: true })
-              .eq('id', data.user.id);
-
-            if (profileError) {
-              console.error('Erreur lors de la mise à jour du profil avec beta access:', profileError);
-            }
-          } catch (profileErr) {
-            console.error('Erreur lors de la mise à jour du beta access:', profileErr);
-          }
-        }
+        // Note: All new accounts get has_beta_access = true by default (restricted access)
+        // The database column default handles this automatically
       }
 
       // Redirect to login immediately with confirmation parameter

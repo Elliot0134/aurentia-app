@@ -65,7 +65,7 @@ export interface UserProfile {
   stripe_customer_id?: string;
   subscription_status?: string;
   address?: string;
-  has_beta_access?: boolean; // Beta access flag - true for grandfathered users, false for new restricted users
+  has_beta_access?: boolean; // Access restriction flag - false for grandfathered users (full access), true for new users (restricted to core features)
   user_type?: string; // Legacy field for backwards compatibility
   is_member?: boolean; // Legacy field for backwards compatibility
   incubateur_id?: string; // Legacy field for backwards compatibility
