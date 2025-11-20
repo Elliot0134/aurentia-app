@@ -92,6 +92,11 @@ const ChatbotPage = () => {
       value: 'project_rag',
       label: 'Rechercher dans le projet (RAG)',
       description: 'Recherche dans les données du projet existant'
+    },
+    {
+      value: 'web_search',
+      label: 'Recherche web',
+      description: 'Recherche d\'informations en ligne pour enrichir les réponses'
     }
   ];
 

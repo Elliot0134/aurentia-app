@@ -16,6 +16,7 @@ export interface Conversation {
   createdAt: Date;
   updatedAt: Date;
   messages: Message[];
+  is_shared?: boolean;
 }
 
 class ChatbotService {
@@ -100,6 +101,7 @@ class ChatbotService {
         projectId: convData.project_id,
         createdAt: new Date(convData.created_at),
         updatedAt: new Date(convData.updated_at),
+        is_shared: convData.is_shared || false,
         messages: (messagesData || []).map(msg => ({
           id: msg.id,
           sender: msg.sender as 'user' | 'bot',
@@ -172,6 +174,7 @@ class ChatbotService {
         projectId: conv.project_id,
         createdAt: new Date(conv.created_at),
         updatedAt: new Date(conv.updated_at),
+        is_shared: conv.is_shared || false,
         messages: [] // Les messages seront chargés séparément si nécessaire
       }));
     } catch (error) {
