@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Building, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,18 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
   const [showNewConversationDialog, setShowNewConversationDialog] = useState(false);
   const [showMobileThread, setShowMobileThread] = useState(false);
   const [conversationListRefetch, setConversationListRefetch] = useState<(() => void) | null>(null);
+  const [addOptimisticConversation, setAddOptimisticConversation] = useState<((conversation: ConversationWithDetails) => void) | null>(null);
+
+  // Wrapper functions to properly store callbacks in state
+  // When you pass a function to setState, React treats it as a functional update
+  // We must wrap it to store the actual function reference
+  const handleRefetchReady = useCallback((refetch: () => void) => {
+    setConversationListRefetch(() => refetch);
+  }, []);
+
+  const handleOptimisticAddReady = useCallback((addOptimistic: (conversation: ConversationWithDetails) => void) => {
+    setAddOptimisticConversation(() => addOptimistic);
+  }, []);
 
   // Update URL when permissions change and user is in org context without permission
   useEffect(() => {
@@ -83,18 +95,15 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
     setShowNewConversationDialog(false);
 
     try {
-      // Give the database a moment to fully commit the transaction
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Explicitly refetch the conversation list to ensure it's up to date
-      if (conversationListRefetch) {
-        conversationListRefetch();
-      }
-
-      // Fetch the newly created conversation details
+      // Fetch the newly created conversation details immediately
       const newConversation = await getConversationById(conversationId);
 
       if (newConversation) {
+        // Optimistically add to conversation list (appears at top immediately)
+        if (addOptimisticConversation) {
+          addOptimisticConversation(newConversation);
+        }
+
         // Select and open the new conversation
         setSelectedConversation(newConversation);
         setShowMobileThread(true);
@@ -145,7 +154,8 @@ export const MessageLayout = ({ organizationId }: MessageLayoutProps) => {
             organizationId={activeOrgId}
             isCollapsed={isConversationListCollapsed}
             onToggleCollapse={() => setIsConversationListCollapsed(!isConversationListCollapsed)}
-            onRefetchReady={setConversationListRefetch}
+            onRefetchReady={handleRefetchReady}
+            onOptimisticAddReady={handleOptimisticAddReady}
           />
         </div>
 

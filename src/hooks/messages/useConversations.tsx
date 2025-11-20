@@ -42,6 +42,18 @@ export const useConversations = (organizationId?: string) => {
     fetchConversations();
   }, [fetchConversations]);
 
+  // Optimistic update for new conversations
+  const addOptimisticConversation = useCallback((conversation: ConversationWithDetails) => {
+    setData(prev => {
+      // Check if conversation already exists (avoid duplicates)
+      if (prev.some(c => c.id === conversation.id)) {
+        return prev;
+      }
+      // Add new conversation at the beginning (most recent first)
+      return [conversation, ...prev];
+    });
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     fetchConversations();
@@ -113,5 +125,6 @@ export const useConversations = (organizationId?: string) => {
     error,
     invalidateConversations,
     refetch: fetchConversations,
+    addOptimisticConversation,
   };
 };

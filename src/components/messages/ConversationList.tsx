@@ -16,6 +16,7 @@ interface ConversationListProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onRefetchReady?: (refetch: () => void) => void;
+  onOptimisticAddReady?: (addOptimistic: (conversation: ConversationWithDetails) => void) => void;
 }
 
 export const ConversationList = ({
@@ -26,9 +27,10 @@ export const ConversationList = ({
   isCollapsed,
   onToggleCollapse,
   onRefetchReady,
+  onOptimisticAddReady,
 }: ConversationListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: conversations, isLoading, refetch } = useConversations(organizationId);
+  const { data: conversations, isLoading, refetch, addOptimisticConversation } = useConversations(organizationId);
 
   // Pass refetch function to parent on mount
   useEffect(() => {
@@ -36,6 +38,13 @@ export const ConversationList = ({
       onRefetchReady(refetch);
     }
   }, [onRefetchReady, refetch]);
+
+  // Pass optimistic add function to parent on mount
+  useEffect(() => {
+    if (onOptimisticAddReady && addOptimisticConversation) {
+      onOptimisticAddReady(addOptimisticConversation);
+    }
+  }, [onOptimisticAddReady, addOptimisticConversation]);
 
   const filteredConversations = conversations?.filter((conv) => {
     if (!searchQuery) return true;

@@ -8,6 +8,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChatInputMenu, SearchModeMenu } from "./ChatInputMenu";
 import ComingSoonDialog from '@/components/ui/ComingSoonDialog';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 interface DeliverableOption {
   value: string;
@@ -95,7 +96,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const isInputEmpty = inputMessage.trim() === '';
 
   return (
-    <div className="w-full pb-safe px-2">
+    <TooltipProvider>
+      <div className="w-full pb-safe px-2">
       <div className="w-full mx-auto bg-[var(--bg-card-static)] border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
            style={{
              transitionDuration: 'var(--transition-base)',
@@ -140,25 +142,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 />
               </div>
               <div className="flex items-end gap-2 flex-shrink-0 self-end mb-1">
-                <Button
-                  onClick={() => onReformQuestion(inputMessage)}
-                  disabled={isInputEmpty || isLoading || isSubmitting}
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-xl bg-[var(--bg-card-static)] hover:bg-[var(--btn-secondary-bg-hover)] transition-all"
-                  style={{
-                    transitionDuration: 'var(--transition-fast)',
-                    opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1'
-                  }}
-                  aria-label="Reformuler la question avec IA"
-                >
-                  {isLoading || isSubmitting ? (
-                    <Loader2 className="h-5 w-5 text-[var(--btn-primary-bg)]" style={{ animation: 'spin 600ms linear infinite' }} />
-                  ) : (
-                    <Sparkles className="h-5 w-5 text-[var(--btn-primary-bg)]" />
-                  )}
-                  <span className="sr-only">Reformuler la question</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => onReformQuestion(inputMessage)}
+                      disabled={isInputEmpty || isLoading || isSubmitting}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-xl bg-[var(--bg-card-static)] hover:bg-[var(--btn-secondary-bg-hover)] transition-all"
+                      style={{
+                        transitionDuration: 'var(--transition-fast)',
+                        opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1'
+                      }}
+                      aria-label="Reformuler la question avec IA"
+                    >
+                      {isLoading || isSubmitting ? (
+                        <Loader2 className="h-5 w-5 text-[var(--btn-primary-bg)]" style={{ animation: 'spin 600ms linear infinite' }} />
+                      ) : (
+                        <Sparkles className="h-5 w-5 text-[var(--btn-primary-bg)]" />
+                      )}
+                      <span className="sr-only">Reformuler la question</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="end">
+                    <p>Améliorez votre prompt</p>
+                  </TooltipContent>
+                </Tooltip>
                 <Button
                   onClick={onSendMessage}
                   disabled={isInputEmpty || isLoading || isSubmitting}
@@ -262,26 +271,33 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   })}
                 </div>
                 <div className="flex items-center gap-2 ml-auto">
-                  <Button
-                    onClick={() => onReformQuestion(inputMessage)}
-                    disabled={isInputEmpty || isLoading || isSubmitting}
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-static)] hover:bg-[var(--btn-secondary-bg-hover)]
-                               flex items-center justify-center transition-all"
-                    style={{
-                      transitionDuration: 'var(--transition-fast)',
-                      opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1'
-                    }}
-                    aria-label="Reformuler la question avec IA"
-                  >
-                    {isLoading || isSubmitting ? (
-                      <Loader2 className="w-[18px] h-[18px] text-[var(--btn-primary-bg)]" style={{ animation: 'spin 600ms linear infinite' }} />
-                    ) : (
-                      <Sparkles className="w-[18px] h-[18px] text-[var(--btn-primary-bg)]" />
-                    )}
-                    <span className="sr-only">Reformuler la question</span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => onReformQuestion(inputMessage)}
+                        disabled={isInputEmpty || isLoading || isSubmitting}
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-static)] hover:bg-[var(--btn-secondary-bg-hover)]
+                                   flex items-center justify-center transition-all"
+                        style={{
+                          transitionDuration: 'var(--transition-fast)',
+                          opacity: isInputEmpty || isLoading || isSubmitting ? 'var(--btn-disabled-opacity)' : '1'
+                        }}
+                        aria-label="Reformuler la question avec IA"
+                      >
+                        {isLoading || isSubmitting ? (
+                          <Loader2 className="w-[18px] h-[18px] text-[var(--btn-primary-bg)]" style={{ animation: 'spin 600ms linear infinite' }} />
+                        ) : (
+                          <Sparkles className="w-[18px] h-[18px] text-[var(--btn-primary-bg)]" />
+                        )}
+                        <span className="sr-only">Reformuler la question</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="end">
+                      <p>Améliorez votre prompt</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     onClick={onSendMessage}
                     disabled={isInputEmpty || isLoading || isSubmitting}
@@ -491,6 +507,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };

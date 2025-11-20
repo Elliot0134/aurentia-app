@@ -51,15 +51,20 @@ export const MessageThread = ({ conversation, organizationId }: MessageThreadPro
     if (messages && messages.length > 0 && optimisticMessages.length > 0) {
       // Remove optimistic messages that now exist in real messages
       setOptimisticMessages(prev =>
-        prev.filter(optMsg =>
-          !messages.some(realMsg =>
+        prev.filter(optMsg => {
+          // Keep optimistic messages that don't have a matching real message
+          // Match by content and sender, and check if real message was created recently
+          const hasRealVersion = messages.some(realMsg =>
             realMsg.content === optMsg.content &&
-            realMsg.created_at > optMsg.created_at
-          )
-        )
+            realMsg.sender_id === optMsg.sender_id &&
+            // Real message should be created within 5 seconds of optimistic message
+            Math.abs(new Date(realMsg.created_at).getTime() - new Date(optMsg.created_at).getTime()) < 5000
+          );
+          return !hasRealVersion;
+        })
       );
     }
-  }, [messages, optimisticMessages.length]);
+  }, [messages]);
 
   const handleSendMessage = async (content: string) => {
     if (!userProfile) return;
@@ -108,11 +113,8 @@ export const MessageThread = ({ conversation, organizationId }: MessageThreadPro
         });
       }
 
-      // Remove optimistic message after successful send
-      // The real message will come through real-time subscription
-      setTimeout(() => {
-        setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
-      }, 1000);
+      // Don't remove optimistic message immediately - let the cleanup effect handle it
+      // when the real message arrives via real-time subscription
     } catch (error) {
       // Remove optimistic message on error
       setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));

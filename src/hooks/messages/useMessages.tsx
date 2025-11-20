@@ -40,6 +40,18 @@ export const useMessages = (filter: MessageFilter) => {
     fetchMessages();
   }, [fetchMessages]);
 
+  // Optimistic update for new messages
+  const addOptimisticMessage = useCallback((message: MessageWithSender) => {
+    setData(prev => {
+      // Check if message already exists (avoid duplicates)
+      if (prev.some(m => m.id === message.id)) {
+        return prev;
+      }
+      // Add new message to the beginning (most recent first)
+      return [message, ...prev];
+    });
+  }, []);
+
   // Load more messages (pagination)
   const loadMore = useCallback(async () => {
     if (!data || data.length === 0 || !filter.conversation_id) return;
@@ -96,5 +108,6 @@ export const useMessages = (filter: MessageFilter) => {
     invalidateMessages,
     loadMore,
     refetch: fetchMessages,
+    addOptimisticMessage,
   };
 };
