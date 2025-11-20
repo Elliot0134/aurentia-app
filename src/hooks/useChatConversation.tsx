@@ -234,17 +234,21 @@ export const useChatConversation = (
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          message: userText, 
+        body: JSON.stringify({
+          message: userText,
           projectId: projectId,
           communicationStyle: communicationStyle,
+          // Envoyer les modes de recherche comme tableau et booléens pour la rétrocompatibilité
+          selectedSearchModes: selectedSearchModes,
           deepThinking: selectedSearchModes.includes('deep_thinking'),
           projectSearchMode: selectedSearchModes.includes('project_rag'),
+          webSearch: selectedSearchModes.includes('web_search'),
+          // Envoyer les livrables sélectionnés
           selectedDeliverables: selectedDeliverables,
           isFirstMessage: isFirstMessage,
           convId: conversationToUse.id,
-          entityId: entityId, // Ajouter entityId
-          entityType: entityType // Ajouter entityType
+          entityId: entityId,
+          entityType: entityType
         }),
       });
 
@@ -360,17 +364,21 @@ export const useChatConversation = (
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          message: previousUserMessage.text, 
+        body: JSON.stringify({
+          message: previousUserMessage.text,
           projectId: projectId,
           communicationStyle: communicationStyle,
+          // Envoyer les modes de recherche comme tableau et booléens pour la rétrocompatibilité
+          selectedSearchModes: selectedSearchModes,
           deepThinking: selectedSearchModes.includes('deep_thinking'),
           projectSearchMode: selectedSearchModes.includes('project_rag'),
+          webSearch: selectedSearchModes.includes('web_search'),
+          // Envoyer les livrables sélectionnés
           selectedDeliverables: selectedDeliverables,
           isFirstMessage: false,
           convId: currentConversation.id,
-          entityId: entityId, // Ajouter entityId
-          entityType: entityType // Ajouter entityType
+          entityId: entityId,
+          entityType: entityType
         }),
       });
 
