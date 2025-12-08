@@ -82,6 +82,7 @@ const ProjectBusiness = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<{ title: React.ReactNode; content: React.ReactNode; buttonColor?: string } | null>(null);
   const [isGenerateDeliverablesConfirmOpen, setIsGenerateDeliverablesConfirmOpen] = useState(false); // New state for confirmation popup
+  const [isGenerating, setIsGenerating] = useState(false); // State to prevent multiple clicks
 
   // État pour le modal d'invitation
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -114,7 +115,11 @@ const ProjectBusiness = () => {
   };
 
   const handleGenerateDeliverables = async () => {
-    setIsGenerateDeliverablesConfirmOpen(false);
+    // Empêcher les clics multiples
+    if (isGenerating) {
+      return;
+    }
+
     if (!projectId) {
       toast({
         title: "Erreur",
@@ -140,21 +145,25 @@ const ProjectBusiness = () => {
     // 2. Vérifier si assez de crédits disponibles
     const totalAvailableCredits = purchasedRemaining + monthlyRemaining;
     if (totalAvailableCredits < DELIVERABLE_COST) {
+      setIsGenerateDeliverablesConfirmOpen(false);
+      closePopup();
       toast({
         title: "Crédits insuffisants",
-        description: `Vous avez ${totalAvailableCredits} crédits, ${DELIVERABLE_COST} requis. Veuillez en acheter davantage.`,
+        description: `Vous n'avez pas assez de crédits. Vous avez ${totalAvailableCredits} crédits, ${DELIVERABLE_COST} sont requis.`,
         variant: "destructive",
       });
-      closePopup();
       openCreditsDialog();
       return;
     }
 
-    // Fermer le popup de confirmation avant de lancer la génération
+    // 3. Fermer les modals et afficher IMMÉDIATEMENT le pop-up de génération
+    setIsGenerateDeliverablesConfirmOpen(false);
     closePopup();
+    setIsGenerating(true);
+    setProjectStatus('premium_en_cours'); // Afficher immédiatement le pop-up "Pause café"
 
     try {
-      // 3. Débiter les crédits avec priorité (achetés en premier)
+      // 4. Débiter les crédits avec priorité (achetés en premier)
       let newPurchasedCredits = purchasedRemaining;
       let newMonthlyCredits = monthlyRemaining;
 
@@ -167,10 +176,10 @@ const ProjectBusiness = () => {
         newPurchasedCredits = 0;
       }
 
-      // 4. Mettre à jour les crédits dans Supabase
+      // 5. Mettre à jour les crédits dans Supabase
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           purchased_credits_remaining: newPurchasedCredits,
           monthly_credits_remaining: newMonthlyCredits
         } as any) // Workaround for stale Supabase types
@@ -178,7 +187,7 @@ const ProjectBusiness = () => {
 
       if (updateError) throw updateError;
 
-      // 5. Mettre le statut du projet en "payment_receive" pour déclencher la génération
+      // 6. Mettre le statut du projet en "payment_receive" pour déclencher la génération
       const { error: statusError } = await supabase
         .from('project_summary')
         .update({ statut_project: 'payment_receive' })
@@ -186,7 +195,7 @@ const ProjectBusiness = () => {
 
       if (statusError) throw statusError;
 
-      // 6. Appeler le webhook de génération des livrables premium
+      // 7. Appeler le webhook de génération des livrables premium
       const webhookResponse = await fetch('https://n8n.srv906204.hstgr.cloud/webhook/generation-livrables-premium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,23 +210,23 @@ const ProjectBusiness = () => {
         throw new Error(`Webhook failed: ${webhookResponse.status}`);
       }
 
-      // 7. Démarrer la génération et afficher le popup "Pause café"
+      // 8. Rafraîchir les crédits et afficher le toast
       fetchCredits();
 
       toast({
-        title: "Génération en cours",
-        description: `${DELIVERABLE_COST} crédits débités. Génération des livrables premium...`,
+        title: "Génération lancée",
+        description: `${DELIVERABLE_COST} crédits débités. La génération des livrables premium est en cours...`,
       });
 
-      // Recharger la page pour mettre à jour le statut du projet et afficher le popup si nécessaire
-      window.location.reload();
+      // Pas de rechargement de page - le polling s'occupera de mettre à jour le statut
 
     } catch (error) {
       console.error("Error generating premium deliverables:", error);
-      
+
       // Réinitialiser les états en cas d'erreur
-      // Pas de changement d'état local nécessaire, le polling s'arrêtera
-      
+      setIsGenerating(false);
+      setProjectStatus('free'); // Revenir à l'état libre en cas d'erreur
+
       toast({
         title: "Erreur",
         description: "Erreur lors de la génération des livrables premium.",
@@ -253,11 +262,11 @@ const ProjectBusiness = () => {
           <span className="font-bold text-text-primary">{project?.nom_projet || "Ce projet"}</span> mérite d'exister. Débloquez tous les livrables clés pour créer votre projet sans erreur.
         </DialogDescription>
         <DialogFooter className="flex justify-center gap-4 mt-8">
-          <Button variant="outline" onClick={closePopup} className="flex-1">
+          <Button variant="outline" onClick={closePopup} className="flex-1" disabled={isGenerating}>
             Non
           </Button>
-          <Button onClick={handleGenerateDeliverables} className="flex-1 bg-gradient-primary hover:opacity-90">
-            Let's go!
+          <Button onClick={handleGenerateDeliverables} className="flex-1 bg-gradient-primary hover:opacity-90" disabled={isGenerating}>
+            {isGenerating ? 'Lancement...' : "Let's go!"}
           </Button>
         </DialogFooter>
       </>
@@ -373,8 +382,13 @@ const ProjectBusiness = () => {
         if (data && data.statut_project !== projectStatus) {
           console.log(`Project status changed from ${projectStatus} to ${data.statut_project}`);
           setProjectStatus(data.statut_project);
+
+          // Réinitialiser isGenerating quand la génération est terminée
+          if (data.statut_project === 'premium_terminé') {
+            setIsGenerating(false);
+          }
         }
-        
+
         // Si le statut est "premium_terminé", le polling s'arrêtera au prochain rendu car la condition initiale du useEffect ne sera plus remplie.
         if (data.statut_project === 'premium_terminé') {
             toast({
@@ -618,7 +632,9 @@ const ProjectBusiness = () => {
           <div className="grid grid-cols-12 gap-4 md:gap-5 mt-8">
             <div className="col-span-12 text-center">
               {projectStatus === 'free' ? (
-                <button className="btn-primary" onClick={handleUnlockClick}>Débloquer les prochains livrables</button>
+                <button className="btn-primary" onClick={handleUnlockClick} disabled={isGenerating}>
+                  {isGenerating ? 'Lancement en cours...' : 'Débloquer les prochains livrables'}
+                </button>
               ) : (
                 <button className="btn-primary">Niveau 2</button>
               )}
@@ -629,28 +645,28 @@ const ProjectBusiness = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mt-8 items-stretch auto-rows-fr min-h-[200px]">
             {/* Analyse de la Concurrence Deliverable */}
             <div className="md:h-full">
-              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick} disabled={isGenerating}>
                 <AnalyseDeLaConcurrenceLivrable projectStatus={projectStatus} />
               </BlurredDeliverableWrapper>
             </div>
 
             {/* Analyse de Marché Deliverable */}
             <div className="md:h-full">
-              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick} disabled={isGenerating}>
                 <AnalyseDeMarcheLivrable projectId={projectId} />
               </BlurredDeliverableWrapper>
             </div>
 
             {/* Proposition de Valeur Deliverable */}
             <div className="md:h-full">
-              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick} disabled={isGenerating}>
                 <PropositionDeValeurLivrable />
               </BlurredDeliverableWrapper>
             </div>
 
             {/* Business Model Deliverable */}
             <div className="md:h-full">
-              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick} disabled={isGenerating}>
                 <BusinessModelLivrable
                   title="Business Model"
                   description="Modèle économique structuré de votre entreprise"
@@ -662,7 +678,7 @@ const ProjectBusiness = () => {
 
             {/* Analyse des Ressources Deliverable */}
             <div className="md:h-full">
-              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick}>
+              <BlurredDeliverableWrapper isBlurred={projectStatus === 'free'} onUnlockClick={handleUnlockClick} disabled={isGenerating}>
                 <AnalyseDesRessourcesLivrable />
               </BlurredDeliverableWrapper>
             </div>

@@ -4,9 +4,10 @@ interface BlurredDeliverableWrapperProps {
   children: React.ReactNode;
   isBlurred: boolean;
   onUnlockClick: () => void; // Add the new prop
+  disabled?: boolean; // Add disabled prop to prevent multiple clicks
 }
 
-const BlurredDeliverableWrapper: React.FC<BlurredDeliverableWrapperProps> = ({ children, isBlurred, onUnlockClick }) => {
+const BlurredDeliverableWrapper: React.FC<BlurredDeliverableWrapperProps> = ({ children, isBlurred, onUnlockClick, disabled = false }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -27,8 +28,9 @@ const BlurredDeliverableWrapper: React.FC<BlurredDeliverableWrapperProps> = ({ c
               ${isHovered ? 'opacity-100' : 'opacity-0'}
             `}
             onClick={onUnlockClick} // Add onClick handler
+            disabled={disabled}
           >
-            Débloquer
+            {disabled ? 'Lancement...' : 'Débloquer'}
           </button>
         </div>
       )}
